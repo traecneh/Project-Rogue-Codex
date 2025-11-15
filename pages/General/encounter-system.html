@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Encounter System &mdash; Project Rogue Codex</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <base href="../../" />
+    <link rel="icon" type="image/x-icon" href="images/project-rogue-favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="images/project-rogue-favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="64x64" href="images/project-rogue-favicon-64.png" />
+    <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
+    <link rel="stylesheet" href="css/styles.css" />
+    <script src="js/nav-loader.js" defer></script>
+  </head>
+  <body>
+    <div class="layout">
+      <div id="sidebar-root"></div>
+      <main class="main-content">
+        <header class="content-header">
+          <h1 class="content-title">Encounter System</h1>
+          <p class="content-tagline">
+            How encounters paint monsters onto the world, control respawns, and escalate into Elite threats.
+          </p>
+        </header>
+
+        <article class="content-section" id="core-rules">
+          <h2>Core Rules</h2>
+          <p>All open-world monster activity flows through pre-authored encounter nodes.</p>
+          <ul>
+            <li>All monster spawns are controlled by the <strong>Encounter System</strong>.</li>
+            <li>
+              An <strong>Encounter</strong> is a pre-built monster layout painted <strong>chunk-by-chunk</strong>
+              across the map.
+            </li>
+            <li>
+              Each encounter can define <strong>up to 5 weighted monster sets</strong>, each with:
+              <ul>
+                <li>A unique <strong>weight</strong> (selection chance).</li>
+                <li>Per-monster <strong>quantity ranges</strong> for the min/max number spawned.</li>
+              </ul>
+            </li>
+            <li>Tuning knobs also cover <strong>respawn cadence</strong> and the <strong>spawn radius</strong>.</li>
+          </ul>
+        </article>
+
+        <article class="content-section" id="encounter-states">
+          <h2>Active vs. Passive States</h2>
+          <ul>
+            <li>
+              <strong>Active radius:</strong> An encounter is <strong>Active</strong> when a player is within
+              <strong>8 chunks (128 tiles)</strong> of its center.
+            </li>
+            <li>If no player is in range, the encounter remains <strong>Passive</strong>.</li>
+            <li>While Active, most encounters <strong>increase their spawn rate</strong>.</li>
+            <li>
+              Going Active after <strong>4+ minutes</strong> of being Passive triggers a
+              <strong>Just Activated</strong> flag and an <strong>instant spawn pulse</strong>.
+            </li>
+            <li>
+              A <strong>Prolonged Activity</strong> timer tracks continuous Active time and unlocks Elite eligibility.
+            </li>
+          </ul>
+        </article>
+
+        <article class="content-section" id="elite-system">
+          <h2>Monster Spawning &amp; the Elite System</h2>
+          <p>Elite escalation only begins once an encounter demonstrates sustained pressure.</p>
+          <ul>
+            <li>
+              After being continuously Active for <strong>2 minutes</strong>, the encounter is flagged for
+              <strong>Prolonged Activity</strong>.
+            </li>
+            <li>
+              Flagged encounters can spawn <strong>Elite</strong> and <strong>Elite+</strong> monsters and retain that
+              eligibility for an additional <strong>8-minute</strong> grace window after falling Passive.
+            </li>
+            <li>
+              Re-entering the <strong>8-chunk</strong> radius during the grace period <strong>refreshes</strong> the
+              timer.
+            </li>
+          </ul>
+
+          <div class="stat-grid elite-grid">
+            <section class="stat-card">
+              <div class="stat-label">Elite</div>
+              <h3>
+                <img src="images/elite.gif" alt="Elite lightning effect" width="32" height="32" class="elite-icon" />
+                Blue Lightning
+              </h3>
+              <ul>
+                <li>Spawn chance: <strong>1 in 50</strong></li>
+                <li><strong>1.5× damage</strong></li>
+                <li><strong>3.0× health</strong></li>
+                <li><strong>3.0× drop rate</strong></li>
+              </ul>
+            </section>
+            <section class="stat-card">
+              <div class="stat-label">Elite+</div>
+              <h3>
+                <img src="images/elite+.gif" alt="Elite+ lightning effect" width="32" height="32" class="elite-icon" />
+                Yellow Lightning
+              </h3>
+              <ul>
+                <li>Spawn chance: <strong>1 in 150</strong></li>
+                <li><strong>2.0× damage</strong></li>
+                <li><strong>10.0× health</strong></li>
+                <li><strong>10.0× drop rate</strong></li>
+              </ul>
+            </section>
+          </div>
+        </article>
+
+        <article class="content-section" id="monster-despawns">
+          <h2>Monster De-Spawns</h2>
+          <ul>
+            <li>
+              Monsters despawn after <strong>4 continuous minutes</strong> without moving or attacking.
+            </li>
+            <li>Any monster exceeding <strong>1 hour</strong> of uptime despawns regardless of activity.</li>
+            <li>
+              <strong>Exception:</strong> <strong>Demon Spires</strong>, <strong>Dragon Spires</strong>, and
+              <strong>Master Spires</strong> ignore the 4-minute inactivity rule.
+            </li>
+          </ul>
+        </article>
+
+        <article class="content-section" id="boss-leashing">
+          <h2>Leashing &amp; Boss Behavior</h2>
+          <ul>
+            <li><strong>Bosses</strong> cannot be dragged outside the locale where they spawned.</li>
+            <li>
+              Crossing the locale boundary forces an instant <strong>leash</strong>, resetting the encounter and
+              restoring <strong>full health</strong>.
+            </li>
+          </ul>
+        </article>
+      </main>
+    </div>
+  </body>
+</html>

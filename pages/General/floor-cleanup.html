@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Floor Cleanup (Creeper) — Project Rogue Codex</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <base href="../../" />
+    <link rel="icon" type="image/x-icon" href="images/project-rogue-favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="images/project-rogue-favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="64x64" href="images/project-rogue-favicon-64.png" />
+    <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
+    <link rel="stylesheet" href="css/styles.css" />
+    <script src="js/nav-loader.js" defer></script>
+  </head>
+  <body>
+    <div class="layout">
+      <div id="sidebar-root"></div>
+      <main class="main-content">
+        <header class="content-header">
+          <h1 class="content-title">Floor Cleanup (Creeper)</h1>
+          <p class="content-tagline">
+            Understand how long dropped loot can remain on the ground before the Creeper removes it.
+          </p>
+        </header>
+
+        <article class="content-section" id="creeper-timing">
+          <h2>Creeper Timing</h2>
+          <p>The <strong>Creeper</strong> is the automated sweep that removes abandoned loot.</p>
+          <ul>
+            <li>Runs a cleanup pass every <strong>3 minutes</strong>.</li>
+            <li>Evaluates each ground item’s <strong>undisturbed timer</strong> during that pass.</li>
+            <li>
+              Deletes any item that has remained untouched for more than <strong>8 minutes</strong> at the time
+              of the sweep.
+            </li>
+          </ul>
+
+          <p>Because the sweep cadence is fixed, effective item lifetime falls within a narrow window.</p>
+          <ul>
+            <li><strong>Worst case:</strong> Item hits 8 minutes right before a sweep &rarr; survives roughly <strong>8 minutes</strong>.</li>
+            <li><strong>Best case:</strong> Item hits 8 minutes right after a sweep &rarr; lasts until the next pass, up to <strong>11 minutes</strong>.</li>
+            <li>In practice, untouched loot exists on the floor for <strong>8&ndash;11 minutes</strong>.</li>
+          </ul>
+
+          <div class="content-callout">
+            <h3>Example: Resetting the Timer</h3>
+            <ul>
+              <li><strong>Interacting with an item resets its undisturbed timer to 0.</strong></li>
+              <li>
+                Moving a stack to a different tile grants the full <strong>8&ndash;11 minute</strong> window again,
+                starting from the new location.
+              </li>
+            </ul>
+          </div>
+        </article>
+      </main>
+    </div>
+  </body>
+</html>

@@ -36,6 +36,11 @@ body {
     radial-gradient(circle at bottom right, #111827 0, transparent 60%),
     var(--bg-main);
   color: var(--text-main);
+  cursor: url("../images/cursor-safe.png") 0 0, auto;
+}
+
+.cursor-attack {
+  cursor: url("../images/cursor-attack.png") 0 0, auto;
 }
 
 /* Overall layout */
@@ -114,7 +119,7 @@ body {
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  cursor: pointer;
+  cursor: inherit;
   transition: background 0.2s ease, color 0.2s ease, transform 0.1s ease;
 }
 
@@ -369,7 +374,7 @@ body {
   border-radius: 50%;
   background: var(--accent);
   box-shadow: 0 0 8px rgba(75, 255, 75, 0.7);
-  cursor: pointer;
+  cursor: inherit;
 }
 
 .stat-control input[type="range"]::-moz-range-thumb {
@@ -378,7 +383,7 @@ body {
   border-radius: 50%;
   background: var(--accent);
   box-shadow: 0 0 8px rgba(75, 255, 75, 0.7);
-  cursor: pointer;
+  cursor: inherit;
   border: none;
 }
 
