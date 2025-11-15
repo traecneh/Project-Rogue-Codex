@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Rarity System &mdash; Project Rogue Codex</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <base href="../../" />
+    <link rel="icon" type="image/x-icon" href="images/project-rogue-favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="images/project-rogue-favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="64x64" href="images/project-rogue-favicon-64.png" />
+    <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
+    <link rel="stylesheet" href="css/styles.css" />
+    <script src="js/nav-loader.js" defer></script>
+  </head>
+  <body>
+    <div class="layout">
+      <div id="sidebar-root"></div>
+      <main class="main-content">
+        <header class="content-header">
+          <h1 class="content-title">Rarity System</h1>
+          <p class="content-tagline">
+            How item rarity tiers boost base stats and unlock perk eligibility in Project Rogue.
+          </p>
+        </header>
+
+        <article class="content-section">
+          <h2>Overview</h2>
+          <p>
+            Project Rogue features seven loot rarities: normal, uncommon, rare, epic, legendary, mythical,
+            and ascendant. Higher tiers roll larger stat bonuses distributed across Strength, Dexterity,
+            and Constitution, and may also qualify for perks.
+          </p>
+          <p>
+            Each tier owns a signature color in-game. Use the table below to reference their bonus windows and
+            perk chances when tuning drop tables or loot rewards.
+          </p>
+
+          <table class="rarity-table">
+            <thead>
+              <tr>
+                <th>Rarity</th>
+                <th>Bonus Stats (Random Split)</th>
+                <th>Perk Eligible?</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="rarity-label" style="color: #ffffff">Normal</span></td>
+                <td><strong>0</strong> bonus stats</td>
+                <td>No</td>
+              </tr>
+              <tr>
+                <td><span class="rarity-label" style="color: #ffd966">Uncommon</span></td>
+                <td><strong>2&ndash;4</strong> bonus stats</td>
+                <td>No</td>
+              </tr>
+              <tr>
+                <td><span class="rarity-label" style="color: #0000ff">Rare</span></td>
+                <td><strong>5&ndash;8</strong> bonus stats</td>
+                <td>No</td>
+              </tr>
+              <tr>
+                <td><span class="rarity-label" style="color: #741b47">Epic</span></td>
+                <td><strong>9&ndash;12</strong> bonus stats</td>
+                <td>Yes &mdash; <strong>40%</strong> chance</td>
+              </tr>
+              <tr>
+                <td><span class="rarity-label" style="color: #ff9900">Legendary</span></td>
+                <td><strong>13&ndash;15</strong> bonus stats</td>
+                <td>Yes &mdash; <strong>60%</strong> chance</td>
+              </tr>
+              <tr>
+                <td><span class="rarity-label" style="color: #6aa84f">Mythical</span></td>
+                <td><strong>16&ndash;22</strong> bonus stats</td>
+                <td>Yes &mdash; <strong>80%</strong> chance</td>
+              </tr>
+              <tr>
+                <td><span class="rarity-label" style="color: #ff0000">Ascendant</span></td>
+                <td><strong>23&ndash;30</strong> bonus stats</td>
+                <td>Yes &mdash; <strong>100%</strong> chance</td>
+              </tr>
+            </tbody>
+          </table>
+        </article>
+      </main>
+    </div>
+  </body>
+</html>

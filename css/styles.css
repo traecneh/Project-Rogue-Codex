@@ -554,6 +554,34 @@ a:hover {
   color: var(--accent);
 }
 
+.rarity-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.8rem;
+  font-size: 0.94rem;
+}
+
+.rarity-table th,
+.rarity-table td {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 0.5rem 0.6rem;
+  text-align: left;
+}
+
+.rarity-table th {
+  background: rgba(255, 255, 255, 0.05);
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.rarity-label {
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 /* Responsive tweaks */
 @media (max-width: 800px) {
   .layout {
