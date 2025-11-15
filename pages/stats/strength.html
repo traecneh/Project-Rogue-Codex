@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>  <meta charset="UTF-8" />  <title>Strength Stat &mdash; Project Rogue Codex</title>  <meta name="viewport" content="width=device-width, initial-scale=1" />  <link rel="icon" type="image/x-icon" href="images/project-rogue-favicon.ico" />
+  <link rel="icon" type="image/png" sizes="32x32" href="images/project-rogue-favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="64x64" href="images/project-rogue-favicon-64.png" />
+  <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
+
+   <link rel="icon" type="image/x-icon" href="images/project-rogue-favicon.ico" />
+  <link rel="icon" type="image/png" sizes="32x32" href="images/project-rogue-favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="64x64" href="images/project-rogue-favicon-64.png" />
+  <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
+
+   <link rel="icon" type="image/x-icon" href="images/project-rogue-favicon.ico" />
+  <link rel="icon" type="image/png" sizes="32x32" href="images/project-rogue-favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="64x64" href="images/project-rogue-favicon-64.png" />
+  <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
+
+<base href="../../" />  <link rel="stylesheet" href="css/styles.css" />  <script src="js/nav-loader.js" defer>
+</script>
+</head>
+<body>  <div class="layout">    <!-- LEFT: NAVIGATION -->    <div id="sidebar-root"></div>    <main class="main-content">      <header class="content-header">        <h1 class="content-title">Strength Stat</h1>      </header>      <article class="content-section" id="strength-overview">        <h2>Overview</h2>        <p>          Strength is the backbone of melee combat and survivability. It raises the raw damage of          every swing, increases how much kit you can haul, and even feeds directly into max health.        </p>        <ul>          <li>Scales melee damage through the shared multiplier: <code>1 + (Skill/50) + (Str/100) + (Dex/200)</code>.</li>          <li>Increases maximum carry weight using <code>150 + (3 * Strength)</code>.</li>          <li>Feeds max health together with level and Constitution: <code>20 + (Level * 15) + (Con * 10) + (Str * 2)</code>.</li>        </ul>      </article>
+
+            <article class="content-section" id="strength-mechanics">        <h2>Core Mechanics</h2>        <div class="stat-grid">          <section class="stat-card">            <div class="stat-label">Damage</div>            <h3>Melee Multiplier</h3>            <p>              Strength contributes a flat <code>Str/100</code> term to the melee multiplier.            </p>          </section>          <section class="stat-card">            <div class="stat-label">Encumbrance</div>            <h3>Max Weight</h3>            <p>              <strong>Formula:</strong> <code>150 + (3 * Strength)</code>.            </p>          </section>          <section class="stat-card">            <div class="stat-label">Vitality</div>            <h3>Max Health</h3>            <p>              <strong>Formula:</strong> <code>20 + (Level * 15) + (Con * 10) + (Str * 2)</code>.            </p>          </section>        </div>      </article>
+
+      <article class="content-section" id="strength-multiplier">
+        <h2>Melee Multiplier Simulator</h2>
+        <p>
+          Explore <code>1 + (Skill/50) + (Str/100) + (Dex/200)</code> by adjusting the sliders below.
+        </p>
+        <div class="stat-widget">
+          <div class="stat-control">
+            <label for="skill-slider">Skill: <span id="skill-value">50</span></label>
+            <input type="range" id="skill-slider" min="0" max="120" value="50" />
+          </div>
+          <div class="stat-control">
+            <label for="strength-slider">Strength: <span id="strength-value">50</span></label>
+            <input type="range" id="strength-slider" min="5" max="500" value="50" />
+          </div>
+          <div class="stat-control">
+            <label for="dexterity-slider">Dexterity: <span id="dexterity-value">50</span></label>
+            <input type="range" id="dexterity-slider" min="5" max="500" value="50" />
+          </div>
+          <div class="stat-output">
+            <span class="stat-output-label">Multiplier</span>
+            <span class="stat-output-value" id="multiplier-value">2.50x</span>
+          </div>
+        </div>
+      </article>
+
+<article class="content-section" id="strength-weight-chart">
+        <h2>Max Weight Benchmarks</h2>
+        <p>
+          Use these values (based on <code>150 + (3 * Strength)</code>) to gauge how much equipment each
+          breakpoint supports.
+        </p>
+        <div class="weight-chart">
+          <div class="weight-row">
+            <div class="weight-label">5 STR</div>
+            <div class="weight-bar" style="--fill:10%;"></div>
+            <div class="weight-value">165 weight</div>
+          </div>
+          <div class="weight-row">
+            <div class="weight-label">25 STR</div>
+            <div class="weight-bar" style="--fill:14%;"></div>
+            <div class="weight-value">225 weight</div>
+          </div>
+          <div class="weight-row">
+            <div class="weight-label">50 STR</div>
+            <div class="weight-bar" style="--fill:18%;"></div>
+            <div class="weight-value">300 weight</div>
+          </div>
+          <div class="weight-row">
+            <div class="weight-label">100 STR</div>
+            <div class="weight-bar" style="--fill:27%;"></div>
+            <div class="weight-value">450 weight</div>
+          </div>
+          <div class="weight-row">
+            <div class="weight-label">200 STR</div>
+            <div class="weight-bar" style="--fill:45%;"></div>
+            <div class="weight-value">750 weight</div>
+          </div>
+          <div class="weight-row weight-row-custom">
+            <div class="weight-label" id="custom-strength-label">5 STR</div>
+            <div class="weight-bar weight-bar-live" aria-hidden="true"></div>
+            <div class="weight-value" id="custom-weight-value">165 weight</div>
+          </div>
+          <div class="weight-slider">
+            <input type="range" id="custom-weight-slider" min="5" max="500" value="5" />
+            <div class="weight-slider-labels">
+              <span>5 STR</span>
+              <span>500 STR</span>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="content-section" id="strength-health">
+        <h2>Max Health Calculator</h2>
+        <p>
+          Adjust stats to see <code>20 + (Level * 15) + (Con * 10) + (Str * 2)</code>.
+        </p>
+        <div class="stat-widget">
+          <div class="stat-control">
+            <label for="health-level-slider">Level: <span id="health-level-value">50</span></label>
+            <input type="range" id="health-level-slider" min="1" max="105" value="50" />
+          </div>
+          <div class="stat-control">
+            <label for="health-con-slider">Constitution: <span id="health-con-value">150</span></label>
+            <input type="range" id="health-con-slider" min="5" max="500" value="150" />
+          </div>
+          <div class="stat-control">
+            <label for="health-str-slider">Strength: <span id="health-str-value">50</span></label>
+            <input type="range" id="health-str-slider" min="5" max="500" value="50" />
+          </div>
+          <div class="stat-output">
+            <span class="stat-output-label">Max Health</span>
+            <span class="stat-output-value" id="health-value">2370</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="content-section" id="strength-bleed">        <h2>Bleed Threshold</h2>        <p>          Reaching 100 base Strength unlocks the ability to inflict bleeds with any compatible attack.        </p>        <ul>          <li>
+<strong>Trigger:</strong> Base Strength >= 100.</li>          <li>
+<strong>Chance:</strong> <code>(Strength / 10)%</code> per hit, before perks or weapon bonuses.</li>          <li>
+<strong>Bleed Damage:</strong> 7.5% of the damage that applied the stack.</li>        </ul>      </article>
+
+            
+      <article class="content-section" id="strength-bleed-chance">
+        <h2>Bleed Chance Calculator</h2>
+        <p>
+          Bleed chance scales directly with base Strength once the threshold is hit. Dial in values with
+          the slider to see <code>(Strength / 10)%</code> per-hit chance.
+        </p>
+        <div class="stat-widget">
+          <div class="stat-control">
+            <label for="bleed-str-slider">Strength: <span id="bleed-str-value">100</span></label>
+            <input type="range" id="bleed-str-slider" min="100" max="500" value="100" step="1" />
+          </div>
+          <div class="stat-output">
+            <span class="stat-output-label">Chance per hit</span>
+            <span class="stat-output-value" id="bleed-chance-value">10.0%</span>
+          </div>
+        </div>
+      </article>
+      <article class="content-section" id="strength-races">        <h2>Racial Bonuses</h2>        <div class="stat-grid">          <section class="stat-card">            <div class="stat-label">Human</div>            <h3>Balanced fighter</h3>            <ul>              <li>+5 Strength and +5 Constitution.</li>              <li>+5 weapon proficiency to swords and small blades.</li>              <li>
+<strong>Desperation:</strong> deal more damage at low health.</li>            </ul>          </section>          <section class="stat-card">            <div class="stat-label">Tundrian</div>            <h3>Heavy hitter</h3>            <ul>              <li>+10 Strength bonus.</li>              <li>+5 weapon proficiency to axes.</li>              <li>
+<strong>Frozen Heart:</strong> innate resistance to extreme cold.</li>            </ul>          </section>        </div>      </article>      <article class="content-section" id="strength-perks">        <h2>Perks</h2>        <p class="content-tagline">          Notation: <strong>[ ]</strong> = tiers (T1/T2/T3), <strong>( )</strong> = weapon attack speeds (750/1000/1250/1500), <strong>{ }</strong> = formulas.        </p>        <div class="stat-grid">          <section class="stat-card">            <div class="stat-label">Tier 1-3</div>            <h3>Bolstered Strength</h3>            <p>              Increases max weight by <strong>[125 / 175 / 225]</strong>. Stack with encumbrance charms for juggernaut              loadouts.            </p>          </section>          <section class="stat-card">            <div class="stat-label">Tier 1-3</div>            <h3>Garrote</h3>            <p>              Requires 100 base Strength. Adds <strong>[4 / 5 / 6]%</strong> bleed chance and boosts bleed damage by              <strong>[2.5 / 3.0 / 3.5]%</strong>.            </p>          </section>          <section class="stat-card">            <div class="stat-label">Tier 1-3</div>            <h3>Brutality</h3>            <p>              <strong>(2 / 3 / 3 / 4)%</strong> chance on hit (based on attack speed bracket) to grant +20% Strength              for 60 seconds plus <strong>[15 / 30 / 45]</strong> seconds bonus duration (additive).            </p>          </section>        </div>      </article>      <article class="content-section" id="strength-gear">
+        <h2>Equipment Reference</h2>
+      </article>    </main>  </div>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

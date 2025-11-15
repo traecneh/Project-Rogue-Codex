@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Constitution Stat &mdash; Project Rogue Codex</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />  <link rel="icon" type="image/x-icon" href="images/project-rogue-favicon.ico" />
+  <link rel="icon" type="image/png" sizes="32x32" href="images/project-rogue-favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="64x64" href="images/project-rogue-favicon-64.png" />
+  <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
+
+
+  <link rel="icon" type="image/x-icon" href="images/project-rogue-favicon.ico" />
+  <link rel="icon" type="image/png" sizes="32x32" href="images/project-rogue-favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="64x64" href="images/project-rogue-favicon-64.png" />
+  <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
+
+   <link rel="icon" type="image/x-icon" href="images/project-rogue-favicon.ico" />
+  <link rel="icon" type="image/png" sizes="32x32" href="images/project-rogue-favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="64x64" href="images/project-rogue-favicon-64.png" />
+  <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
+
+   <link rel="icon" type="image/x-icon" href="images/project-rogue-favicon.ico" />
+  <link rel="icon" type="image/png" sizes="32x32" href="images/project-rogue-favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="64x64" href="images/project-rogue-favicon-64.png" />
+  <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
+
+<base href="../../" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <script src="js/nav-loader.js" defer></script>
+</head>
+<body>
+  <div class="layout">
+    <div id="sidebar-root"></div>
+
+    <main class="main-content">
+      <header class="content-header">
+        <h1 class="content-title">Constitution Stat</h1>
+      </header>
+
+      <article class="content-section" id="con-overview">
+        <h2>Overview</h2>
+        <p>
+          Constitution is the tank stat. Every point makes you harder to kill by inflating your maximum
+          health pool and accelerating your natural regeneration ticks.
+        </p>
+        <ul>
+          <li>Max health uses <code>20 + (Level * 15) + (Con * 10) + (Str * 2)</code>.</li>
+          <li>Passive regeneration powers up by <code>Con / 3</code> HP every 2 seconds.</li>
+        </ul>
+      </article>
+
+      <article class="content-section" id="con-mechanics">
+        <h2>Core Mechanics</h2>
+        <div class="stat-grid">
+          <section class="stat-card">
+            <div class="stat-label">Vitality</div>
+            <h3>Health Scaling</h3>
+            <p>
+              Constitution multiplies every source of flat HP. Stack it first, then layer gear and charms to
+              reach raid-ready health pools.
+            </p>
+          </section>
+          <section class="stat-card">
+            <div class="stat-label">Regeneration</div>
+            <h3>Con/3 Ticks</h3>
+            <p>
+              Baseline regen heals <code>Con / 3</code> HP every 2 seconds before bonuses, letting bruisers
+              stabilize between hits without potions.
+            </p>
+          </section>
+        </div>
+      </article>
+
+      <article class="content-section" id="con-health">
+        <h2>Max Health Calculator</h2>
+        <p>
+          Adjust stats to see <code>20 + (Level * 15) + (Con * 10) + (Str * 2)</code>.
+        </p>
+        <div class="stat-widget">
+          <div class="stat-control">
+            <label for="health-level-slider">Level: <span id="health-level-value">50</span></label>
+            <input type="range" id="health-level-slider" min="1" max="105" value="50" />
+          </div>
+          <div class="stat-control">
+            <label for="health-con-slider">Constitution: <span id="health-con-value">150</span></label>
+            <input type="range" id="health-con-slider" min="5" max="500" value="150" />
+          </div>
+          <div class="stat-control">
+            <label for="health-str-slider">Strength: <span id="health-str-value">50</span></label>
+            <input type="range" id="health-str-slider" min="5" max="500" value="50" />
+          </div>
+          <div class="stat-output">
+            <span class="stat-output-label">Max Health</span>
+            <span class="stat-output-value" id="health-value">2370</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="content-section" id="con-regen">
+        <h2>Regeneration Calculator</h2>
+        <p>
+          Baseline regen heals <code>Con / 3</code> HP every 2 seconds. Use the slider to see how bigger pools
+          translate into sustain between swings.
+        </p>
+        <div class="stat-widget">
+          <div class="stat-control">
+            <label for="regen-con-slider">Constitution: <span id="regen-con-value">150</span></label>
+            <input type="range" id="regen-con-slider" min="5" max="500" value="150" step="1" />
+          </div>
+          <div class="stat-output">
+            <span class="stat-output-label">Baseline regen</span>
+            <span class="stat-output-value" id="regen-value">50.0 HP / 2s</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="content-section" id="con-races">
+        <h2>Racial Bonuses</h2>
+        <div class="stat-grid">
+          <section class="stat-card">
+            <div class="stat-label">Brimlock</div>
+            <h3>Infernal Vanguard</h3>
+            <ul>
+              <li>+5 Constitution bonus.</li>
+              <li>+10 weapon proficiency with blunts.</li>
+              <li><strong>Demon Blood:</strong> special resistances against demonic foes.</li>
+            </ul>
+          </section>
+          <section class="stat-card">
+            <div class="stat-label">Komodan</div>
+            <h3>Scaled Guardian</h3>
+            <ul>
+              <li>+5 Constitution bonus.</li>
+              <li>+10 weapon proficiency with poles.</li>
+              <li><strong>Magic Shield:</strong> innate elemental resistance from scaled hide.</li>
+            </ul>
+          </section>
+          <section class="stat-card">
+            <div class="stat-label">Orc</div>
+            <h3>Relentless Bruiser</h3>
+            <ul>
+              <li>+10 Constitution bonus.</li>
+              <li>+5 weapon proficiency with blunts.</li>
+              <li><strong>Hazmat:</strong> tougher versus disease effects.</li>
+            </ul>
+          </section>
+          <section class="stat-card">
+            <div class="stat-label">Gnoll</div>
+            <h3>Battle Survivor</h3>
+            <ul>
+              <li>+5 Constitution bonus.</li>
+              <li>+5 weapon proficiency with swords.</li>
+              <li><strong>Rejuvenation:</strong> enhanced post-fight recovery.</li>
+            </ul>
+          </section>
+        </div>
+      </article>
+
+      <article class="content-section" id="con-perks">
+        <h2>Perks</h2>
+        <p class="content-tagline">
+          Legend: <strong>[ ]</strong> = tiers (T1/T2/T3), <strong>( )</strong> = weapon attack speeds
+          (750/1000/1250/1500), <strong>{ }</strong> = formulas.
+        </p>
+        <div class="stat-grid">
+          <section class="stat-card">
+            <div class="stat-label">Tier 1-3</div>
+            <h3>Rejuvenation</h3>
+            <p>
+              Adds <strong>[10 / 15 / 20]</strong> to each Constitution regen tick plus
+              <strong>[2 / 3 / 4]</strong> per tick for every 25 player levels (additive).
+            </p>
+          </section>
+          <section class="stat-card">
+            <div class="stat-label">Tier 1-3</div>
+            <h3>Tenacity</h3>
+            <p>
+              <strong>(2 / 3 / 3 / 4)%</strong> chance when attacked to gain +20% Constitution for 60 seconds
+              plus <strong>[15 / 30 / 45]</strong> seconds bonus duration (additive).
+            </p>
+          </section>
+          <section class="stat-card">
+            <div class="stat-label">Tier 1-3</div>
+            <h3>Vengeance</h3>
+            <p>
+              <strong>{Con / 3}%</strong> chance to deal bonus true damage equal to
+              <strong>[0.2&ndash;0.25 Con / 0.25&ndash;0.33 Con / 0.33&ndash;0.5 Con]</strong> (additive).
+            </p>
+          </section>
+        </div>
+      </article>
+
+      <article class="content-section" id="con-gear">
+        <h2>Equipment Reference</h2>
+      </article>
+    </main>
+  </div>
+</body>
+</html>
+
+
+
+
+
+
+
+

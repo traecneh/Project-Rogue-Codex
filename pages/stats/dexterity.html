@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Dexterity Stat &mdash; Project Rogue Codex</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />  <link rel="icon" type="image/x-icon" href="images/project-rogue-favicon.ico" />
+  <link rel="icon" type="image/png" sizes="32x32" href="images/project-rogue-favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="64x64" href="images/project-rogue-favicon-64.png" />
+  <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
+
+
+  <link rel="icon" type="image/x-icon" href="images/project-rogue-favicon.ico" />
+  <link rel="icon" type="image/png" sizes="32x32" href="images/project-rogue-favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="64x64" href="images/project-rogue-favicon-64.png" />
+  <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
+
+   <link rel="icon" type="image/x-icon" href="images/project-rogue-favicon.ico" />
+  <link rel="icon" type="image/png" sizes="32x32" href="images/project-rogue-favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="64x64" href="images/project-rogue-favicon-64.png" />
+  <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
+
+   <link rel="icon" type="image/x-icon" href="images/project-rogue-favicon.ico" />
+  <link rel="icon" type="image/png" sizes="32x32" href="images/project-rogue-favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="64x64" href="images/project-rogue-favicon-64.png" />
+  <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
+
+<base href="../../" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <script src="js/nav-loader.js" defer></script>
+</head>
+<body>
+  <div class="layout">
+    <div id="sidebar-root"></div>
+
+    <main class="main-content">
+      <header class="content-header">
+        <h1 class="content-title">Dexterity Stat</h1>
+      </header>
+
+      <article class="content-section" id="dex-overview">
+        <h2>Overview</h2>
+        <p>
+          Dexterity is the finesse core for Project Rogue. It feeds the global melee multiplier, fuels
+          crit chance, and bakes in survival for light builds that refuse to wear heavy plate.
+        </p>
+        <ul>
+          <li>Increases melee damage through <code>1 + (Skill/50) + (Str/100) + (Dex/200)</code>.</li>
+          <li>Raises crit chance by <code>Dex / 3%</code> for 1.35&times; damage spikes.</li>
+          <li>Grants passive damage reduction based solely on base Dexterity.</li>
+        </ul>
+      </article>
+
+      <article class="content-section" id="dex-mechanics">
+        <h2>Core Mechanics</h2>
+        <div class="stat-grid">
+          <section class="stat-card">
+            <div class="stat-label">Damage</div>
+            <h3>Melee Multiplier</h3>
+            <p>
+              Dexterity adds the <code>Dex/200</code> slice to the shared multiplier. Pair it with Skill and
+              Strength to keep daggers, bows, and claws scaling into the endgame.
+            </p>
+          </section>
+          <section class="stat-card">
+            <div class="stat-label">Criticals</div>
+            <h3>Dexterity Crit Chance</h3>
+            <p>
+              Base DEX delivers <code>Dex / 3%</code> chance to crit at 1.35&times; damage before gear. The more DEX
+              you stack, the more those crit spikes fuel burst rotations.
+            </p>
+          </section>
+          <section class="stat-card">
+            <div class="stat-label">Mitigation</div>
+            <h3>Innate DR</h3>
+            <p>
+              Even without armor, Dexterity adds a smoothing damage reduction layer that stacks with plate
+              and buffs, letting glass cannons shrug off chip damage.
+            </p>
+          </section>
+        </div>
+      </article>
+
+      <article class="content-section" id="dex-multiplier">
+        <h2>Melee Multiplier Simulator</h2>
+        <p>
+          Explore <code>1 + (Skill/50) + (Str/100) + (Dex/200)</code> by adjusting the sliders below.
+        </p>
+        <div class="stat-widget">
+          <div class="stat-control">
+            <label for="skill-slider">Skill: <span id="skill-value">50</span></label>
+            <input type="range" id="skill-slider" min="0" max="120" value="50" />
+          </div>
+          <div class="stat-control">
+            <label for="strength-slider">Strength: <span id="strength-value">50</span></label>
+            <input type="range" id="strength-slider" min="5" max="500" value="50" />
+          </div>
+          <div class="stat-control">
+            <label for="dexterity-slider">Dexterity: <span id="dexterity-value">50</span></label>
+            <input type="range" id="dexterity-slider" min="5" max="500" value="50" />
+          </div>
+          <div class="stat-output">
+            <span class="stat-output-label">Multiplier</span>
+            <span class="stat-output-value" id="multiplier-value">2.50x</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="content-section" id="dex-crit-calculator">
+        <h2>Dexterity Crit Chance</h2>
+        <p>
+          Base DEX delivers <code>Dex / 3%</code> chance to crit at 1.35&times; damage before gear. The more DEX you
+          stack, the more those crit spikes fuel burst rotations.
+        </p>
+        <div class="stat-widget">
+          <div class="stat-control">
+            <label for="dex-crit-slider">Dexterity: <span id="dex-crit-value">150</span></label>
+            <input type="range" id="dex-crit-slider" min="5" max="500" value="150" step="1" />
+          </div>
+          <div class="stat-output">
+            <span class="stat-output-label">Crit chance</span>
+            <span class="stat-output-value" id="dex-crit-chance-value">50.0% @ 1.35x</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="content-section" id="dex-dr">
+        <h2>Damage Reduction Curve</h2>
+        <p>
+          Damage reduction from Dexterity uses:
+          <code>[(Base Dex * 0.00125) / (1 + (Base Dex * 0.00125))]%</code>
+        </p>
+        <div class="weight-chart">
+          <div class="weight-row">
+            <div class="weight-label">50 DEX</div>
+            <div class="weight-bar" style="--fill:10%;"></div>
+            <div class="weight-value">5.88% DR</div>
+          </div>
+          <div class="weight-row">
+            <div class="weight-label">100 DEX</div>
+            <div class="weight-bar" style="--fill:20%;"></div>
+            <div class="weight-value">11.11% DR</div>
+          </div>
+          <div class="weight-row">
+            <div class="weight-label">150 DEX</div>
+            <div class="weight-bar" style="--fill:30%;"></div>
+            <div class="weight-value">15.79% DR</div>
+          </div>
+          <div class="weight-row">
+            <div class="weight-label">200 DEX</div>
+            <div class="weight-bar" style="--fill:40%;"></div>
+            <div class="weight-value">20% DR</div>
+          </div>
+          <div class="weight-row weight-row-custom">
+            <div class="weight-label" id="dex-dr-label">120 DEX</div>
+            <div class="weight-bar" id="dex-dr-live-bar" aria-hidden="true"></div>
+            <div class="weight-value" id="dex-dr-value">13.04% DR</div>
+          </div>
+          <div class="weight-slider">
+            <input type="range" id="dex-dr-slider" min="5" max="500" value="120" />
+            <div class="weight-slider-labels">
+              <span>5 DEX</span>
+              <span>500 DEX</span>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="content-section" id="dex-races">
+        <h2>Racial Bonuses</h2>
+        <div class="stat-grid">
+          <section class="stat-card">
+            <div class="stat-label">Elf</div>
+            <h3>Nimble Hunter</h3>
+            <ul>
+              <li>+10 Dexterity bonus.</li>
+              <li>+5 weapon proficiency to poles.</li>
+              <li><strong>Parry:</strong> improved ability to deflect incoming attacks.</li>
+            </ul>
+          </section>
+          <section class="stat-card">
+            <div class="stat-label">Dark Elf</div>
+            <h3>Alchemical Assassin</h3>
+            <ul>
+              <li>+5 Dexterity bonus.</li>
+              <li>+5 weapon proficiency to small blades.</li>
+              <li><strong>Alchemist:</strong> excels with healing potions and combat tonics.</li>
+            </ul>
+          </section>
+        </div>
+      </article>
+
+      <article class="content-section" id="dex-perks">
+        <h2>Perks</h2>
+        <p class="content-tagline">
+          Notation: <strong>[ ]</strong> = tiers (T1/T2/T3), <strong>( )</strong> = weapon attack speeds
+          (750/1000/1250/1500), <strong>{ }</strong> = formulas.
+        </p>
+        <div class="stat-grid">
+          <section class="stat-card">
+            <div class="stat-label">Tier 1-3</div>
+            <h3>Swiftness</h3>
+            <p>
+              <strong>(2 / 3 / 3 / 4)%</strong> chance on attack to gain +20% Dexterity for 60 seconds plus
+              <strong>[15 / 30 / 45]</strong> seconds bonus duration (additive). Staple perk for crit-focused
+              builds.
+            </p>
+          </section>
+        </div>
+      </article>
+
+      <article class="content-section" id="dex-gear">
+        <h2>Equipment Reference</h2>
+      </article>
+    </main>
+  </div>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
