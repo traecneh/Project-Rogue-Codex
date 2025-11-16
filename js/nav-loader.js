@@ -281,11 +281,24 @@ function initializeKeywordLinks() {
       href: "pages/General/floor-cleanup.html",
       excludedPaths: ["pages/general/floor-cleanup.html"],
     },
+    {
+      keyword: "Perks",
+      href: "pages/items/perks.html",
+      excludedPaths: ["pages/items/perks.html"],
+    },
   ];
 
+  const normalizedRules = keywordRules
+    .filter((rule) => rule.keyword)
+    .map((rule) => ({
+      ...rule,
+      keywordPattern: new RegExp(`\\b${escapeRegExp(String(rule.keyword))}\\b`, "gi"),
+      excludedPathsLower: (rule.excludedPaths || []).map((excluded) => excluded.toLowerCase()),
+    }));
+
   const currentPath = window.location.pathname.toLowerCase();
-  const activeRules = keywordRules.filter(
-    (rule) => !rule.excludedPaths.some((excluded) => currentPath.includes(excluded.toLowerCase()))
+  const activeRules = normalizedRules.filter(
+    (rule) => !rule.excludedPathsLower.some((excluded) => currentPath.includes(excluded))
   );
   if (!activeRules.length) return;
 
@@ -305,7 +318,9 @@ function initializeKeywordLinks() {
     "TITLE",
   ]);
 
-  const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  function escapeRegExp(value) {
+    return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
 
   const shouldSkipNode = (node) => {
     let parent = node.parentNode;
@@ -319,7 +334,8 @@ function initializeKeywordLinks() {
   };
 
   const linkifyRule = (rule) => {
-    const pattern = `\\b${escapeRegExp(rule.keyword)}\\b`;
+    const pattern = rule.keywordPattern;
+    if (!pattern) return;
     const walker = document.createTreeWalker(
       document.body,
       NodeFilter.SHOW_TEXT,
@@ -347,7 +363,8 @@ function initializeKeywordLinks() {
     textNodes.forEach((node) => {
       const text = node.nodeValue;
       if (!text || !node.parentNode) return;
-      const regex = new RegExp(pattern, "gi");
+      const regex = pattern;
+      regex.lastIndex = 0;
       let match;
       let lastIndex = 0;
       let replaced = false;

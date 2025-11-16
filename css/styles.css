@@ -150,6 +150,26 @@ body {
   box-shadow: 0 0 6px rgba(255, 214, 90, 0.9);
 }
 
+.sidebar .nav-section:nth-of-type(1) .nav-header-label::before {
+  background: #4bff4b;
+  box-shadow: 0 0 6px rgba(75, 255, 75, 0.9);
+}
+
+.sidebar .nav-section:nth-of-type(2) .nav-header-label::before {
+  background: #5ab0ff;
+  box-shadow: 0 0 6px rgba(90, 176, 255, 0.9);
+}
+
+.sidebar .nav-section:nth-of-type(3) .nav-header-label::before {
+  background: #ff7edb;
+  box-shadow: 0 0 6px rgba(255, 126, 219, 0.9);
+}
+
+.sidebar .nav-section:nth-of-type(4) .nav-header-label::before {
+  background: #ffa94d;
+  box-shadow: 0 0 6px rgba(255, 169, 77, 0.9);
+}
+
 .nav-header-icon {
   font-size: 0.95rem;
   font-weight: 700;
@@ -521,19 +541,31 @@ a:hover {
 
 /* Stat cards */
 .stat-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 0.9rem;
   margin-top: 0.8rem;
+  justify-content: center;
 }
 
-.stat-card {
+.stat-grid .stat-card {
+  flex: 1 1 230px;
+  max-width: 320px;
+  min-width: 190px;
   background: radial-gradient(circle at top left, #262d39, #141821);
   border-radius: 6px;
   padding: 0.8rem 0.9rem;
   border: 1px solid rgba(107, 114, 128, 0.9);
   box-shadow: inset 0 0 0 1px #090c13;
   transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+@media (max-width: 520px) {
+  .stat-grid .stat-card {
+    flex: 1 1 100%;
+    min-width: 0;
+    max-width: none;
+  }
 }
 
 .stat-card:hover,
@@ -546,7 +578,7 @@ a:hover {
 }
 
 .stat-label {
-  font-size: 0.7rem;
+  font-size: 0.9rem;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: var(--text-muted);
@@ -556,6 +588,10 @@ a:hover {
   margin: 0.25rem 0 0.2rem;
   font-size: 1rem;
   color: #f9fafb;
+}
+
+.stat-card ul {
+  padding-left: 1.2rem;
 }
 
 .stat-keyword {
@@ -670,3 +706,24 @@ a:hover {
     padding: 1rem 1rem 1.3rem;
   }
 }
+
+.resist-value {
+  font-weight: 700;
+}
+
+.resist-divider {
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  margin: 0.4rem 0;
+  width: calc(100% + 1.2rem);
+  margin-left: -1.2rem;
+}
+
+.resistance-icon {
+  display: block;
+  margin: 0.4rem auto 0.6rem;
+  image-rendering: pixelated;
+}
+
+
+
