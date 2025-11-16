@@ -533,6 +533,16 @@ a:hover {
   padding: 0.8rem 0.9rem;
   border: 1px solid rgba(107, 114, 128, 0.9);
   box-shadow: inset 0 0 0 1px #090c13;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+.stat-card:hover,
+.stat-card:focus-within {
+  border-color: rgba(75, 255, 75, 0.7);
+  box-shadow:
+    inset 0 0 0 1px rgba(75, 255, 75, 0.25),
+    0 0 14px rgba(75, 255, 75, 0.2);
+  transform: translateY(-2px);
 }
 
 .stat-label {
@@ -553,6 +563,7 @@ a:hover {
   font-size: 0.82rem;
   color: var(--accent);
 }
+
 
 .rarity-table {
   width: 100%;
