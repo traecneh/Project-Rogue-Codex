@@ -32,56 +32,73 @@
             and Constitution, and may also qualify for perks.
           </p>
           <p>
-            Each tier owns a signature color in-game. Use the table below to reference their bonus windows and
-            perk chances when tuning drop tables or loot rewards.
+            Each tier carries a signature color in-game. Browse the ladder of rarity cards below to see bonus windows
+            and perk eligibility at a glance.
           </p>
 
-          <table class="rarity-table">
-            <thead>
-              <tr>
-                <th>Rarity</th>
-                <th>Bonus Stats (Random Split)</th>
-                <th>Perk Eligible?</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><span class="rarity-label" style="color: #ffffff">Normal</span></td>
-                <td><strong>0</strong> bonus stats</td>
-                <td>No</td>
-              </tr>
-              <tr>
-                <td><span class="rarity-label" style="color: #ffd966">Uncommon</span></td>
-                <td><strong>2&ndash;4</strong> bonus stats</td>
-                <td>No</td>
-              </tr>
-              <tr>
-                <td><span class="rarity-label" style="color: #0000ff">Rare</span></td>
-                <td><strong>5&ndash;8</strong> bonus stats</td>
-                <td>No</td>
-              </tr>
-              <tr>
-                <td><span class="rarity-label" style="color: #741b47">Epic</span></td>
-                <td><strong>9&ndash;12</strong> bonus stats</td>
-                <td>Yes &mdash; <strong>40%</strong> chance</td>
-              </tr>
-              <tr>
-                <td><span class="rarity-label" style="color: #ff9900">Legendary</span></td>
-                <td><strong>13&ndash;15</strong> bonus stats</td>
-                <td>Yes &mdash; <strong>60%</strong> chance</td>
-              </tr>
-              <tr>
-                <td><span class="rarity-label" style="color: #6aa84f">Mythical</span></td>
-                <td><strong>16&ndash;22</strong> bonus stats</td>
-                <td>Yes &mdash; <strong>80%</strong> chance</td>
-              </tr>
-              <tr>
-                <td><span class="rarity-label" style="color: #ff0000">Ascendant</span></td>
-                <td><strong>23&ndash;30</strong> bonus stats</td>
-                <td>Yes &mdash; <strong>100%</strong> chance</td>
-              </tr>
-            </tbody>
-          </table>
+          <div class="rarity-stack">
+            <section class="rarity-card">
+              <header style="color: #ffffff">
+                <span class="rarity-label">Normal</span>
+              </header>
+              <p><strong>0</strong> bonus stats</p>
+              <p>No perk eligibility</p>
+            </section>
+            <section class="rarity-card">
+              <header style="color: #ffd966">
+                <span class="rarity-label">Uncommon</span>
+              </header>
+              <p><strong>2&ndash;4</strong> bonus stats</p>
+              <p>No perk eligibility</p>
+            </section>
+            <section class="rarity-card">
+              <header style="color: #0000ff">
+                <span class="rarity-label">Rare</span>
+              </header>
+              <p><strong>5&ndash;8</strong> bonus stats</p>
+              <p>No perk eligibility</p>
+            </section>
+            <section class="rarity-card">
+              <header style="color: #741b47">
+                <span class="rarity-label">Epic</span>
+              </header>
+              <p><strong>9&ndash;12</strong> bonus stats</p>
+              <p>Perk eligible &mdash; <strong>40%</strong></p>
+            </section>
+            <section class="rarity-card">
+              <header style="color: #ff9900">
+                <span class="rarity-label">Legendary</span>
+              </header>
+              <p><strong>13&ndash;15</strong> bonus stats</p>
+              <p>Perk eligible &mdash; <strong>60%</strong></p>
+            </section>
+            <section class="rarity-card">
+              <header style="color: #6aa84f">
+                <span class="rarity-label">Mythical</span>
+              </header>
+              <p><strong>16&ndash;22</strong> bonus stats</p>
+              <p>Perk eligible &mdash; <strong>80%</strong></p>
+            </section>
+            <section class="rarity-card">
+              <header style="color: #ff0000">
+                <span class="rarity-label">Ascendant</span>
+              </header>
+              <p><strong>23&ndash;30</strong> bonus stats</p>
+              <p>Perk eligible &mdash; <strong>100%</strong></p>
+            </section>
+          </div>
+
+          <hr class="rarity-divider" />
+
+          <section class="rarity-roller-section" id="rarity-roller">
+            <h3>Random Rarity Roll</h3>
+            <p>
+              Click to simulate a drop: the rarity tiers are weighted evenly, bonus stats roll within their ranges, and
+              perk eligibility follows each tier's chance. Unique perks are excluded from these rolls.
+            </p>
+            <button class="rarity-roll-button" type="button" data-rarity-roll>Roll Random Rarity</button>
+            <div class="rarity-roll-result" data-rarity-result>Roll results will appear here.</div>
+          </section>
         </article>
       </main>
     </div>
