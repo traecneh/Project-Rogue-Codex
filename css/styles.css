@@ -730,6 +730,57 @@ a:hover {
   padding: 3px;
 }
 
+.xp-sim-widget .stat-control label {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.xp-sim-buttons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.6rem;
+}
+
+.xp-sim-buttons button[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.xp-sim-buttons button {
+  border: 1px solid var(--border-soft);
+  background: linear-gradient(135deg, rgba(50, 60, 75, 0.9), rgba(20, 24, 32, 0.9));
+  color: var(--text-main);
+  padding: 0.4rem 0.9rem;
+  border-radius: 6px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease;
+}
+
+.xp-sim-buttons button:hover:not([disabled]),
+.xp-sim-buttons button:focus-visible:not([disabled]) {
+  border-color: var(--accent);
+  box-shadow: 0 0 12px rgba(75, 255, 75, 0.2);
+  transform: translateY(-1px);
+}
+
+.xp-sim-metrics {
+  margin-top: 0.8rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.xp-sim-metrics strong {
+  display: block;
+  margin-bottom: 0.1rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
 .materials-summary {
   margin-top: 1rem;
   border: 1px solid rgba(255, 255, 255, 0.15);
