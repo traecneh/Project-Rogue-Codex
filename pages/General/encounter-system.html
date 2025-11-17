@@ -157,26 +157,28 @@
     </div>
     <script>
       document.addEventListener("DOMContentLoaded", () => {
-        const monsterSprites = [
-          "images/monsters/Abberation.gif",
-          "images/monsters/Death Tyrant.gif",
-          "images/monsters/Demon.gif",
-          "images/monsters/Dirt Demon.gif",
-          "images/monsters/Green Triddle.gif",
-          "images/monsters/Orc General.gif",
-        ];
         const randomTargets = Array.from(document.querySelectorAll(".elite-random"));
-        if (!randomTargets.length || !monsterSprites.length) return;
-
-        const bag = monsterSprites.slice();
-        randomTargets.forEach((img) => {
-          if (!bag.length) {
-            bag.push(...monsterSprites);
-          }
-          const idx = Math.floor(Math.random() * bag.length);
-          const src = bag.splice(idx, 1)[0];
-          img.src = src;
-        });
+        if (!randomTargets.length) return;
+        fetch("images/monsters")
+          .then((response) => response.text())
+          .then((text) => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(text, "text/html");
+            const links = Array.from(doc.querySelectorAll("a"))
+              .map((a) => decodeURIComponent(a.getAttribute("href") || ""))
+              .filter((href) => href.toLowerCase().endsWith(".gif"))
+              .map((href) => `images/monsters/${href.replace(/^\/?/, "")}`);
+            if (!links.length) return;
+            const bag = links.slice();
+            randomTargets.forEach((img) => {
+              if (!bag.length) {
+                bag.push(...links);
+              }
+              const idx = Math.floor(Math.random() * bag.length);
+              img.src = bag.splice(idx, 1)[0];
+            });
+          })
+          .catch(() => {});
       });
     </script>
   </body>
