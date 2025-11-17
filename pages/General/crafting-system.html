@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Crafting System &mdash; Project Rogue Codex</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <base href="../../" />
+    <link rel="icon" type="image/x-icon" href="images/project-rogue-favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="images/project-rogue-favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="64x64" href="images/project-rogue-favicon-64.png" />
+    <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
+    <link rel="stylesheet" href="css/styles.css" />
+    <script src="js/nav-loader.js" defer></script>
+  </head>
+  <body>
+    <div class="layout">
+      <div id="sidebar-root"></div>
+      <main class="main-content">
+        <header class="content-header">
+          <h1 class="content-title">Crafting System</h1>
+          <p class="content-tagline">
+            How Dragon Scales and Ice Crystals become elite Frost and Dragon armor in Project Rogue.
+          </p>
+        </header>
+
+        <article class="content-section">
+          <h2>Currency &amp; Requirements</h2>
+          <p>
+            Crafting revolves around two specialty drops: <strong>Ice Crystals</strong> for Frost armor and
+            <strong>Dragon Scales</strong> for Dragon armor. Scales come in four colors&mdash;<strong>Black</strong>,
+            <strong>Red</strong>, <strong>Blue</strong>, and <strong>Green</strong>&mdash;and the color you feed the anvil
+            determines the look of the finished Dragon piece. Ice Crystals have only one variant, so their entire supply
+            goes toward Frost gear.
+          </p>
+          <ul>
+            <li>Carry a <strong>blacksmith hammer</strong> (buyable from town blacksmith NPCs) and stand beside an <strong>anvil</strong>.</li>
+            <li>
+              Stand on a tile adjacent to the anvil, right-click the hammer in your inventory, then click the crystal or
+              scale stack you want to spend to open the piece selector.
+            </li>
+            <li>Crafting has a <strong>100% success rate</strong>; no mats are lost to RNG.</li>
+            <li>The only recipes are Frost and Dragon armor slots, so every resource funnels into those sets.</li>
+            <li>A full armor suit consumes <strong>455</strong> Ice Crystals (Frost) or <strong>455</strong> Dragon Scales (any color).</li>
+            <li>When the craft finishes (~4 seconds), the new piece rolls a random rarity.</li>
+          </ul>
+          <section class="armor-set" aria-label="Frost armor set">
+            <h3>Frost Set</h3>
+            <div class="armor-gallery">
+              <figure>
+                <img src="images/armors/Frost%20Helmet.png" alt="Frost Helmet" loading="lazy" />
+                <figcaption>Helm</figcaption>
+              </figure>
+              <figure>
+                <img src="images/armors/Frost%20Gauntlets.png" alt="Frost Gauntlets" loading="lazy" />
+                <figcaption>Gauntlets</figcaption>
+              </figure>
+              <figure>
+                <img src="images/armors/Frost%20Leggings.png" alt="Frost Leggings" loading="lazy" />
+                <figcaption>Legs</figcaption>
+              </figure>
+              <figure>
+                <img src="images/armors/Frost%20Shield.png" alt="Frost Shield" loading="lazy" />
+                <figcaption>Shield</figcaption>
+              </figure>
+              <figure>
+                <img src="images/armors/Frost%20Platemail.png" alt="Frost Plate" loading="lazy" />
+                <figcaption>Plate</figcaption>
+              </figure>
+            </div>
+          </section>
+          <section class="armor-set" aria-label="Black Dragon armor set">
+            <h3>Black Dragon Set</h3>
+            <div class="armor-gallery">
+              <figure>
+                <img src="images/armors/Black%20Dragon%20Helmet.gif" alt="Black Dragon Helmet" loading="lazy" />
+                <figcaption>Helm</figcaption>
+              </figure>
+              <figure>
+                <img src="images/armors/Black%20Dragon%20Gauntlets.png" alt="Black Dragon Gauntlets" loading="lazy" />
+                <figcaption>Gauntlets</figcaption>
+              </figure>
+              <figure>
+                <img src="images/armors/Black%20Dragon%20Leggings.png" alt="Black Dragon Leggings" loading="lazy" />
+                <figcaption>Legs</figcaption>
+              </figure>
+              <figure>
+                <img src="images/armors/Black%20Dragon%20Shield.png" alt="Black Dragon Shield" loading="lazy" />
+                <figcaption>Shield</figcaption>
+              </figure>
+              <figure>
+                <img src="images/armors/Black%20Dragon%20Platemail.png" alt="Black Dragon Plate" loading="lazy" />
+                <figcaption>Plate</figcaption>
+              </figure>
+            </div>
+          </section>
+          <section class="armor-set" aria-label="Red Dragon armor set">
+            <h3>Red Dragon Set</h3>
+            <div class="armor-gallery">
+              <figure>
+                <img src="images/armors/Red%20Dragon%20Helmet.png" alt="Red Dragon Helmet" loading="lazy" />
+                <figcaption>Helm</figcaption>
+              </figure>
+              <figure>
+                <img src="images/armors/Red%20Dragon%20Gauntlets.png" alt="Red Dragon Gauntlets" loading="lazy" />
+                <figcaption>Gauntlets</figcaption>
+              </figure>
+              <figure>
+                <img src="images/armors/Red%20Dragon%20Leggings.png" alt="Red Dragon Leggings" loading="lazy" />
+                <figcaption>Legs</figcaption>
+              </figure>
+              <figure>
+                <img src="images/armors/Red%20Dragon%20Shield.png" alt="Red Dragon Shield" loading="lazy" />
+                <figcaption>Shield</figcaption>
+              </figure>
+              <figure>
+                <img src="images/armors/Red%20Dragon%20Platemail.gif" alt="Red Dragon Plate" loading="lazy" />
+                <figcaption>Plate</figcaption>
+              </figure>
+            </div>
+          </section>
+          <section class="armor-set" aria-label="Blue Dragon armor set">
+            <h3>Blue Dragon Set</h3>
+            <div class="armor-gallery">
+              <figure>
+                <img src="images/armors/Blue%20Dragon%20Helmet.png" alt="Blue Dragon Helmet" loading="lazy" />
+                <figcaption>Helm</figcaption>
+              </figure>
+              <figure>
+                <img src="images/armors/Blue%20Dragon%20Gauntlets.png" alt="Blue Dragon Gauntlets" loading="lazy" />
+                <figcaption>Gauntlets</figcaption>
+              </figure>
+              <figure>
+                <img src="images/armors/Blue%20Dragon%20Leggings.png" alt="Blue Dragon Leggings" loading="lazy" />
+                <figcaption>Legs</figcaption>
+              </figure>
+              <figure>
+                <img src="images/armors/Blue%20Dragon%20Shield.png" alt="Blue Dragon Shield" loading="lazy" />
+                <figcaption>Shield</figcaption>
+              </figure>
+              <figure>
+                <img src="images/armors/Blue%20Dragon%20Platemail.png" alt="Blue Dragon Plate" loading="lazy" />
+                <figcaption>Plate</figcaption>
+              </figure>
+            </div>
+          </section>
+          <section class="armor-set" aria-label="Green Dragon armor set">
+            <h3>Green Dragon Set</h3>
+            <div class="armor-gallery">
+              <figure>
+                <img src="images/armors/Green%20Dragon%20Helmet.gif" alt="Green Dragon Helmet" loading="lazy" />
+                <figcaption>Helm</figcaption>
+              </figure>
+              <figure>
+                <img src="images/armors/Green%20Dragon%20Gauntlets.png" alt="Green Dragon Gauntlets" loading="lazy" />
+                <figcaption>Gauntlets</figcaption>
+              </figure>
+              <figure>
+                <img src="images/armors/Green%20Dragon%20Leggings.png" alt="Green Dragon Leggings" loading="lazy" />
+                <figcaption>Legs</figcaption>
+              </figure>
+              <figure>
+                <img src="images/armors/Green%20Dragon%20Shield.png" alt="Green Dragon Shield" loading="lazy" />
+                <figcaption>Shield</figcaption>
+              </figure>
+              <figure>
+                <img src="images/armors/Green%20Dragon%20Platemail.png" alt="Green Dragon Plate" loading="lazy" />
+                <figcaption>Plate</figcaption>
+              </figure>
+            </div>
+          </section>
+        </article>
+
+        <article class="content-section">
+          <h2>Material Costs</h2>
+          <p>
+            Each slot uses the same recipe whether you are building Frost armor (Ice Crystals) or any Dragon color (Dragon
+            Scales). Pick the slot you need, pay the cost in the matching resource type, and the piece appears after a short
+            (~4 second) channel.
+          </p>
+          <p class="text-muted">
+            Slot previews below show: <span data-slot-set-label>Frost Set</span>
+          </p>
+          <div class="stat-grid">
+            <section class="stat-card">
+              <h3>Helm</h3>
+              <img
+                class="armor-slot-preview"
+                src="images/armors/Frost%20Helmet.png"
+                alt="Frost Helmet"
+                loading="lazy"
+                data-slot-preview
+                data-slot="helm"
+              />
+              <p><strong>30</strong> Ice Crystals or Dragon Scales.</p>
+            </section>
+            <section class="stat-card">
+              <h3>Gauntlets</h3>
+              <img
+                class="armor-slot-preview"
+                src="images/armors/Frost%20Gauntlets.png"
+                alt="Frost Gauntlets"
+                loading="lazy"
+                data-slot-preview
+                data-slot="gauntlets"
+              />
+              <p><strong>55</strong> Ice Crystals or Dragon Scales.</p>
+            </section>
+            <section class="stat-card">
+              <h3>Legs</h3>
+              <img
+                class="armor-slot-preview"
+                src="images/armors/Frost%20Leggings.png"
+                alt="Frost Leggings"
+                loading="lazy"
+                data-slot-preview
+                data-slot="legs"
+              />
+              <p><strong>99</strong> Ice Crystals or Dragon Scales.</p>
+            </section>
+            <section class="stat-card">
+              <h3>Shield</h3>
+              <img
+                class="armor-slot-preview"
+                src="images/armors/Frost%20Shield.png"
+                alt="Frost Shield"
+                loading="lazy"
+                data-slot-preview
+                data-slot="shield"
+              />
+              <p><strong>113</strong> Ice Crystals or Dragon Scales.</p>
+            </section>
+            <section class="stat-card">
+              <h3>Plate</h3>
+              <img
+                class="armor-slot-preview"
+                src="images/armors/Frost%20Platemail.png"
+                alt="Frost Platemail"
+                loading="lazy"
+                data-slot-preview
+                data-slot="plate"
+              />
+              <p><strong>158</strong> Ice Crystals or Dragon Scales.</p>
+            </section>
+          </div>
+        </article>
+
+        <article class="content-section">
+          <h2>Materials Calculator</h2>
+          <p>
+            Use this quick planner to see whether your current stockpile can cover the pieces you want. Toggle any slot
+            to include it in the plan, then adjust your material count to find gaps or leftovers.
+          </p>
+          <div class="stat-widget">
+            <div class="stat-control">
+              <label for="materials-slider">Current Materials: <span data-materials-value>0</span></label>
+              <input type="range" id="materials-slider" min="0" max="1000" value="0" step="1" data-materials-range />
+            </div>
+            <div class="calculator-grid" data-material-options>
+              <button class="calc-chip" type="button" data-slot="helm" data-cost="30">
+                <h4>Helm</h4>
+                <span>30 mats</span>
+              </button>
+              <button class="calc-chip" type="button" data-slot="gauntlets" data-cost="55">
+                <h4>Gauntlets</h4>
+                <span>55 mats</span>
+              </button>
+              <button class="calc-chip" type="button" data-slot="legs" data-cost="99">
+                <h4>Legs</h4>
+                <span>99 mats</span>
+              </button>
+              <button class="calc-chip" type="button" data-slot="shield" data-cost="113">
+                <h4>Shield</h4>
+                <span>113 mats</span>
+              </button>
+              <button class="calc-chip" type="button" data-slot="plate" data-cost="158">
+                <h4>Plate</h4>
+                <span>158 mats</span>
+              </button>
+            </div>
+            <div class="materials-summary" data-material-summary>
+              Select at least one slot to see totals.
+            </div>
+          </div>
+        </article>
+      </main>
+    </div>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const slotPreviews = document.querySelectorAll("[data-slot-preview]");
+        const slotSetLabel = document.querySelector("[data-slot-set-label]");
+        const slotNames = {
+          helm: "Helm",
+          gauntlets: "Gauntlets",
+          legs: "Leggings",
+          shield: "Shield",
+          plate: "Plate"
+        };
+        const armorSets = {
+          frost: {
+            label: "Frost",
+            helm: "images/armors/Frost%20Helmet.png",
+            gauntlets: "images/armors/Frost%20Gauntlets.png",
+            legs: "images/armors/Frost%20Leggings.png",
+            shield: "images/armors/Frost%20Shield.png",
+            plate: "images/armors/Frost%20Platemail.png"
+          },
+          black: {
+            label: "Black Dragon",
+            helm: "images/armors/Black%20Dragon%20Helmet.gif",
+            gauntlets: "images/armors/Black%20Dragon%20Gauntlets.png",
+            legs: "images/armors/Black%20Dragon%20Leggings.png",
+            shield: "images/armors/Black%20Dragon%20Shield.png",
+            plate: "images/armors/Black%20Dragon%20Platemail.png"
+          },
+          red: {
+            label: "Red Dragon",
+            helm: "images/armors/Red%20Dragon%20Helmet.png",
+            gauntlets: "images/armors/Red%20Dragon%20Gauntlets.png",
+            legs: "images/armors/Red%20Dragon%20Leggings.png",
+            shield: "images/armors/Red%20Dragon%20Shield.png",
+            plate: "images/armors/Red%20Dragon%20Platemail.gif"
+          },
+          blue: {
+            label: "Blue Dragon",
+            helm: "images/armors/Blue%20Dragon%20Helmet.png",
+            gauntlets: "images/armors/Blue%20Dragon%20Gauntlets.png",
+            legs: "images/armors/Blue%20Dragon%20Leggings.png",
+            shield: "images/armors/Blue%20Dragon%20Shield.png",
+            plate: "images/armors/Blue%20Dragon%20Platemail.png"
+          },
+          green: {
+            label: "Green Dragon",
+            helm: "images/armors/Green%20Dragon%20Helmet.gif",
+            gauntlets: "images/armors/Green%20Dragon%20Gauntlets.png",
+            legs: "images/armors/Green%20Dragon%20Leggings.png",
+            shield: "images/armors/Green%20Dragon%20Shield.png",
+            plate: "images/armors/Green%20Dragon%20Platemail.png"
+          }
+        };
+
+        if (slotPreviews.length) {
+          const setKeys = Object.keys(armorSets);
+          const randomKey = setKeys[Math.floor(Math.random() * setKeys.length)];
+          const selectedSet = armorSets[randomKey];
+
+          slotPreviews.forEach((img) => {
+            const slot = img.dataset.slot;
+            const asset = selectedSet[slot];
+            if (asset) {
+              img.src = asset;
+              img.alt = `${selectedSet.label} ${slotNames[slot] || "Armor"}`;
+            }
+          });
+
+          if (slotSetLabel) {
+            slotSetLabel.textContent = `${selectedSet.label} Set`;
+          }
+        }
+
+        const slider = document.querySelector("[data-materials-range]");
+        const valueLabel = document.querySelector("[data-materials-value]");
+        const chips = Array.from(document.querySelectorAll("[data-material-options] .calc-chip"));
+        const summary = document.querySelector("[data-material-summary]");
+
+        if (!slider || !valueLabel || chips.length === 0 || !summary) {
+          return;
+        }
+
+        const state = {
+          currentMats: Number(slider.value),
+          selectedSlots: new Set()
+        };
+
+        function formatNumber(num) {
+          return num.toLocaleString();
+        }
+
+        function pluralize(count, singular, plural) {
+          return count === 1 ? singular : plural || `${singular}s`;
+        }
+
+        function describeSelection() {
+          const items = Array.from(state.selectedSlots).map((slot) => slotNames[slot] || slot);
+          if (items.length === 0) {
+            return "";
+          }
+          if (items.length === 1) {
+            return items[0];
+          }
+          if (items.length === 2) {
+            return `${items[0]} and ${items[1]}`;
+          }
+          const last = items.pop();
+          return `${items.join(", ")}, and ${last}`;
+        }
+
+        function updateSummary() {
+          const selectedChips = Array.from(state.selectedSlots).map((slot) =>
+            chips.find((c) => c.dataset.slot === slot)
+          ).filter(Boolean);
+
+          const totalCost = selectedChips.reduce((sum, chip) => sum + Number(chip.dataset.cost), 0);
+
+          if (selectedChips.length === 0) {
+            summary.textContent = "Select at least one slot to see totals.";
+            return;
+          }
+
+          const selectionLabel = describeSelection();
+          const diff = state.currentMats - totalCost;
+          const remainingLabel = pluralize(diff, "material");
+          const materialLabel = pluralize(Math.abs(diff), "material");
+
+          if (diff >= 0) {
+            summary.textContent = `You have enough materials to craft ${selectionLabel}. ${formatNumber(diff)} ${remainingLabel} remain.`;
+          } else {
+            summary.textContent = `Need ${formatNumber(Math.abs(diff))} more ${materialLabel} to craft ${selectionLabel}.`;
+          }
+        }
+
+        function toggleChip(chip) {
+          const slot = chip.dataset.slot;
+          if (state.selectedSlots.has(slot)) {
+            state.selectedSlots.delete(slot);
+            chip.dataset.active = "false";
+          } else {
+            state.selectedSlots.add(slot);
+            chip.dataset.active = "true";
+          }
+          updateSummary();
+        }
+
+        slider.addEventListener("input", () => {
+          state.currentMats = Number(slider.value);
+          valueLabel.textContent = formatNumber(state.currentMats);
+          updateSummary();
+        });
+
+        chips.forEach((chip) => {
+          chip.dataset.active = "false";
+          chip.addEventListener("click", () => toggleChip(chip));
+        });
+
+        valueLabel.textContent = formatNumber(state.currentMats);
+      });
+    </script>
+  </body>
+</html>

@@ -600,6 +600,118 @@ a:hover {
   color: var(--accent);
 }
 
+.calculator-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin: 1rem 0;
+}
+
+.calc-chip {
+  flex: 1 1 120px;
+  min-width: 110px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  padding: 0.5rem 0.6rem;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+  background: linear-gradient(145deg, rgba(33, 38, 48, 0.9), rgba(12, 16, 24, 0.9));
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03),
+    0 8px 16px rgba(0, 0, 0, 0.45);
+}
+
+.calc-chip[data-active="true"] {
+  border-color: var(--accent);
+  background: rgba(75, 255, 75, 0.12);
+  box-shadow:
+    inset 0 0 0 1px rgba(75, 255, 75, 0.4),
+    0 0 12px rgba(75, 255, 75, 0.15);
+}
+
+.calc-chip h4 {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #050709;
+  transition: color 0.2s ease;
+}
+
+.calc-chip span {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.calc-chip[data-active="true"] h4 {
+  color: #ffffff;
+}
+
+.armor-set {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 0.9rem 1rem;
+  margin-top: 1rem;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.armor-set h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
+}
+
+.armor-gallery {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+}
+
+.armor-gallery figure {
+  width: 64px;
+  text-align: center;
+}
+
+.armor-gallery img {
+  width: 48px;
+  height: 48px;
+  display: block;
+  margin: 0 auto;
+  image-rendering: pixelated;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 2px;
+}
+
+.armor-gallery figcaption {
+  margin-top: 0.2rem;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.armor-slot-preview {
+  width: 56px;
+  height: 56px;
+  display: block;
+  margin: 0.4rem auto;
+  image-rendering: pixelated;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 3px;
+}
+
+.materials-summary {
+  margin-top: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 0.8rem 1rem;
+  background: rgba(255, 255, 255, 0.04);
+}
+
 .race-portraits {
   display: flex;
   justify-content: center;
