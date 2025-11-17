@@ -85,7 +85,16 @@
             <section class="stat-card">
               <div class="stat-label">Elite</div>
               <h3>
-                <img src="images/elite.gif" alt="Elite lightning effect" width="32" height="32" class="elite-icon" />
+                <span class="elite-icon-wrapper">
+                  <img class="elite-random" alt="" aria-hidden="true" width="32" height="32" />
+                  <img
+                    src="images/elite.gif"
+                    alt="Elite lightning effect"
+                    width="32"
+                    height="32"
+                    class="elite-icon"
+                  />
+                </span>
                 Blue Lightning
               </h3>
               <ul>
@@ -98,7 +107,16 @@
             <section class="stat-card">
               <div class="stat-label">Elite+</div>
               <h3>
-                <img src="images/elite+.gif" alt="Elite+ lightning effect" width="32" height="32" class="elite-icon" />
+                <span class="elite-icon-wrapper">
+                  <img class="elite-random" alt="" aria-hidden="true" width="32" height="32" />
+                  <img
+                    src="images/elite+.gif"
+                    alt="Elite+ lightning effect"
+                    width="32"
+                    height="32"
+                    class="elite-icon"
+                  />
+                </span>
                 Yellow Lightning
               </h3>
               <ul>
@@ -137,5 +155,29 @@
         </article>
       </main>
     </div>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const monsterSprites = [
+          "images/monsters/Abberation.gif",
+          "images/monsters/Death Tyrant.gif",
+          "images/monsters/Demon.gif",
+          "images/monsters/Dirt Demon.gif",
+          "images/monsters/Green Triddle.gif",
+          "images/monsters/Orc General.gif",
+        ];
+        const randomTargets = Array.from(document.querySelectorAll(".elite-random"));
+        if (!randomTargets.length || !monsterSprites.length) return;
+
+        const bag = monsterSprites.slice();
+        randomTargets.forEach((img) => {
+          if (!bag.length) {
+            bag.push(...monsterSprites);
+          }
+          const idx = Math.floor(Math.random() * bag.length);
+          const src = bag.splice(idx, 1)[0];
+          img.src = src;
+        });
+      });
+    </script>
   </body>
 </html>

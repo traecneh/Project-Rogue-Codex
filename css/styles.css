@@ -725,5 +725,33 @@ a:hover {
   image-rendering: pixelated;
 }
 
+.elite-icon-wrapper {
+  position: relative;
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+  margin-right: 0.4rem;
+}
+
+.elite-icon,
+.elite-random {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 32px;
+  height: 32px;
+  image-rendering: pixelated;
+}
+
+.elite-random {
+  opacity: 0.65;
+  filter: saturate(0.8);
+  z-index: 1;
+}
+
+.elite-icon {
+  z-index: 2;
+}
+
 
 
