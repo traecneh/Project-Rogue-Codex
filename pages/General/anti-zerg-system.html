@@ -93,23 +93,23 @@
             </p>
             <div class="stat-widget anti-zerg-calculator">
               <div class="stat-control">
-                <label for="anti-zerg-smaller">Smaller Team &mdash; <span data-smaller-value>3 players</span></label>
+                <label for="anti-zerg-smaller">My Guild &mdash; <span data-smaller-value>3 players</span></label>
                 <input
                   type="range"
                   id="anti-zerg-smaller"
                   min="1"
-                  max="13"
+                  max="14"
                   value="3"
                   step="1"
                   data-smaller-range
                 />
               </div>
               <div class="stat-control">
-                <label for="anti-zerg-bigger">Larger Team &mdash; <span data-bigger-value>8 players</span></label>
+                <label for="anti-zerg-bigger">Enemy Guild &mdash; <span data-bigger-value>8 players</span></label>
                 <input
                   type="range"
                   id="anti-zerg-bigger"
-                  min="2"
+                  min="1"
                   max="14"
                   value="8"
                   step="1"
@@ -121,9 +121,9 @@
                 <span class="stat-output-value" data-reduction-result>30%</span>
               </div>
               <p class="calculator-scenario" data-reduction-scenario>
-                Smaller team: 3 players | Larger team: 8 players
+                My guild is smaller (3 players); Enemy guild is larger (8 players)
               </p>
-              <p class="calculator-note" data-reduction-note>That's the maximum Anti-Zerg bonus.</p>
+              <p class="calculator-note" data-reduction-note>My guild receives the max 30% reduction.</p>
             </div>
 
             <h3>Damage Reduction Cheat Sheet</h3>
@@ -334,10 +334,10 @@
         const describePlayers = (count) => `${count} player${count === 1 ? "" : "s"}`;
         const getRandomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
         const randomizeMatchup = () => {
-          const randomSmaller = getRandomInt(1, 13);
-          const randomLarger = getRandomInt(randomSmaller + 1, 14);
-          smallerInput.value = randomSmaller;
-          largerInput.value = randomLarger;
+          const myGuild = getRandomInt(1, 14);
+          const enemyGuild = getRandomInt(1, 14);
+          smallerInput.value = myGuild;
+          largerInput.value = enemyGuild;
         };
 
         const setResult = (message) => {
@@ -347,63 +347,72 @@
           noteText.textContent = message;
         };
 
-        function updateCalculator() {
-          const smaller = Number(smallerInput.value);
-          const larger = Number(largerInput.value);
+        function evaluateMatchup(myGuildSize, enemyGuildSize) {
+          const smaller = Math.min(myGuildSize, enemyGuildSize);
+          const larger = Math.max(myGuildSize, enemyGuildSize);
+          const smallerTeamName =
+            myGuildSize === enemyGuildSize
+              ? "Neither guild"
+              : myGuildSize < enemyGuildSize
+                ? "My guild"
+                : "Enemy guild";
 
-          smallerValue.textContent = describePlayers(smaller);
-          largerValue.textContent = describePlayers(larger);
-          scenarioText.textContent = `Smaller team: ${describePlayers(smaller)} | Larger team: ${describePlayers(larger)}`;
-
-          if (larger <= smaller) {
-            setResult("0%");
-            setNote("Anti-Zerg only kicks in when the opposing guild has more players than you.");
-            return;
+          if (larger === smaller) {
+            return { value: "0%", note: "Both guilds are the same size, so no one receives Anti-Zerg damage reduction." };
           }
 
           const entries = reductionTable[smaller];
           if (!entries) {
-            setResult("N/A");
-            setNote("This matchup is outside the published ranges, so treat it as N/A.");
-            return;
+            return { value: "N/A", note: "No guild receives Anti-Zerg here because this matchup is outside the published ranges." };
           }
 
           const match = entries.find((entry) => larger >= entry.min && larger <= entry.max);
           if (!match) {
-            setResult("N/A");
-            setNote("This matchup is outside the published ranges, so treat it as N/A.");
-            return;
+            return { value: "N/A", note: "No guild receives Anti-Zerg here because this matchup is outside the published ranges." };
           }
 
-          setResult(match.value);
-
+          let note;
           if (match.value === "0%") {
-            setNote("Difference is too small to trigger Anti-Zerg despite the headcount gap.");
+            note = `${smallerTeamName} doesn't qualify for Anti-Zerg because the size gap is too small.`;
           } else if (match.value === "30%") {
-            setNote("That's the maximum bonus Anti-Zerg grants to the smaller team.");
+            note = `${smallerTeamName} receives the max ${match.value} damage reduction.`;
           } else {
-            setNote(`Smaller team receives ${match.value} less incoming PvP damage in this matchup.`);
+            note = `${smallerTeamName} receives ${match.value} damage reduction in this matchup.`;
           }
+
+          return { value: match.value, note };
         }
 
-        const handleSmallerInput = () => {
-          if (Number(smallerInput.value) >= Number(largerInput.value)) {
-            largerInput.value = smallerInput.value;
-          }
-          updateCalculator();
-        };
+        function updateCalculator() {
+          const myGuildSize = Number(smallerInput.value);
+          const enemyGuildSize = Number(largerInput.value);
 
-        const handleLargerInput = () => {
-          if (Number(largerInput.value) <= Number(smallerInput.value)) {
-            smallerInput.value = largerInput.value;
+          smallerValue.textContent = describePlayers(myGuildSize);
+          largerValue.textContent = describePlayers(enemyGuildSize);
+
+          if (myGuildSize === enemyGuildSize) {
+            scenarioText.textContent = `Both guilds match at ${describePlayers(myGuildSize)}.`;
+          } else {
+            const smaller = Math.min(myGuildSize, enemyGuildSize);
+            const larger = Math.max(myGuildSize, enemyGuildSize);
+            const smallerLabel = myGuildSize < enemyGuildSize ? "My guild" : "Enemy guild";
+            const largerLabel = myGuildSize < enemyGuildSize ? "Enemy guild" : "My guild";
+            scenarioText.textContent = `${smallerLabel} is smaller (${describePlayers(smaller)}); ${largerLabel} is larger (${describePlayers(larger)})`;
           }
+
+          const result = evaluateMatchup(myGuildSize, enemyGuildSize);
+          setResult(result.value);
+          setNote(result.note);
+        }
+
+        const handleInput = () => {
           updateCalculator();
         };
 
         randomizeMatchup();
         updateCalculator();
-        smallerInput.addEventListener("input", handleSmallerInput);
-        largerInput.addEventListener("input", handleLargerInput);
+        smallerInput.addEventListener("input", handleInput);
+        largerInput.addEventListener("input", handleInput);
       });
     </script>
   </body>
