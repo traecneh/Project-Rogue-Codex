@@ -240,9 +240,9 @@
         };
 
         const updateInputs = () => {
-          levelInput.value = String(state.level);
-          xpInput.value = String(Math.max(0, Math.round(state.xp)));
-          poolInput.value = state.pool.toFixed(2);
+        levelInput.value = String(state.level);
+        xpInput.value = String(Math.max(0, Math.round(state.xp)));
+        poolInput.value = state.pool.toFixed(2);
         };
 
         const syncButtons = () => {
@@ -383,6 +383,13 @@
         stopButton.addEventListener("click", stopSimulation);
 
         // Initial setup
+        // Initial setup with randomized values
+        state.level = randomInt(1, 105);
+        const xpNeededInitial = getXpNeeded(state.level);
+        state.xp = xpNeededInitial ? randomInt(0, Math.max(0, Math.round(xpNeededInitial * 0.8))) : 0;
+        const poolCapInitial = getPoolCap(state.level);
+        state.pool = Number((Math.random() * poolCapInitial).toFixed(2));
+
         normalizeState();
         syncPoolSliderBounds();
         syncXpSliderBounds();
