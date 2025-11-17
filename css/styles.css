@@ -648,6 +648,32 @@ a:hover {
   color: #ffffff;
 }
 
+.calc-qty-control {
+  margin-top: 0.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+}
+
+.qty-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(0, 0, 0, 0.4);
+  color: var(--text-main);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.qty-btn:hover,
+.qty-btn:focus-visible {
+  border-color: var(--accent);
+  background: rgba(75, 255, 75, 0.15);
+}
+
 .armor-set {
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 8px;

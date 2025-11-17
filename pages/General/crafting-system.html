@@ -256,28 +256,53 @@
               <label for="materials-slider">Current Materials: <span data-materials-value>0</span></label>
               <input type="range" id="materials-slider" min="0" max="1000" value="0" step="1" data-materials-range />
             </div>
-            <div class="calculator-grid" data-material-options>
-              <button class="calc-chip" type="button" data-slot="helm" data-cost="30">
-                <h4>Helm</h4>
-                <span>30 mats</span>
-              </button>
-              <button class="calc-chip" type="button" data-slot="gauntlets" data-cost="55">
-                <h4>Gauntlets</h4>
-                <span>55 mats</span>
-              </button>
-              <button class="calc-chip" type="button" data-slot="legs" data-cost="99">
-                <h4>Legs</h4>
-                <span>99 mats</span>
-              </button>
-              <button class="calc-chip" type="button" data-slot="shield" data-cost="113">
-                <h4>Shield</h4>
-                <span>113 mats</span>
-              </button>
-              <button class="calc-chip" type="button" data-slot="plate" data-cost="158">
-                <h4>Plate</h4>
-                <span>158 mats</span>
-              </button>
+          <div class="calculator-grid" data-material-options>
+            <div class="calc-chip" data-slot="helm" data-cost="30" role="button" tabindex="0">
+              <h4>Helm</h4>
+              <span>30 mats</span>
+              <div class="calc-qty-control">
+                <button type="button" class="qty-btn" data-qty-minus aria-label="Decrease Helm count">−</button>
+                <span data-qty-count>0</span>
+                <button type="button" class="qty-btn" data-qty-plus aria-label="Increase Helm count">+</button>
+              </div>
             </div>
+            <div class="calc-chip" data-slot="gauntlets" data-cost="55" role="button" tabindex="0">
+              <h4>Gauntlets</h4>
+              <span>55 mats</span>
+              <div class="calc-qty-control">
+                <button type="button" class="qty-btn" data-qty-minus aria-label="Decrease Gauntlets count">−</button>
+                <span data-qty-count>0</span>
+                <button type="button" class="qty-btn" data-qty-plus aria-label="Increase Gauntlets count">+</button>
+              </div>
+            </div>
+            <div class="calc-chip" data-slot="legs" data-cost="99" role="button" tabindex="0">
+              <h4>Legs</h4>
+              <span>99 mats</span>
+              <div class="calc-qty-control">
+                <button type="button" class="qty-btn" data-qty-minus aria-label="Decrease Legs count">−</button>
+                <span data-qty-count>0</span>
+                <button type="button" class="qty-btn" data-qty-plus aria-label="Increase Legs count">+</button>
+              </div>
+            </div>
+            <div class="calc-chip" data-slot="shield" data-cost="113" role="button" tabindex="0">
+              <h4>Shield</h4>
+              <span>113 mats</span>
+              <div class="calc-qty-control">
+                <button type="button" class="qty-btn" data-qty-minus aria-label="Decrease Shield count">−</button>
+                <span data-qty-count>0</span>
+                <button type="button" class="qty-btn" data-qty-plus aria-label="Increase Shield count">+</button>
+              </div>
+            </div>
+            <div class="calc-chip" data-slot="plate" data-cost="158" role="button" tabindex="0">
+              <h4>Plate</h4>
+              <span>158 mats</span>
+              <div class="calc-qty-control">
+                <button type="button" class="qty-btn" data-qty-minus aria-label="Decrease Plate count">−</button>
+                <span data-qty-count>0</span>
+                <button type="button" class="qty-btn" data-qty-plus aria-label="Increase Plate count">+</button>
+              </div>
+            </div>
+          </div>
             <div class="materials-summary" data-material-summary>
               Select at least one slot to see totals.
             </div>
@@ -367,9 +392,20 @@
           return;
         }
 
+        const slotLabels = {
+          helm: { singular: "Helm", plural: "Helms" },
+          gauntlets: { singular: "Gauntlets", plural: "Gauntlets" },
+          legs: { singular: "Legs", plural: "Legs" },
+          shield: { singular: "Shield", plural: "Shields" },
+          plate: { singular: "Plate", plural: "Plates" }
+        };
+
         const state = {
           currentMats: Number(slider.value),
-          selectedSlots: new Set()
+          slotCounts: chips.reduce((acc, chip) => {
+            acc[chip.dataset.slot] = 0;
+            return acc;
+          }, {})
         };
 
         function formatNumber(num) {
@@ -381,7 +417,14 @@
         }
 
         function describeSelection() {
-          const items = Array.from(state.selectedSlots).map((slot) => slotNames[slot] || slot);
+          const items = Object.entries(state.slotCounts)
+            .filter(([, count]) => count > 0)
+            .map(([slot, count]) => {
+              const { singular, plural } = slotLabels[slot] || { singular: slotNames[slot] || slot, plural: `${slotNames[slot] || slot}s` };
+              const label = count === 1 ? singular : plural;
+              return `${count} ${label}`;
+            });
+
           if (items.length === 0) {
             return "";
           }
@@ -396,11 +439,11 @@
         }
 
         function updateSummary() {
-          const selectedChips = Array.from(state.selectedSlots).map((slot) =>
-            chips.find((c) => c.dataset.slot === slot)
-          ).filter(Boolean);
-
-          const totalCost = selectedChips.reduce((sum, chip) => sum + Number(chip.dataset.cost), 0);
+          const selectedChips = chips.filter((chip) => state.slotCounts[chip.dataset.slot] > 0);
+          const totalCost = selectedChips.reduce(
+            (sum, chip) => sum + Number(chip.dataset.cost) * state.slotCounts[chip.dataset.slot],
+            0
+          );
 
           if (selectedChips.length === 0) {
             summary.textContent = "Select at least one slot to see totals.";
@@ -409,7 +452,7 @@
 
           const selectionLabel = describeSelection();
           const diff = state.currentMats - totalCost;
-          const remainingLabel = pluralize(diff, "material");
+          const remainingLabel = pluralize(Math.abs(diff), "material");
           const materialLabel = pluralize(Math.abs(diff), "material");
 
           if (diff >= 0) {
@@ -419,16 +462,41 @@
           }
         }
 
+        function setChipActive(chip, isActive) {
+          chip.dataset.active = isActive ? "true" : "false";
+        }
+
+        function updateChipCount(chip) {
+          const countEl = chip.querySelector("[data-qty-count]");
+          if (countEl) {
+            countEl.textContent = state.slotCounts[chip.dataset.slot];
+          }
+        }
+
+        function adjustSlotCount(slot, newValue) {
+          const chip = chips.find((c) => c.dataset.slot === slot);
+          if (!chip) {
+            return;
+          }
+
+          if (newValue <= 0) {
+            state.slotCounts[slot] = 0;
+            setChipActive(chip, false);
+          } else {
+            state.slotCounts[slot] = newValue;
+            setChipActive(chip, true);
+          }
+          updateChipCount(chip);
+          updateSummary();
+        }
+
         function toggleChip(chip) {
           const slot = chip.dataset.slot;
-          if (state.selectedSlots.has(slot)) {
-            state.selectedSlots.delete(slot);
-            chip.dataset.active = "false";
+          if (state.slotCounts[slot] > 0) {
+            adjustSlotCount(slot, 0);
           } else {
-            state.selectedSlots.add(slot);
-            chip.dataset.active = "true";
+            adjustSlotCount(slot, 1);
           }
-          updateSummary();
         }
 
         slider.addEventListener("input", () => {
@@ -439,10 +507,43 @@
 
         chips.forEach((chip) => {
           chip.dataset.active = "false";
-          chip.addEventListener("click", () => toggleChip(chip));
+          chip.addEventListener("click", (event) => {
+            if (event.target.closest(".calc-qty-control")) {
+              return;
+            }
+            toggleChip(chip);
+          });
+          chip.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              toggleChip(chip);
+            }
+          });
+
+          const minusBtn = chip.querySelector("[data-qty-minus]");
+          const plusBtn = chip.querySelector("[data-qty-plus]");
+          const slot = chip.dataset.slot;
+
+          if (minusBtn) {
+            minusBtn.addEventListener("click", (event) => {
+              event.stopPropagation();
+              if (state.slotCounts[slot] > 1) {
+                adjustSlotCount(slot, state.slotCounts[slot] - 1);
+              }
+            });
+          }
+
+          if (plusBtn) {
+            plusBtn.addEventListener("click", (event) => {
+              event.stopPropagation();
+              const current = state.slotCounts[slot];
+              adjustSlotCount(slot, current > 0 ? current + 1 : 1);
+            });
+          }
         });
 
         valueLabel.textContent = formatNumber(state.currentMats);
+        updateSummary();
       });
     </script>
   </body>
