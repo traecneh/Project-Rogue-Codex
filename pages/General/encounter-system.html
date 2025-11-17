@@ -166,10 +166,12 @@
           })
           .then((links) => {
             if (!Array.isArray(links) || !links.length) return;
-            const bag = links.slice();
+            const filtered = links.filter((src) => !src.toLowerCase().includes("demon spire.gif"));
+            if (!filtered.length) return;
+            const bag = filtered.slice();
             randomTargets.forEach((img) => {
               if (!bag.length) {
-                bag.push(...links);
+                bag.push(...filtered);
               }
               const idx = Math.floor(Math.random() * bag.length);
               img.src = bag.splice(idx, 1)[0];
