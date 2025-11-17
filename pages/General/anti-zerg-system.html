@@ -332,6 +332,14 @@
         const noteText = document.querySelector("[data-reduction-note]");
 
         const describePlayers = (count) => `${count} player${count === 1 ? "" : "s"}`;
+        const getRandomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+        const randomizeMatchup = () => {
+          const randomSmaller = getRandomInt(1, 13);
+          const randomLarger = getRandomInt(randomSmaller + 1, 14);
+          smallerInput.value = randomSmaller;
+          largerInput.value = randomLarger;
+        };
+
         const setResult = (message) => {
           resultText.textContent = message;
         };
@@ -378,9 +386,24 @@
           }
         }
 
-        smallerInput.addEventListener("input", updateCalculator);
-        largerInput.addEventListener("input", updateCalculator);
+        const handleSmallerInput = () => {
+          if (Number(smallerInput.value) >= Number(largerInput.value)) {
+            largerInput.value = smallerInput.value;
+          }
+          updateCalculator();
+        };
+
+        const handleLargerInput = () => {
+          if (Number(largerInput.value) <= Number(smallerInput.value)) {
+            smallerInput.value = largerInput.value;
+          }
+          updateCalculator();
+        };
+
+        randomizeMatchup();
         updateCalculator();
+        smallerInput.addEventListener("input", handleSmallerInput);
+        largerInput.addEventListener("input", handleLargerInput);
       });
     </script>
   </body>
