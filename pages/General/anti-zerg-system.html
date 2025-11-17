@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Anti-Zerg System &mdash; Project Rogue Codex</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <base href="../../" />
+    <link rel="icon" type="image/x-icon" href="images/project-rogue-favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="images/project-rogue-favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="64x64" href="images/project-rogue-favicon-64.png" />
+    <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
+    <link rel="stylesheet" href="css/styles.css" />
+    <script src="js/nav-loader.js" defer></script>
+  </head>
+  <body>
+    <div class="layout">
+      <div id="sidebar-root"></div>
+      <main class="main-content">
+        <header class="content-header">
+          <h1 class="content-title">Anti-Zerg System</h1>
+          <p class="content-tagline">
+            Dynamic PvP scaling that cushions smaller squads while keeping large zergs honest.
+          </p>
+        </header>
+
+        <article class="content-section">
+          <h2>Why Anti-Zerg Exists</h2>
+          <p>
+            Anti-Zerg is a safety net for outnumbered teams in PvP. Whenever your squad is smaller than the force
+            engaging you, the system trims incoming damage so you can trade blows without being erased by raw headcount.
+            The same logic also dials back self-healing for anyone who is currently protected, preventing bunker-style
+            builds from stacking invulnerability and sustain.
+          </p>
+
+          <section>
+            <h2>How Zerg Size Is Determined</h2>
+            <p>
+              Anti-Zerg works by comparing two Zerg sizes: yours and your attacker&rsquo;s. The game constantly evaluates
+              your guildmates through two complementary modes and a short-term memory, described below.
+            </p>
+
+            <h3>Warfront Mode</h3>
+            <ul>
+              <li>A Warfront bundles several marked PvP areas into a single Anti-Zerg zone.</li>
+              <li>Your minimap explicitly shows when you&rsquo;re inside a Warfront.</li>
+              <li>
+                While you stay inside, the system counts every guildmate who is also within that Warfront. That number
+                becomes your current Zerg size for PvP calculations.
+              </li>
+              <li>Stepping out of the Warfront boundary immediately swaps you back to Range-Based Mode.</li>
+            </ul>
+
+            <h3>Range-Based Mode</h3>
+            <ul>
+              <li>Used whenever you are not flagged as being inside a Warfront.</li>
+              <li>
+                You automatically form a Zerg with any guildmate located within <strong>10 map chunks</strong>
+                (<strong>160 tiles</strong>) of your current position.
+              </li>
+              <li>All qualifying guildmates within that circular radius are lumped together for your Zerg size.</li>
+            </ul>
+
+            <h3>Zerg Status Memory (180 Seconds)</h3>
+            <ul>
+              <li>
+                Meeting the requirements for either Warfront Mode or Range-Based Mode marks you as sharing a Zerg with
+                those guildmates for the next <strong>180 seconds</strong> (3 minutes).
+              </li>
+              <li>
+                During that window, temporary spacing or repositioning does not immediately dissolve the Zerg; the
+                system still treats you as linked until the timer expires.
+              </li>
+            </ul>
+          </section>
+
+          <section>
+            <h2>Damage Reduction &amp; Self-Healing</h2>
+            <p>
+              Once your Zerg size is known, Anti-Zerg compares it directly against the attacker&rsquo;s Zerg size and
+              pulls a value from the internal damage reduction chart (not shown here). Only targets of PvP damage
+              receive the reduction, ensuring outnumbered players survive longer when focus-fired by a swarm.
+            </p>
+            <p>
+              Any time you benefit from that reduction, the game applies the same percentage as a penalty to your
+              offensive self-healing (heals triggered by attacking others). This blocks double-dipping: you can either
+              be tankier or burst-heal at full value, but not both simultaneously under Anti-Zerg protection.
+            </p>
+            <h3>Matchup Calculator</h3>
+            <p>
+              Pick the squad sizes to see whether Anti-Zerg will cushion the smaller team and by how much.
+              The calculator mirrors the rules below, just without the manual lookup.
+            </p>
+            <div class="stat-widget anti-zerg-calculator">
+              <div class="stat-control">
+                <label for="anti-zerg-smaller">Smaller Team &mdash; <span data-smaller-value>3 players</span></label>
+                <input
+                  type="range"
+                  id="anti-zerg-smaller"
+                  min="1"
+                  max="13"
+                  value="3"
+                  step="1"
+                  data-smaller-range
+                />
+              </div>
+              <div class="stat-control">
+                <label for="anti-zerg-bigger">Larger Team &mdash; <span data-bigger-value>8 players</span></label>
+                <input
+                  type="range"
+                  id="anti-zerg-bigger"
+                  min="2"
+                  max="14"
+                  value="8"
+                  step="1"
+                  data-bigger-range
+                />
+              </div>
+              <div class="stat-output">
+                <span class="stat-output-label">Damage Reduction</span>
+                <span class="stat-output-value" data-reduction-result>30%</span>
+              </div>
+              <p class="calculator-scenario" data-reduction-scenario>
+                Smaller team: 3 players | Larger team: 8 players
+              </p>
+              <p class="calculator-note" data-reduction-note>That's the maximum Anti-Zerg bonus.</p>
+            </div>
+
+            <h3>Damage Reduction Cheat Sheet</h3>
+            <p>
+              These quick examples show how much protection the smaller guild squad receives when facing a larger one.
+              Only the underdog gets the damage reduction, and it caps at <strong>30%</strong>.
+            </p>
+            <div class="stat-grid" aria-label="Anti-Zerg damage reduction examples">
+              <section class="stat-card">
+                <h3>Solo Player</h3>
+                <ul>
+                  <li><strong>vs 2 players:</strong> 20% reduction</li>
+                  <li><strong>vs 3&ndash;14 players:</strong> 30% reduction (maximum)</li>
+                </ul>
+              </section>
+              <section class="stat-card">
+                <h3>Duo</h3>
+                <ul>
+                  <li><strong>vs 3 players:</strong> 0% reduction</li>
+                  <li><strong>vs 4&ndash;14 players:</strong> 30% reduction</li>
+                </ul>
+              </section>
+              <section class="stat-card">
+                <h3>Trio</h3>
+                <ul>
+                  <li><strong>vs 4 players:</strong> 0% reduction</li>
+                  <li><strong>vs 5 players:</strong> 25% reduction</li>
+                  <li><strong>vs 6&ndash;14 players:</strong> 30% reduction</li>
+                </ul>
+              </section>
+              <section class="stat-card">
+                <h3>Team of 4</h3>
+                <ul>
+                  <li><strong>vs 5 players:</strong> 0% reduction</li>
+                  <li><strong>vs 6 players:</strong> 20% reduction</li>
+                  <li><strong>vs 7&ndash;14 players:</strong> 30% reduction</li>
+                </ul>
+              </section>
+              <section class="stat-card">
+                <h3>Team of 5</h3>
+                <ul>
+                  <li><strong>vs 6 players:</strong> 0% reduction</li>
+                  <li><strong>vs 7 players:</strong> 16.67% reduction</li>
+                  <li><strong>vs 8 players:</strong> 28.57% reduction</li>
+                  <li><strong>vs 9&ndash;14 players:</strong> 30% reduction</li>
+                </ul>
+              </section>
+              <section class="stat-card">
+                <h3>Team of 6</h3>
+                <ul>
+                  <li><strong>vs 7 players:</strong> 0% reduction</li>
+                  <li><strong>vs 8 players:</strong> 14.29% reduction</li>
+                  <li><strong>vs 9 players:</strong> 25% reduction</li>
+                  <li><strong>vs 10&ndash;14 players:</strong> 30% reduction</li>
+                </ul>
+              </section>
+              <section class="stat-card">
+                <h3>Team of 7</h3>
+                <ul>
+                  <li><strong>vs 8 players:</strong> 0% reduction</li>
+                  <li><strong>vs 9 players:</strong> 12.50% reduction</li>
+                  <li><strong>vs 10 players:</strong> 22.22% reduction</li>
+                  <li><strong>vs 11&ndash;14 players:</strong> 30% reduction</li>
+                </ul>
+              </section>
+              <section class="stat-card">
+                <h3>Team of 8</h3>
+                <ul>
+                  <li><strong>vs 9 players:</strong> 0% reduction</li>
+                  <li><strong>vs 10 players:</strong> 11.11% reduction</li>
+                  <li><strong>vs 11 players:</strong> 20% reduction</li>
+                  <li><strong>vs 12 players:</strong> 27.27% reduction</li>
+                  <li><strong>vs 13&ndash;14 players:</strong> 30% reduction</li>
+                </ul>
+              </section>
+              <section class="stat-card">
+                <h3>Team of 9</h3>
+                <ul>
+                  <li><strong>vs 10 players:</strong> 0% reduction</li>
+                  <li><strong>vs 11 players:</strong> 10% reduction</li>
+                  <li><strong>vs 12 players:</strong> 18.18% reduction</li>
+                  <li><strong>vs 13 players:</strong> 25% reduction</li>
+                  <li><strong>vs 14 players:</strong> 30% reduction</li>
+                </ul>
+              </section>
+              <section class="stat-card">
+                <h3>Team of 10</h3>
+                <ul>
+                  <li><strong>vs 11 players:</strong> 0% reduction</li>
+                  <li><strong>vs 12 players:</strong> 9.09% reduction</li>
+                  <li><strong>vs 13 players:</strong> 16.67% reduction</li>
+                  <li><strong>vs 14 players:</strong> 23.08% reduction</li>
+                </ul>
+              </section>
+              <section class="stat-card">
+                <h3>Team of 11</h3>
+                <ul>
+                  <li><strong>vs 12 players:</strong> 0% reduction</li>
+                  <li><strong>vs 13 players:</strong> 8.33% reduction</li>
+                  <li><strong>vs 14 players:</strong> 15.38% reduction</li>
+                </ul>
+              </section>
+              <section class="stat-card">
+                <h3>Team of 12</h3>
+                <ul>
+                  <li><strong>vs 13 players:</strong> 0% reduction</li>
+                  <li><strong>vs 14 players:</strong> 7.69% reduction</li>
+                </ul>
+              </section>
+              <section class="stat-card">
+                <h3>Team of 13</h3>
+                <ul>
+                  <li><strong>vs 14 players:</strong> 0% reduction</li>
+                </ul>
+              </section>
+            </div>
+            <p>
+              Any matchup outside these ranges is effectively <em>N/A</em> for Anti-Zerg&mdash;no bonus damage reduction
+              applies when both squads are the same size or your team is larger.
+            </p>
+          </section>
+        </article>
+      </main>
+    </div>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const reductionTable = {
+          1: [
+            { min: 2, max: 2, value: "20%" },
+            { min: 3, max: 14, value: "30%" }
+          ],
+          2: [
+            { min: 3, max: 3, value: "0%" },
+            { min: 4, max: 14, value: "30%" }
+          ],
+          3: [
+            { min: 4, max: 4, value: "0%" },
+            { min: 5, max: 5, value: "25%" },
+            { min: 6, max: 14, value: "30%" }
+          ],
+          4: [
+            { min: 5, max: 5, value: "0%" },
+            { min: 6, max: 6, value: "20%" },
+            { min: 7, max: 14, value: "30%" }
+          ],
+          5: [
+            { min: 6, max: 6, value: "0%" },
+            { min: 7, max: 7, value: "16.67%" },
+            { min: 8, max: 8, value: "28.57%" },
+            { min: 9, max: 14, value: "30%" }
+          ],
+          6: [
+            { min: 7, max: 7, value: "0%" },
+            { min: 8, max: 8, value: "14.29%" },
+            { min: 9, max: 9, value: "25%" },
+            { min: 10, max: 14, value: "30%" }
+          ],
+          7: [
+            { min: 8, max: 8, value: "0%" },
+            { min: 9, max: 9, value: "12.50%" },
+            { min: 10, max: 10, value: "22.22%" },
+            { min: 11, max: 14, value: "30%" }
+          ],
+          8: [
+            { min: 9, max: 9, value: "0%" },
+            { min: 10, max: 10, value: "11.11%" },
+            { min: 11, max: 11, value: "20%" },
+            { min: 12, max: 12, value: "27.27%" },
+            { min: 13, max: 14, value: "30%" }
+          ],
+          9: [
+            { min: 10, max: 10, value: "0%" },
+            { min: 11, max: 11, value: "10%" },
+            { min: 12, max: 12, value: "18.18%" },
+            { min: 13, max: 13, value: "25%" },
+            { min: 14, max: 14, value: "30%" }
+          ],
+          10: [
+            { min: 11, max: 11, value: "0%" },
+            { min: 12, max: 12, value: "9.09%" },
+            { min: 13, max: 13, value: "16.67%" },
+            { min: 14, max: 14, value: "23.08%" }
+          ],
+          11: [
+            { min: 12, max: 12, value: "0%" },
+            { min: 13, max: 13, value: "8.33%" },
+            { min: 14, max: 14, value: "15.38%" }
+          ],
+          12: [
+            { min: 13, max: 13, value: "0%" },
+            { min: 14, max: 14, value: "7.69%" }
+          ],
+          13: [{ min: 14, max: 14, value: "0%" }]
+        };
+
+        const smallerInput = document.querySelector("[data-smaller-range]");
+        const largerInput = document.querySelector("[data-bigger-range]");
+        if (!smallerInput || !largerInput) {
+          return;
+        }
+
+        const smallerValue = document.querySelector("[data-smaller-value]");
+        const largerValue = document.querySelector("[data-bigger-value]");
+        const scenarioText = document.querySelector("[data-reduction-scenario]");
+        const resultText = document.querySelector("[data-reduction-result]");
+        const noteText = document.querySelector("[data-reduction-note]");
+
+        const describePlayers = (count) => `${count} player${count === 1 ? "" : "s"}`;
+        const setResult = (message) => {
+          resultText.textContent = message;
+        };
+        const setNote = (message) => {
+          noteText.textContent = message;
+        };
+
+        function updateCalculator() {
+          const smaller = Number(smallerInput.value);
+          const larger = Number(largerInput.value);
+
+          smallerValue.textContent = describePlayers(smaller);
+          largerValue.textContent = describePlayers(larger);
+          scenarioText.textContent = `Smaller team: ${describePlayers(smaller)} | Larger team: ${describePlayers(larger)}`;
+
+          if (larger <= smaller) {
+            setResult("0%");
+            setNote("Anti-Zerg only kicks in when the opposing guild has more players than you.");
+            return;
+          }
+
+          const entries = reductionTable[smaller];
+          if (!entries) {
+            setResult("N/A");
+            setNote("This matchup is outside the published ranges, so treat it as N/A.");
+            return;
+          }
+
+          const match = entries.find((entry) => larger >= entry.min && larger <= entry.max);
+          if (!match) {
+            setResult("N/A");
+            setNote("This matchup is outside the published ranges, so treat it as N/A.");
+            return;
+          }
+
+          setResult(match.value);
+
+          if (match.value === "0%") {
+            setNote("Difference is too small to trigger Anti-Zerg despite the headcount gap.");
+          } else if (match.value === "30%") {
+            setNote("That's the maximum bonus Anti-Zerg grants to the smaller team.");
+          } else {
+            setNote(`Smaller team receives ${match.value} less incoming PvP damage in this matchup.`);
+          }
+        }
+
+        smallerInput.addEventListener("input", updateCalculator);
+        largerInput.addEventListener("input", updateCalculator);
+        updateCalculator();
+      });
+    </script>
+  </body>
+</html>
