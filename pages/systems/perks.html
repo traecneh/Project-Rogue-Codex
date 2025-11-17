@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Perks System &mdash; Project Rogue Codex</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <base href="../../" />
+    <link rel="icon" type="image/x-icon" href="images/project-rogue-favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="images/project-rogue-favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="64x64" href="images/project-rogue-favicon-64.png" />
+    <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
+    <link rel="stylesheet" href="css/styles.css" />
+    <script src="js/nav-loader.js" defer></script>
+  </head>
+  <body>
+    <div class="layout">
+      <div id="sidebar-root"></div>
+      <main class="main-content">
+        <header class="content-header">
+          <h1 class="content-title">Perks System</h1>
+          <p class="content-tagline">
+            Traits that define high-end builds by layering bonuses, procs, and unique mechanics.
+          </p>
+        </header>
+
+        <article class="content-section">
+          <h2>Overview</h2>
+          <p>
+            Perks are special effects that let players augment their builds, chase long-term goals, and create
+            meaningful diversity. They drop on loot, some items ship with innate perks, and balance passes
+            routinely adjust exact values. Treat the details below as a current design snapshot.
+          </p>
+        </article>
+
+        <article class="content-section" id="stacking-rules">
+          <h2>Perk Stacking Rules</h2>
+          <ul>
+            <li>You can only benefit from <strong>three copies</strong> of the same perk.</li>
+            <li>Extra copies beyond three provide <strong>no additional bonuses</strong>.</li>
+            <li>Race bonuses count toward this limit.</li>
+          <li>When more than three copies exist, only the three highest tiers count.</li></ul>
+        </article>
+
+        <article class="content-section" id="notation">
+          <h2>Notation</h2>
+          <ul>
+            <li><strong>[Square brackets]</strong> &rarr; tier values in the order <strong>[T1 / T2 / T3]</strong>.</li>
+            <li>
+              <strong>(Parentheses)</strong> &rarr; weapon speed variants:
+              <strong>(750 / 1000 / 1250 / 1500)</strong>.
+            </li>
+            <li><strong>{Curly brackets}</strong> &rarr; formulas.</li>
+          </ul>
+        </article>
+
+        <article class="content-section" id="perk-list">
+          <h2>Perks</h2>
+          <div class="stat-grid perk-grid">
+          <section class="stat-card">
+            <h3>Lifesteal</h3>
+            <p>Steals <strong>[6/8/10]%</strong> of your damage in PvP; half effectiveness in PvE.</p>
+          </section>
+          <section class="stat-card">
+            <h3>Bloodthirster</h3>
+            <p>
+              <strong>(21/26/31/36)%</strong> chance for attacks to heal you for
+              <strong>[4/6/8]%</strong> of max health in PvP; half effectiveness in PvE.
+            </p>
+          </section>
+          <section class="stat-card">
+            <h3>Rejuvenation</h3>
+            <p>
+              Heals an additional <strong>[10/15/20]</strong> per Constitution tick, plus
+              <strong>[2/3/4]</strong> per tick for every 25 player levels; additive.
+            </p>
+          </section>
+          <section class="stat-card">
+            <h3>Alchemist</h3>
+            <p>Potions heal an additional <strong>[30/40/50]%</strong>, additive.</p>
+          </section>
+          <section class="stat-card">
+            <h3>Vitality</h3>
+            <p>Increases player health by <strong>[200/250/300]</strong>.</p>
+          </section>
+          <section class="stat-card">
+            <h3>Bolstered Strength</h3>
+            <p>Increases max weight by <strong>[125/175/225]</strong>.</p>
+          </section>
+          <section class="stat-card">
+            <h3>Resistances</h3>
+            <p>
+              <em>(Demon Blood, Frozen Heart, Lightning Field, Touriquet, Hazmat, Antacid)</em> &mdash; increases
+              element-specific resistance by <strong>[8/10/12]%</strong>.
+            </p>
+          </section>
+          <section class="stat-card">
+            <h3>Magic Shield</h3>
+            <p>Increases all resistances by <strong>[2/3/4]%</strong>.</p>
+          </section>
+          <section class="stat-card">
+            <h3>Moneybags</h3>
+            <p>Monsters drop an additional <strong>[20/25/30]%</strong> gold.</p>
+          </section>
+          <section class="stat-card">
+            <h3>Juggernaut</h3>
+            <p>
+              <strong>20%</strong> chance to reduce damage taken by <strong>[25/30/35]%</strong>, multiplicative.
+            </p>
+          </section>
+          <section class="stat-card">
+            <h3>Parry</h3>
+            <p>
+              <strong>(6/7/9/10)%</strong> chance (based on weapon speed) to parry, reducing damage taken by
+              <strong>[70/80/90]%</strong>, multiplicative.
+            </p>
+          </section>
+          <section class="stat-card">
+            <h3>Impenetrable</h3>
+            <p>Increases Armor by <strong>[4/5/6]</strong>.</p>
+          </section>
+          <section class="stat-card">
+            <h3>Destruction</h3>
+            <p>Increases damage dealt by <strong>[4/5/6]</strong>%.</p>
+          </section>
+          <section class="stat-card">
+            <h3>Hawkeye</h3>
+            <ul>
+              <li>Increases To-Hit by <strong>[8/10/12]</strong>.</li>
+              <li>Increases Crit Chance by <strong>[3/4/5]%</strong>.</li>
+            </ul>
+          </section>
+          <section class="stat-card">
+            <h3>Garrote</h3>
+            <p>This perk only works if you have <strong>100 base Strength</strong>.</p>
+            <ul>
+              <li>Increases Bleed Chance by <strong>[4/5/6]%</strong>.</li>
+              <li>Increases Bleed Damage by <strong>[2.5/3.0/3.5]%</strong>.</li>
+            </ul>
+          </section>
+          <section class="stat-card">
+            <h3>Overpower</h3>
+            <p>Increases Crit Damage by <strong>[5/6/7]%</strong>.</p>
+          </section>
+          <section class="stat-card">
+            <h3>Epidemic</h3>
+            <ul>
+              <li><strong>[6/8/10]%</strong> bonus disease damage, additive.</li>
+              <li><strong>[4/6/8]%</strong> bonus disease chance, additive.</li>
+            </ul>
+          </section>
+          <section class="stat-card">
+            <h3>Lethal Toxins</h3>
+            <ul>
+              <li><strong>[6/8/10]%</strong> bonus poison damage, additive.</li>
+              <li><strong>[4/6/8]%</strong> bonus poison chance, additive.</li>
+            </ul>
+          </section>
+          <section class="stat-card">
+            <h3>Antitoxin</h3>
+            <p><strong>[20/25/30]%</strong> chance to avoid poison, additive.</p>
+          </section>
+          <section class="stat-card">
+            <h3>Immunization</h3>
+            <p><strong>[20/25/30]%</strong> chance to avoid disease, additive.</p>
+          </section>
+          <section class="stat-card">
+            <h3>Knowledge</h3>
+            <p><strong>[10/12.5/15]%</strong> increase to experience gained, additive.</p>
+          </section>
+          <section class="stat-card">
+            <h3>Vampirism</h3>
+            <p>
+              <strong>(8/10/11/13)%</strong> chance to trigger a HoT that heals every 5 seconds for 5 ticks:
+            </p>
+            <ul>
+              <li><strong>PvP:</strong> <strong>[3/3.75/4.5]%</strong> of target max health.</li>
+              <li><strong>PvE:</strong> <strong>[1/1.5/2]%</strong> of target max health (capped at 4000).</li>
+            </ul>
+          </section>
+          <section class="stat-card">
+            <h3>Demonsbane</h3>
+            <p><strong>[11/13/15]%</strong> bonus damage against Demons and Fire Beasts, additive.</p>
+          </section>
+          <section class="stat-card">
+            <h3>Venomshock</h3>
+            <p><strong>[11/13/15]%</strong> bonus damage against Electric and Poison Beasts, additive.</p>
+          </section>
+          <section class="stat-card">
+            <h3>Consecration</h3>
+            <p><strong>[11/13/15]%</strong> bonus damage against Undead and Disease Beasts, additive.</p>
+          </section>
+          <section class="stat-card">
+            <h3>Executioner</h3>
+            <p><strong>[11/13/15]%</strong> bonus damage against Humanoids and Giants, additive.</p>
+          </section>
+          <section class="stat-card">
+            <h3>Beastslayer</h3>
+            <p><strong>[11/13/15]%</strong> bonus damage against Beasts and Animals, additive.</p>
+          </section>
+          <section class="stat-card">
+            <h3>Iceshatter</h3>
+            <p><strong>[11/13/15]%</strong> bonus damage against Ice Beasts, additive.</p>
+          </section>
+          <section class="stat-card">
+            <h3>Desperation</h3>
+            <p>
+              Deals up to <strong>[6/8/10]%</strong> bonus damage, scaling with how low your health percentage is.
+            </p>
+          </section>
+          <section class="stat-card">
+            <h3>Bloodlust</h3>
+            <p>
+              <strong>[3/4/5]%</strong> chance on attack to grant Bloodlust, increasing attack speed by
+              <strong>250</strong> for 12 seconds; chance is additive.
+            </p>
+            <p>
+              Afterward you become exhausted for 1 minute and cannot retrigger Bloodlust. Each trigger reduces this
+              exhaustion by <strong>[4/8/12]</strong> seconds, additive.
+            </p>
+          </section>
+          <section class="stat-card">
+            <h3>Brutality</h3>
+            <p>
+              <strong>(2/3/3/4)%</strong> chance on attack to grant +20% Strength for 60 seconds plus an additional
+              <strong>[15/30/45]</strong> seconds; bonus duration is additive.
+            </p>
+          </section>
+          <section class="stat-card">
+            <h3>Swiftness</h3>
+            <p>
+              <strong>(2/3/3/4)%</strong> chance on attack to grant +20% Dexterity for 60 seconds plus
+              <strong>[15/30/45]</strong> bonus seconds; additive.
+            </p>
+          </section>
+          <section class="stat-card">
+            <h3>Tenacity</h3>
+            <p>
+              <strong>(2/3/3/4)%</strong> chance when attacked to grant +20% Constitution for 60 seconds plus
+              <strong>[15/30/45]</strong> bonus seconds; additive.
+            </p>
+          </section>
+          </div>
+        </article>
+
+        <article class="content-section" id="unique-effects">
+          <h2>Unique Perks (Typically Item-Only)</h2>
+          <div class="stat-grid perk-grid">
+          <section class="stat-card">
+            <h3>Lycan</h3>
+            <ul>
+              <li>Allows diseases regardless of weapon element.</li>
+              <li>+<strong>[5/10/15]%</strong> disease chance, additive.</li>
+            </ul>
+          </section>
+          <section class="stat-card">
+            <h3>Envenomation</h3>
+            <ul>
+              <li>Allows poisons regardless of weapon element.</li>
+              <li>+<strong>[5/10/15]%</strong> poison chance, additive.</li>
+            </ul>
+          </section>
+          <section class="stat-card">
+            <h3>Runic</h3>
+            <p>
+              Steals <strong>[10/12.5/15]%</strong> of your damage in PvE or
+              <strong>[20/25/30]%</strong> of your damage in PvP.
+            </p>
+          </section>
+          <section class="stat-card">
+            <h3>Vengeance</h3>
+            <p>
+              <strong>{Con/3}%</strong> chance to deal an additional
+              <strong>[0.2–0.25 Con / 0.25–0.33 Con / 0.33–0.5 Con]</strong> Constitution damage; additive.
+            </p>
+          </section>
+          <section class="stat-card">
+            <h3>Flame Buffet</h3>
+            <p>
+              <strong>(15/20/25/30)%</strong> chance to inflict a DoT dealing
+              <strong>[50–100 / 100–200 / 200–300]</strong> damage per tick.
+            </p>
+          </section>
+          <section class="stat-card">
+            <h3>Plague Eater</h3>
+            <p>
+              Chance equal to your offensive disease chance to reflect disease on attackers, dealing
+              <strong>[5/10/15]%</strong> of damage taken per tick; additive.
+            </p>
+          </section>
+          <section class="stat-card">
+            <h3>Blood Siphon</h3>
+            <p>
+              When you cause bleed, gain a HoT equal to <strong>[33/66/100]%</strong> of your bleed damage;
+              half effectiveness in PvE.
+            </p>
+          </section>
+          <section class="stat-card">
+            <h3>Crimson Feast</h3>
+            <p>
+              When you disease a target, gain a HoT equal to <strong>[50/75/100]%</strong> of your disease damage;
+              halved in PvE.
+            </p>
+          </section>
+          </div>
+        </article>
+      </main>
+    </div>
+  </body>
+</html>
+
+
+

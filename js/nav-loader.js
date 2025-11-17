@@ -273,18 +273,18 @@ function initializeKeywordLinks() {
     },
     {
       keyword: "Floor Cleanup",
-      href: "pages/General/floor-cleanup.html",
-      excludedPaths: ["pages/general/floor-cleanup.html"],
+      href: "pages/systems/floor-cleanup.html",
+      excludedPaths: ["pages/systems/floor-cleanup.html"],
     },
     {
       keyword: "Creeper",
-      href: "pages/General/floor-cleanup.html",
-      excludedPaths: ["pages/general/floor-cleanup.html"],
+      href: "pages/systems/floor-cleanup.html",
+      excludedPaths: ["pages/systems/floor-cleanup.html"],
     },
     {
       keyword: "Perks",
-      href: "pages/items/perks.html",
-      excludedPaths: ["pages/items/perks.html"],
+      href: "pages/systems/perks.html",
+      excludedPaths: ["pages/systems/perks.html"],
     },
   ];
 
@@ -492,7 +492,7 @@ function initializePerkEmbeds() {
 function loadPerkCardData() {
   if (perkCardCachePromise) return perkCardCachePromise;
 
-  perkCardCachePromise = fetch("pages/items/perks.html")
+  perkCardCachePromise = fetch("pages/systems/perks.html")
     .then((response) => {
       if (!response.ok) throw new Error("Failed to load perks reference");
       return response.text();
