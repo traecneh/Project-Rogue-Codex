@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Skills &mdash; Project Rogue Codex</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <base href="../../" />
+    <link rel="icon" type="image/x-icon" href="images/project-rogue-favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="images/project-rogue-favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="64x64" href="images/project-rogue-favicon-64.png" />
+    <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
+    <link rel="stylesheet" href="css/styles.css" />
+    <script src="js/nav-loader.js" defer></script>
+  </head>
+  <body>
+    <div class="layout">
+      <div id="sidebar-root"></div>
+      <main class="main-content">
+        <header class="content-header">
+          <h1 class="content-title">Skills</h1>
+          <p class="content-tagline">Melee skills, caps, and race bonus rules.</p>
+        </header>
+
+        <article class="content-section">
+          <h2>Overview</h2>
+          <p>Project Rogue supports only five melee skills; mage and bow skills were removed for balance.</p>
+          <div class="stat-grid" role="list">
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Skills</p>
+              <h3>Melee Set</h3>
+              <p>Large Blades, Axes, Blunts, Polearms, Small Blades.</p>
+            </section>
+
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Cap</p>
+              <h3>Base Max</h3>
+              <p>Skills level up to <strong>110</strong>.</p>
+            </section>
+
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Race Bonus</p>
+              <h3>+10 Above Cap</h3>
+              <p>Race bonuses add up to +10 skill but do not count toward equipment requirements.</p>
+            </section>
+          </div>
+        </article>
+
+        <article class="content-section">
+          <h2>Skill XP Requirements</h2>
+          <p>Levels start at 0. Bars show total XP to reach each level and the XP total for that level.</p>
+          <div class="stat-card" style="padding: 0.75rem;">
+            <div class="weight-chart" id="skill-xp-chart"></div>
+          </div>
+        </article>
+      </main>
+    </div>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const totals = [
+          25, 62, 125, 250, 375, 500, 625, 750, 875, 1000, 1500, 2000, 2500, 3750, 5000, 6250, 7500, 8750, 10000, 11250,
+          12500, 15000, 17500, 20000, 22500, 25000, 37500, 50000, 62500, 75000, 87500, 100000, 112500, 125000, 150000,
+          175000, 200000, 225000, 250000, 312500, 375000, 437500, 500000, 562500, 625000, 687500, 750000, 812500,
+          875000, 1000000, 1125000, 1250000, 1375000, 1500000, 1625000, 1750000, 1875000, 2000000, 2125000, 2250000,
+          2375000, 2500000, 2625000, 2750000, 2875000, 3000000, 3125000, 3250000, 3375000, 3500000, 3625000, 3750000,
+          3875000, 4000000, 4250000, 4750000, 5000000, 5250000, 5500000, 5750000, 6000000, 6250000, 6500000, 6750000,
+          7000000, 7250000, 7500000, 7750000, 8000000, 8250000, 8500000, 8750000, 9000000, 9250000, 9500000, 9750000,
+          10000000, 10500000, 11250000, 12500000, 15000000, 17500000, 20000000, 22500000, 25000000, 27500000, 30000000,
+          32500000, 35000000, 40000000
+        ];
+        const chart = document.getElementById("skill-xp-chart");
+        if (!chart || !totals.length) return;
+        const withZero = [0, ...totals];
+        const max = withZero[withZero.length - 1];
+        withZero.forEach((total, idx) => {
+          const level = idx;
+          if (level > 110) return;
+          const delta = idx > 0 ? total - withZero[idx - 1] : null;
+
+          const row = document.createElement("div");
+          row.className = "weight-row";
+
+          const label = document.createElement("div");
+          label.className = "weight-label";
+          label.textContent = `Lvl ${level}`;
+
+          const bar = document.createElement("div");
+          bar.className = "weight-bar";
+          const fill = (total / max) * 100;
+          bar.style.setProperty("--fill", `${fill}%`);
+
+          const value = document.createElement("div");
+          value.className = "weight-value";
+          const totalLabel = total.toLocaleString();
+          const deltaLabel = delta !== null ? delta.toLocaleString() : "";
+          value.innerHTML = delta !== null ? `${totalLabel}<br/><span>(${deltaLabel})</span>` : `${totalLabel}`;
+
+          row.appendChild(label);
+          row.appendChild(bar);
+          row.appendChild(value);
+          chart.appendChild(row);
+        });
+      });
+    </script>
+  </body>
+</html>
