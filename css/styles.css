@@ -974,6 +974,20 @@ a:hover {
       transition: transform 0.12s linear, opacity 0.2s ease;
     }
 
+  .discord-elite {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 32px;
+    height: 32px;
+    transform: translate(-50%, -50%);
+    image-rendering: pixelated;
+    pointer-events: none;
+    z-index: 3;
+    opacity: 0;
+    transition: transform 0.12s linear, opacity 0.2s ease;
+  }
+
 .discord-cta:hover,
 .discord-cta:focus-visible {
   transform: translateY(-2px) scale(1.01);

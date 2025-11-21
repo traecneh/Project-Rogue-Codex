@@ -72,6 +72,13 @@
         sprite.alt = "Monster escort";
         wrap.appendChild(sprite);
 
+        const eliteBadge = document.createElement("img");
+        eliteBadge.className = "discord-elite";
+        eliteBadge.width = 32;
+        eliteBadge.height = 32;
+        eliteBadge.alt = "Elite aura";
+        wrap.appendChild(eliteBadge);
+
         const cta = wrap.querySelector(".discord-cta");
         const step = 32;
         const quantize = (value) => Math.max(step, Math.round(value / step) * step);
@@ -131,13 +138,20 @@
 
         let idx = 0;
         let lastWidth = window.innerWidth;
+
+        const applyPosition = (dx, dy) => {
+          const transform = `translate(-50%, -50%) translate(${dx}px, ${dy}px)`;
+          sprite.style.transform = transform;
+          eliteBadge.style.transform = transform;
+        };
+
         const stepMove = () => {
           if (!pathOffsets.length) {
             pathOffsets = buildPath();
             idx = 0;
           }
           const [dx, dy] = pathOffsets[idx];
-          sprite.style.transform = `translate(-50%, -50%) translate(${dx}px, ${dy}px)`;
+          applyPosition(dx, dy);
           idx = (idx + 1) % pathOffsets.length;
         };
 
@@ -152,9 +166,28 @@
           setTimeout(() => setSprite(next), 200);
         };
 
+        const setEliteState = () => {
+          const roll = Math.random();
+          let badge = null;
+          if (roll <= 0.05) {
+            badge = "elite+.gif";
+          } else if (roll <= 0.20) {
+            badge = "elite.gif";
+          }
+
+          if (badge) {
+            eliteBadge.src = `images/${badge}`;
+            eliteBadge.style.opacity = 1;
+          } else {
+            eliteBadge.style.opacity = 0;
+          }
+        };
+
         stepMove();
         setInterval(stepMove, 300);
         setInterval(swapMonster, 5000);
+        setInterval(setEliteState, 5000);
+        setEliteState();
 
         window.addEventListener("resize", () => {
           const currentWidth = window.innerWidth;
