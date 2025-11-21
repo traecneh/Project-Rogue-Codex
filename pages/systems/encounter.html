@@ -27,59 +27,91 @@
         <article class="content-section" id="core-rules">
           <h2>Core Rules</h2>
           <p>All open-world monster activity flows through pre-authored encounter nodes.</p>
-          <ul>
-            <li>All monster spawns are controlled by the <strong>Encounter System</strong>.</li>
-            <li>
-              An <strong>Encounter</strong> is a pre-built monster layout painted <strong>chunk-by-chunk</strong>
-              across the map.
-            </li>
-            <li>
-              Each encounter can define <strong>up to 5 weighted monster sets</strong>, each with:
-              <ul>
-                <li>A unique <strong>weight</strong> (selection chance).</li>
-                <li>Per-monster <strong>quantity ranges</strong> for the min/max number spawned.</li>
-              </ul>
-            </li>
-            <li>Tuning knobs also cover <strong>respawn cadence</strong> and the <strong>spawn radius</strong>.</li>
-          </ul>
+          <div class="stat-grid" role="list">
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Control</p>
+              <h3>Spawn Source</h3>
+              <p>All monster spawns are controlled by the <strong>Encounter System</strong>.</p>
+            </section>
+
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Layout</p>
+              <h3>Chunk Painting</h3>
+              <p>An <strong>Encounter</strong> is a pre-built monster layout painted chunk-by-chunk across the map.</p>
+            </section>
+
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Sets</p>
+              <h3>Weighted Groups</h3>
+              <p>An encounter can define up to <strong>5 weighted monster sets</strong>, each with a unique weight.</p>
+              <p>Each set defines per-monster quantity ranges for minimum and maximum spawns.</p>
+            </section>
+
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Tuning</p>
+              <h3>Respawn & Radius</h3>
+              <p>Knobs include respawn cadence and spawn radius.</p>
+            </section>
+          </div>
         </article>
 
         <article class="content-section" id="encounter-states">
           <h2>Active vs. Passive States</h2>
-          <ul>
-            <li>
-              <strong>Active radius:</strong> An encounter is <strong>Active</strong> when a player is within
-              <strong>10 chunks (160 tiles)</strong> of its center.
-            </li>
-            <li>If no player is in range, the encounter remains <strong>Passive</strong>.</li>
-            <li>While Active, most encounters <strong>increase their spawn rate</strong>.</li>
-            <li>
-              Going Active after <strong>4+ minutes</strong> of being Passive triggers a
-              <strong>Just Activated</strong> flag and an <strong>instant spawn pulse</strong>.
-            </li>
-            <li>
-              A <strong>Prolonged Activity</strong> timer tracks continuous Active time and unlocks Elite eligibility.
-            </li>
-          </ul>
+          <div class="stat-grid" role="list">
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Radius</p>
+              <h3>Active Range</h3>
+              <p>An encounter is Active when a player is within <strong>10 chunks (160 tiles)</strong> of its center.</p>
+            </section>
+
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Passive</p>
+              <h3>Out of Range</h3>
+              <p>If no player is in range, the encounter remains Passive.</p>
+            </section>
+
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Spawn Rate</p>
+              <h3>Active Boost</h3>
+              <p>While Active, most encounters increase their spawn rate.</p>
+            </section>
+
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Activation</p>
+              <h3>Just Activated</h3>
+              <p>Going Active after <strong>4+ minutes</strong> Passive triggers a Just Activated flag and an instant spawn pulse.</p>
+            </section>
+
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Timer</p>
+              <h3>Prolonged Activity</h3>
+              <p>A Prolonged Activity timer tracks continuous Active time and unlocks Elite eligibility.</p>
+            </section>
+          </div>
         </article>
 
         <article class="content-section" id="elite-system">
           <h2>Monster Spawning &amp; the Elite System</h2>
           <p>Elite escalation only begins once an encounter demonstrates sustained pressure.</p>
-          <ul>
-            <li>
-              After being continuously Active for <strong>1 minute</strong>, the encounter is flagged for
-              <strong>Prolonged Activity</strong>.
-            </li>
-            <li>
-              Flagged encounters can spawn <strong>Elite</strong> and <strong>Elite+</strong> monsters and retain that
-              eligibility for an additional <strong>6-minute</strong> grace window after falling Passive.
-            </li>
-            <li>
-              Re-entering the <strong>10-chunk</strong> radius during the grace period <strong>refreshes</strong> the
-              timer.
-            </li>
-          </ul>
+          <div class="stat-grid" role="list">
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Flag</p>
+              <h3>Prolonged Activity</h3>
+              <p>After 1 minute of continuous Active time, the encounter is flagged for Prolonged Activity.</p>
+            </section>
+
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Eligibility</p>
+              <h3>Elite Unlock</h3>
+              <p>Flagged encounters can spawn Elite and Elite+ monsters and keep that eligibility for a 6-minute grace window after going Passive.</p>
+            </section>
+
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Refresh</p>
+              <h3>Grace Reset</h3>
+              <p>Re-entering the 10-chunk radius during the grace period refreshes the timer.</p>
+            </section>
+          </div>
 
           <div class="stat-grid elite-grid">
             <section class="stat-card">
@@ -131,27 +163,42 @@
 
         <article class="content-section" id="monster-despawns">
           <h2>Monster De-Spawns</h2>
-          <ul>
-            <li>
-              Monsters despawn after <strong>4 continuous minutes</strong> without moving or attacking.
-            </li>
-            <li>Any monster exceeding <strong>1 hour</strong> of uptime despawns regardless of activity.</li>
-            <li>
-              <strong>Exception:</strong> <strong>Demon Spires</strong>, <strong>Dragon Spires</strong>, and
-              <strong>Master Spires</strong> ignore the 4-minute inactivity rule.
-            </li>
-          </ul>
+          <div class="stat-grid" role="list">
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Inactivity</p>
+              <h3>4-Minute Rule</h3>
+              <p>Monsters despawn after 4 continuous minutes without moving or attacking.</p>
+            </section>
+
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Uptime</p>
+              <h3>1-Hour Cap</h3>
+              <p>Any monster exceeding 1 hour of uptime despawns regardless of activity.</p>
+            </section>
+
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Exceptions</p>
+              <h3>Spires</h3>
+              <p>Demon Spires, Dragon Spires, and Master Spires ignore the 4-minute inactivity rule.</p>
+            </section>
+          </div>
         </article>
 
         <article class="content-section" id="boss-leashing">
           <h2>Leashing &amp; Boss Behavior</h2>
-          <ul>
-            <li><strong>Bosses</strong> cannot be dragged outside the locale where they spawned.</li>
-            <li>
-              Crossing the locale boundary forces an instant <strong>leash</strong>, resetting the encounter and
-              restoring <strong>full health</strong>.
-            </li>
-          </ul>
+          <div class="stat-grid" role="list">
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Locale</p>
+              <h3>Boundaries</h3>
+              <p>Bosses cannot be dragged outside the locale where they spawned.</p>
+            </section>
+
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Leash</p>
+              <h3>Reset</h3>
+              <p>Crossing the locale boundary forces an instant leash, resetting the encounter and restoring full health.</p>
+            </section>
+          </div>
         </article>
       </main>
     </div>

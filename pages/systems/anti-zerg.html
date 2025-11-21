@@ -20,72 +20,79 @@
         <header class="content-header">
           <h1 class="content-title">Anti-Zerg System</h1>
           <p class="content-tagline">
-            Dynamic PvP scaling that cushions smaller squads while keeping large zergs honest.
+            PvP scaling that reduces damage to smaller squads and mirrors that value as a self-heal penalty.
           </p>
         </header>
 
         <article class="content-section">
           <h2>Why Anti-Zerg Exists</h2>
           <p>
-            Anti-Zerg is a safety net for outnumbered teams in PvP. Whenever your squad is smaller than the force
-            engaging you, the system trims incoming damage so you can trade blows without being erased by raw headcount.
-            The same logic also dials back self-healing for anyone who is currently protected, preventing bunker-style
-            builds from stacking invulnerability and sustain.
+            Anti-Zerg reduces incoming PvP damage for the smaller squad based on Zerg size differences and applies the
+            same percentage as a penalty to offensive self-healing on protected targets.
           </p>
 
           <section>
             <h2>How Zerg Size Is Determined</h2>
-            <p>
-              Anti-Zerg works by comparing two Zerg sizes: yours and your attacker&rsquo;s. The game constantly evaluates
-              your guildmates through two complementary modes and a short-term memory, described below.
-            </p>
+            <div class="stat-grid" role="list">
+              <section class="stat-card" role="listitem">
+                <p class="stat-label">Warfront</p>
+                <h3>Bundled Zones</h3>
+                <p>A Warfront bundles marked PvP areas into one Anti-Zerg zone and displays on the minimap.</p>
+              </section>
 
-            <h3>Warfront Mode</h3>
-            <ul>
-              <li>A Warfront bundles several marked PvP areas into a single Anti-Zerg zone.</li>
-              <li>Your minimap explicitly shows when you&rsquo;re inside a Warfront.</li>
-              <li>
-                While you stay inside, the system counts every guildmate who is also within that Warfront. That number
-                becomes your current Zerg size for PvP calculations.
-              </li>
-              <li>Stepping out of the Warfront boundary immediately swaps you back to Range-Based Mode.</li>
-            </ul>
+              <section class="stat-card" role="listitem">
+                <p class="stat-label">Warfront</p>
+                <h3>Inside Count</h3>
+                <p>While inside, the system counts every guildmate in the Warfront to set your Zerg size.</p>
+              </section>
 
-            <h3>Range-Based Mode</h3>
-            <ul>
-              <li>Used whenever you are not flagged as being inside a Warfront.</li>
-              <li>
-                You automatically form a Zerg with any guildmate located within <strong>10 map chunks</strong>
-                (<strong>160 tiles</strong>) of your current position.
-              </li>
-              <li>All qualifying guildmates within that circular radius are lumped together for your Zerg size.</li>
-            </ul>
+              <section class="stat-card" role="listitem">
+                <p class="stat-label">Warfront</p>
+                <h3>Exit Swap</h3>
+                <p>Leaving the Warfront boundary switches you to Range-Based Mode.</p>
+              </section>
 
-            <h3>Zerg Status Memory (180 Seconds)</h3>
-            <ul>
-              <li>
-                Meeting the requirements for either Warfront Mode or Range-Based Mode marks you as sharing a Zerg with
-                those guildmates for the next <strong>180 seconds</strong> (3 minutes).
-              </li>
-              <li>
-                During that window, temporary spacing or repositioning does not immediately dissolve the Zerg; the
-                system still treats you as linked until the timer expires.
-              </li>
-            </ul>
+              <section class="stat-card" role="listitem">
+                <p class="stat-label">Range</p>
+                <h3>Range-Based Mode</h3>
+                <p>When not in a Warfront, you form a Zerg with any guildmate within 10 chunks (160 tiles).</p>
+              </section>
+
+              <section class="stat-card" role="listitem">
+                <p class="stat-label">Range</p>
+                <h3>Radius Grouping</h3>
+                <p>All qualifying guildmates within that radius are counted for your Zerg size.</p>
+              </section>
+
+              <section class="stat-card" role="listitem">
+                <p class="stat-label">Memory</p>
+                <h3>180-Second Link</h3>
+                <p>Qualifying in either mode links you for 180 seconds (3 minutes), even if spacing temporarily changes.</p>
+              </section>
+            </div>
           </section>
 
           <section>
             <h2>Damage Reduction &amp; Self-Healing</h2>
-            <p>
-              Once your Zerg size is known, Anti-Zerg compares it directly against the attacker&rsquo;s Zerg size and
-              pulls a value from the internal damage reduction chart (not shown here). Only targets of PvP damage
-              receive the reduction, ensuring outnumbered players survive longer when focus-fired by a swarm.
-            </p>
-            <p>
-              Any time you benefit from that reduction, the game applies the same percentage as a penalty to your
-              offensive self-healing (heals triggered by attacking others). This blocks double-dipping: you can either
-              be tankier or burst-heal at full value, but not both simultaneously under Anti-Zerg protection.
-            </p>
+            <div class="stat-grid" role="list">
+              <section class="stat-card" role="listitem">
+                <p class="stat-label">Comparison</p>
+                <h3>Zerg Size Check</h3>
+                <p>Anti-Zerg compares your Zerg size to the attacker&apos;s Zerg size.</p>
+              </section>
+
+              <section class="stat-card" role="listitem">
+                <p class="stat-label">Reduction</p>
+                <h3>Damage Cut</h3>
+                <p>Targets of PvP damage receive a reduction based on the size comparison.</p>
+              </section>
+
+              <section class="stat-card" role="listitem">
+                <p class="stat-label">Penalty</p>
+                <h3>Self-Heal Mirror</h3>
+                <p>The same percentage is applied as a penalty to offensive self-healing while protected.</p>
+              </section>
+            </div>
             <h3>Matchup Calculator</h3>
             <p>
               Pick the squad sizes to see whether Anti-Zerg will cushion the smaller team and by how much.
@@ -127,10 +134,7 @@
             </div>
 
             <h3>Damage Reduction Cheat Sheet</h3>
-            <p>
-              These quick examples show how much protection the smaller guild squad receives when facing a larger one.
-              Only the underdog gets the damage reduction, and it caps at <strong>30%</strong>.
-            </p>
+            <p>Only the smaller squad receives the reduction, capped at <strong>30%</strong>.</p>
             <div class="stat-grid" aria-label="Anti-Zerg damage reduction examples">
               <section class="stat-card">
                 <h3>Solo Player</h3>

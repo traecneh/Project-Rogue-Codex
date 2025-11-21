@@ -553,13 +553,13 @@ function getPerkSlug(name) {
 
 // Rarity Roller
 const rarityDefinitions = [
-  { name: "Normal", color: "#ffffff", min: 0, max: 0, perkChance: 0 },
-  { name: "Uncommon", color: "#ffd966", min: 2, max: 4, perkChance: 0 },
-  { name: "Rare", color: "#0000ff", min: 5, max: 8, perkChance: 0 },
-  { name: "Epic", color: "#741b47", min: 9, max: 12, perkChance: 0.4 },
-  { name: "Legendary", color: "#ff9900", min: 13, max: 15, perkChance: 0.6 },
-  { name: "Mythical", color: "#6aa84f", min: 16, max: 22, perkChance: 0.8 },
-  { name: "Ascendant", color: "#ff0000", min: 23, max: 30, perkChance: 1 },
+  { name: "Normal", color: "#ffffff", min: 0, max: 0, perkChance: 0, ac: 0 },
+  { name: "Uncommon", color: "#ffd966", min: 2, max: 5, perkChance: 0, ac: 0 },
+  { name: "Rare", color: "#0000ff", min: 6, max: 10, perkChance: 0, ac: 0 },
+  { name: "Epic", color: "#741b47", min: 11, max: 15, perkChance: 0.4, ac: 2 },
+  { name: "Legendary", color: "#ff9900", min: 16, max: 20, perkChance: 0.6, ac: 3 },
+  { name: "Mythical", color: "#6aa84f", min: 21, max: 25, perkChance: 0.8, ac: 4 },
+  { name: "Ascendant", color: "#ff0000", min: 26, max: 30, perkChance: 1, ac: 5 },
 ];
 
 let perksCacheForRoller = null;
@@ -569,49 +569,142 @@ function initializeRarityRoller() {
   if (!container) return;
 
   const rollButton = container.querySelector("[data-rarity-roll]");
+  const upgradeButton = container.querySelector("[data-rarity-upgrade]");
   const resultContainer = container.querySelector("[data-rarity-result]");
   if (!rollButton || !resultContainer) return;
 
-  rollButton.addEventListener("click", () => {
-    rollButton.disabled = true;
-    rollButton.textContent = "Rolling...";
-    Promise.all([rollRandomRarity(), loadPerkCardData()])
-      .then(([rarity, perkData]) => {
-        const stats = rarity.max > rarity.min ? randomInt(rarity.min, rarity.max) : rarity.min;
-        const statSplit = distributeStats(stats);
-        const perkOutcome = rollPerk(rarity, perkData.map);
+  let currentIndex = 0;
+  let currentMaxIndex = rarityDefinitions.length - 1;
+  let currentPerkOutcome = null;
+  let currentPerkMeta = null;
+  let perkMapPromise = null;
 
-        const fragments = [];
-        fragments.push(createResultLine("Rarity", rarity.name, rarity.color));
-        fragments.push(createResultLine("Bonus stats", rarity.min === rarity.max ? `${stats}` : `${stats} (rolled within ${rarity.min}-${rarity.max})`));
-        fragments.push(createResultLine("Split", `STR ${statSplit.str}, DEX ${statSplit.dex}, CON ${statSplit.con}`));
+  const lastIndex = rarityDefinitions.length - 1;
 
-        if (rarity.perkChance > 0) {
-          const chancePercent = `${Math.round(rarity.perkChance * 100)}%`;
-          if (perkOutcome) {
-            const perkName = perkOutcome.card.querySelector("h3")
-              ? perkOutcome.card.querySelector("h3").textContent.trim()
-              : "Perk";
-            fragments.push(createResultLine("Perk Roll", `Success (${chancePercent}) — ${perkOutcome.tier} ${perkName}`));
-          } else {
-            fragments.push(createResultLine("Perk Roll", `Failed (${chancePercent})`));
-          }
-        } else {
-          fragments.push(createResultLine("Perk Roll", "Not eligible"));
+  const getPerkMap = () => {
+    if (!perkMapPromise) {
+      perkMapPromise = loadPerkCardData().then((data) => data.map);
+    }
+    return perkMapPromise;
+  };
+
+  const computeMaxIndex = (baseIndex) => {
+    if (baseIndex >= lastIndex) return lastIndex;
+    return randomInt(baseIndex + 1, lastIndex);
+  };
+
+  const updateUpgradeAvailability = () => {
+    if (!upgradeButton) return;
+    const atMax = currentIndex >= currentMaxIndex;
+    upgradeButton.disabled = atMax;
+  };
+
+  const setLoadingState = (isLoading, activeButton) => {
+    const buttons = [rollButton, upgradeButton].filter(Boolean);
+    buttons.forEach((btn) => {
+      btn.disabled = isLoading;
+      if (!activeButton || btn !== activeButton) return;
+      if (isLoading) {
+        btn.dataset.originalText = btn.dataset.originalText || btn.textContent;
+        btn.textContent = btn === rollButton ? "Rolling..." : "Upgrading...";
+      } else if (btn.dataset.originalText) {
+        btn.textContent = btn.dataset.originalText;
+        delete btn.dataset.originalText;
+      }
+    });
+  };
+
+  const renderOutcome = (rarity, perkMap, perkOutcome, perkMeta, maxIndex) => {
+    const stats = rarity.max > rarity.min ? randomInt(rarity.min, rarity.max) : rarity.min;
+    const statSplit = distributeStats(stats);
+
+    const fragments = [];
+    fragments.push(createResultLine("Rarity", rarity.name, rarity.color));
+    const maxDef = rarityDefinitions[Math.min(maxIndex, lastIndex)];
+    if (maxDef) {
+      fragments.push(createResultLine("Max Rarity", maxDef.name, maxDef.color));
+    }
+    fragments.push(
+      createResultLine(
+        "Bonus stats",
+        rarity.min === rarity.max ? `${stats}` : `${stats} (rolled within ${rarity.min}-${rarity.max})`
+      )
+    );
+    const acValue = typeof rarity.ac === "number" ? rarity.ac : 0;
+    fragments.push(createResultLine("Bonus AC", `${acValue}`));
+    fragments.push(createResultLine("Split", `STR ${statSplit.str}, DEX ${statSplit.dex}, CON ${statSplit.con}`));
+
+    const perkLabel = perkMeta && perkMeta.source ? `Perk (from ${perkMeta.source} roll)` : "Perk Roll";
+    if (!perkMeta || perkMeta.rolled === false) {
+      fragments.push(createResultLine(perkLabel, "Not rolled (use Random Rarity)"));
+    } else if (!perkMeta.eligible) {
+      fragments.push(createResultLine(perkLabel, "Not eligible"));
+    } else {
+      const chancePercent = `${Math.round((perkMeta.chance || 0) * 100)}%`;
+      if (perkOutcome) {
+        const perkName = perkOutcome.card.querySelector("h3")
+          ? perkOutcome.card.querySelector("h3").textContent.trim()
+          : "Perk";
+        fragments.push(createResultLine(perkLabel, `Success (${chancePercent}) - ${perkOutcome.tier} ${perkName}`));
+      } else {
+        fragments.push(createResultLine(perkLabel, `Failed (${chancePercent})`));
+      }
+    }
+
+    resultContainer.innerHTML = "";
+    fragments.forEach((fragment) => resultContainer.appendChild(fragment));
+  };
+
+  const renderFromIndex = (index, activeButton, { rerollPerk, setMax } = {}) => {
+    const clampedIndex = Math.max(0, Math.min(index, rarityDefinitions.length - 1));
+    currentIndex = clampedIndex;
+    if (setMax) {
+      currentMaxIndex = computeMaxIndex(clampedIndex);
+    }
+    const rarity = rarityDefinitions[clampedIndex];
+    if (!rarity) return;
+    setLoadingState(true, activeButton);
+    getPerkMap()
+      .then((perkMap) => {
+        if (rerollPerk) {
+          currentPerkOutcome = rollPerk(rarity, perkMap);
+          currentPerkMeta = {
+            source: rarity.name,
+            chance: rarity.perkChance,
+            eligible: rarity.perkChance > 0,
+            rolled: true,
+          };
         }
-
-        resultContainer.innerHTML = "";
-        fragments.forEach((fragment) => resultContainer.appendChild(fragment));
+        renderOutcome(rarity, perkMap, currentPerkOutcome, currentPerkMeta, currentMaxIndex);
       })
       .catch((error) => {
         console.error("Rarity roll failed", error);
         resultContainer.textContent = "Unable to roll rarity.";
       })
       .finally(() => {
-        rollButton.disabled = false;
-        rollButton.textContent = "Roll Random Rarity";
+        setLoadingState(false, activeButton);
+        updateUpgradeAvailability();
       });
+  };
+
+  rollButton.addEventListener("click", () => {
+    const index = Math.floor(Math.random() * rarityDefinitions.length);
+    renderFromIndex(index, rollButton, { rerollPerk: true, setMax: true });
   });
+
+  if (upgradeButton) {
+    upgradeButton.addEventListener("click", () => {
+      if (currentIndex >= currentMaxIndex) {
+        updateUpgradeAvailability();
+        return;
+      }
+      const nextIndex = Math.min(currentIndex + 1, rarityDefinitions.length - 1);
+      const boundedNext = Math.min(nextIndex, currentMaxIndex);
+      renderFromIndex(boundedNext, upgradeButton, { rerollPerk: false, setMax: false });
+    });
+
+    updateUpgradeAvailability();
+  }
 }
 
 function rollRandomRarity() {

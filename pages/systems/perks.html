@@ -20,38 +20,59 @@
         <header class="content-header">
           <h1 class="content-title">Perks System</h1>
           <p class="content-tagline">
-            Traits that define high-end builds by layering bonuses, procs, and unique mechanics.
+            Perks are item-based effects with tiered values and stacking rules.
           </p>
         </header>
 
         <article class="content-section">
           <h2>Overview</h2>
-          <p>
-            Perks are special effects that let players augment their builds, chase long-term goals, and create
-            meaningful diversity. They drop on loot, some items ship with innate perks, and balance passes
-            routinely adjust exact values. Treat the details below as a current design snapshot.
-          </p>
+          <p>Perks drop on loot or come innate on items; values can change with balance updates.</p>
         </article>
 
         <article class="content-section" id="stacking-rules">
           <h2>Perk Stacking Rules</h2>
-          <ul>
-            <li>You can only benefit from <strong>three copies</strong> of the same perk.</li>
-            <li>Extra copies beyond three provide <strong>no additional bonuses</strong>.</li>
-            <li>Race bonuses count toward this limit.</li>
-          <li>When more than three copies exist, only the three highest tiers count.</li></ul>
+          <div class="stat-grid" role="list">
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Limit</p>
+              <h3>Three Copies</h3>
+              <p>Only three copies of the same perk provide bonuses; extra copies give no benefit.</p>
+            </section>
+
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Race</p>
+              <h3>Counts Toward Limit</h3>
+              <p>Race bonuses count toward the three-copy limit.</p>
+            </section>
+
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Selection</p>
+              <h3>Highest Tiers</h3>
+              <p>If more than three copies exist, only the three highest tiers apply.</p>
+            </section>
+          </div>
         </article>
 
         <article class="content-section" id="notation">
           <h2>Notation</h2>
-          <ul>
-            <li><strong>[Square brackets]</strong> &rarr; tier values in the order <strong>[T1 / T2 / T3]</strong>.</li>
-            <li>
-              <strong>(Parentheses)</strong> &rarr; weapon speed variants:
-              <strong>(750 / 1000 / 1250 / 1500)</strong>.
-            </li>
-            <li><strong>{Curly brackets}</strong> &rarr; formulas.</li>
-          </ul>
+          <div class="stat-grid" role="list">
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Tiers</p>
+              <h3>[Brackets]</h3>
+              <p>Tier values list in order [T1 / T2 / T3].</p>
+            </section>
+
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Speed</p>
+              <h3>(Parentheses)</h3>
+              <p>Weapon speed variants use (750 / 1000 / 1250 / 1500).</p>
+            </section>
+
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Formula</p>
+              <h3>{Curly Braces}</h3>
+              <p>Formulas appear in curly brackets.</p>
+            </section>
+          </div>
         </article>
 
         <article class="content-section" id="perk-list">

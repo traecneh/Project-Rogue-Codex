@@ -545,6 +545,7 @@ a:hover {
   flex-wrap: wrap;
   gap: 0.9rem;
   margin-top: 0.8rem;
+  margin-bottom: 1rem;
   justify-content: center;
 }
 
@@ -863,6 +864,14 @@ a:hover {
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 8px;
   background: rgba(0, 0, 0, 0.3);
+  margin-top: 1.2rem;
+}
+
+.rarity-roller-actions {
+  display: flex;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+  margin-top: 0.6rem;
 }
 
 .rarity-roll-button {
@@ -878,6 +887,10 @@ a:hover {
   font-weight: 600;
   letter-spacing: 0.05em;
   margin-top: 0.6rem;
+}
+
+.rarity-roller-actions .rarity-roll-button {
+  margin-top: 0;
 }
 
 .rarity-roll-button:disabled {
@@ -908,6 +921,13 @@ a:hover {
 
 .rarity-result-value {
   font-weight: 600;
+}
+
+.elite-grid .stat-card {
+  border-color: rgba(75, 255, 255, 0.7);
+  box-shadow:
+    inset 0 0 0 1px rgba(75, 255, 255, 0.25),
+    0 0 16px rgba(75, 255, 255, 0.15);
 }
 
 /* Responsive tweaks */
@@ -963,8 +983,8 @@ a:hover {
 }
 
 .elite-random {
-  opacity: 0.65;
-  filter: saturate(0.8);
+  opacity: 1;
+  filter: none;
   z-index: 1;
 }
 

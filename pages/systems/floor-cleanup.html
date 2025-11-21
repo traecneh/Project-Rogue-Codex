@@ -27,31 +27,44 @@
         <article class="content-section" id="creeper-timing">
           <h2>Creeper Timing</h2>
           <p>The <strong>Creeper</strong> is the automated sweep that removes abandoned loot.</p>
-          <ul>
-            <li>Runs a cleanup pass every <strong>3 minutes</strong>.</li>
-            <li>Evaluates each ground item’s <strong>undisturbed timer</strong> during that pass.</li>
-            <li>
-              Deletes any item that has remained untouched for more than <strong>8 minutes</strong> at the time
-              of the sweep.
-            </li>
-          </ul>
+          <div class="stat-grid" role="list">
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Cycle</p>
+              <h3>Sweep Interval</h3>
+              <p>Cleanup runs every <strong>3 minutes</strong>.</p>
+            </section>
 
-          <p>Because the sweep cadence is fixed, effective item lifetime falls within a narrow window.</p>
-          <ul>
-            <li><strong>Worst case:</strong> Item hits 8 minutes right before a sweep &rarr; survives roughly <strong>8 minutes</strong>.</li>
-            <li><strong>Best case:</strong> Item hits 8 minutes right after a sweep &rarr; lasts until the next pass, up to <strong>11 minutes</strong>.</li>
-            <li>In practice, untouched loot exists on the floor for <strong>8&ndash;11 minutes</strong>.</li>
-          </ul>
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Check</p>
+              <h3>Undisturbed Timer</h3>
+              <p>Each ground item is checked for its undisturbed time during the sweep.</p>
+            </section>
 
-          <div class="content-callout">
-            <h3>Example: Resetting the Timer</h3>
-            <ul>
-              <li><strong>Interacting with an item resets its undisturbed timer to 0.</strong></li>
-              <li>
-                Moving a stack to a different tile grants the full <strong>8&ndash;11 minute</strong> window again,
-                starting from the new location.
-              </li>
-            </ul>
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Removal</p>
+              <h3>Deletion Threshold</h3>
+              <p>Items untouched for more than <strong>8 minutes</strong> when the sweep occurs are deleted.</p>
+            </section>
+          </div>
+
+          <div class="stat-grid" role="list">
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Lifetime</p>
+              <h3>Worst Case</h3>
+              <p>Item reaches 8 minutes just before a sweep: survives about <strong>8 minutes</strong>.</p>
+            </section>
+
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Lifetime</p>
+              <h3>Best Case</h3>
+              <p>Item reaches 8 minutes just after a sweep: lasts to the next pass, up to <strong>11 minutes</strong>.</p>
+            </section>
+
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Lifetime</p>
+              <h3>Typical Window</h3>
+              <p>Untouched loot remains on the floor for <strong>8&ndash;11 minutes</strong>.</p>
+            </section>
           </div>
         </article>
       </main>

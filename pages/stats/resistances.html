@@ -20,27 +20,35 @@
 <main class="main-content">
 <header class="content-header">
 <h1 class="content-title">Resistances</h1>
-<p class="content-tagline">Elemental damage reduction rules for players and monsters.</p>
+<p class="content-tagline">Elemental damage reductions for players and monsters.</p>
 </header>
 <article class="content-section" id="player-resistances">
 <h2>Players</h2>
 <p>
-            Player resistances to <strong>Fire, Electric, Poison, Cold, Acid,</strong> and <strong>Disease</strong>
-            are flat damage reductions capped at <strong>60%</strong>. Any amount over 60% does not further reduce
-            damage. Combine gear, consumables, and perks carefully to hit the cap without wasting affix slots.
+            Player resistances to <strong>Fire, Electric, Poison, Cold, Acid,</strong> and <strong>Disease</strong> are
+            flat damage reductions capped at <strong>60%</strong>; excess over cap is ignored for that element.
           </p>
-<ul>
-<li>Each element tracks independently; only the capped element ignores excess.</li>
-<li>Sources stack additively unless explicitly stated (e.g., multiplicative perks).</li>
-<li>Damage reductions apply after armor but before reactive perks and on-hit effects.</li>
-</ul>
+<div class="stat-grid" role="list">
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Per Element</p>
+              <h3>Independent Caps</h3>
+              <p>Each element tracks separately; only the capped element ignores excess.</p>
+            </section>
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Stacking</p>
+              <h3>Additive Sources</h3>
+              <p>Sources stack additively unless a perk specifies multiplicative.</p>
+            </section>
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Order</p>
+              <h3>Damage Step</h3>
+              <p>Applied after armor, before reactive perks and on-hit effects.</p>
+            </section>
+          </div>
 </article>
 <article class="content-section" id="monster-resistances">
 <h2>Monster Resistances</h2>
-<p>
-            Enemy families lean hard into specific weaknesses and strengths. Use the cards below to quickly reference
-            their multipliers. Values above <strong class="resist-value" data-resist-value="1.00">1.00x</strong> mean increased damage taken; below means reduced.
-          </p>
+<p>Values above <strong class="resist-value" data-resist-value="1.00">1.00x</strong> mean increased damage taken; below means reduced.</p>
 <div class="stat-grid">
             <section class="stat-card">
               <div class="stat-label">Humanoid</div>

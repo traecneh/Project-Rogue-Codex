@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Ascend System &mdash; Project Rogue Codex</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <base href="../../" />
+    <link rel="icon" type="image/x-icon" href="images/project-rogue-favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="images/project-rogue-favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="64x64" href="images/project-rogue-favicon-64.png" />
+    <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
+    <link rel="stylesheet" href="css/styles.css" />
+    <script src="js/nav-loader.js" defer></script>
+  </head>
+  <body>
+    <div class="layout">
+      <div id="sidebar-root"></div>
+      <main class="main-content">
+        <header class="content-header">
+          <h1 class="content-title">Ascend System</h1>
+          <p class="content-tagline">
+            Spend Ascendency Shards to raise gear one rarity tier.
+          </p>
+        </header>
+
+        <article class="content-section">
+          <h2>How Ascend Works</h2>
+          <p>
+            Ascend raises an item to the next rarity tier when you spend the required Ascendency Shards.
+          </p>
+          <p>
+            Every item has a maximum rarity tier; identify an item to see whether it can still ascend.
+          </p>
+          <p>
+            The Ascend menu lists backpack items with shard costs, stat totals, and current rolls. Select items and
+            confirm to move them up a tier.
+          </p>
+
+          <div class="stat-grid" role="list">
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Cost</p>
+              <h3>Ascendency Shards</h3>
+              <p>
+                Ascending consumes Ascendency Shards generated through Deconstruct.
+              </p>
+            </section>
+
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Check Tier</p>
+              <h3>Know the Ceiling</h3>
+              <p>
+                Identify items to see their maximum rarity tier. If an item is capped, it cannot ascend further.
+              </p>
+            </section>
+
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Backpack</p>
+              <h3>Selectable Items</h3>
+              <p>
+                The Ascend menu shows backpack items with shard costs, stat totals, and current rolls. Select items and
+                ascend to increase their rarity.
+              </p>
+            </section>
+          </div>
+
+          <hr class="rarity-divider" />
+
+          <section class="rarity-roller-section" id="rarity-roller">
+            <h3>Rarity Test Bench</h3>
+            <p>
+              Simulate rarity jumps: roll a random drop to see stat spreads and perk chances, then click Upgrade Rarity
+              to step the current result up one tier.
+            </p>
+            <div class="rarity-roller-actions">
+              <button class="rarity-roll-button" type="button" data-rarity-roll>Roll Random Rarity</button>
+              <button class="rarity-roll-button" type="button" data-rarity-upgrade>Upgrade Rarity</button>
+            </div>
+            <div class="rarity-roll-result" data-rarity-result>Roll results will appear here.</div>
+          </section>
+        </article>
+      </main>
+    </div>
+  </body>
+</html>

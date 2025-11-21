@@ -19,36 +19,77 @@
       <main class="main-content">
         <header class="content-header">
           <h1 class="content-title">Experience Pool System</h1>
-          <p class="content-tagline">Passive levels that build in the background and double XP while you hunt.</p>
+          <p class="content-tagline">Stored levels that build passively and double XP until depleted.</p>
         </header>
 
         <article class="content-section">
           <h2>How the Pool Builds</h2>
           <p>The Experience Pool is a small reserve of bonus levels that ticks up automatically:</p>
-          <ul>
-            <li>Levels <strong>1&ndash;89</strong>: earns <strong>+3.0 levels per 24 hours</strong>, up to a <strong>3.0 level cap</strong>.</li>
-            <li>Levels <strong>90+</strong>: slows to <strong>+1.0 level per 24 hours</strong> and the cap shrinks to <strong>1.0 stored level</strong>.</li>
-            <li>If you’re below the cap, the pool keeps filling; once capped it pauses until you spend XP.</li>
-          </ul>
+          <div class="stat-grid" role="list">
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Gain</p>
+              <h3>Levels 1–89</h3>
+              <p>+3.0 levels per 24 hours; pool cap 3.0 levels.</p>
+            </section>
+
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Gain</p>
+              <h3>Levels 90+</h3>
+              <p>+1.0 level per 24 hours; pool cap 1.0 level.</p>
+            </section>
+
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Cap</p>
+              <h3>Fill Behavior</h3>
+              <p>Below cap, the pool fills; at cap, it pauses until XP is spent.</p>
+            </section>
+          </div>
         </article>
 
         <article class="content-section">
           <h2>How It Works In Combat</h2>
-          <ul>
-            <li>When you have pool stored, all XP you earn from hunting is doubled.</li>
-            <li>Each <strong>1% of a level</strong> you gain consumes <strong>0.01</strong> from the pool.</li>
-            <li>Example: earning <strong>25%</strong> of a level spends <strong>0.25</strong> pool.</li>
-          </ul>
-          <p>Once the pool empties, XP returns to its normal rate until the bank refills.</p>
+          <div class="stat-grid" role="list">
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Bonus</p>
+              <h3>Double XP</h3>
+              <p>Stored pool doubles XP earned from hunting while pool remains.</p>
+            </section>
+
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Drain</p>
+              <h3>Pool Consumption</h3>
+              <p>Each 1% of a level gained consumes 0.01 pool (e.g., 25% costs 0.25 pool).</p>
+            </section>
+
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Empty</p>
+              <h3>Normal XP</h3>
+              <p>When the pool is empty, XP returns to the normal rate until the pool refills.</p>
+            </section>
+          </div>
         </article>
 
         <article class="content-section">
           <h2>Why It Exists</h2>
-          <ul>
-            <li>Lets players with limited playtime bank progress and catch up quickly when they log in.</li>
-            <li>Rewards actual gameplay: you still need to hunt to convert stored pool into real XP.</li>
-            <li>Plays nicely with future seasonal "catch-up" mechanics by front-loading some bonus levels.</li>
-          </ul>
+          <div class="stat-grid" role="list">
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Bank</p>
+              <h3>Stored Levels</h3>
+              <p>Lets players bank levels while offline and spend them through combat.</p>
+            </section>
+
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Conversion</p>
+              <h3>Hunt to Use</h3>
+              <p>Stored pool converts to XP only when hunting.</p>
+            </section>
+
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Catch-Up</p>
+              <h3>Seasonal Support</h3>
+              <p>Works with seasonal catch-up by preloading bonus levels.</p>
+            </section>
+          </div>
         </article>
 
         <article class="content-section" id="experience-pool-sim">
