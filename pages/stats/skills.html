@@ -50,6 +50,7 @@
           <h2>Skill XP Requirements</h2>
           <p>Levels start at 0. Bars show total XP to reach each level and the XP total for that level.</p>
           <div class="stat-card" style="padding: 0.75rem;">
+            <canvas id="skill-xp-curve" width="800" height="140" aria-label="XP gain curve" style="width: 100%; height: 140px;"></canvas>
             <div class="weight-chart" id="skill-xp-chart"></div>
           </div>
         </article>
@@ -72,6 +73,39 @@
         if (!chart || !totals.length) return;
         const withZero = [0, ...totals];
         const max = withZero[withZero.length - 1];
+
+        const deltas = withZero.map((value, idx) => (idx === 0 ? 0 : value - withZero[idx - 1]));
+        const curve = document.getElementById("skill-xp-curve");
+        if (curve && curve.getContext) {
+          const ctx = curve.getContext("2d");
+          const padding = 8;
+          const w = curve.width - padding * 2;
+          const h = curve.height - padding * 2;
+          const maxTotal = Math.max(...withZero);
+          ctx.clearRect(0, 0, curve.width, curve.height);
+          ctx.strokeStyle = "#5ab0ff";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          withZero.forEach((total, idx) => {
+            const x = padding + (w * idx) / (withZero.length - 1);
+            const y = padding + h - (total / maxTotal) * h;
+            if (idx === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          });
+          ctx.stroke();
+
+          ctx.fillStyle = "#a0a5b0";
+          ctx.font = "10px Tahoma, Verdana, sans-serif";
+          ctx.textBaseline = "top";
+          const clampY = (y) => Math.max(padding + 2, Math.min(padding + h - 12, y));
+          const startX = padding;
+          const startY = clampY(padding + h - (withZero[0] / maxTotal) * h - 4);
+          const endX = padding + (w * (withZero.length - 1)) / (withZero.length - 1);
+          const endY = clampY(padding + h - (withZero[withZero.length - 1] / maxTotal) * h - 4);
+          ctx.fillText("Lvl 0", startX, startY);
+          ctx.fillText("Lvl 110", endX - 36, endY);
+        }
+
         withZero.forEach((total, idx) => {
           const level = idx;
           if (level > 110) return;
