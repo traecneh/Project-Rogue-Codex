@@ -915,6 +915,121 @@ a:hover {
   cursor: not-allowed;
 }
 
+.discord-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.5rem;
+  border-radius: 10px;
+  border: 1px solid rgba(126, 206, 255, 0.9);
+  color: #e9f7ff;
+  font-weight: 700;
+  text-decoration: none;
+  letter-spacing: 0.02em;
+  background: linear-gradient(120deg, #11233d, #2457ff, #7a3dff, #2457ff);
+  background-size: 220% 220%;
+    box-shadow:
+      0 0 24px rgba(126, 206, 255, 0.35),
+      inset 0 0 8px rgba(255, 255, 255, 0.15);
+    animation: discordGlow 6s ease infinite;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+.discord-cta .discord-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+  .discord-cta .discord-icon svg {
+    width: 1.2rem;
+    height: 1.2rem;
+    fill: currentColor;
+  }
+
+  .discord-cta-wrap {
+    display: flex;
+    justify-content: center;
+    margin-top: 2.5rem;
+    position: relative;
+    align-items: center;
+    padding: 32px 0;
+  }
+
+  .discord-monster {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 32px;
+      height: 32px;
+      transform: translate(-50%, -50%);
+      image-rendering: pixelated;
+      filter: drop-shadow(0 0 6px rgba(0, 0, 0, 0.65));
+      pointer-events: none;
+      z-index: 2;
+      opacity: 1;
+      transition: transform 0.12s linear, opacity 0.2s ease;
+    }
+
+.discord-cta:hover,
+.discord-cta:focus-visible {
+  transform: translateY(-2px) scale(1.01);
+  box-shadow:
+    0 0 28px rgba(126, 206, 255, 0.45),
+    inset 0 0 12px rgba(255, 255, 255, 0.2);
+  filter: drop-shadow(0 0 6px rgba(122, 61, 255, 0.45));
+}
+
+.discord-cta:active {
+    transform: translateY(0);
+    box-shadow:
+      0 0 18px rgba(126, 206, 255, 0.3),
+      inset 0 0 10px rgba(255, 255, 255, 0.22);
+  }
+
+  .discord-cta::after {
+    content: "";
+    position: absolute;
+    inset: -120% -40%;
+    background: linear-gradient(
+      120deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.35) 45%,
+      rgba(255, 255, 255, 0.25) 55%,
+      transparent 100%
+    );
+    transform: rotate(18deg);
+    animation: discordSheen 2.4s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  @keyframes discordGlow {
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
+  }
+
+  @keyframes discordSheen {
+    0% {
+      transform: translateX(-30%) rotate(18deg);
+    }
+    50% {
+      transform: translateX(30%) rotate(18deg);
+    }
+    100% {
+      transform: translateX(70%) rotate(18deg);
+    }
+  }
+
 .rarity-roll-result {
   margin-top: 1rem;
   border-top: 1px solid rgba(255, 255, 255, 0.08);

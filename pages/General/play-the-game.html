@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Play the Game &mdash; Project Rogue Codex</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <base href="../../" />
+    <link rel="icon" type="image/x-icon" href="images/project-rogue-favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="images/project-rogue-favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="64x64" href="images/project-rogue-favicon-64.png" />
+    <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
+    <link rel="stylesheet" href="css/styles.css" />
+    <script src="js/nav-loader.js" defer></script>
+  </head>
+  <body>
+    <div class="layout">
+      <div id="sidebar-root"></div>
+      <main class="main-content">
+        <header class="content-header">
+          <h1 class="content-title">Play the Game</h1>
+          <p class="content-tagline">Hop into the Discord, grab the download, and start playing.</p>
+        </header>
+
+        <section class="stat-grid">
+          <article class="stat-card">
+            <h3>Join the Discord</h3>
+            <p>Use the permanent invite to enter the server and get plugged in.</p>
+            <p style="margin: 0.5rem 0 0; font-size: 0.95rem;">Invite: https://discord.gg/DW6zcWy</p>
+          </article>
+
+          <article class="stat-card">
+            <h3>#welcome Channel</h3>
+            <p>Download links live in #welcome alongside the steps to DM the bot that makes your game account.</p>
+          </article>
+
+          <article class="stat-card">
+            <h3>Log In and Play</h3>
+            <p>Open the game client, sign in with the Discord-created account, and jump in.</p>
+          </article>
+        </section>
+
+        <div class="discord-cta-wrap">
+          <a
+            class="discord-cta"
+            href="https://discord.gg/DW6zcWy"
+            target="_blank"
+            rel="noreferrer noopener"
+          >
+            <span class="discord-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false">
+                <path
+                  d="M20.5 4.5a17.2 17.2 0 0 0-4.3-1.4l-.2.4c1 .3 1.8.7 2.7 1.2a9.7 9.7 0 0 0-10 0c.9-.5 1.8-.9 2.7-1.2l-.2-.4a17.2 17.2 0 0 0-4.3 1.4 15.7 15.7 0 0 0-2.6 11c1 1.2 2.2 2 3.5 2.7a12.3 12.3 0 0 0 1.6.7l.7-1.1c-.4-.2-.9-.4-1.3-.7l.3-.3c2.6 1.2 5.5 1.2 8.2 0l.3.3c-.4.3-.9.5-1.3.7l.7 1.1c.6-.2 1.1-.4 1.6-.7a9.7 9.7 0 0 0 3.5-2.7 15.7 15.7 0 0 0-2.6-11Zm-9.5 9c-.7 0-1.3-.7-1.3-1.6s.6-1.6 1.3-1.6c.7 0 1.3.7 1.3 1.6s-.6 1.6-1.3 1.6Zm5 0c-.7 0-1.3-.7-1.3-1.6s.6-1.6 1.3-1.6c.7 0 1.3.7 1.3 1.6s-.6 1.6-1.3 1.6Z"
+                ></path>
+              </svg>
+            </span>
+            <span>Enter the Discord</span>
+          </a>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const wrap = document.querySelector(".discord-cta-wrap");
+        if (!wrap) return;
+
+        const sprite = document.createElement("img");
+        sprite.className = "discord-monster";
+        sprite.width = 32;
+        sprite.height = 32;
+        sprite.alt = "Monster escort";
+        wrap.appendChild(sprite);
+
+        const cta = wrap.querySelector(".discord-cta");
+        const step = 32;
+        const quantize = (value) => Math.max(step, Math.round(value / step) * step);
+
+        const buildPath = () => {
+          if (!cta) return [];
+          const halfW = quantize(cta.offsetWidth / 2 + step * 2);
+          const halfH = quantize(cta.offsetHeight / 2 + step);
+          const path = [];
+
+          for (let x = -halfW; x <= halfW; x += step) path.push([x, -halfH]);
+          for (let y = -halfH + step; y <= halfH; y += step) path.push([halfW, y]);
+          for (let x = halfW - step; x >= -halfW; x -= step) path.push([x, halfH]);
+          for (let y = halfH - step; y > -halfH; y -= step) path.push([-halfW, y]);
+
+          return path;
+        };
+
+        let pathOffsets = buildPath();
+
+        const fallback = [
+          "images/monsters/Bee.gif",
+          "images/monsters/Bat.gif",
+          "images/monsters/Imp.gif",
+          "images/monsters/Skeleton.gif",
+          "images/monsters/Wolf.gif",
+        ];
+
+        const pickRandom = (exclude) => {
+          const list = monsters && monsters.length ? monsters : fallback;
+          if (!list.length) return null;
+          if (list.length === 1) return list[0];
+          let candidate = list[Math.floor(Math.random() * list.length)];
+          if (candidate === exclude) {
+            candidate = list[(list.indexOf(candidate) + 1) % list.length];
+          }
+          return candidate;
+        };
+
+        let monsters = [];
+        let currentSrc = null;
+
+        const setSprite = (src) => {
+          if (!src) return;
+          currentSrc = src;
+          sprite.src = src;
+        };
+
+        fetch("images/monsters/manifest.json")
+          .then((res) => (res.ok ? res.json() : Promise.reject()))
+          .then((list) => {
+            monsters = Array.isArray(list) ? list : [];
+            return pickRandom();
+          })
+          .catch(() => pickRandom())
+          .then((src) => setSprite(src));
+
+        let idx = 0;
+        const stepMove = () => {
+          if (!pathOffsets.length) {
+            pathOffsets = buildPath();
+            idx = 0;
+          }
+          const [dx, dy] = pathOffsets[idx];
+          sprite.style.transform = `translate(-50%, -50%) translate(${dx}px, ${dy}px)`;
+          idx = (idx + 1) % pathOffsets.length;
+        };
+
+        sprite.addEventListener("load", () => {
+          sprite.style.opacity = 1;
+        });
+
+        const swapMonster = () => {
+          const next = pickRandom(currentSrc);
+          if (!next) return;
+          sprite.style.opacity = 0;
+          setTimeout(() => setSprite(next), 200);
+        };
+
+        stepMove();
+        setInterval(stepMove, 300);
+        setInterval(swapMonster, 5000);
+
+        window.addEventListener("resize", () => {
+          pathOffsets = buildPath();
+          idx = 0;
+        });
+      });
+    </script>
+  </body>
+</html>
