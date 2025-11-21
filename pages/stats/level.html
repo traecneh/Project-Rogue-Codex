@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Level &mdash; Project Rogue Codex</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <base href="../../" />
+    <link rel="icon" type="image/x-icon" href="images/project-rogue-favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="images/project-rogue-favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="64x64" href="images/project-rogue-favicon-64.png" />
+    <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
+    <link rel="stylesheet" href="css/styles.css" />
+    <script src="js/nav-loader.js" defer></script>
+  </head>
+  <body>
+    <div class="layout">
+      <div id="sidebar-root"></div>
+      <main class="main-content">
+        <header class="content-header">
+          <h1 class="content-title">Level</h1>
+          <p class="content-tagline">Player XP rules and level requirements.</p>
+        </header>
+
+        <article class="content-section">
+          <h2>XP Sources</h2>
+          <div class="stat-grid" role="list">
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Baseline</p>
+              <h3>1:1 Damage</h3>
+              <p>XP from monsters is 1:1 with damage dealt.</p>
+            </section>
+
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Multiplier</p>
+              <h3>Experience Pool</h3>
+              <p>Experience Pool adds +100% XP based on damage.</p>
+            </section>
+
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Seasonal</p>
+              <h3>Catch-Up</h3>
+              <p>Catch-up adds +100% XP based on damage when active.</p>
+            </section>
+
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Events</p>
+              <h3>Weekend / Special</h3>
+              <p>Some events add +100% XP based on damage.</p>
+            </section>
+
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Stacking</p>
+              <h3>XP Boosts</h3>
+              <p>Experience Pool, catch-up, and event boosts can stack additively.</p>
+            </section>
+          </div>
+        </article>
+
+        <article class="content-section">
+          <h2>Damage to XP</h2>
+          <p>Toggle boosts and set damage to see XP gained.</p>
+          <div class="stat-widget">
+            <div class="stat-control">
+              <label for="level-damage-slider">Damage: <span data-level-damage-value>100</span></label>
+              <input type="range" id="level-damage-slider" min="1" max="2000" value="100" />
+            </div>
+            <div class="rarity-roller-actions">
+              <button class="rarity-roll-button" type="button" data-xp-boost="pool" data-active="false" data-label="Experience Pool">Experience Pool</button>
+              <button class="rarity-roll-button" type="button" data-xp-boost="catchup" data-active="false" data-label="Catch-Up">Catch-Up</button>
+              <button class="rarity-roll-button" type="button" data-xp-boost="event" data-active="false" data-label="Weekend / Event">Weekend / Event</button>
+            </div>
+            <div class="stat-output">
+              <span class="stat-output-label">Total XP</span>
+              <span class="stat-output-value" data-level-total-xp>100</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="content-section">
+          <h2>Level XP Requirements</h2>
+          <p>Player levels start at 1. Bars show total XP to reach each level and the XP total for that level.</p>
+          <div class="stat-card" style="padding: 0.75rem;">
+            <canvas id="level-xp-curve" width="800" height="140" aria-label="Level XP curve" style="width: 100%; height: 140px;"></canvas>
+            <div class="weight-chart" id="level-xp-chart"></div>
+          </div>
+        </article>
+      </main>
+    </div>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        // Level 1 starts at 0 XP; values below are totals to reach each level.
+        const totals = [
+          0,
+          2000, 4000, 6000, 8000, 10000, 15000, 20000, 25000, 30000, 40000, 50000, 60000, 80000, 100000, 120000, 140000,
+          160000, 200000, 300000, 400000, 500000, 600000, 750000, 1000000, 1250000, 1500000, 1750000, 2000000, 2250000,
+          2500000, 2750000, 3000000, 3500000, 4000000, 4500000, 5000000, 5500000, 6000000, 7000000, 8000000, 9000000,
+          10000000, 11000000, 12000000, 13000000, 14000000, 15000000, 16000000, 17000000, 18000000, 19000000, 20000000,
+          21000000, 22000000, 23000000, 24000000, 26000000, 28000000, 30000000, 32000000, 34000000, 36000000, 38000000,
+          40000000, 42000000, 44000000, 46000000, 48000000, 51000000, 54000000, 57000000, 60000000, 63000000, 66000000,
+          69000000, 72000000, 75000000, 78000000, 81000000, 84000000, 87000000, 90000000, 93000000, 96000000, 100000000,
+          104000000, 108000000, 113000000, 118000000, 123000000, 128000000, 133000000, 138000000, 143000000, 148000000,
+          153000000, 160000000, 168000000, 178000000, 350000000, 700000000, 1050000000, 1400000000, 1750000000
+        ];
+
+        const chart = document.getElementById("level-xp-chart");
+        const curve = document.getElementById("level-xp-curve");
+        if (!chart || !totals.length) return;
+
+        const max = totals[totals.length - 1];
+
+        if (curve && curve.getContext) {
+          const ctx = curve.getContext("2d");
+          const padding = 8;
+          const w = curve.width - padding * 2;
+          const h = curve.height - padding * 2;
+          ctx.clearRect(0, 0, curve.width, curve.height);
+          ctx.strokeStyle = "#5ab0ff";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          totals.forEach((total, idx) => {
+            const x = padding + (w * idx) / (totals.length - 1);
+            const y = padding + h - (total / max) * h;
+            if (idx === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          });
+          ctx.stroke();
+
+          ctx.fillStyle = "#a0a5b0";
+          ctx.font = "10px Tahoma, Verdana, sans-serif";
+          ctx.textBaseline = "top";
+          const clampY = (y) => Math.max(padding + 2, Math.min(padding + h - 12, y));
+          const startX = padding;
+          const startY = clampY(padding + h - (totals[0] / max) * h - 4);
+          const endX = padding + w;
+          const endY = clampY(padding + h - (totals[totals.length - 1] / max) * h - 4);
+          ctx.fillText("Lvl 1", startX, startY);
+          ctx.fillText("Lvl 105", endX - 40, endY);
+        }
+
+        totals.forEach((total, idx) => {
+          const level = idx + 1;
+          if (level > 105) return;
+          const prev = idx > 0 ? totals[idx - 1] : 0;
+          const delta = idx === 0 ? null : total - prev;
+
+          const row = document.createElement("div");
+          row.className = "weight-row";
+
+          const label = document.createElement("div");
+          label.className = "weight-label";
+          label.textContent = `Lvl ${level}`;
+
+          const bar = document.createElement("div");
+          bar.className = "weight-bar";
+          const fill = (total / max) * 100;
+          bar.style.setProperty("--fill", `${fill}%`);
+
+          const value = document.createElement("div");
+          value.className = "weight-value";
+          const totalLabel = total.toLocaleString();
+          const deltaLabel = delta !== null ? delta.toLocaleString() : "";
+          value.innerHTML = delta !== null ? `${totalLabel}<br/><span>(${deltaLabel})</span>` : `${totalLabel}`;
+
+          row.appendChild(label);
+          row.appendChild(bar);
+          row.appendChild(value);
+          chart.appendChild(row);
+        });
+
+        const damageSlider = document.getElementById("level-damage-slider");
+        const damageValue = document.querySelector("[data-level-damage-value]");
+        const totalXpValue = document.querySelector("[data-level-total-xp]");
+        const boostButtons = Array.from(document.querySelectorAll("[data-xp-boost]"));
+
+        const updateButtonLabel = (btn) => {
+          const isActive = btn.dataset.active === "true";
+          const baseLabel = btn.dataset.label || btn.textContent;
+          btn.textContent = `${baseLabel} ${isActive ? "(on)" : "(off)"}`;
+          btn.setAttribute("aria-pressed", isActive ? "true" : "false");
+        };
+
+        const recomputeXp = () => {
+          if (!damageSlider || !damageValue || !totalXpValue) return;
+          const damage = Number(damageSlider.value) || 0;
+          damageValue.textContent = damage.toLocaleString();
+          const activeBoosts = boostButtons.filter((btn) => btn.dataset.active === "true").length;
+          const multiplier = 1 + activeBoosts;
+          const total = damage * multiplier;
+          totalXpValue.textContent = total.toLocaleString();
+        };
+
+        boostButtons.forEach((btn) => {
+          updateButtonLabel(btn);
+          btn.addEventListener("click", () => {
+            const isActive = btn.dataset.active === "true";
+            btn.dataset.active = isActive ? "false" : "true";
+            updateButtonLabel(btn);
+            recomputeXp();
+          });
+        });
+
+        if (damageSlider) {
+          damageSlider.addEventListener("input", recomputeXp);
+        }
+
+        recomputeXp();
+      });
+    </script>
+  </body>
+</html>
