@@ -130,6 +130,7 @@
           .then((src) => setSprite(src));
 
         let idx = 0;
+        let lastWidth = window.innerWidth;
         const stepMove = () => {
           if (!pathOffsets.length) {
             pathOffsets = buildPath();
@@ -156,6 +157,9 @@
         setInterval(swapMonster, 5000);
 
         window.addEventListener("resize", () => {
+          const currentWidth = window.innerWidth;
+          if (Math.abs(currentWidth - lastWidth) < 1) return;
+          lastWidth = currentWidth;
           pathOffsets = buildPath();
           idx = 0;
         });
