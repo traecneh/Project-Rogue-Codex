@@ -66,9 +66,9 @@
               <input type="range" id="level-damage-slider" min="1" max="2000" value="100" />
             </div>
             <div class="rarity-roller-actions">
-              <button class="rarity-roll-button" type="button" data-xp-boost="pool" data-active="false" data-label="Experience Pool">Experience Pool</button>
-              <button class="rarity-roll-button" type="button" data-xp-boost="catchup" data-active="false" data-label="Catch-Up">Catch-Up</button>
-              <button class="rarity-roll-button" type="button" data-xp-boost="event" data-active="false" data-label="Weekend / Event">Weekend / Event</button>
+              <button class="rarity-roll-button xp-boost-toggle" type="button" data-xp-boost="pool" data-active="false">Experience Pool</button>
+              <button class="rarity-roll-button xp-boost-toggle" type="button" data-xp-boost="catchup" data-active="false">Catch-Up</button>
+              <button class="rarity-roll-button xp-boost-toggle" type="button" data-xp-boost="event" data-active="false">Weekend / Event</button>
             </div>
             <div class="stat-output">
               <span class="stat-output-label">Total XP</span>
@@ -173,13 +173,6 @@
         const totalXpValue = document.querySelector("[data-level-total-xp]");
         const boostButtons = Array.from(document.querySelectorAll("[data-xp-boost]"));
 
-        const updateButtonLabel = (btn) => {
-          const isActive = btn.dataset.active === "true";
-          const baseLabel = btn.dataset.label || btn.textContent;
-          btn.textContent = `${baseLabel} ${isActive ? "(on)" : "(off)"}`;
-          btn.setAttribute("aria-pressed", isActive ? "true" : "false");
-        };
-
         const recomputeXp = () => {
           if (!damageSlider || !damageValue || !totalXpValue) return;
           const damage = Number(damageSlider.value) || 0;
@@ -191,14 +184,23 @@
         };
 
         boostButtons.forEach((btn) => {
-          updateButtonLabel(btn);
+          btn.setAttribute("aria-pressed", btn.dataset.active === "true" ? "true" : "false");
           btn.addEventListener("click", () => {
             const isActive = btn.dataset.active === "true";
             btn.dataset.active = isActive ? "false" : "true";
-            updateButtonLabel(btn);
+            btn.setAttribute("aria-pressed", btn.dataset.active);
+            btn.classList.toggle("xp-boost-active", btn.dataset.active === "true");
             recomputeXp();
           });
         });
+
+        // Randomize initial damage within slider range
+        if (damageSlider) {
+          const minDamage = Number(damageSlider.min) || 1;
+          const maxDamage = Number(damageSlider.max) || 2000;
+          const randomDamage = Math.floor(Math.random() * (maxDamage - minDamage + 1)) + minDamage;
+          damageSlider.value = String(randomDamage);
+        }
 
         if (damageSlider) {
           damageSlider.addEventListener("input", recomputeXp);
