@@ -1,3 +1,11 @@
+function setRandomLogo() {
+  const logo = document.querySelector(".site-logo-image");
+  if (!logo) return;
+  const logos = ["images/logo-1.png", "images/logo-2.png"];
+  const pick = Math.random() < 0.5 ? logos[0] : logos[1];
+  logo.src = pick;
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   const sidebarRoot = document.getElementById("sidebar-root");
   const navPromise = fetch("nav.html")
@@ -8,6 +16,7 @@ document.addEventListener("DOMContentLoaded", () => {
     .then((html) => {
       if (sidebarRoot) {
         sidebarRoot.outerHTML = html;
+        setRandomLogo();
         initializeSidebar();
       }
     })
