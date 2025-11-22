@@ -95,8 +95,9 @@
         <article class="content-section" id="experience-pool-sim">
           <h2>Experience Pool Simulator</h2>
           <p>
-            Pick a level, current XP, stored pool, XP range per tick, and weapon speed. Hit start to watch randomized kills
-            in your custom range (e.g., 150&ndash;235 XP) trigger every weapon swing and consume pool as they double your XP.
+            Pick a level, current XP, stored pool, XP range per tick, XP multiplier, and weapon speed. Hit start to watch
+            randomized kills in your custom range (e.g., 150&ndash;235 XP) trigger every weapon swing and consume pool as they
+            double your XP. The multiplier only scales your min/max per tick before any pool bonus.
           </p>
           <div class="stat-widget xp-sim-widget">
             <div class="stat-control">
@@ -119,12 +120,27 @@
               <input type="range" id="xp-sim-pool" min="0" max="3" step="0.01" value="0" />
             </div>
             <div class="stat-control">
-              <label for="xp-sim-min-gain">Minimum XP per tick: <span data-xp-min>150</span></label>
+              <label for="xp-sim-min-gain">
+                Minimum XP per tick:
+                <span data-xp-min>150</span>
+                (<span data-xp-min-effective>150</span> with multiplier)
+              </label>
               <input type="range" id="xp-sim-min-gain" min="0" max="235" step="1" value="150" />
             </div>
             <div class="stat-control">
-              <label for="xp-sim-max-gain">Maximum XP per tick: <span data-xp-max>235</span></label>
+              <label for="xp-sim-max-gain">
+                Maximum XP per tick:
+                <span data-xp-max>235</span>
+                (<span data-xp-max-effective>235</span> with multiplier)
+              </label>
               <input type="range" id="xp-sim-max-gain" min="0" max="235" step="1" value="235" />
+            </div>
+            <div class="stat-control">
+              <label for="xp-sim-multiplier">
+                XP Multiplier:
+                <span data-xp-multiplier>1.07x</span>
+              </label>
+              <input type="range" id="xp-sim-multiplier" min="1.07" max="10.9" step="0.01" value="1.07" />
             </div>
             <div class="stat-control">
               <label for="xp-sim-speed">Weapon Speed: <span data-xp-speed>1500</span> ms</label>
@@ -182,6 +198,10 @@
 
         const minLabel = document.querySelector("[data-xp-min]");
         const maxLabel = document.querySelector("[data-xp-max]");
+        const minEffectiveLabel = document.querySelector("[data-xp-min-effective]");
+        const maxEffectiveLabel = document.querySelector("[data-xp-max-effective]");
+        const multiplierInput = document.getElementById("xp-sim-multiplier");
+        const multiplierLabel = document.querySelector("[data-xp-multiplier]");
         const speedLabel = document.querySelector("[data-xp-speed]");
         const rateLabel = document.querySelector("[data-xp-rate]");
 
@@ -206,6 +226,10 @@
           !etaLabel ||
           !minLabel ||
           !maxLabel ||
+          !minEffectiveLabel ||
+          !maxEffectiveLabel ||
+          !multiplierInput ||
+          !multiplierLabel ||
           !speedLabel ||
           !rateLabel
         ) {
@@ -218,6 +242,7 @@
           pool: Number(poolInput.value) || 0,
           minGain: Number(minGainInput.value) || 150,
           maxGain: Number(maxGainInput.value) || 235,
+          xpMultiplier: Number(multiplierInput.value) || 1.07,
           weaponSpeed: Number(speedInput.value) || 1500
         };
 
@@ -298,6 +323,8 @@
 
         const updateLabels = () => {
           const xpNeeded = getXpNeeded(state.level);
+          const effectiveMin = state.minGain * state.xpMultiplier;
+          const effectiveMax = state.maxGain * state.xpMultiplier;
           levelLabel.textContent = state.level.toString();
           xpCurrentLabel.textContent = formatNumber(Math.floor(state.xp));
           xpNeededLabel.textContent = xpNeeded ? formatNumber(xpNeeded) : "Max";
@@ -305,11 +332,14 @@
           poolRemainingLabel.textContent = `${state.pool.toFixed(2)}`;
           minLabel.textContent = formatNumber(state.minGain);
           maxLabel.textContent = formatNumber(state.maxGain);
+          minEffectiveLabel.textContent = formatNumber(Number(effectiveMin.toFixed(1)));
+          maxEffectiveLabel.textContent = formatNumber(Number(effectiveMax.toFixed(1)));
+          multiplierLabel.textContent = `${state.xpMultiplier.toFixed(2)}x`;
           speedLabel.textContent = state.weaponSpeed.toString();
           const ticksPerSecond = state.weaponSpeed > 0 ? 1000 / state.weaponSpeed : 0;
-          const averageGain = (state.minGain + state.maxGain) / 2;
+          const averageGain = (effectiveMin + effectiveMax) / 2;
           const projectedRate = averageGain * ticksPerSecond;
-          rateLabel.textContent = `${formatNumber(projectedRate.toFixed(1))} xp/s`;
+          rateLabel.textContent = `${formatNumber(Number(projectedRate.toFixed(1)))} xp/s`;
           if (xpNeeded) {
             const percent = Math.min(100, (state.xp / xpNeeded) * 100);
             progressLabel.textContent = `${percent.toFixed(1)}%`;
@@ -319,9 +349,10 @@
         };
 
         const updateInputs = () => {
-        levelInput.value = String(state.level);
-        xpInput.value = String(Math.max(0, Math.round(state.xp)));
-        poolInput.value = state.pool.toFixed(2);
+          levelInput.value = String(state.level);
+          xpInput.value = String(Math.max(0, Math.round(state.xp)));
+          poolInput.value = state.pool.toFixed(2);
+          multiplierInput.value = state.xpMultiplier.toFixed(2);
         };
 
         const syncButtons = () => {
@@ -383,7 +414,8 @@
             return;
           }
 
-          const baseGain = randomInt(state.minGain, state.maxGain);
+          const baseGainRoll = randomInt(state.minGain, state.maxGain);
+          const baseGain = baseGainRoll * state.xpMultiplier;
           const percentGain = (baseGain / xpNeeded) * 100;
           let bonusGain = 0;
           if (state.pool > 0 && percentGain > 0) {
@@ -402,9 +434,9 @@
           updateLabels();
           updateInputs();
           syncButtons();
-          baseLabel.textContent = formatNumber(Math.round(baseGain));
-          bonusLabel.textContent = formatNumber(Math.round(bonusGain));
-          totalLabel.textContent = formatNumber(Math.round(totalGain));
+          baseLabel.textContent = formatNumber(Number(baseGain.toFixed(1)));
+          bonusLabel.textContent = formatNumber(Number(bonusGain.toFixed(1)));
+          totalLabel.textContent = formatNumber(Number(totalGain.toFixed(1)));
           poolRemainingLabel.textContent = state.pool.toFixed(2);
           updateEta();
         };
@@ -486,6 +518,15 @@
           clampGainRange();
         });
 
+        multiplierInput.addEventListener("input", () => {
+          stopSimulation();
+          const rawValue = Number(multiplierInput.value);
+          const clampedValue = Math.min(10.9, Math.max(1.07, Number.isFinite(rawValue) ? rawValue : 1.07));
+          state.xpMultiplier = Number(clampedValue.toFixed(2));
+          multiplierInput.value = state.xpMultiplier.toFixed(2);
+          updateLabels();
+        });
+
         speedInput.addEventListener("input", () => {
           stopSimulation();
           let value = Number(speedInput.value) || 1500;
@@ -510,10 +551,12 @@
         state.pool = Number((Math.random() * poolCapInitial).toFixed(2));
         state.minGain = randomInt(0, 200);
         state.maxGain = randomInt(state.minGain, 235);
+        state.xpMultiplier = Number((Math.random() * (10.9 - 1.07) + 1.07).toFixed(2));
         const allowedSpeeds = [750, 1000, 1250, 1500];
         state.weaponSpeed = allowedSpeeds[randomInt(0, allowedSpeeds.length - 1)];
         minGainInput.value = String(state.minGain);
         maxGainInput.value = String(state.maxGain);
+        multiplierInput.value = state.xpMultiplier.toFixed(2);
         speedInput.value = String(state.weaponSpeed);
 
         normalizeState();

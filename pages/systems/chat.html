@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Chat System - Project Rogue Codex</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <base href="../../" />
+    <link rel="icon" type="image/x-icon" href="images/project-rogue-favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="images/project-rogue-favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="64x64" href="images/project-rogue-favicon-64.png" />
+    <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
+    <link rel="stylesheet" href="css/styles.css" />
+    <script src="js/nav-loader.js" defer></script>
+  </head>
+  <body>
+    <div class="layout">
+      <div id="sidebar-root"></div>
+      <main class="main-content">
+        <header class="content-header">
+          <h1 class="content-title">Chat System</h1>
+          <p class="content-tagline">Filter views, quick-send hotkeys, and channel visibility rules.</p>
+        </header>
+
+        <article class="content-section" id="chat-views">
+          <h2>Viewing Chat</h2>
+          <p>Switch the feed to focus on what matters.</p>
+          <div class="stat-grid" role="list">
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">All</p>
+              <h3>Everything</h3>
+              <p>Shows every channel in one scroll.</p>
+            </section>
+
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Local</p>
+              <h3>Nearby Only</h3>
+              <p>Limits to messages from players in your visible area.</p>
+            </section>
+
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Global</p>
+              <h3>World Channel</h3>
+              <p>Shows server-wide messages sent from safe zones.</p>
+            </section>
+
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Guild</p>
+              <h3>Team Channel</h3>
+              <p>Only messages from members of your guild.</p>
+            </section>
+          </div>
+        </article>
+
+        <article class="content-section" id="chat-input">
+          <h2>Sending Messages</h2>
+          <div class="stat-grid" role="list">
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Hotkey</p>
+              <h3>Open + Cycle</h3>
+              <p>Press <strong>T</strong> to open chat; press <strong>Tab</strong> to cycle Local, Global, Guild, or All.</p>
+            </section>
+
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Fullscreen</p>
+              <h3>Hold to Expand</h3>
+              <p>Press and hold <strong>E</strong> to temporarily make chat full screen while the key is held.</p>
+            </section>
+
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Say</p>
+              <h3>Local Range</h3>
+              <p>Posts to Local; only players within your visible area see it.</p>
+            </section>
+
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Whisper</p>
+              <h3>Tile Tight</h3>
+              <p>Posts to Local; only players on your tile or the 8 surrounding tiles see it.</p>
+            </section>
+
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Global</p>
+              <h3>Safe Zone Only</h3>
+              <p>Posts to Global; can only be sent while you are in a safe zone.</p>
+            </section>
+
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Guild</p>
+              <h3>Guildmates</h3>
+              <p>Posts to Guild; only members of your guild see it.</p>
+            </section>
+          </div>
+        </article>
+      </main>
+    </div>
+  </body>
+</html>
