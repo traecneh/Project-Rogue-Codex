@@ -68,14 +68,14 @@ body {
 .site-logo {
   display: block;
   margin-bottom: 1rem;
-  padding: 0.8rem 1rem;
-  border-radius: 6px;
+  padding: 0.6rem;
+  border-radius: 8px;
   background: linear-gradient(135deg, #20252e, #141821);
   border: 1px solid var(--border-soft);
   box-shadow: 0 0 0 1px #0b0f16, 0 8px 18px rgba(0, 0, 0, 0.6);
   text-decoration: none;
   color: inherit;
-  transition: background 0.2s ease, box-shadow 0.2s ease;
+  transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease;
 }
 
 .site-logo:hover,
@@ -83,17 +83,21 @@ body {
   background: linear-gradient(135deg, #2a313e, #1b202a);
   box-shadow: 0 0 0 1px #151a22, 0 10px 20px rgba(0, 0, 0, 0.75);
   outline: none;
+  transform: translateY(-1px);
 }
 
 .site-logo:active {
   background: linear-gradient(135deg, #161b22, #0d1118);
+  transform: translateY(0);
 }
 
-.site-title {
-  font-size: 0.95rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+.site-logo-image {
+  display: block;
+  width: 100%;
+  max-width: 180px;
+  height: auto;
+  margin: 0 auto;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.5));
 }
 
 /* Nav panels (floating-style) */
