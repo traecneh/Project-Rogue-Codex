@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Imbuements System &mdash; Project Rogue Codex</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <base href="../../" />
+    <link rel="icon" type="image/x-icon" href="images/project-rogue-favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="images/project-rogue-favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="64x64" href="images/project-rogue-favicon-64.png" />
+    <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
+    <link rel="stylesheet" href="css/styles.css" />
+    <script src="js/nav-loader.js" defer></script>
+  </head>
+  <body>
+    <div class="layout">
+      <div id="sidebar-root"></div>
+      <main class="main-content">
+        <header class="content-header">
+          <h1 class="content-title">Imbuements System</h1>
+          <p class="content-tagline">Guaranteed perk targeting via Tattered Imbuements and crafted scrolls.</p>
+        </header>
+
+        <article class="content-section" id="imbuement-basics">
+          <h2>Imbuements</h2>
+          <p>Imbuements are new in PR 2.0 (2025). Balance is ongoing; treat the numbers below as guidance.</p>
+          <div class="stat-grid" role="list">
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Perk Focus</p>
+              <h3>Best Path</h3>
+              <p>Perks remain the strongest power path. Only three of any perk type can be active; race bonuses count toward this cap.</p>
+            </section>
+
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Menu</p>
+              <h3>Press [R]</h3>
+              <p>Open the Imbuement interface with R and work through Tool: Imbue, Tool: Craft, and Tool: Purge.</p>
+            </section>
+
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Eligibility</p>
+              <h3>Epic or Higher</h3>
+              <p>An item must be Epic rarity or better to receive an imbuement.</p>
+            </section>
+          </div>
+        </article>
+
+        <article class="content-section" id="imbuement-flow">
+          <h2>Craft and Apply</h2>
+          <div class="stat-grid" role="list">
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Cost</p>
+              <h3>250 Needed</h3>
+              <p>You need 250 of a single Tattered Imbuement type to craft its Scroll of Imbuement in Tool: Craft.</p>
+            </section>
+
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Perk Tiers</p>
+              <h3>Roll Outcome</h3>
+              <p>Scrolls roll perk tiers at 80% T1, 15% T2, and 5% T3 to keep upgrades feeling progressive.</p>
+            </section>
+
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Apply</p>
+              <h3>Tool: Imbue</h3>
+              <p>Use the Imbue tool to attach the crafted scroll to your Epic+ item; Purge removes an applied imbuement if needed.</p>
+            </section>
+          </div>
+        </article>
+
+        <article class="content-section" id="imbuement-sourcing">
+          <h2>Where Imbuements Come From</h2>
+          <div class="stat-grid" role="list">
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Tagged Monsters</p>
+              <h3>Perk Sources</h3>
+              <p>Only monsters with a perk set in their data can drop Tattered Imbuements. They can be uncommon (1/10), rare (1/20), both, or neither.</p>
+            </section>
+
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Drop Volume</p>
+              <h3>Level Scaling</h3>
+              <p>On a drop, monsters grant between two and the higher of three and their level divided by ten. Higher-level and elite monsters drop more.</p>
+            </section>
+
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Material</p>
+              <h3>Tattered Imbuements</h3>
+              <p>These collectable materials carry a specific perk and are turned into Scrolls of Imbuement via Tool: Craft.</p>
+            </section>
+
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Example</p>
+              <h3>Bloodthirster</h3>
+              <p>Hell Spawn can drop Tattered Imbuement [Bloodthirster]; collect 250 to craft a scroll, then apply it with Tool: Imbue.</p>
+            </section>
+          </div>
+        </article>
+
+        <article class="content-section" id="imbuement-math">
+          <h2>Illustrative Drop Math</h2>
+          <p>Numbers shift with balance; use these as rough expectations.</p>
+          <div class="stat-grid" role="list">
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Formula</p>
+              <h3>Uncommon Case</h3>
+              <p>Uncommon Tattered Imbuements drop on roughly 1 out of 10 kills. Each proc yields between two and max(3, monster level / 10) imbuements.</p>
+            </section>
+
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Level 30</p>
+              <h3>Beholder</h3>
+              <p>About 2-3 imbuements on a 1/10 trigger (~0.25 per kill), or around 1,000 kills to reach 250 for a scroll.</p>
+            </section>
+
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Level 90</p>
+              <h3>Hell Spawn</h3>
+              <p>About 2-9 imbuements on a 1/10 trigger (~0.55 per kill), or roughly 450-455 kills to reach 250 for a scroll.</p>
+            </section>
+          </div>
+          <p class="content-tagline">Treat these figures as provisional; live balance may change them.</p>
+        </article>
+      </main>
+    </div>
+  </body>
+</html>
