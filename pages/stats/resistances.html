@@ -13,6 +13,12 @@
 <link href="images/project-rogue-favicon-512.png" rel="icon" sizes="512x512" type="image/png"/>
 <link href="css/styles.css" rel="stylesheet"/>
 <script defer="" src="js/nav-loader.js"></script>
+<style>
+  .element-label {
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+</style>
 </head>
 <body>
 <div class="layout">
@@ -254,14 +260,43 @@
 </article>
 </main>
 </div>
-</body>
 <script>
+  (function () {
+    const ELEMENT_COLORS = {
+      fire: "#ff5a5a",
+      electric: "#b86bff",
+      poison: "#2f7a2f",
+      cold: "#7cc9ff",
+      acid: "#b38b00",
+      disease: "#ff9c42",
+    };
+
     document.addEventListener("DOMContentLoaded", () => {
       document.querySelectorAll(".resist-value").forEach((node) => {
         const raw = node.getAttribute("data-resist-value") || node.textContent;
         const value = parseFloat(raw);
         if (Number.isNaN(value)) return;
         node.style.color = getResistanceColor(value);
+      });
+
+      const listItems = document.querySelectorAll("#monster-resistances li");
+      listItems.forEach((li) => {
+        const strong = li.querySelector("strong");
+        if (!strong) return;
+        const rawText = (li.textContent || "").split(":")[0] || "";
+        const elementName = rawText.trim();
+        if (!elementName) return;
+        const valueClone = strong.cloneNode(true);
+        const label = document.createElement("span");
+        label.className = "element-label";
+        label.textContent = elementName;
+        const color = ELEMENT_COLORS[elementName.toLowerCase()];
+        if (color) label.style.color = color;
+
+        li.innerHTML = "";
+        li.appendChild(label);
+        li.appendChild(document.createTextNode(": "));
+        li.appendChild(valueClone);
       });
     });
 
@@ -279,5 +314,7 @@
       }
       return "#bbbbbb";
     }
-  </script>
+  })();
+</script>
+</body>
 </html>

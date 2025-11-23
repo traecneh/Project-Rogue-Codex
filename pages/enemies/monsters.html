@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Monsters — Project Rogue Codex</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <base href="../../" />
+    <link rel="icon" type="image/x-icon" href="images/project-rogue-favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="images/project-rogue-favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="64x64" href="images/project-rogue-favicon-64.png" />
+    <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
+    <link rel="stylesheet" href="css/styles.css" />
+    <script src="js/nav-loader.js" defer></script>
+    <style>
+      .monster-controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        align-items: center;
+        margin-bottom: 1rem;
+      }
+
+      .monster-search {
+        padding: 0.55rem 0.75rem;
+        border: 1px solid var(--border-soft);
+        border-radius: 6px;
+        background: var(--bg-panel-dark);
+        color: var(--text-main);
+        width: min(420px, 100%);
+      }
+
+      .monsters-table-wrapper {
+        overflow: auto;
+        border: 1px solid var(--border-soft);
+        border-radius: 8px;
+        background: var(--bg-panel);
+        box-shadow: 0 0 0 1px #0b0f16, 0 8px 16px rgba(0, 0, 0, 0.55);
+      }
+
+      .monsters-table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 760px;
+      }
+
+      .monsters-table thead {
+        background: linear-gradient(to bottom, #303540, #252a33);
+        position: sticky;
+        top: 0;
+        z-index: 1;
+      }
+
+      .monsters-table th,
+      .monsters-table td {
+        padding: 0.55rem 0.75rem;
+        text-align: left;
+        border-bottom: 1px solid #2f333b;
+        font-size: 0.92rem;
+      }
+
+      .monsters-table th {
+        cursor: pointer;
+        user-select: none;
+        letter-spacing: 0.02em;
+        color: #f9fafb;
+        white-space: nowrap;
+      }
+
+      .monsters-table th .sort-indicator {
+        margin-left: 0.35rem;
+        font-size: 0.8rem;
+        color: var(--text-muted);
+      }
+
+      .monsters-table tbody tr {
+        background: var(--bg-panel-dark);
+      }
+
+      .monsters-table tbody tr:nth-child(2n) {
+        background: #1d222b;
+      }
+
+      .monsters-table tbody tr:hover {
+        background: rgba(75, 255, 75, 0.08);
+        cursor: pointer;
+      }
+
+      .monster-thumb {
+        width: 48px;
+        height: 48px;
+        object-fit: cover;
+        border-radius: 6px;
+        border: 1px solid var(--border-soft);
+        background: #0f1218;
+      }
+
+      .no-image {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 48px;
+        min-height: 48px;
+        padding: 0.2rem 0.35rem;
+        border: 1px solid var(--border-soft);
+        border-radius: 6px;
+        background: #0f1218;
+        color: var(--text-muted);
+        font-size: 0.82rem;
+        text-align: center;
+      }
+
+      .no-image-fallback {
+        width: 48px;
+        height: 48px;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--border-soft);
+        border-radius: 6px;
+        background: #0f1218;
+        color: var(--text-muted);
+        font-size: 0.82rem;
+        text-align: center;
+      }
+
+      .table-empty {
+        text-align: center;
+        padding: 1rem;
+        color: var(--text-muted);
+      }
+
+      .monster-details {
+        display: none;
+        border: 1px solid var(--border-soft);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        background: linear-gradient(135deg, #20252e, #141821);
+        box-shadow: 0 0 0 1px #0b0f16, 0 12px 22px rgba(0, 0, 0, 0.65);
+      }
+
+      .monster-details.show {
+        display: block;
+      }
+
+      .monster-details-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 0.6rem;
+      }
+
+      .monster-details-body {
+        display: grid;
+        grid-template-columns: 120px 1fr;
+        gap: 1rem;
+      }
+
+      .monster-details-info {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 0.5rem 1rem;
+      }
+
+      .detail-label {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-muted);
+      }
+
+      .detail-value {
+        font-weight: 700;
+        color: #fff;
+      }
+
+      .detail-stat {
+        position: relative;
+        padding: 0;
+        transition: box-shadow 0.15s ease, background 0.15s ease;
+      }
+
+      .detail-stat.hoverable {
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+        border-radius: 6px;
+        background: rgba(255, 255, 255, 0.02);
+      }
+
+      .detail-stat.hoverable .detail-tooltip {
+        position: absolute;
+        left: 0;
+        top: 100%;
+        margin-top: 0.35rem;
+        padding: 0.4rem 0.55rem;
+        border-radius: 6px;
+        background: #11151c;
+        border: 1px solid var(--border-soft);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5);
+        display: none;
+        min-width: 170px;
+        z-index: 2;
+      }
+
+      .detail-stat.hoverable:hover .detail-tooltip,
+      .detail-stat.hoverable:focus-within .detail-tooltip {
+        display: block;
+      }
+
+      .detail-tooltip-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.75rem;
+        font-size: 0.85rem;
+        color: var(--text-main);
+        align-items: center;
+      }
+
+      .detail-tooltip-label {
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        font-size: 0.76rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+      }
+
+      .details-close {
+        border: 1px solid var(--border-soft);
+        background: #1b2027;
+        color: var(--text-main);
+        padding: 0.35rem 0.7rem;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background 0.15s ease, transform 0.1s ease;
+      }
+
+      .details-close:hover {
+        background: #252c36;
+        transform: translateY(-1px);
+      }
+
+      @media (max-width: 640px) {
+        .monster-details-body {
+          grid-template-columns: 1fr;
+        }
+
+        .monster-details-info {
+          grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="layout">
+      <div id="sidebar-root"></div>
+      <main class="main-content">
+        <header class="content-header">
+          <h1 class="content-title">Monsters</h1>
+          <p class="content-tagline">Search, sort, and drill into the creatures that populate Project Rogue.</p>
+        </header>
+
+        <section class="monster-details" id="monster-details" aria-live="polite">
+          <div class="monster-details-header">
+            <div class="monster-details-title">
+              <p class="detail-label">Selected Monster</p>
+              <h2 id="details-name" class="content-title" style="margin: 0"></h2>
+            </div>
+            <button type="button" class="details-close" id="details-close">Close</button>
+          </div>
+          <div class="monster-details-body">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <img id="details-image" class="monster-thumb" alt="" />
+              <div id="details-image-fallback" class="no-image-fallback">No Image</div>
+            </div>
+            <div class="monster-details-info">
+              <div>
+                <div class="detail-label">Level</div>
+                <div class="detail-value" id="details-level">-</div>
+              </div>
+              <div class="detail-stat">
+                <div class="detail-label">HP Max</div>
+                <div class="detail-value" id="details-hp">-</div>
+              </div>
+              <div class="detail-stat">
+                <div class="detail-label">Min Damage</div>
+                <div class="detail-value" id="details-min-dmg">-</div>
+              </div>
+              <div class="detail-stat">
+                <div class="detail-label">Max Damage</div>
+                <div class="detail-value" id="details-max-dmg">-</div>
+              </div>
+              <div class="detail-stat">
+                <div class="detail-label">DPS</div>
+                <div class="detail-value" id="details-dps">-</div>
+              </div>
+              <div>
+                <div class="detail-label">Move Speed</div>
+                <div class="detail-value" id="details-speed">-</div>
+              </div>
+              <div>
+                <div class="detail-label">Type</div>
+                <div class="detail-value" id="details-type">-</div>
+              </div>
+              <div>
+                <div class="detail-label">Element</div>
+                <div class="detail-value" id="details-element">-</div>
+              </div>
+              <div>
+                <div class="detail-label">Flying</div>
+                <div class="detail-value" id="details-flying">-</div>
+              </div>
+              <div>
+                <div class="detail-label">Ethereal</div>
+                <div class="detail-value" id="details-ethereal">-</div>
+              </div>
+              <div>
+                <div class="detail-label">Boss</div>
+                <div class="detail-value" id="details-boss">-</div>
+              </div>
+              <div class="detail-stat hoverable">
+                <div class="detail-label">
+                  <img src="images/elite.gif" alt="" width="18" height="18" />
+                  Elite
+                </div>
+                <div class="detail-value" id="details-elite-summary"></div>
+                <div class="detail-tooltip" role="tooltip">
+                  <div class="detail-tooltip-row">
+                    <span class="detail-tooltip-label">HP Max</span>
+                    <span id="tooltip-elite-hp">-</span>
+                  </div>
+                  <div class="detail-tooltip-row">
+                    <span class="detail-tooltip-label">Min Damage</span>
+                    <span id="tooltip-elite-min">-</span>
+                  </div>
+                  <div class="detail-tooltip-row">
+                    <span class="detail-tooltip-label">Max Damage</span>
+                    <span id="tooltip-elite-max">-</span>
+                  </div>
+                  <div class="detail-tooltip-row">
+                    <span class="detail-tooltip-label">DPS</span>
+                    <span id="tooltip-elite-dps">-</span>
+                  </div>
+                </div>
+              </div>
+              <div class="detail-stat hoverable">
+                <div class="detail-label">
+                  <img src="images/elite+.gif" alt="" width="18" height="18" />
+                  Elite+
+                </div>
+                <div class="detail-value" id="details-elite-plus-summary"></div>
+                <div class="detail-tooltip" role="tooltip">
+                  <div class="detail-tooltip-row">
+                    <span class="detail-tooltip-label">HP Max</span>
+                    <span id="tooltip-elite-plus-hp">-</span>
+                  </div>
+                  <div class="detail-tooltip-row">
+                    <span class="detail-tooltip-label">Min Damage</span>
+                    <span id="tooltip-elite-plus-min">-</span>
+                  </div>
+                  <div class="detail-tooltip-row">
+                    <span class="detail-tooltip-label">Max Damage</span>
+                    <span id="tooltip-elite-plus-max">-</span>
+                  </div>
+                  <div class="detail-tooltip-row">
+                    <span class="detail-tooltip-label">DPS</span>
+                    <span id="tooltip-elite-plus-dps">-</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div class="content-section">
+          <div class="monster-controls">
+            <input
+              type="search"
+              id="monster-search"
+              class="monster-search"
+              placeholder="Search monsters by name, type, or element..."
+              aria-label="Search monsters"
+            />
+          </div>
+
+          <div class="monsters-table-wrapper">
+            <table class="monsters-table" aria-describedby="monster-search">
+              <thead>
+                <tr>
+                  <th scope="col" data-sort-key="image">Image</th>
+                  <th scope="col" data-sort-key="name">Name <span class="sort-indicator" aria-hidden="true">↕</span></th>
+                  <th scope="col" data-sort-key="level">Level <span class="sort-indicator" aria-hidden="true">↕</span></th>
+                  <th scope="col" data-sort-key="hpMax">HPMax <span class="sort-indicator" aria-hidden="true">↕</span></th>
+                  <th scope="col" data-sort-key="dps">DPS <span class="sort-indicator" aria-hidden="true">↕</span></th>
+                  <th scope="col" data-sort-key="movingSpeed">
+                    MovingSpeed <span class="sort-indicator" aria-hidden="true">↕</span>
+                  </th>
+                  <th scope="col" data-sort-key="monsterType">
+                    MonsterType <span class="sort-indicator" aria-hidden="true">↕</span>
+                  </th>
+                  <th scope="col" data-sort-key="elementalAttack">
+                    ElementalAttack <span class="sort-indicator" aria-hidden="true">↕</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody id="monsters-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      (() => {
+        const dataUrl = new URL("monsters.json", window.location.href);
+        const searchInput = document.getElementById("monster-search");
+        const tableBody = document.getElementById("monsters-body");
+        const details = document.getElementById("monster-details");
+        const closeBtn = document.getElementById("details-close");
+
+        const deriveImageCandidates = (monster) => {
+          const candidates = [];
+          const rawName = (monster && monster.name) || "";
+          const spacedName = rawName.replace(/\s+/g, " ").trim();
+          const safeName = spacedName.replace(/[\\/:*?"<>|]/g, "");
+
+          if (monster && monster.image) {
+            candidates.push(monster.image);
+          }
+
+          if (safeName) {
+            const encoded = encodeURI(`images/monsters/${safeName}`);
+            candidates.push(`${encoded}.gif`, `${encoded}.GIF`, `${encoded}.png`, `${encoded}.PNG`);
+          }
+
+          return Array.from(new Set(candidates.filter(Boolean)));
+        };
+
+        const ELEMENT_COLORS = {
+          fire: "#ff5a5a",
+          electric: "#b86bff",
+          poison: "#2f7a2f",
+          cold: "#7cc9ff",
+          acid: "#b38b00",
+          disease: "#ff9c42",
+        };
+
+        const setImageSource = (imgEl, monster, onFail, onSuccess) => {
+          const sources = deriveImageCandidates(monster);
+          if (!sources.length) {
+            if (onFail) onFail();
+            return;
+          }
+          let index = 0;
+          const trySet = () => {
+            imgEl.onerror = () => {
+              index += 1;
+              if (index < sources.length) {
+                trySet();
+              } else {
+                imgEl.onerror = null;
+                if (onFail) onFail();
+              }
+            };
+            imgEl.onload = () => {
+              imgEl.onload = null;
+              if (onSuccess) onSuccess();
+            };
+            imgEl.src = sources[index];
+          };
+          trySet();
+        };
+
+      const detailFields = {
+        name: document.getElementById("details-name"),
+        image: document.getElementById("details-image"),
+        level: document.getElementById("details-level"),
+        hp: document.getElementById("details-hp"),
+        min: document.getElementById("details-min-dmg"),
+        max: document.getElementById("details-max-dmg"),
+        dps: document.getElementById("details-dps"),
+        speed: document.getElementById("details-speed"),
+        type: document.getElementById("details-type"),
+        element: document.getElementById("details-element"),
+        flying: document.getElementById("details-flying"),
+        ethereal: document.getElementById("details-ethereal"),
+        boss: document.getElementById("details-boss"),
+        eliteSummary: document.getElementById("details-elite-summary"),
+        elitePlusSummary: document.getElementById("details-elite-plus-summary"),
+        imageFallback: document.getElementById("details-image-fallback"),
+      };
+
+        const tooltipFields = {
+          elite: {
+            hp: document.getElementById("tooltip-elite-hp"),
+            min: document.getElementById("tooltip-elite-min"),
+            max: document.getElementById("tooltip-elite-max"),
+            dps: document.getElementById("tooltip-elite-dps"),
+          },
+          elitePlus: {
+            hp: document.getElementById("tooltip-elite-plus-hp"),
+            min: document.getElementById("tooltip-elite-plus-min"),
+            max: document.getElementById("tooltip-elite-plus-max"),
+            dps: document.getElementById("tooltip-elite-plus-dps"),
+          },
+        };
+
+        let monsters = [];
+        let sortKey = "name";
+        let sortDir = "asc";
+        let searchTerm = "";
+
+        const renderEmpty = (message) => {
+          tableBody.innerHTML = `<tr><td class="table-empty" colspan="8">${message}</td></tr>`;
+        };
+
+        const getSortValue = (monster, key) => {
+          const value = monster[key];
+          return typeof value === "string" ? value.toLowerCase() : value;
+        };
+
+        const formatBool = (value) => (value ? "Yes" : "No");
+
+        const formatNumber = (value) => (value === null || value === undefined ? "-" : value);
+
+        const formatDps = (value) => {
+          if (value === null || value === undefined) return "-";
+          const num = Number(value);
+          if (Number.isNaN(num)) return "-";
+          return num.toFixed(1);
+        };
+
+        const setVariantValues = (value, mult, el, formatter = formatNumber) => {
+          const isNumber = typeof value === "number" && !Number.isNaN(value);
+          const scaled = isNumber ? value * mult : null;
+          if (el) el.textContent = formatter(scaled);
+        };
+
+        const applyElementColor = (elementValue, target) => {
+          if (!target) return;
+          const text = elementValue || "-";
+          const color = ELEMENT_COLORS[(elementValue || "").toLowerCase()];
+          target.textContent = text;
+          target.style.color = color || "";
+        };
+
+        const applyFilterAndSort = () => {
+          const term = searchTerm.trim().toLowerCase();
+          let list = monsters.slice();
+
+          if (term) {
+            list = list.filter((m) => {
+              return (
+                (m.name && m.name.toLowerCase().includes(term)) ||
+                (m.monsterType && m.monsterType.toLowerCase().includes(term)) ||
+                (m.elementalAttack && m.elementalAttack.toLowerCase().includes(term))
+              );
+            });
+          }
+
+          list.sort((a, b) => {
+            const aVal = getSortValue(a, sortKey);
+            const bVal = getSortValue(b, sortKey);
+            if (aVal === bVal) return 0;
+            const dir = sortDir === "asc" ? 1 : -1;
+            return aVal > bVal ? dir : -dir;
+          });
+
+          renderTable(list);
+        };
+
+        const renderTable = (rows) => {
+          if (!rows.length) {
+            renderEmpty("No monsters match your filters.");
+            return;
+          }
+
+          const fragment = document.createDocumentFragment();
+
+          rows.forEach((monster) => {
+            const tr = document.createElement("tr");
+            tr.dataset.id = monster.id;
+
+            const imgCell = document.createElement("td");
+            const img = document.createElement("img");
+            const fallback = () => {
+              img.remove();
+              const noImg = document.createElement("span");
+              noImg.className = "no-image";
+              noImg.textContent = "No Image";
+              imgCell.appendChild(noImg);
+            };
+            setImageSource(img, monster, fallback, () => {
+              img.style.display = "block";
+            });
+            img.alt = monster.name ? `${monster.name} portrait` : "Monster portrait";
+            img.className = "monster-thumb";
+            img.loading = "lazy";
+            imgCell.appendChild(img);
+            tr.appendChild(imgCell);
+
+            const addCell = (value) => {
+              const td = document.createElement("td");
+              td.textContent = value;
+              tr.appendChild(td);
+            };
+
+            addCell(monster.name || "-");
+            addCell(formatNumber(monster.level));
+            addCell(formatNumber(monster.hpMax));
+            addCell(formatDps(monster.dps));
+            addCell(formatNumber(monster.movingSpeed));
+            addCell(monster.monsterType || "-");
+
+            const elementTd = document.createElement("td");
+            const elementSpan = document.createElement("span");
+            applyElementColor(monster.elementalAttack, elementSpan);
+            elementTd.appendChild(elementSpan);
+            tr.appendChild(elementTd);
+
+            tr.addEventListener("click", () => {
+              setDetails(monster);
+            });
+
+            fragment.appendChild(tr);
+          });
+
+          tableBody.innerHTML = "";
+          tableBody.appendChild(fragment);
+        };
+
+        const setDetails = (monster) => {
+          if (!monster) return;
+          detailFields.name.textContent = monster.name || "Unknown Monster";
+          const fallbackImage = detailFields.imageFallback;
+          if (detailFields.image) {
+            detailFields.image.style.display = "block";
+          }
+          if (fallbackImage) {
+            fallbackImage.style.display = "none";
+          }
+          setImageSource(
+            detailFields.image,
+            monster,
+            () => {
+              if (detailFields.image) {
+                detailFields.image.style.display = "none";
+              }
+              if (fallbackImage) {
+                fallbackImage.style.display = "flex";
+              }
+            },
+            () => {
+              if (detailFields.image) {
+                detailFields.image.style.display = "block";
+              }
+              if (fallbackImage) {
+                fallbackImage.style.display = "none";
+              }
+            }
+          );
+          detailFields.image.alt = monster.name ? `${monster.name} portrait` : "Monster portrait";
+          detailFields.level.textContent = formatNumber(monster.level);
+          detailFields.hp.textContent = formatNumber(monster.hpMax);
+          detailFields.min.textContent = formatNumber(monster.minDamage);
+          detailFields.max.textContent = formatNumber(monster.maxDamage);
+          detailFields.dps.textContent = formatDps(monster.dps);
+          if (detailFields.eliteSummary) {
+            detailFields.eliteSummary.textContent = "1.5x dmg, 3x HP";
+          }
+          if (detailFields.elitePlusSummary) {
+            detailFields.elitePlusSummary.textContent = "2.0x dmg, 10x HP";
+          }
+          setVariantValues(monster.hpMax, 3.0, tooltipFields.elite.hp);
+          setVariantValues(monster.minDamage, 1.5, tooltipFields.elite.min);
+          setVariantValues(monster.maxDamage, 1.5, tooltipFields.elite.max);
+          setVariantValues(monster.dps, 1.5, tooltipFields.elite.dps, formatDps);
+          setVariantValues(monster.hpMax, 10.0, tooltipFields.elitePlus.hp);
+          setVariantValues(monster.minDamage, 2.0, tooltipFields.elitePlus.min);
+          setVariantValues(monster.maxDamage, 2.0, tooltipFields.elitePlus.max);
+          setVariantValues(monster.dps, 2.0, tooltipFields.elitePlus.dps, formatDps);
+          detailFields.speed.textContent = formatNumber(monster.movingSpeed);
+          detailFields.type.textContent = monster.monsterType || "-";
+          applyElementColor(monster.elementalAttack, detailFields.element);
+          detailFields.flying.textContent = formatBool(monster.flying);
+          detailFields.ethereal.textContent = formatBool(monster.ethereal);
+          detailFields.boss.textContent = formatBool(monster.boss);
+
+          details.classList.add("show");
+          details.scrollIntoView({ behavior: "smooth", block: "start" });
+        };
+
+        const clearDetails = () => {
+          details.classList.remove("show");
+        };
+
+        const attachSorting = () => {
+          document.querySelectorAll(".monsters-table th[data-sort-key]").forEach((th) => {
+            th.addEventListener("click", () => {
+              const key = th.getAttribute("data-sort-key");
+              if (!key) return;
+              if (sortKey === key) {
+                sortDir = sortDir === "asc" ? "desc" : "asc";
+              } else {
+                sortKey = key;
+                sortDir = "asc";
+              }
+              applyFilterAndSort();
+            });
+          });
+        };
+
+        const init = () => {
+          fetch(dataUrl.toString())
+            .then((response) => {
+              if (!response.ok) {
+                throw new Error("Failed to load monsters.json");
+              }
+              return response.json();
+            })
+            .then((data) => {
+              monsters = Array.isArray(data) ? data : [];
+              if (!monsters.length) {
+                renderEmpty("No monsters found in monsters.json.");
+                return;
+              }
+              applyFilterAndSort();
+            })
+            .catch(() => {
+              renderEmpty("Unable to load monsters. Add monsters.json beside this page.");
+            });
+        };
+
+        searchInput.addEventListener("input", (event) => {
+          searchTerm = event.target.value || "";
+          applyFilterAndSort();
+        });
+
+        if (closeBtn) {
+          closeBtn.addEventListener("click", clearDetails);
+        }
+
+        attachSorting();
+        init();
+      })();
+    </script>
+  </body>
+</html>
