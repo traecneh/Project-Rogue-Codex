@@ -227,6 +227,64 @@
         gap: 0.35rem;
       }
 
+      .detail-divider {
+        grid-column: 1 / -1;
+        height: 1px;
+        margin: 0.35rem 0 0.25rem;
+        background: var(--border-soft);
+        opacity: 0.6;
+      }
+
+      .flag-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+      }
+
+      .flag-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.2rem 0.55rem;
+        border-radius: 999px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #fff;
+        background: linear-gradient(135deg, #2c3240, #1c212b);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+        position: relative;
+      }
+
+      .flag-pill .flag-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: #4bff4b;
+        box-shadow: 0 0 8px rgba(75, 255, 75, 0.8);
+      }
+
+      .flag-pill .flag-tooltip {
+        display: none;
+        position: absolute;
+        left: 0;
+        top: 110%;
+        padding: 0.4rem 0.55rem;
+        background: #11151c;
+        border: 1px solid var(--border-soft);
+        border-radius: 6px;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+        white-space: nowrap;
+        font-weight: 400;
+        letter-spacing: normal;
+        z-index: 2;
+      }
+
+      .flag-pill:hover .flag-tooltip,
+      .flag-pill:focus-within .flag-tooltip {
+        display: block;
+      }
+
       .details-close {
         border: 1px solid var(--border-soft);
         background: #1b2027;
@@ -285,12 +343,8 @@
                 <div class="detail-value" id="details-hp">-</div>
               </div>
               <div class="detail-stat">
-                <div class="detail-label">Min Damage</div>
-                <div class="detail-value" id="details-min-dmg">-</div>
-              </div>
-              <div class="detail-stat">
-                <div class="detail-label">Max Damage</div>
-                <div class="detail-value" id="details-max-dmg">-</div>
+                <div class="detail-label">Damage</div>
+                <div class="detail-value" id="details-dmg-range">-</div>
               </div>
               <div class="detail-stat">
                 <div class="detail-label">DPS</div>
@@ -317,13 +371,19 @@
                 <div class="detail-value" id="details-ethereal">-</div>
               </div>
               <div>
-                <div class="detail-label">Boss</div>
-                <div class="detail-value" id="details-boss">-</div>
-              </div>
-              <div class="detail-stat hoverable">
-                <div class="detail-label">
-                  <img src="images/elite.gif" alt="" width="18" height="18" />
-                  Elite
+              <div class="detail-label">Boss</div>
+              <div class="detail-value" id="details-boss">-</div>
+            </div>
+            <div class="detail-divider" aria-hidden="true"></div>
+            <div>
+              <div class="detail-label">Flags</div>
+              <div class="flag-pills" id="details-flags"></div>
+            </div>
+            <div class="detail-divider" aria-hidden="true"></div>
+            <div class="detail-stat hoverable">
+              <div class="detail-label">
+                <img src="images/elite.gif" alt="" width="18" height="18" />
+                Elite
                 </div>
                 <div class="detail-value" id="details-elite-summary"></div>
                 <div class="detail-tooltip" role="tooltip">
@@ -332,12 +392,8 @@
                     <span id="tooltip-elite-hp">-</span>
                   </div>
                   <div class="detail-tooltip-row">
-                    <span class="detail-tooltip-label">Min Damage</span>
-                    <span id="tooltip-elite-min">-</span>
-                  </div>
-                  <div class="detail-tooltip-row">
-                    <span class="detail-tooltip-label">Max Damage</span>
-                    <span id="tooltip-elite-max">-</span>
+                    <span class="detail-tooltip-label">Damage</span>
+                    <span id="tooltip-elite-dmg">-</span>
                   </div>
                   <div class="detail-tooltip-row">
                     <span class="detail-tooltip-label">DPS</span>
@@ -357,12 +413,8 @@
                     <span id="tooltip-elite-plus-hp">-</span>
                   </div>
                   <div class="detail-tooltip-row">
-                    <span class="detail-tooltip-label">Min Damage</span>
-                    <span id="tooltip-elite-plus-min">-</span>
-                  </div>
-                  <div class="detail-tooltip-row">
-                    <span class="detail-tooltip-label">Max Damage</span>
-                    <span id="tooltip-elite-plus-max">-</span>
+                    <span class="detail-tooltip-label">Damage</span>
+                    <span id="tooltip-elite-plus-dmg">-</span>
                   </div>
                   <div class="detail-tooltip-row">
                     <span class="detail-tooltip-label">DPS</span>
@@ -478,8 +530,7 @@
         image: document.getElementById("details-image"),
         level: document.getElementById("details-level"),
         hp: document.getElementById("details-hp"),
-        min: document.getElementById("details-min-dmg"),
-        max: document.getElementById("details-max-dmg"),
+        dmgRange: document.getElementById("details-dmg-range"),
         dps: document.getElementById("details-dps"),
         speed: document.getElementById("details-speed"),
         type: document.getElementById("details-type"),
@@ -490,22 +541,21 @@
         eliteSummary: document.getElementById("details-elite-summary"),
         elitePlusSummary: document.getElementById("details-elite-plus-summary"),
         imageFallback: document.getElementById("details-image-fallback"),
+        flags: document.getElementById("details-flags"),
       };
 
-        const tooltipFields = {
-          elite: {
-            hp: document.getElementById("tooltip-elite-hp"),
-            min: document.getElementById("tooltip-elite-min"),
-            max: document.getElementById("tooltip-elite-max"),
-            dps: document.getElementById("tooltip-elite-dps"),
-          },
-          elitePlus: {
-            hp: document.getElementById("tooltip-elite-plus-hp"),
-            min: document.getElementById("tooltip-elite-plus-min"),
-            max: document.getElementById("tooltip-elite-plus-max"),
-            dps: document.getElementById("tooltip-elite-plus-dps"),
-          },
-        };
+      const tooltipFields = {
+        elite: {
+          hp: document.getElementById("tooltip-elite-hp"),
+          dmg: document.getElementById("tooltip-elite-dmg"),
+          dps: document.getElementById("tooltip-elite-dps"),
+        },
+        elitePlus: {
+          hp: document.getElementById("tooltip-elite-plus-hp"),
+          dmg: document.getElementById("tooltip-elite-plus-dmg"),
+          dps: document.getElementById("tooltip-elite-plus-dps"),
+        },
+      };
 
         let monsters = [];
         let sortKey = "name";
@@ -544,6 +594,67 @@
           const color = ELEMENT_COLORS[(elementValue || "").toLowerCase()];
           target.textContent = text;
           target.style.color = color || "";
+        };
+
+        const formatDamageRange = (min, max) => {
+          const hasMin = typeof min === "number" && !Number.isNaN(min);
+          const hasMax = typeof max === "number" && !Number.isNaN(max);
+          if (hasMin && hasMax) return `${min} - ${max}`;
+          if (hasMin) return `${min}`;
+          if (hasMax) return `${max}`;
+          return "-";
+        };
+
+        const formatScaledDamageRange = (min, max, mult) => {
+          const hasMin = typeof min === "number" && !Number.isNaN(min);
+          const hasMax = typeof max === "number" && !Number.isNaN(max);
+          const scaledMin = hasMin ? min * mult : null;
+          const scaledMax = hasMax ? max * mult : null;
+          if (scaledMin !== null && scaledMax !== null) return `${scaledMin} - ${scaledMax}`;
+          if (scaledMin !== null) return `${scaledMin}`;
+          if (scaledMax !== null) return `${scaledMax}`;
+          return "-";
+        };
+
+        const renderFlags = (monster) => {
+          const container = detailFields.flags;
+          if (!container) return;
+          container.innerHTML = "";
+          const descriptions = {
+            boss: "These are the most powerful enemies you can fight. They can pass through non-Boss monsters.",
+            flying: "Able to fly over mountains, water, and other objects.",
+            ethereal: "Able pass through walls and fly over mountains, water, and other objects.",
+          };
+          const flags = [];
+          if (monster.flying) flags.push("flying");
+          if (monster.ethereal) flags.push("ethereal");
+          if (monster.boss) flags.push("boss");
+
+          if (!flags.length) {
+            const none = document.createElement("span");
+            none.className = "detail-value";
+            none.textContent = "None";
+            container.appendChild(none);
+            return;
+          }
+
+          flags.forEach((flag) => {
+            const pill = document.createElement("span");
+            pill.className = "flag-pill";
+            const dot = document.createElement("span");
+            dot.className = "flag-dot";
+            const label = document.createElement("span");
+            label.textContent = flag.charAt(0).toUpperCase() + flag.slice(1);
+            const tooltip = document.createElement("span");
+            tooltip.className = "flag-tooltip";
+            tooltip.textContent = descriptions[flag] || "";
+            pill.appendChild(dot);
+            pill.appendChild(label);
+            if (tooltip.textContent) {
+              pill.appendChild(tooltip);
+            }
+            container.appendChild(pill);
+          });
         };
 
         const applyFilterAndSort = () => {
@@ -664,8 +775,7 @@
           detailFields.image.alt = monster.name ? `${monster.name} portrait` : "Monster portrait";
           detailFields.level.textContent = formatNumber(monster.level);
           detailFields.hp.textContent = formatNumber(monster.hpMax);
-          detailFields.min.textContent = formatNumber(monster.minDamage);
-          detailFields.max.textContent = formatNumber(monster.maxDamage);
+          detailFields.dmgRange.textContent = formatDamageRange(monster.minDamage, monster.maxDamage);
           detailFields.dps.textContent = formatDps(monster.dps);
           if (detailFields.eliteSummary) {
             detailFields.eliteSummary.textContent = "1.5x dmg, 3x HP";
@@ -674,12 +784,14 @@
             detailFields.elitePlusSummary.textContent = "2.0x dmg, 10x HP";
           }
           setVariantValues(monster.hpMax, 3.0, tooltipFields.elite.hp);
-          setVariantValues(monster.minDamage, 1.5, tooltipFields.elite.min);
-          setVariantValues(monster.maxDamage, 1.5, tooltipFields.elite.max);
+          if (tooltipFields.elite.dmg) {
+            tooltipFields.elite.dmg.textContent = formatScaledDamageRange(monster.minDamage, monster.maxDamage, 1.5);
+          }
           setVariantValues(monster.dps, 1.5, tooltipFields.elite.dps, formatDps);
           setVariantValues(monster.hpMax, 10.0, tooltipFields.elitePlus.hp);
-          setVariantValues(monster.minDamage, 2.0, tooltipFields.elitePlus.min);
-          setVariantValues(monster.maxDamage, 2.0, tooltipFields.elitePlus.max);
+          if (tooltipFields.elitePlus.dmg) {
+            tooltipFields.elitePlus.dmg.textContent = formatScaledDamageRange(monster.minDamage, monster.maxDamage, 2.0);
+          }
           setVariantValues(monster.dps, 2.0, tooltipFields.elitePlus.dps, formatDps);
           detailFields.speed.textContent = formatNumber(monster.movingSpeed);
           detailFields.type.textContent = monster.monsterType || "-";
@@ -687,6 +799,7 @@
           detailFields.flying.textContent = formatBool(monster.flying);
           detailFields.ethereal.textContent = formatBool(monster.ethereal);
           detailFields.boss.textContent = formatBool(monster.boss);
+          renderFlags(monster);
 
           details.classList.add("show");
           details.scrollIntoView({ behavior: "smooth", block: "start" });
