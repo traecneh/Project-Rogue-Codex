@@ -30,6 +30,71 @@
         width: min(420px, 100%);
       }
 
+      .monster-count {
+        margin: 0;
+        font-size: 0.9rem;
+        color: var(--text-muted);
+      }
+
+      .monster-filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin: 0 0 0.5rem;
+      }
+
+      .monster-filter {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+        min-width: 220px;
+      }
+
+      .filter-label {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-muted);
+        margin: 0;
+      }
+
+      .filter-select {
+        background: var(--bg-panel-dark);
+        color: var(--text-main);
+        border: 1px solid var(--border-soft);
+        border-radius: 6px;
+        padding: 0.35rem 0.45rem;
+        min-height: 120px;
+        max-height: 180px;
+        overflow: auto;
+      }
+
+      .filter-select:focus-visible {
+        outline: 1px solid var(--accent);
+      }
+
+      .filter-select::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+      }
+
+      .filter-select::-webkit-scrollbar-track {
+        background: #0d1118;
+        border-radius: 8px;
+      }
+
+      .filter-select::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, #3a414f, #262c36);
+        border: 1px solid var(--border-soft);
+        border-radius: 8px;
+        box-shadow: inset 0 0 0 1px #0b0f16;
+      }
+
+      .filter-select::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(180deg, #4a5262, #2f3642);
+      }
+      }
+
       .monsters-table-wrapper {
         overflow: auto;
         max-height: 70vh;
@@ -457,6 +522,22 @@
               placeholder="Search monsters by name, type, or element..."
               aria-label="Search monsters"
             />
+            <p class="monster-count" id="monster-count"></p>
+          </div>
+
+          <div class="monster-filters">
+            <div class="monster-filter">
+              <p class="filter-label">Type</p>
+              <select id="filter-type" class="filter-select" multiple size="4" aria-label="Filter by type"></select>
+            </div>
+            <div class="monster-filter">
+              <p class="filter-label">EleAttack</p>
+              <select id="filter-element" class="filter-select" multiple size="4" aria-label="Filter by element"></select>
+            </div>
+            <div class="monster-filter">
+              <p class="filter-label">Flags</p>
+              <select id="filter-flags" class="filter-select" multiple size="4" aria-label="Filter by flags"></select>
+            </div>
           </div>
 
           <div class="monsters-table-wrapper">
@@ -490,7 +571,11 @@
       (() => {
         const dataUrl = new URL("monsters.json", window.location.href);
         const searchInput = document.getElementById("monster-search");
+        const typeFilter = document.getElementById("filter-type");
+        const elementFilter = document.getElementById("filter-element");
+        const flagFilter = document.getElementById("filter-flags");
         const tableBody = document.getElementById("monsters-body");
+        const countLabel = document.getElementById("monster-count");
         const details = document.getElementById("monster-details");
         const closeBtn = document.getElementById("details-close");
 
@@ -673,9 +758,78 @@
         let sortKey = "name";
         let sortDir = "asc";
         let searchTerm = "";
+        let selectedTypes = new Set();
+        let selectedElements = new Set();
+        let selectedFlags = new Set();
 
         const renderEmpty = (message) => {
           tableBody.innerHTML = `<tr><td class="table-empty" colspan="8">${message}</td></tr>`;
+          if (countLabel) {
+            countLabel.textContent = "0 results";
+          }
+        };
+
+        const populateFilters = (data) => {
+          const typeOptions = new Map();
+          const elementOptions = new Set();
+          const flagOptions = new Set();
+
+          data.forEach((m) => {
+            const normalizedType = normalizeType(m.monsterType);
+            if (normalizedType) {
+              const label = formatTypeLabel(m.monsterType);
+              if (!typeOptions.has(normalizedType)) {
+                typeOptions.set(normalizedType, label);
+              }
+            }
+            const element = (m.elementalAttack || "").trim().toLowerCase();
+            if (element) {
+              elementOptions.add(element);
+            }
+
+            if (m.flying) flagOptions.add("flying");
+            if (m.ethereal) flagOptions.add("ethereal");
+            if (m.boss) flagOptions.add("boss");
+          });
+
+          if (typeFilter) {
+            typeFilter.innerHTML = "";
+            Array.from(typeOptions.entries())
+              .sort((a, b) => a[1].localeCompare(b[1]))
+              .forEach(([value, label]) => {
+                const opt = document.createElement("option");
+                opt.value = value;
+                opt.textContent = label;
+                opt.selected = selectedTypes.has(value);
+                typeFilter.appendChild(opt);
+              });
+          }
+
+          if (elementFilter) {
+            elementFilter.innerHTML = "";
+            Array.from(elementOptions)
+              .sort((a, b) => a.localeCompare(b))
+              .forEach((value) => {
+                const opt = document.createElement("option");
+                opt.value = value;
+                opt.textContent = value.charAt(0).toUpperCase() + value.slice(1);
+                opt.selected = selectedElements.has(value);
+                elementFilter.appendChild(opt);
+              });
+          }
+
+          if (flagFilter) {
+            flagFilter.innerHTML = "";
+            Array.from(flagOptions)
+              .sort((a, b) => a.localeCompare(b))
+              .forEach((value) => {
+                const opt = document.createElement("option");
+                opt.value = value;
+                opt.textContent = value.charAt(0).toUpperCase() + value.slice(1);
+                opt.selected = selectedFlags.has(value);
+                flagFilter.appendChild(opt);
+              });
+          }
         };
 
         const getSortValue = (monster, key) => {
@@ -758,6 +912,35 @@
             .replace(/\b\w/g, (c) => c.toUpperCase());
         };
 
+        const formatResistanceValue = (value) => {
+          if (Number.isInteger(value)) return `${value}x`;
+          let text = value.toString();
+          if (text.startsWith("0.")) {
+            text = text.replace(/^0+/, "");
+          } else if (text.startsWith("-0.")) {
+            text = text.replace(/^-0+/, "-.");
+          }
+          text = text.replace(/(\.\d*?)0+$/, "$1");
+          if (text.endsWith(".")) text = text.slice(0, -1);
+          return `${text}x`;
+        };
+
+        const getResistanceColor = (value) => {
+          if (typeof value !== "number" || Number.isNaN(value)) return "";
+          if (value > 1) {
+            const ratio = Math.min((value - 1) / 0.3, 1);
+            const lightness = 50 + 20 * ratio;
+            const saturation = 65 + 15 * ratio;
+            return `hsl(120, ${saturation}%, ${lightness}%)`;
+          }
+          if (value < 1) {
+            const ratio = Math.min((1 - value) / 0.3, 1);
+            const lightness = 55 + 25 * ratio;
+            return `hsl(0, 80%, ${lightness}%)`;
+          }
+          return "#bbbbbb";
+        };
+
         const renderTypeTooltip = (typeValue) => {
           const tooltip = detailFields.typeTooltip;
           if (!tooltip) return;
@@ -792,7 +975,11 @@
             const color = ELEMENT_COLORS[element.toLowerCase()];
             if (color) label.style.color = color;
             const val = document.createElement("span");
-            val.textContent = typeof value === "number" ? `${value.toFixed(2)}x` : value;
+            val.textContent = typeof value === "number" ? formatResistanceValue(value) : value;
+            if (typeof value === "number") {
+              const valColor = getResistanceColor(value);
+              if (valColor) val.style.color = valColor;
+            }
             row.appendChild(label);
             row.appendChild(val);
             tooltip.appendChild(row);
@@ -861,6 +1048,24 @@
             });
           }
 
+          if (selectedTypes.size) {
+            list = list.filter((m) => selectedTypes.has(normalizeType(m.monsterType)));
+          }
+
+          if (selectedElements.size) {
+            list = list.filter((m) => selectedElements.has((m.elementalAttack || "").trim().toLowerCase()));
+          }
+
+          if (selectedFlags.size) {
+            list = list.filter((m) => {
+              const flags = [];
+              if (m.flying) flags.push("flying");
+              if (m.ethereal) flags.push("ethereal");
+              if (m.boss) flags.push("boss");
+              return flags.some((flag) => selectedFlags.has(flag));
+            });
+          }
+
           list.sort((a, b) => {
             const aVal = getSortValue(a, sortKey);
             const bVal = getSortValue(b, sortKey);
@@ -870,6 +1075,9 @@
           });
 
           renderTable(list);
+          if (countLabel) {
+            countLabel.textContent = `${list.length.toLocaleString("en-US")} result${list.length === 1 ? "" : "s"}`;
+          }
         };
 
         const renderTable = (rows) => {
@@ -1039,6 +1247,7 @@
                 renderEmpty("No monsters found in monsters.json.");
                 return;
               }
+              populateFilters(monsters);
               applyFilterAndSort();
             })
             .catch(() => {
@@ -1050,6 +1259,51 @@
           searchTerm = event.target.value || "";
           applyFilterAndSort();
         });
+
+        const enableToggleSelect = (selectEl) => {
+          if (!selectEl) return;
+          selectEl.addEventListener("mousedown", (event) => {
+            const option = event.target;
+            if (option && option.tagName === "OPTION") {
+              event.preventDefault();
+              option.selected = !option.selected;
+              selectEl.dispatchEvent(new Event("change", { bubbles: true }));
+            }
+          });
+        };
+
+        const collectSelected = (selectEl) => {
+          const set = new Set();
+          if (!selectEl) return set;
+          Array.from(selectEl.selectedOptions || []).forEach((opt) => {
+            if (opt && opt.value) set.add(opt.value);
+          });
+          return set;
+        };
+
+        if (typeFilter) {
+          enableToggleSelect(typeFilter);
+          typeFilter.addEventListener("change", () => {
+            selectedTypes = collectSelected(typeFilter);
+            applyFilterAndSort();
+          });
+        }
+
+        if (elementFilter) {
+          enableToggleSelect(elementFilter);
+          elementFilter.addEventListener("change", () => {
+            selectedElements = collectSelected(elementFilter);
+            applyFilterAndSort();
+          });
+        }
+
+        if (flagFilter) {
+          enableToggleSelect(flagFilter);
+          flagFilter.addEventListener("change", () => {
+            selectedFlags = collectSelected(flagFilter);
+            applyFilterAndSort();
+          });
+        }
 
         if (closeBtn) {
           closeBtn.addEventListener("click", clearDetails);

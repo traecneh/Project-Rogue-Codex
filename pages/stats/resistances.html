@@ -18,6 +18,30 @@
     font-weight: 700;
     letter-spacing: 0.02em;
   }
+
+  #monster-resistances ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  #monster-resistances li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    column-gap: 0.5rem;
+  }
+
+  #monster-resistances .resist-divider {
+    width: 100%;
+    margin: 0.25rem 0;
+    border: none;
+    border-top: 1px solid var(--border-soft);
+    opacity: 0.5;
+  }
 </style>
 </head>
 <body>
@@ -276,6 +300,7 @@
         const raw = node.getAttribute("data-resist-value") || node.textContent;
         const value = parseFloat(raw);
         if (Number.isNaN(value)) return;
+        node.textContent = formatResistanceValue(value);
         node.style.color = getResistanceColor(value);
       });
 
@@ -295,7 +320,6 @@
 
         li.innerHTML = "";
         li.appendChild(label);
-        li.appendChild(document.createTextNode(": "));
         li.appendChild(valueClone);
       });
     });
@@ -313,6 +337,19 @@
         return `hsl(0, 80%, ${lightness}%)`;
       }
       return "#bbbbbb";
+    }
+
+    function formatResistanceValue(value) {
+      if (Number.isInteger(value)) return `${value}x`;
+      let text = value.toString();
+      if (text.startsWith("0.")) {
+        text = text.replace(/^0+/, "");
+      } else if (text.startsWith("-0.")) {
+        text = text.replace(/^-0+/, "-.");
+      }
+      text = text.replace(/(\.\d*?)0+$/, "$1"); // trim trailing zeros
+      if (text.endsWith(".")) text = text.slice(0, -1);
+      return `${text}x`;
     }
   })();
 </script>
