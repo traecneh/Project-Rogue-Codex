@@ -41,7 +41,7 @@
       .monsters-table {
         width: 100%;
         border-collapse: collapse;
-        min-width: 760px;
+        min-width: 680px;
       }
 
       .monsters-table thead {
@@ -357,8 +357,12 @@
                 <div class="detail-value" id="details-dps">-</div>
               </div>
               <div>
-              <div class="detail-label">Move Speed (ms)</div>
-              <div class="detail-value" id="details-speed">-</div>
+                <div class="detail-label">Attack Speed (ms)</div>
+                <div class="detail-value" id="details-attack-speed">-</div>
+              </div>
+              <div>
+                <div class="detail-label">Move Speed (ms)</div>
+                <div class="detail-value" id="details-speed">-</div>
               </div>
               <div class="detail-stat hoverable">
                 <div class="detail-label">Type</div>
@@ -442,13 +446,13 @@
                   <th scope="col" data-sort-key="hpMax">HPMax <span class="sort-indicator" aria-hidden="true">↕</span></th>
                   <th scope="col" data-sort-key="dps">DPS <span class="sort-indicator" aria-hidden="true">↕</span></th>
                   <th scope="col" data-sort-key="movingSpeed">
-                    MovingSpeed (ms) <span class="sort-indicator" aria-hidden="true">↕</span>
+                    Movement <span class="sort-indicator" aria-hidden="true">↕</span>
                   </th>
                   <th scope="col" data-sort-key="monsterType">
-                    MonsterType <span class="sort-indicator" aria-hidden="true">↕</span>
+                    Type <span class="sort-indicator" aria-hidden="true">↕</span>
                   </th>
                   <th scope="col" data-sort-key="elementalAttack">
-                    ElementalAttack <span class="sort-indicator" aria-hidden="true">↕</span>
+                    EleAttack <span class="sort-indicator" aria-hidden="true">↕</span>
                   </th>
                 </tr>
               </thead>
@@ -618,6 +622,7 @@
         hp: document.getElementById("details-hp"),
         dmgRange: document.getElementById("details-dmg-range"),
         dps: document.getElementById("details-dps"),
+        attackSpeed: document.getElementById("details-attack-speed"),
         speed: document.getElementById("details-speed"),
         type: document.getElementById("details-type"),
         typeTooltip: document.getElementById("details-type-tooltip"),
@@ -959,6 +964,10 @@
             tooltipFields.elitePlus.dmg.textContent = formatScaledDamageRange(monster.minDamage, monster.maxDamage, 2.0);
           }
           setVariantValues(monster.dps, 2.0, tooltipFields.elitePlus.dps, formatDps);
+          detailFields.attackSpeed.textContent =
+            monster.attackSpeed === null || monster.attackSpeed === undefined
+              ? "-"
+              : `${formatNumber(monster.attackSpeed)} ms`;
           detailFields.speed.textContent =
             monster.movingSpeed === null || monster.movingSpeed === undefined
               ? "-"
