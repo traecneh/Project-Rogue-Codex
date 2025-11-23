@@ -238,6 +238,7 @@
         align-items: center;
         gap: 1rem;
         margin-bottom: 0.6rem;
+        flex-wrap: wrap;
       }
 
       .monster-details-body {
@@ -384,6 +385,14 @@
         margin: 0.25rem 0;
       }
 
+      .monster-details-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+
+      .details-button,
       .details-close {
         border: 1px solid var(--border-soft);
         background: #1b2027;
@@ -392,11 +401,26 @@
         border-radius: 6px;
         cursor: pointer;
         transition: background 0.15s ease, transform 0.1s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
       }
 
+      .details-button:hover,
       .details-close:hover {
         background: #252c36;
         transform: translateY(-1px);
+      }
+
+      .details-map {
+        background: linear-gradient(135deg, #1b703f, #1e8f53);
+        border-color: #23a35d;
+        color: #eafbee;
+      }
+
+      .details-map:hover {
+        background: linear-gradient(135deg, #1f7d47, #22a15d);
       }
 
       @media (max-width: 640px) {
@@ -424,7 +448,18 @@
               </div>
               <h2 id="details-name" class="content-title" style="margin: 0"></h2>
             </div>
-            <button type="button" class="details-close" id="details-close">Close</button>
+            <div class="monster-details-actions">
+              <a
+                id="details-map-link"
+                class="details-button details-map"
+                href="https://traecneh.github.io/Project-Rogue-Map/?search="
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Find on Map
+              </a>
+              <button type="button" class="details-button details-close" id="details-close">Close</button>
+            </div>
           </div>
           <div class="monster-details-body">
             <div class="monster-details-info">
@@ -578,6 +613,7 @@
         const countLabel = document.getElementById("monster-count");
         const details = document.getElementById("monster-details");
         const closeBtn = document.getElementById("details-close");
+        const MAP_SEARCH_BASE = "https://traecneh.github.io/Project-Rogue-Map/?search=";
 
         const deriveImageCandidates = (monster) => {
           const candidates = [];
@@ -726,6 +762,7 @@
       const detailFields = {
         name: document.getElementById("details-name"),
         image: document.getElementById("details-image"),
+        mapLink: document.getElementById("details-map-link"),
         level: document.getElementById("details-level"),
         hp: document.getElementById("details-hp"),
         dmgRange: document.getElementById("details-dmg-range"),
@@ -1147,6 +1184,11 @@
         const setDetails = (monster) => {
           if (!monster) return;
           detailFields.name.textContent = monster.name || "Unknown Monster";
+          if (detailFields.mapLink) {
+            const searchName = monster.name || "";
+            detailFields.mapLink.href = `${MAP_SEARCH_BASE}${encodeURIComponent(searchName)}`;
+            detailFields.mapLink.title = searchName ? `Find ${searchName} on the map` : "Find on the map";
+          }
           const fallbackImage = detailFields.imageFallback;
           if (detailFields.image) {
             detailFields.image.style.display = "block";
