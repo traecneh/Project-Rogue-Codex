@@ -711,6 +711,7 @@ a:hover {
   display: block;
   margin: 0 auto;
   image-rendering: pixelated;
+  image-rendering: crisp-edges;
   border: 1px solid rgba(255, 255, 255, 0.25);
   border-radius: 4px;
   background: rgba(0, 0, 0, 0.3);
@@ -814,6 +815,7 @@ a:hover {
   display: block;
   margin: 0 auto;
   image-rendering: pixelated;
+  image-rendering: crisp-edges;
 }
 
 .race-portrait figcaption {
@@ -963,7 +965,7 @@ a:hover {
     padding: 32px 0;
   }
 
-  .discord-monster {
+.discord-monster {
       position: absolute;
       top: 50%;
       left: 50%;
@@ -971,6 +973,7 @@ a:hover {
       height: 32px;
       transform: translate(-50%, -50%);
       image-rendering: pixelated;
+      image-rendering: crisp-edges;
       filter: drop-shadow(0 0 6px rgba(0, 0, 0, 0.65));
       pointer-events: none;
       z-index: 2;
@@ -978,19 +981,20 @@ a:hover {
       transition: transform 0.12s linear, opacity 0.2s ease;
     }
 
-  .discord-elite {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 32px;
-    height: 32px;
-    transform: translate(-50%, -50%);
-    image-rendering: pixelated;
-    pointer-events: none;
-    z-index: 3;
-    opacity: 0;
-    transition: transform 0.12s linear, opacity 0.2s ease;
-  }
+.discord-elite {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 32px;
+  height: 32px;
+  transform: translate(-50%, -50%);
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  pointer-events: none;
+  z-index: 3;
+  opacity: 0;
+  transition: transform 0.12s linear, opacity 0.2s ease;
+}
 
 .discord-cta:hover,
 .discord-cta:focus-visible {
@@ -1112,6 +1116,7 @@ a:hover {
   display: block;
   margin: 0.4rem auto 0.6rem;
   image-rendering: pixelated;
+  image-rendering: crisp-edges;
 }
 
 .elite-icon-wrapper {
@@ -1130,6 +1135,7 @@ a:hover {
   width: 32px;
   height: 32px;
   image-rendering: pixelated;
+  image-rendering: crisp-edges;
 }
 
 .elite-random {
