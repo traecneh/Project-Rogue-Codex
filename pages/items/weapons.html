@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Weapons - Project Rogue Codex</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <base href="../../" />
+    <link rel="icon" type="image/x-icon" href="images/project-rogue-favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="images/project-rogue-favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="64x64" href="images/project-rogue-favicon-64.png" />
+    <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
+    <link rel="stylesheet" href="css/styles.css" />
+    <script src="js/nav-loader.js" defer></script>
+    <style>
+      .item-controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        align-items: center;
+        margin-bottom: 1rem;
+      }
+
+      .item-search {
+        padding: 0.55rem 0.75rem;
+        border: 1px solid var(--border-soft);
+        border-radius: 6px;
+        background: var(--bg-panel-dark);
+        color: var(--text-main);
+        width: min(420px, 100%);
+      }
+
+      .item-count {
+        margin: 0;
+        font-size: 0.9rem;
+        color: var(--text-muted);
+      }
+
+      .items-table-wrapper {
+        overflow: auto;
+        max-height: 70vh;
+        border: 1px solid var(--border-soft);
+        border-radius: 8px;
+        background: var(--bg-panel);
+        box-shadow: 0 0 0 1px #0b0f16, 0 8px 16px rgba(0, 0, 0, 0.55);
+      }
+
+      .items-table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 640px;
+      }
+
+      .items-table thead {
+        background: linear-gradient(to bottom, #303540, #252a33);
+      }
+
+      .items-table th,
+      .items-table td {
+        padding: 0.55rem 0.75rem;
+        text-align: left;
+        border-bottom: 1px solid #2f333b;
+        font-size: 0.92rem;
+      }
+
+      .items-table th {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        cursor: pointer;
+        user-select: none;
+        letter-spacing: 0.02em;
+        color: #f9fafb;
+        white-space: nowrap;
+      }
+
+      .items-table tbody tr {
+        background: var(--bg-panel-dark);
+      }
+
+      .items-table tbody tr:nth-child(2n) {
+        background: #1d222b;
+      }
+
+      .items-table tbody tr:hover {
+        background: rgba(75, 255, 75, 0.08);
+        cursor: pointer;
+      }
+
+      .item-thumb {
+        width: 32px;
+        height: 32px;
+        object-fit: cover;
+        border-radius: 6px;
+        border: 1px solid var(--border-soft);
+        background: #0f1218;
+        image-rendering: pixelated;
+        image-rendering: crisp-edges;
+      }
+
+      .no-image {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 32px;
+        min-height: 32px;
+        padding: 0.2rem 0.35rem;
+        border: 1px solid var(--border-soft);
+        border-radius: 6px;
+        background: #0f1218;
+        color: var(--text-muted);
+        font-size: 0.82rem;
+        text-align: center;
+      }
+
+      .no-image-fallback {
+        width: 32px;
+        height: 32px;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--border-soft);
+        border-radius: 6px;
+        background: #0f1218;
+        color: var(--text-muted);
+        font-size: 0.82rem;
+        text-align: center;
+      }
+
+      .item-details {
+        display: none;
+        border: 1px solid var(--border-soft);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        background: linear-gradient(135deg, #20252e, #141821);
+        box-shadow: 0 0 0 1px #0b0f16, 0 12px 22px rgba(0, 0, 0, 0.65);
+      }
+
+      .item-details.show {
+        display: block;
+      }
+
+      .item-details-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 0.6rem;
+        flex-wrap: wrap;
+      }
+
+      .item-details-body {
+        display: block;
+      }
+
+      .item-title-group {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+
+      .item-details .item-thumb {
+        width: 64px;
+        height: 64px;
+      }
+
+      .item-details .no-image-fallback {
+        width: 64px;
+        height: 64px;
+      }
+
+      .details-button,
+      .details-close {
+        border: 1px solid var(--border-soft);
+        background: linear-gradient(135deg, rgba(50, 60, 75, 0.9), rgba(20, 24, 32, 0.9));
+        color: var(--text-main);
+        padding: 0.45rem 0.9rem;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background 0.15s ease, transform 0.1s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        line-height: 1.2;
+        min-height: 2.35rem;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
+      }
+
+      .details-button:hover,
+      .details-close:hover {
+        background: linear-gradient(135deg, rgba(60, 72, 88, 0.95), rgba(26, 30, 40, 0.95));
+        transform: translateY(-1px);
+      }
+
+      .table-empty {
+        text-align: center;
+        padding: 1rem;
+        color: var(--text-muted);
+      }
+
+      .items-table-wrapper::-webkit-scrollbar,
+      .item-details::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+      }
+
+      .items-table-wrapper::-webkit-scrollbar-track,
+      .item-details::-webkit-scrollbar-track {
+        background: #0d1118;
+        border-radius: 8px;
+      }
+
+      .items-table-wrapper::-webkit-scrollbar-thumb,
+      .item-details::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, #3a414f, #262c36);
+        border: 1px solid var(--border-soft);
+        border-radius: 8px;
+        box-shadow: inset 0 0 0 1px #0b0f16;
+      }
+
+      .item-details-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 0.5rem 1rem;
+      }
+
+      .detail-cell {
+        padding: 0.3rem 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      }
+
+      .detail-label {
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-muted);
+        margin: 0 0 0.1rem;
+        display: block;
+      }
+
+      .detail-value {
+        font-weight: 700;
+        color: #fff;
+      }
+
+      @media (max-width: 640px) {
+        .item-details-grid {
+          grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="layout">
+      <div id="sidebar-root"></div>
+      <main class="main-content">
+        <header class="content-header">
+          <h1 class="content-title">Weapons</h1>
+          <p class="content-tagline">Browse weapons; drop a weapons.json beside this page to see data.</p>
+        </header>
+
+        <section class="item-details" id="item-details" aria-live="polite">
+          <div class="item-details-header">
+            <div class="item-title-group">
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <img id="details-image" class="item-thumb" alt="" />
+                <div id="details-image-fallback" class="no-image-fallback">No Image</div>
+              </div>
+              <h2 id="details-name" class="content-title" style="margin: 0"></h2>
+            </div>
+            <button type="button" class="details-button details-close" id="details-close">Close</button>
+          </div>
+          <div class="item-details-body">
+            <div id="details-properties" class="item-details-grid"></div>
+          </div>
+        </section>
+
+        <div class="content-section">
+          <div class="item-controls">
+            <input
+              type="search"
+              id="item-search"
+              class="item-search"
+              placeholder="Search weapons by any field..."
+              aria-label="Search weapons"
+            />
+            <p class="item-count" id="item-count"></p>
+          </div>
+
+          <div class="items-table-wrapper">
+            <table class="items-table" aria-describedby="item-search">
+              <thead>
+                <tr id="items-head-row"></tr>
+              </thead>
+              <tbody id="items-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      (() => {
+        const PAGE = {
+          title: "Weapons",
+          dataFile: "weapons.json",
+        };
+
+        const dataUrl = new URL(PAGE.dataFile, window.location.href);
+        const searchInput = document.getElementById("item-search");
+        const tableHeadRow = document.getElementById("items-head-row");
+        const tableBody = document.getElementById("items-body");
+        const countLabel = document.getElementById("item-count");
+        const details = document.getElementById("item-details");
+        const closeBtn = document.getElementById("details-close");
+
+        const detailFields = {
+          name: document.getElementById("details-name"),
+          image: document.getElementById("details-image"),
+          imageFallback: document.getElementById("details-image-fallback"),
+          properties: document.getElementById("details-properties"),
+        };
+
+        let items = [];
+        let columns = [];
+        let sortKey = "name";
+        let sortDir = "asc";
+        let searchTerm = "";
+
+        const titleCase = (text) =>
+          text
+            .replace(/([a-z])([A-Z])/g, "$1 $2")
+            .replace(/[_-]+/g, " ")
+            .replace(/\s+/g, " ")
+            .trim()
+            .replace(/\b\w/g, (c) => c.toUpperCase());
+
+        const renderEmpty = (message) => {
+          tableHeadRow.innerHTML = "";
+          tableBody.innerHTML = `<tr><td class="table-empty" colspan="1">${message}</td></tr>`;
+          if (countLabel) {
+            countLabel.textContent = "0 results";
+          }
+        };
+
+        const deriveColumns = (rows) => {
+          const set = new Set();
+          rows.forEach((row) => {
+            Object.keys(row || {}).forEach((key) => set.add(key));
+          });
+          if (!set.size) return [];
+          const preferred = ["name", "slot", "type", "rarity", "level"];
+          const keys = Array.from(set);
+          keys.sort((a, b) => {
+            const ai = preferred.indexOf(a);
+            const bi = preferred.indexOf(b);
+            if (ai !== -1 && bi !== -1) return ai - bi;
+            if (ai !== -1) return -1;
+            if (bi !== -1) return 1;
+            return a.localeCompare(b);
+          });
+          return keys;
+        };
+
+        const normalizeSortValue = (value) => {
+          if (value === null || value === undefined) return "";
+          if (typeof value === "number") return value;
+          if (typeof value === "boolean") return value ? 1 : 0;
+          if (Array.isArray(value)) return value.join(", ");
+          if (typeof value === "object") return JSON.stringify(value);
+          return String(value).toLowerCase();
+        };
+
+        const formatValue = (value) => {
+          if (value === null || value === undefined) return "-";
+          if (Array.isArray(value)) return value.join(", ");
+          if (typeof value === "object") return JSON.stringify(value);
+          return value;
+        };
+
+        const ensureImage = (img, fallback, src) => {
+          if (!img || !fallback) return;
+          if (!src) {
+            img.style.display = "none";
+            fallback.style.display = "flex";
+            return;
+          }
+          img.onload = () => {
+            img.style.display = "block";
+            fallback.style.display = "none";
+          };
+          img.onerror = () => {
+            img.style.display = "none";
+            fallback.style.display = "flex";
+          };
+          img.src = src;
+        };
+
+        const buildHead = () => {
+          tableHeadRow.innerHTML = "";
+          columns.forEach((col) => {
+            const th = document.createElement("th");
+            th.textContent = titleCase(col);
+            th.dataset.sortKey = col;
+            th.addEventListener("click", () => {
+              if (sortKey === col) {
+                sortDir = sortDir === "asc" ? "desc" : "asc";
+              } else {
+                sortKey = col;
+                sortDir = "asc";
+              }
+              applyFilterAndSort();
+            });
+            tableHeadRow.appendChild(th);
+          });
+        };
+
+        const setDetails = (item) => {
+          if (!item) return;
+          detailFields.name.textContent = item.name || "Unknown";
+          const imgSrc = item.image || item.icon || item.thumbnail || "";
+          ensureImage(detailFields.image, detailFields.imageFallback, imgSrc);
+
+          const container = detailFields.properties;
+          container.innerHTML = "";
+          const keys = Object.keys(item || {});
+          if (!keys.length) {
+            const empty = document.createElement("div");
+            empty.textContent = "No properties to display.";
+            empty.className = "detail-value";
+            container.appendChild(empty);
+          } else {
+            keys.forEach((key) => {
+              const cell = document.createElement("div");
+              cell.className = "detail-cell";
+              const label = document.createElement("span");
+              label.className = "detail-label";
+              label.textContent = titleCase(key);
+              const value = document.createElement("div");
+              value.className = "detail-value";
+              value.textContent = formatValue(item[key]);
+              cell.appendChild(label);
+              cell.appendChild(value);
+              container.appendChild(cell);
+            });
+          }
+
+          details.classList.add("show");
+          details.scrollIntoView({ behavior: "smooth", block: "start" });
+        };
+
+        const clearDetails = () => {
+          details.classList.remove("show");
+        };
+
+        const renderTable = (rows) => {
+          if (!rows.length) {
+            renderEmpty("No weapons match your filters.");
+            return;
+          }
+
+          const fragment = document.createDocumentFragment();
+
+          rows.forEach((item) => {
+            const tr = document.createElement("tr");
+            tr.dataset.id = item.id || "";
+
+            columns.forEach((col) => {
+              const td = document.createElement("td");
+              const value = item[col];
+              if (typeof value === "string" && value.match(/\.(png|gif|jpg|jpeg)$/i)) {
+                const img = document.createElement("img");
+                img.className = "item-thumb";
+                img.alt = `${item.name || "Item"} image`;
+                img.src = value;
+                td.appendChild(img);
+              } else {
+                td.textContent = formatValue(value);
+              }
+              tr.appendChild(td);
+            });
+
+            tr.addEventListener("click", () => setDetails(item));
+            fragment.appendChild(tr);
+          });
+
+          tableBody.innerHTML = "";
+          tableBody.appendChild(fragment);
+        };
+
+        const applyFilterAndSort = () => {
+          if (!Array.isArray(items) || !items.length) {
+            renderEmpty("No weapons found in weapons.json.");
+            return;
+          }
+
+          const filtered = items.filter((item) => {
+            if (!searchTerm) return true;
+            const text = columns
+              .map((col) => formatValue(item[col]))
+              .join(" ")
+              .toLowerCase();
+            return text.includes(searchTerm.toLowerCase());
+          });
+
+          const sorted = filtered.sort((a, b) => {
+            const av = normalizeSortValue(a[sortKey]);
+            const bv = normalizeSortValue(b[sortKey]);
+            if (av < bv) return sortDir === "asc" ? -1 : 1;
+            if (av > bv) return sortDir === "asc" ? 1 : -1;
+            return 0;
+          });
+
+          if (countLabel) {
+            const count = sorted.length;
+            countLabel.textContent = `${count} result${count === 1 ? "" : "s"}`;
+          }
+
+          renderTable(sorted);
+        };
+
+        const init = () => {
+          fetch(dataUrl.toString())
+            .then((response) => {
+              if (!response.ok) {
+                throw new Error("Failed to load weapons.json");
+              }
+              return response.json();
+            })
+            .then((data) => {
+              items = Array.isArray(data) ? data : [];
+              columns = deriveColumns(items);
+              if (!columns.length) {
+                renderEmpty("Add weapons.json beside this page to see weapons.");
+                return;
+              }
+              if (columns.includes("name")) sortKey = "name";
+              buildHead();
+              applyFilterAndSort();
+            })
+            .catch(() => {
+              renderEmpty("Unable to load weapons. Add weapons.json beside this page.");
+            });
+        };
+
+        if (searchInput) {
+          searchInput.addEventListener("input", (event) => {
+            searchTerm = event.target.value || "";
+            applyFilterAndSort();
+          });
+        }
+
+        if (closeBtn) {
+          closeBtn.addEventListener("click", clearDetails);
+        }
+
+        init();
+      })();
+    </script>
+  </body>
+</html>

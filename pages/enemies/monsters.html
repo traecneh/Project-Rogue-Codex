@@ -289,29 +289,8 @@
       }
 
       .detail-stat.hoverable {
-        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
-        border-radius: 6px;
-        background: rgba(255, 255, 255, 0.02);
-      }
-
-      .detail-stat.hoverable .detail-tooltip {
-        position: absolute;
-        left: 0;
-        top: 100%;
-        margin-top: 0.35rem;
-        padding: 0.4rem 0.55rem;
-        border-radius: 6px;
-        background: #11151c;
-        border: 1px solid var(--border-soft);
-        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5);
-        display: none;
-        min-width: 170px;
-        z-index: 2;
-      }
-
-      .detail-stat.hoverable:hover .detail-tooltip,
-      .detail-stat.hoverable:focus-within .detail-tooltip {
-        display: block;
+        box-shadow: none;
+        background: transparent;
       }
 
       .detail-tooltip-row {
@@ -321,6 +300,7 @@
         font-size: 0.85rem;
         color: var(--text-main);
         align-items: center;
+        white-space: nowrap;
       }
 
       .detail-tooltip-label {
@@ -388,6 +368,47 @@
 
       .flag-pill:hover .flag-tooltip,
       .flag-pill:focus-within .flag-tooltip {
+        display: block;
+      }
+
+      .flag-tooltip.is-pinned {
+        display: block;
+      }
+
+      .detail-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.2rem 0.65rem;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: linear-gradient(135deg, rgba(44, 50, 64, 0.9), rgba(28, 33, 43, 0.9));
+        color: #e8ecf2;
+        font-weight: 700;
+        letter-spacing: 0.03em;
+        position: relative;
+      }
+
+      .detail-pill .detail-tooltip {
+        position: absolute;
+        left: 0;
+        top: 110%;
+        margin-top: 0.1rem;
+        padding: 0.4rem 0.55rem;
+        border-radius: 6px;
+        background: #11151c;
+        border: 1px solid var(--border-soft);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5);
+        display: none;
+        min-width: 200px;
+        width: max-content;
+        white-space: nowrap;
+        z-index: 2;
+      }
+
+      .detail-pill:hover .detail-tooltip,
+      .detail-pill:focus-within .detail-tooltip,
+      .detail-tooltip.is-pinned {
         display: block;
       }
 
@@ -508,8 +529,12 @@
               </div>
               <div class="detail-stat hoverable">
                 <div class="detail-label">Type</div>
-                <div class="detail-value" id="details-type">-</div>
-                <div class="detail-tooltip" role="tooltip" id="details-type-tooltip"></div>
+                <div class="detail-value">
+                  <span class="detail-pill">
+                    <span id="details-type">-</span>
+                    <span class="detail-tooltip" role="tooltip" id="details-type-tooltip"></span>
+                  </span>
+                </div>
               </div>
               <div>
                 <div class="detail-label">Attack Element</div>
@@ -526,20 +551,24 @@
                 <img src="images/elite.gif" alt="" width="18" height="18" />
                 Elite
                 </div>
-                <div class="detail-value" id="details-elite-summary"></div>
-                <div class="detail-tooltip" role="tooltip">
-                  <div class="detail-tooltip-row">
-                    <span class="detail-tooltip-label">HP Max</span>
-                    <span id="tooltip-elite-hp">-</span>
-                  </div>
-                  <div class="detail-tooltip-row">
-                    <span class="detail-tooltip-label">Damage</span>
-                    <span id="tooltip-elite-dmg">-</span>
-                  </div>
-                  <div class="detail-tooltip-row">
-                    <span class="detail-tooltip-label">DPS</span>
-                    <span id="tooltip-elite-dps">-</span>
-                  </div>
+                <div class="detail-value">
+                  <span class="detail-pill">
+                    <span id="details-elite-summary"></span>
+                    <span class="detail-tooltip" role="tooltip">
+                      <div class="detail-tooltip-row">
+                        <span class="detail-tooltip-label">HP Max</span>
+                        <span id="tooltip-elite-hp">-</span>
+                      </div>
+                      <div class="detail-tooltip-row">
+                        <span class="detail-tooltip-label">Damage</span>
+                        <span id="tooltip-elite-dmg">-</span>
+                      </div>
+                      <div class="detail-tooltip-row">
+                        <span class="detail-tooltip-label">DPS</span>
+                        <span id="tooltip-elite-dps">-</span>
+                      </div>
+                    </span>
+                  </span>
                 </div>
               </div>
               <div class="detail-stat hoverable">
@@ -547,21 +576,35 @@
                   <img src="images/elite+.gif" alt="" width="18" height="18" />
                   Elite+
                 </div>
-                <div class="detail-value" id="details-elite-plus-summary"></div>
-                <div class="detail-tooltip" role="tooltip">
-                  <div class="detail-tooltip-row">
-                    <span class="detail-tooltip-label">HP Max</span>
-                    <span id="tooltip-elite-plus-hp">-</span>
-                  </div>
-                  <div class="detail-tooltip-row">
-                    <span class="detail-tooltip-label">Damage</span>
-                    <span id="tooltip-elite-plus-dmg">-</span>
-                  </div>
-                  <div class="detail-tooltip-row">
-                    <span class="detail-tooltip-label">DPS</span>
-                    <span id="tooltip-elite-plus-dps">-</span>
-                  </div>
+                <div class="detail-value">
+                  <span class="detail-pill">
+                    <span id="details-elite-plus-summary"></span>
+                    <span class="detail-tooltip" role="tooltip">
+                      <div class="detail-tooltip-row">
+                        <span class="detail-tooltip-label">HP Max</span>
+                        <span id="tooltip-elite-plus-hp">-</span>
+                      </div>
+                      <div class="detail-tooltip-row">
+                        <span class="detail-tooltip-label">Damage</span>
+                        <span id="tooltip-elite-plus-dmg">-</span>
+                      </div>
+                      <div class="detail-tooltip-row">
+                        <span class="detail-tooltip-label">DPS</span>
+                        <span id="tooltip-elite-plus-dps">-</span>
+                      </div>
+                    </span>
+                  </span>
                 </div>
+              </div>
+              <div class="detail-divider" aria-hidden="true"></div>
+              <div>
+                <div class="detail-label">Recommended Weapons</div>
+                <div class="detail-value">Coming soon</div>
+              </div>
+              <div class="detail-divider" aria-hidden="true"></div>
+              <div>
+                <div class="detail-label">Recommended Armors</div>
+                <div class="detail-value">Coming soon</div>
               </div>
             </div>
           </div>
@@ -809,6 +852,8 @@
           dps: document.getElementById("tooltip-elite-plus-dps"),
         },
       };
+      let pinnedTooltip = null;
+      let pinDocumentListenerAttached = false;
 
         let monsters = [];
         let sortKey = "name";
@@ -818,11 +863,11 @@
         let selectedElements = new Set();
         let selectedFlags = new Set();
 
-        const renderEmpty = (message) => {
-          tableBody.innerHTML = `<tr><td class="table-empty" colspan="8">${message}</td></tr>`;
-          if (countLabel) {
-            countLabel.textContent = "0 results";
-          }
+      const renderEmpty = (message) => {
+        tableBody.innerHTML = `<tr><td class="table-empty" colspan="8">${message}</td></tr>`;
+        if (countLabel) {
+          countLabel.textContent = "0 results";
+        }
         };
 
         const populateFilters = (data) => {
@@ -1136,11 +1181,11 @@
           }
         };
 
-        const renderTable = (rows) => {
-          if (!rows.length) {
-            renderEmpty("No monsters match your filters.");
-            return;
-          }
+      const renderTable = (rows) => {
+        if (!rows.length) {
+          renderEmpty("No monsters match your filters.");
+          return;
+        }
 
           const fragment = document.createDocumentFragment();
 
@@ -1200,8 +1245,71 @@
           tableBody.appendChild(fragment);
         };
 
+      const unpinTooltip = (tooltip) => {
+        if (!tooltip) return;
+        tooltip.classList.remove("is-pinned");
+        if (pinnedTooltip === tooltip) pinnedTooltip = null;
+      };
+
+        const attachTooltipPinning = () => {
+          const tooltips = document.querySelectorAll(
+            ".monster-details .detail-tooltip, .monster-details .flag-tooltip"
+          );
+
+          tooltips.forEach((tooltip) => {
+            if (tooltip.dataset.pinWired === "1") return;
+            let activator = tooltip.closest(".flag-pill");
+            if (!activator) {
+              const stat = tooltip.closest(".detail-stat");
+              activator = stat ? stat.querySelector(".detail-pill") : null;
+            }
+            if (!activator) return;
+
+            const togglePin = () => {
+              if (pinnedTooltip && pinnedTooltip !== tooltip) {
+                unpinTooltip(pinnedTooltip);
+              }
+
+              if (tooltip.classList.contains("is-pinned")) {
+                unpinTooltip(tooltip);
+              } else {
+                tooltip.classList.add("is-pinned");
+                pinnedTooltip = tooltip;
+              }
+            };
+
+            activator.addEventListener("click", (event) => {
+              event.stopPropagation();
+              togglePin();
+            });
+
+            tooltip.addEventListener("click", (event) => {
+              event.stopPropagation();
+              togglePin();
+            });
+
+            tooltip.dataset.pinWired = "1";
+          });
+
+          if (!pinDocumentListenerAttached) {
+            document.addEventListener("click", (event) => {
+              if (!pinnedTooltip) return;
+              let activator = pinnedTooltip.closest(".flag-pill");
+              if (!activator) {
+                const stat = pinnedTooltip.closest(".detail-stat");
+                activator = stat ? stat.querySelector(".detail-pill") : null;
+              }
+              if (activator && activator.contains(event.target)) return;
+              if (pinnedTooltip.contains(event.target)) return;
+              unpinTooltip(pinnedTooltip);
+            });
+            pinDocumentListenerAttached = true;
+          }
+        };
+
         const setDetails = (monster) => {
           if (!monster) return;
+          if (pinnedTooltip) unpinTooltip(pinnedTooltip);
           detailFields.name.textContent = monster.name || "Unknown Monster";
           if (detailFields.mapLink) {
             const searchName = monster.name || "";
@@ -1269,6 +1377,7 @@
           renderTypeTooltip(monster.monsterType);
           applyElementColor(monster.elementalAttack, detailFields.element);
           renderFlags(monster);
+          attachTooltipPinning();
 
           details.classList.add("show");
           details.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -1370,6 +1479,7 @@
           closeBtn.addEventListener("click", clearDetails);
         }
 
+        attachTooltipPinning();
         attachSorting();
         init();
       })();
