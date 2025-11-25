@@ -42,6 +42,14 @@
     border-top: 1px solid var(--border-soft);
     opacity: 0.5;
   }
+
+  .resistance-icons {
+    display: flex;
+    gap: 0.35rem;
+    justify-content: center;
+    align-items: center;
+    margin: 0.3rem 0 0.6rem;
+  }
 </style>
 </head>
 <body>
@@ -421,6 +429,15 @@
         trySet();
       };
 
+      const shuffle = (arr) => {
+        const a = arr.slice();
+        for (let i = a.length - 1; i > 0; i -= 1) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [a[i], a[j]] = [a[j], a[i]];
+        }
+        return a;
+      };
+
       fetch(dataUrl.toString())
         .then((res) => (res.ok ? res.json() : Promise.reject()))
         .then((data) => {
@@ -438,14 +455,32 @@
             const label = (img.closest(".stat-card")?.querySelector(".stat-label")?.textContent || "").trim();
             const key = normalizeType(explicit || label);
             const pool = byType[key] || [];
-            const pick = pool.length ? pool[Math.floor(Math.random() * pool.length)] : null;
-            if (pick) {
-              img.alt = pick.name ? `${pick.name} example` : `${label} example`;
-              setImageSource(img, pick);
-            } else {
+            const picks = pool.length ? shuffle(pool).slice(0, Math.min(3, pool.length)) : [];
+
+            // ensure a container for multiple icons
+            let wrap = img.closest(".resistance-icons");
+            if (!wrap) {
+              wrap = document.createElement("div");
+              wrap.className = "resistance-icons";
+              img.parentNode.insertBefore(wrap, img);
+              wrap.appendChild(img);
+            }
+
+            wrap.innerHTML = "";
+            if (!picks.length) {
               img.removeAttribute("src");
               img.alt = "No matching monster";
+              wrap.appendChild(img);
+              return;
             }
+
+            picks.forEach((monster) => {
+              const node = img.cloneNode(false);
+              node.removeAttribute("src");
+              node.alt = monster.name ? `${monster.name} example` : `${label} example`;
+              setImageSource(node, monster);
+              wrap.appendChild(node);
+            });
           });
         })
         .catch(() => {
