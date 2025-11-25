@@ -598,6 +598,13 @@
               </div>
               <div class="detail-divider" aria-hidden="true"></div>
               <div>
+                <div class="detail-label">Loot Table</div>
+                <div class="detail-value">
+                  <div id="loot-table" style="display: flex; gap: 0.35rem; flex-wrap: wrap;"></div>
+                </div>
+              </div>
+              <div class="detail-divider" aria-hidden="true"></div>
+              <div>
                 <div class="detail-label">Recommended Weapons</div>
                 <div class="detail-value">
                   <div id="recommended-weapons" style="display: flex; gap: 0.35rem; flex-wrap: wrap;"></div>
@@ -841,6 +848,7 @@
         elitePlusSummary: document.getElementById("details-elite-plus-summary"),
         imageFallback: document.getElementById("details-image-fallback"),
         flags: document.getElementById("details-flags"),
+        lootTable: document.getElementById("loot-table"),
         recommendedWeapons: document.getElementById("recommended-weapons"),
       };
 
@@ -1020,6 +1028,23 @@
           return match && typeof match.value === "number" ? match.value : 1;
         };
 
+        const buildWeaponLinkRow = (entry) => {
+          const row = document.createElement("div");
+          row.className = "detail-tooltip-row";
+          const label = document.createElement("a");
+          label.className = "detail-tooltip-label";
+          label.textContent = entry.name;
+          label.href = `pages/items/weapons.html?weapon=${encodeURIComponent(entry.name)}`;
+          label.style.color = "inherit";
+          const val = document.createElement("span");
+          val.textContent = entry.meta || "";
+          const color = ELEMENT_COLORS[(entry.element || "").toLowerCase()];
+          if (color) val.style.color = color;
+          row.appendChild(label);
+          row.appendChild(val);
+          return row;
+        };
+
         const renderRecommendedWeapons = (monster) => {
           const container = detailFields.recommendedWeapons;
           if (!container) return;
@@ -1090,19 +1115,11 @@
               tooltip.textContent = "No matching weapons";
             } else {
               list.forEach((entry) => {
-                const row = document.createElement("div");
-                row.className = "detail-tooltip-row";
-                const label = document.createElement("a");
-                label.className = "detail-tooltip-label";
-                label.textContent = entry.name;
-                label.href = `pages/items/weapons.html?weapon=${encodeURIComponent(entry.name)}`;
-                label.style.color = "inherit";
-                const val = document.createElement("span");
-                val.textContent = `${formatDps(entry.effective)} DPS`;
-                const color = ELEMENT_COLORS[(entry.element || "").toLowerCase()];
-                if (color) val.style.color = color;
-                row.appendChild(label);
-                row.appendChild(val);
+                const row = buildWeaponLinkRow({
+                  name: entry.name,
+                  element: entry.element,
+                  meta: `${formatDps(entry.effective)} DPS`,
+                });
                 tooltip.appendChild(row);
               });
             }
@@ -1110,6 +1127,88 @@
             pill.appendChild(tooltip);
             container.appendChild(pill);
           });
+        };
+
+        const renderLootTable = (monster) => {
+          const container = detailFields.lootTable;
+          if (!container) return;
+          container.innerHTML = "";
+
+          if (!Array.isArray(weapons) || !weapons.length) {
+            const pill = document.createElement("span");
+            pill.className = "detail-pill";
+            pill.textContent = "No weapons data";
+            container.appendChild(pill);
+            return;
+          }
+
+          const level = Number(monster.level);
+          if (!Number.isFinite(level)) {
+            const pill = document.createElement("span");
+            pill.className = "detail-pill";
+            pill.textContent = "No level data";
+            container.appendChild(pill);
+            return;
+          }
+
+          const minLevel = Math.max(0, level - 10);
+          const maxLevel = level + 10;
+
+          const list = weapons
+            .map((w) => {
+              const wLevel = Number(w.level);
+              if (!Number.isFinite(wLevel)) return null;
+              if (wLevel < minLevel || wLevel > maxLevel) return null;
+              return {
+                name: w.name || "Unknown Weapon",
+                element: w.elementalDamageType || "-",
+                meta: `Lvl ${formatNumber(wLevel)}`,
+                level: wLevel,
+              };
+            })
+            .filter(Boolean)
+            .sort((a, b) => b.level - a.level)
+            .slice(0, 10);
+
+          const pill = document.createElement("span");
+          pill.className = "detail-pill";
+          pill.textContent = "Weapons";
+
+          const tooltip = document.createElement("span");
+          tooltip.className = "detail-tooltip";
+          tooltip.role = "tooltip";
+
+          const rangeRow = document.createElement("div");
+          rangeRow.className = "detail-tooltip-row";
+          const rangeLabel = document.createElement("span");
+          rangeLabel.className = "detail-tooltip-label";
+          rangeLabel.textContent = "Levels";
+          const rangeVal = document.createElement("span");
+          rangeVal.textContent = `${formatNumber(minLevel)} - ${formatNumber(maxLevel)}`;
+          rangeRow.appendChild(rangeLabel);
+          rangeRow.appendChild(rangeVal);
+          tooltip.appendChild(rangeRow);
+
+          const divider = document.createElement("div");
+          divider.className = "detail-tooltip-divider";
+          tooltip.appendChild(divider);
+
+          if (!list.length) {
+            const emptyRow = document.createElement("div");
+            emptyRow.className = "detail-tooltip-row";
+            const emptyLabel = document.createElement("span");
+            emptyLabel.className = "detail-tooltip-label";
+            emptyLabel.textContent = "No weapons in range";
+            emptyRow.appendChild(emptyLabel);
+            tooltip.appendChild(emptyRow);
+          } else {
+            list.forEach((entry) => {
+              tooltip.appendChild(buildWeaponLinkRow(entry));
+            });
+          }
+
+          pill.appendChild(tooltip);
+          container.appendChild(pill);
         };
 
         const normalizeType = (value) => {
@@ -1385,8 +1484,8 @@
               const stat = tooltip.closest(".detail-stat");
               activator = stat ? stat.querySelector(".detail-pill") : null;
             }
-            if (!activator && tooltip.closest("#recommended-weapons-pill")) {
-              activator = document.getElementById("recommended-weapons-pill");
+            if (!activator) {
+              activator = tooltip.closest(".detail-pill");
             }
             if (!activator) return;
 
@@ -1424,8 +1523,8 @@
                 const stat = pinnedTooltip.closest(".detail-stat");
                 activator = stat ? stat.querySelector(".detail-pill") : null;
               }
-              if (!activator && pinnedTooltip.closest("#recommended-weapons-pill")) {
-                activator = document.getElementById("recommended-weapons-pill");
+              if (!activator) {
+                activator = pinnedTooltip.closest(".detail-pill");
               }
               if (activator && activator.contains(event.target)) return;
               if (pinnedTooltip.contains(event.target)) return;
@@ -1505,6 +1604,7 @@
           renderTypeTooltip(monster.monsterType);
           applyElementColor(monster.elementalAttack, detailFields.element);
           renderFlags(monster);
+          renderLootTable(monster);
           renderRecommendedWeapons(monster);
           attachTooltipPinning();
 
