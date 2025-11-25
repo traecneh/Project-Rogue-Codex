@@ -167,8 +167,8 @@
         flex: 1 1 140px;
       }
 
-      .stat-select {
-        min-width: 120px;
+      .stat-slider {
+        width: 100%;
       }
 
       .price-row .field {
@@ -599,26 +599,36 @@
 
                 <div class="input-row stat-row">
                   <div class="field">
-                    <label for="stat-str">Strength Bonus</label>
-                    <select id="stat-str" class="select-input stat-select"></select>
+                    <label for="stat-str">Strength Bonus <span id="stat-str-value">0</span></label>
+                    <input type="range" id="stat-str" class="stat-slider" min="0" max="30" value="0" />
                   </div>
                   <div class="field">
-                    <label for="stat-dex">Dexterity Bonus</label>
-                    <select id="stat-dex" class="select-input stat-select"></select>
+                    <label for="stat-dex">Dexterity Bonus <span id="stat-dex-value">0</span></label>
+                    <input type="range" id="stat-dex" class="stat-slider" min="0" max="30" value="0" />
                   </div>
                   <div class="field">
-                    <label for="stat-con">Constitution Bonus</label>
-                    <select id="stat-con" class="select-input stat-select"></select>
+                    <label for="stat-con">Constitution Bonus <span id="stat-con-value">0</span></label>
+                    <input type="range" id="stat-con" class="stat-slider" min="0" max="30" value="0" />
                   </div>
                 </div>
+                <p class="inline-note" id="stat-total-note">Total bonus: 0</p>
 
                 <div class="input-row price-row">
                   <div class="field price-field">
-                    <label for="price-input">Price</label>
-                    <input id="price-input" name="price" class="text-input" type="text" placeholder="1200, offer, etc." />
+                    <label for="price-input">Price <span id="price-value">0</span></label>
+                    <input
+                      id="price-input"
+                      name="price"
+                      class="stat-slider"
+                      type="range"
+                      min="0"
+                      max="100000000"
+                      step="5"
+                      value="0"
+                    />
                   </div>
                   <div class="field">
-                    <label for="price-currency">Currency</label>
+                    <label>Currency</label>
                     <select id="price-currency" name="priceCurrency" class="select-input">
                       <option value="Gold">Gold</option>
                       <option value="Ascendancy Shards">Ascendancy Shards</option>

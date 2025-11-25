@@ -33,7 +33,12 @@
     statStr: null,
     statDex: null,
     statCon: null,
+    statStrValue: null,
+    statDexValue: null,
+    statConValue: null,
+    statTotalNote: null,
     price: null,
+    priceDisplay: null,
     priceCurrency: null,
     ign: null,
     notes: null,
@@ -55,6 +60,7 @@
     wireItemControls();
     wireForm();
     wireFilters();
+    syncPriceFields();
     loadItemData();
   });
 
@@ -71,7 +77,12 @@
     els.statStr = document.getElementById("stat-str");
     els.statDex = document.getElementById("stat-dex");
     els.statCon = document.getElementById("stat-con");
+    els.statStrValue = document.getElementById("stat-str-value");
+    els.statDexValue = document.getElementById("stat-dex-value");
+    els.statConValue = document.getElementById("stat-con-value");
+    els.statTotalNote = document.getElementById("stat-total-note");
     els.price = document.getElementById("price-input");
+    els.priceDisplay = document.getElementById("price-value");
     els.priceCurrency = document.getElementById("price-currency");
     els.ign = document.getElementById("ign-input");
     els.notes = document.getElementById("notes-input");
@@ -127,7 +138,7 @@
     if (els.raritySelect) {
       els.raritySelect.addEventListener("change", () => {
         const rarity = getSelectedRarity();
-        updateStatSelects(rarity);
+        updateStatSliders(rarity);
         const currentItem = state.itemLookup.get(els.itemSelect?.value);
         const allowed = getAllowedRarities(currentItem);
         const allowedRangeText = allowed.length ? `${allowed[0].name} - ${allowed[allowed.length - 1].name}` : "";
@@ -136,6 +147,19 @@
             ? `Allowed rarities: ${allowedRangeText || "N/A"}. Bonus stats must total between ${rarity.min} and ${rarity.max}.`
             : ""
         );
+      });
+    }
+
+    ["statStr", "statDex", "statCon"].forEach((key) => {
+      const input = els[key];
+      if (input) {
+        input.addEventListener("input", () => updateStatLabels());
+      }
+    });
+
+    if (els.price) {
+      els.price.addEventListener("input", () => {
+        syncPriceFields();
       });
     }
   }
@@ -414,7 +438,7 @@
     renderItemSelect();
     renderSelectedItem(null);
     updateRarityForItem(null);
-    updateStatSelects(null);
+    updateStatSliders(null);
     void loadPerkOptions();
 
     let persisted = [];
@@ -533,6 +557,7 @@
     const slug = slugify(name);
     const icon = raw?.Icon ? `images/${category === "Weapon" ? "weapons" : "armors"}/${raw.Icon}` : null;
     const skillType = raw?.SkillType || raw?.Skill || "";
+    const shardDecomp = typeof raw?.ShardDecompositionCount === "number" ? raw.ShardDecompositionCount : null;
     return {
       id: `${category}-${slug}`,
       name,
@@ -544,6 +569,7 @@
       skillType,
       minimumRarity,
       maximumRarity,
+      shardDecomp,
       raw,
     };
   }
@@ -655,6 +681,9 @@
       const max = item.maximumRarity || "Any";
       meta.appendChild(makeChip(`Rarity: ${min} - ${max}`));
     }
+    if (typeof item.shardDecomp === "number") {
+      meta.appendChild(makeChip(`Shard Decomp: ${item.shardDecomp}`));
+    }
     container.appendChild(meta);
   }
 
@@ -722,7 +751,7 @@
     });
 
     const rarity = getSelectedRarity();
-    updateStatSelects(rarity);
+    updateStatSliders(rarity);
     if (item) {
       setRarityNote(
         rarity
@@ -743,34 +772,53 @@
     return state.rarityDefs.find((entry) => entry.name === value) || null;
   }
 
-  function updateStatSelects(rarity) {
-    const selects = [els.statStr, els.statDex, els.statCon].filter(Boolean);
-    if (!selects.length) return;
+  function updateStatSliders(rarity) {
+    const sliders = [els.statStr, els.statDex, els.statCon].filter(Boolean);
+    if (!sliders.length) return;
     const max = rarity ? Math.max(rarity.max || 0, rarity.min || 0) : 30;
-    const range = Array.from({ length: max + 1 }, (_, idx) => idx);
-
-    selects.forEach((select) => {
-      const current = Number(select.value || 0);
-      select.innerHTML = "";
-      range.forEach((num) => {
-        const opt = document.createElement("option");
-        opt.value = num.toString();
-        opt.textContent = num.toString();
-        select.appendChild(opt);
-      });
-      const target = current <= max ? current : 0;
-      select.value = target.toString();
-    });
-
-    if (rarity && rarity.min > 0) {
-      const total =
-        Number(els.statStr?.value || 0) + Number(els.statDex?.value || 0) + Number(els.statCon?.value || 0);
-      if (total === 0) {
-        if (els.statStr) els.statStr.value = rarity.min.toString();
+    sliders.forEach((slider) => {
+      if (!slider) return;
+      slider.max = String(max);
+      if (Number(slider.value) > max) {
+        slider.value = String(max);
       }
+      if (rarity && rarity.min > 0 && totalStats() === 0) {
+        slider.value = String(Math.min(rarity.min, max));
+      }
+    });
+    updateStatLabels();
+  }
+
+  function updateStatLabels() {
+    if (els.statStrValue) els.statStrValue.textContent = els.statStr?.value || "0";
+    if (els.statDexValue) els.statDexValue.textContent = els.statDex?.value || "0";
+    if (els.statConValue) els.statConValue.textContent = els.statCon?.value || "0";
+    updateStatTotalNote();
+  }
+
+  function totalStats() {
+    return Number(els.statStr?.value || 0) + Number(els.statDex?.value || 0) + Number(els.statCon?.value || 0);
+  }
+
+  function updateStatTotalNote() {
+    if (!els.statTotalNote) return;
+    const total = totalStats();
+    const rarity = getSelectedRarity();
+    if (!rarity) {
+      els.statTotalNote.textContent = `Total bonus: ${total}`;
+    } else {
+      els.statTotalNote.textContent = `Total bonus: ${total} (allowed ${rarity.min}-${rarity.max})`;
     }
   }
 
+  function getPriceValue() {
+    return Number(els.price?.value || 0);
+  }
+
+  function syncPriceFields() {
+    if (!els.price || !els.priceDisplay) return;
+    els.priceDisplay.textContent = els.price.value || "0";
+  }
   function createListingFromForm() {
     if (!els.form || !els.itemSelect) return;
 
@@ -799,6 +847,8 @@
       return;
     }
 
+    const priceValue = getPriceValue();
+
     const perkName = (els.perkSelect?.value || "").trim();
 
     if (!state.auth || !state.auth.user) {
@@ -813,7 +863,7 @@
 
     const listingTypeInput = els.form.querySelector('input[name="listingType"]:checked');
     const listingType = listingTypeInput ? listingTypeInput.value : "WTS";
-    const price = (els.price?.value || "").trim();
+    const price = getPriceValue();
     const priceCurrency = els.priceCurrency?.value || "Gold";
     const ign = (els.ign?.value || "").trim();
     const notes = (els.notes?.value || "").trim();
@@ -822,7 +872,7 @@
       id: `listing-${Date.now()}-${Math.random().toString(16).slice(2)}`,
       itemId: item.id,
       listingType,
-      price: price || "Offer",
+      price: priceValue,
       priceCurrency,
       discordUser: state.auth.user,
       ign,
@@ -850,8 +900,14 @@
     if (els.priceCurrency) {
       els.priceCurrency.value = "Gold";
     }
+    if (els.price) {
+      els.price.value = "0";
+    }
+    if (els.priceDisplay) {
+      els.priceDisplay.textContent = "0";
+    }
     updateRarityForItem(null);
-    updateStatSelects(null);
+    updateStatSliders(null);
     // TODO: hook this up to a real database (e.g., Firestore).
     void saveListingToBackend(listing);
   }
@@ -1045,7 +1101,7 @@
     const defaults = [
       {
         listingType: "WTS",
-        price: "1200g",
+        price: 1200,
         priceCurrency: "Gold",
         discordUser: {
           displayTag: "codex-helper#2025",
@@ -1061,7 +1117,7 @@
       },
       {
         listingType: "WTB",
-        price: "Offer",
+        price: 0,
         priceCurrency: "Gold",
         discordUser: {
           displayTag: "scout#8888",
@@ -1077,7 +1133,7 @@
       },
       {
         listingType: "WTT",
-        price: "Trade my polearm set",
+        price: 0,
         priceCurrency: "Gold",
         discordUser: {
           displayTag: "merc#3377",
