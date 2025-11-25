@@ -1059,9 +1059,11 @@
           list.forEach((entry) => {
             const row = document.createElement("div");
             row.className = "detail-tooltip-row";
-            const label = document.createElement("span");
+            const label = document.createElement("a");
             label.className = "detail-tooltip-label";
             label.textContent = entry.name;
+            label.href = `pages/items/weapons.html?weapon=${encodeURIComponent(entry.name)}`;
+            label.style.color = "inherit";
             const val = document.createElement("span");
             val.textContent = `${formatDps(entry.effective)} DPS`;
             const color = ELEMENT_COLORS[(entry.element || "").toLowerCase()];
