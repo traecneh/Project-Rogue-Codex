@@ -1062,24 +1062,26 @@
           }
 
           const level = Number(monster.level);
-          const ranges = [];
+          let ranges = [];
           if (Number.isFinite(level)) {
-            const centers = [];
-            if (level - 20 >= 0) centers.push(level - 20);
-            centers.push(level);
-            for (let c = level + 20; c <= 100; c += 20) {
-              centers.push(c);
+            const half = 10;
+            const step = 25; // non-overlapping 20-wide bands with a 5-level gap
+            const centers = new Set();
+            centers.add(level);
+            const prevCenter = level - step;
+            if (prevCenter >= 0) centers.add(prevCenter);
+            for (let c = level + step; c - half < 100; c += step) {
+              centers.add(c);
             }
-            const seen = new Set();
-            centers.forEach((c) => {
-              const min = Math.max(0, c - 10);
-              const max = Math.min(100, c + 10);
-              const key = `${min}-${max}`;
-              if (seen.has(key)) return;
-              seen.add(key);
-              ranges.push({ min, max, limit: 5 });
-            });
-            ranges.sort((a, b) => a.min - b.min);
+
+            ranges = Array.from(centers)
+              .map((c) => {
+                const min = Math.max(0, c - half);
+                const max = c + half;
+                return { min, max, limit: 5 };
+              })
+              .filter((r) => r.max > r.min)
+              .sort((a, b) => a.min - b.min);
           }
           ranges.push({ label: "Endgame", min: 100, max: Infinity, limit: 10 });
 
