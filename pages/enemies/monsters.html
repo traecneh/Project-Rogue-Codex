@@ -607,7 +607,10 @@
               <div>
                 <div class="detail-label">Recommended Weapons</div>
                 <div class="detail-value">
-                  <div id="recommended-weapons" style="display: flex; gap: 0.35rem; flex-wrap: wrap;"></div>
+                  <div
+                    id="recommended-weapons"
+                    style="display: flex; gap: 0.35rem; flex-wrap: wrap;"
+                  ></div>
                 </div>
               </div>
               <div class="detail-divider" aria-hidden="true"></div>
@@ -1060,22 +1063,25 @@
 
           const level = Number(monster.level);
           const ranges = [];
-          if (Number.isFinite(level) && level >= 105) {
-            ranges.push({ label: "Endgame", min: 100, max: Infinity });
-          } else if (Number.isFinite(level)) {
-            let start = Math.max(0, level - 30);
-            let end = level;
-            ranges.push({ label: `${start}-${end}`, min: start, max: end });
-            while (end < 100) {
-              const nextStart = end;
-              const nextEnd = Math.min(100, nextStart + 30);
-              ranges.push({ label: `${nextStart}-${nextEnd}`, min: nextStart, max: nextEnd });
-              end = nextEnd;
+          if (Number.isFinite(level)) {
+            const centers = [];
+            if (level - 20 >= 0) centers.push(level - 20);
+            centers.push(level);
+            for (let c = level + 20; c <= 100; c += 20) {
+              centers.push(c);
             }
-            ranges.push({ label: "Endgame", min: 100, max: Infinity });
-          } else {
-            ranges.push({ label: "Endgame", min: 100, max: Infinity });
+            const seen = new Set();
+            centers.forEach((c) => {
+              const min = Math.max(0, c - 10);
+              const max = Math.min(100, c + 10);
+              const key = `${min}-${max}`;
+              if (seen.has(key)) return;
+              seen.add(key);
+              ranges.push({ min, max, limit: 5 });
+            });
+            ranges.sort((a, b) => a.min - b.min);
           }
+          ranges.push({ label: "Endgame", min: 100, max: Infinity, limit: 10 });
 
           const buildList = (range) => {
             const list = weapons
@@ -1083,28 +1089,30 @@
                 const dps = Number(w.dps);
                 const wLevel = Number(w.level);
                 if (!Number.isFinite(dps)) return null;
-                if (!Number.isFinite(wLevel)) return null;
-                if (wLevel < range.min) return null;
-                if (range.max !== Infinity && wLevel > range.max) return null;
-                const multiplier = getElementMultiplier(monster.monsterType, w.elementalDamageType);
-                return {
-                  name: w.name || "Unknown Weapon",
-                  element: w.elementalDamageType || "-",
-                  effective: dps * multiplier,
-                  base: dps,
-                  level: wLevel,
-                };
-              })
-              .filter(Boolean)
-              .sort((a, b) => b.effective - a.effective)
-              .slice(0, 10);
+              if (!Number.isFinite(wLevel)) return null;
+              if (wLevel < range.min) return null;
+              if (range.max !== Infinity && wLevel > range.max) return null;
+              const multiplier = getElementMultiplier(monster.monsterType, w.elementalDamageType);
+              return {
+                name: w.name || "Unknown Weapon",
+                element: w.elementalDamageType || "-",
+                effective: dps * multiplier,
+                base: dps,
+                level: wLevel,
+              };
+            })
+            .filter(Boolean)
+            .sort((a, b) => b.effective - a.effective)
+            .slice(0, range.limit || 5);
             return list;
           };
+
+          const rangeLabel = (range) => (range.min === range.max ? `${range.max}` : `${range.min}-${range.max}`);
 
           ranges.forEach((range) => {
             const pill = document.createElement("span");
             pill.className = "detail-pill";
-            pill.textContent = range.label;
+            pill.textContent = range.label || rangeLabel(range);
 
             const tooltip = document.createElement("span");
             tooltip.className = "detail-tooltip";
