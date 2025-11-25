@@ -230,7 +230,6 @@
 
       .detail-cell {
         padding: 0.3rem 0;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
       }
 
       .detail-label {
@@ -245,6 +244,14 @@
       .detail-value {
         font-weight: 700;
         color: #fff;
+      }
+
+      .detail-divider {
+        grid-column: 1 / -1;
+        height: 1px;
+        margin: 0.35rem 0 0.25rem;
+        background: var(--border-soft);
+        opacity: 0.6;
       }
 
       @media (max-width: 640px) {
@@ -347,24 +354,15 @@
           }
         };
 
-        const deriveColumns = (rows) => {
-          const set = new Set();
-          rows.forEach((row) => {
-            Object.keys(row || {}).forEach((key) => set.add(key));
-          });
-          if (!set.size) return [];
-          const preferred = ["name", "slot", "type", "rarity", "level"];
-          const keys = Array.from(set);
-          keys.sort((a, b) => {
-            const ai = preferred.indexOf(a);
-            const bi = preferred.indexOf(b);
-            if (ai !== -1 && bi !== -1) return ai - bi;
-            if (ai !== -1) return -1;
-            if (bi !== -1) return 1;
-            return a.localeCompare(b);
-          });
-          return keys;
-        };
+      const TABLE_COLUMNS = ["image", "name", "level", "dps", "skillType", "specialEffect", "elementalDamageType"];
+      const ELEMENT_COLORS = {
+        fire: "#ff5a5a",
+        electric: "#b86bff",
+        poison: "#2f7a2f",
+        cold: "#7cc9ff",
+        acid: "#b38b00",
+        disease: "#ff9c42",
+      };
 
         const normalizeSortValue = (value) => {
           if (value === null || value === undefined) return "";
@@ -380,6 +378,21 @@
           if (Array.isArray(value)) return value.join(", ");
           if (typeof value === "object") return JSON.stringify(value);
           return value;
+        };
+
+        const formatNumber = (value) => {
+          if (value === null || value === undefined) return "-";
+          if (Number.isNaN(Number(value))) return value;
+          return Number(value).toLocaleString("en-US");
+        };
+
+        const formatRange = (min, max) => {
+          const hasMin = min !== null && min !== undefined && min !== "";
+          const hasMax = max !== null && max !== undefined && max !== "";
+          if (hasMin && hasMax) return `${formatNumber(min)} - ${formatNumber(max)}`;
+          if (hasMin) return `${formatNumber(min)}`;
+          if (hasMax) return `${formatNumber(max)}`;
+          return "-";
         };
 
         const ensureImage = (img, fallback, src) => {
@@ -400,21 +413,66 @@
           img.src = src;
         };
 
+        const createCell = (labelText, valueContent) => {
+          const cell = document.createElement("div");
+          cell.className = "detail-cell";
+          const label = document.createElement("span");
+          label.className = "detail-label";
+          label.textContent = labelText;
+          const value = document.createElement("div");
+          value.className = "detail-value";
+          if (valueContent instanceof Node) {
+            value.appendChild(valueContent);
+          } else {
+            value.textContent = valueContent;
+          }
+          cell.appendChild(label);
+          cell.appendChild(value);
+          return cell;
+        };
+
+        const createPill = (items) => {
+          const pill = document.createElement("span");
+          pill.className = "flag-pill";
+          if (!items.length) {
+            pill.textContent = "None";
+            return pill;
+          }
+          items.forEach((entry, idx) => {
+            const part = document.createElement("span");
+            part.textContent = entry;
+            pill.appendChild(part);
+            if (idx !== items.length - 1) {
+              const sep = document.createElement("span");
+              sep.textContent = " • ";
+              pill.appendChild(sep);
+            }
+          });
+          return pill;
+        };
+
         const buildHead = () => {
           tableHeadRow.innerHTML = "";
-          columns.forEach((col) => {
+          TABLE_COLUMNS.forEach((col) => {
             const th = document.createElement("th");
-            th.textContent = titleCase(col);
-            th.dataset.sortKey = col;
-            th.addEventListener("click", () => {
-              if (sortKey === col) {
-                sortDir = sortDir === "asc" ? "desc" : "asc";
-              } else {
-                sortKey = col;
-                sortDir = "asc";
-              }
-              applyFilterAndSort();
-            });
+            const label =
+              col === "elementalDamageType" ? "Element"
+              : col === "dps" ? "DPS"
+              : col === "specialEffect" ? "Perk"
+              : col;
+            th.textContent = titleCase(label);
+            if (col !== "image") {
+              th.dataset.sortKey = col;
+              th.addEventListener("click", () => {
+                if (sortKey === col) {
+                  sortDir = sortDir === "asc" ? "desc" : "asc";
+                } else {
+                  sortKey = col;
+                  sortDir = "asc";
+                }
+                applyFilterAndSort();
+              });
+            }
             tableHeadRow.appendChild(th);
           });
         };
@@ -427,26 +485,68 @@
 
           const container = detailFields.properties;
           container.innerHTML = "";
-          const keys = Object.keys(item || {});
-          if (!keys.length) {
-            const empty = document.createElement("div");
-            empty.textContent = "No properties to display.";
-            empty.className = "detail-value";
-            container.appendChild(empty);
-          } else {
-            keys.forEach((key) => {
-              const cell = document.createElement("div");
-              cell.className = "detail-cell";
-              const label = document.createElement("span");
-              label.className = "detail-label";
-              label.textContent = titleCase(key);
-              const value = document.createElement("div");
-              value.className = "detail-value";
-              value.textContent = formatValue(item[key]);
-              cell.appendChild(label);
-              cell.appendChild(value);
-              container.appendChild(cell);
-            });
+
+          const add = (label, value) => container.appendChild(createCell(label, value));
+
+          add("Level", formatNumber(item.level));
+          add("DPS", formatNumber(item.dps));
+          add("Damage", formatRange(item.minDamage, item.maxDamage));
+          add(
+            "Speed",
+            item.speed === null || item.speed === undefined ? "-" : `${formatNumber(item.speed)} ms`
+          );
+          add("Skill Type", formatValue(item.skillType));
+          add("Subtype", formatValue(item.subtype));
+          add("Perk", formatValue(item.specialEffect));
+          const elementSpan = document.createElement("span");
+          const elementColor = ELEMENT_COLORS[(item.elementalDamageType || "").toLowerCase()];
+          elementSpan.textContent = formatValue(item.elementalDamageType);
+          elementSpan.style.color = elementColor || "";
+          add("Element", elementSpan);
+          add("Proc Chance", formatValue(item.procChance));
+          add("Requirement Type", formatValue(item.requirementType));
+          add("Requirement Amount", formatNumber(item.requirementAmount));
+          add("Weight", formatNumber(item.weight));
+          add("Speciality", formatValue(item.speciality));
+          add("Speciality Amount", formatNumber(item.specialityAmount));
+          add(
+            "Rarity",
+            `${formatValue(item.minimumRarity || "-")} - ${formatValue(item.maximumRarity || "-")}`
+          );
+          add("Stat To Hit", formatNumber(item.statToHit));
+
+          container.appendChild(Object.assign(document.createElement("div"), { className: "detail-divider" }));
+
+          add("Sell Value", formatNumber(item.sellValue));
+          add("Value", formatNumber(item.value));
+          add("Shard Decomposition Count", formatNumber(item.shardDecompositionCount));
+          add("Shard Promotion Count", formatNumber(item.shardPromotionCount));
+
+          container.appendChild(Object.assign(document.createElement("div"), { className: "detail-divider" }));
+
+          const resistances = [
+            ["Fire", item.fire],
+            ["Cold", item.cold],
+            ["Electric", item.electric],
+            ["Acid", item.acid],
+            ["Poison", item.poison],
+            ["Disease", item.disease],
+          ]
+            .filter(([, val]) => val !== null && val !== undefined && Number(val) !== 0)
+            .map(([label, val]) => `${label}: ${formatNumber(val)}`);
+          if (resistances.length) {
+            add("Resistances", createPill(resistances));
+          }
+
+          const stats = [
+            ["Str", item.statStrength],
+            ["Dex", item.statDexterity],
+            ["Con", item.statConstitution],
+          ]
+            .filter(([, val]) => val !== null && val !== undefined && Number(val) !== 0)
+            .map(([label, val]) => `${label}: ${formatNumber(val)}`);
+          if (stats.length) {
+            add("Stats", createPill(stats));
           }
 
           details.classList.add("show");
@@ -469,20 +569,35 @@
             const tr = document.createElement("tr");
             tr.dataset.id = item.id || "";
 
-            columns.forEach((col) => {
+            TABLE_COLUMNS.forEach((col) => {
               const td = document.createElement("td");
-              const value = item[col];
-              if (typeof value === "string" && value.match(/\.(png|gif|jpg|jpeg)$/i)) {
+              if (col === "image") {
                 const img = document.createElement("img");
                 img.className = "item-thumb";
                 img.alt = `${item.name || "Item"} image`;
-                img.src = value;
-                td.appendChild(img);
-              } else {
-                td.textContent = formatValue(value);
-              }
-              tr.appendChild(td);
-            });
+                const noImg = document.createElement("span");
+                noImg.className = "no-image";
+                noImg.textContent = "No Image";
+                ensureImage(img, noImg, item.image || item.icon || item.thumbnail);
+                if (img.src) {
+                  td.appendChild(img);
+                } else {
+                  td.appendChild(noImg);
+                }
+          } else {
+            const value = item[col];
+            if (col === "elementalDamageType") {
+              const span = document.createElement("span");
+              const color = ELEMENT_COLORS[(value || "").toLowerCase()];
+              span.textContent = formatValue(value);
+              span.style.color = color || "";
+              td.appendChild(span);
+            } else {
+              td.textContent = formatValue(value);
+            }
+          }
+          tr.appendChild(td);
+        });
 
             tr.addEventListener("click", () => setDetails(item));
             fragment.appendChild(tr);
@@ -498,9 +613,11 @@
             return;
           }
 
+          const searchableColumns = TABLE_COLUMNS.filter((c) => c !== "image");
+
           const filtered = items.filter((item) => {
             if (!searchTerm) return true;
-            const text = columns
+            const text = searchableColumns
               .map((col) => formatValue(item[col]))
               .join(" ")
               .toLowerCase();
@@ -523,6 +640,55 @@
           renderTable(sorted);
         };
 
+        const KEY_MAP = {
+          dps: "dps",
+          name: "name",
+          skilltype: "skillType",
+          specialeffect: "specialEffect",
+          elementaldamagetype: "elementalDamageType",
+          minimumdamage: "minDamage",
+          maximumdamage: "maxDamage",
+          speed: "speed",
+          level: "level",
+          subtype: "subtype",
+          type: "type",
+          sellvalue: "sellValue",
+          value: "value",
+          weight: "weight",
+          speciality: "speciality",
+          specialityamount: "specialityAmount",
+          procchance: "procChance",
+          requirementtype: "requirementType",
+          requirementamount: "requirementAmount",
+          minimumrarity: "minimumRarity",
+          maximumrarity: "maximumRarity",
+          sharddecompositioncount: "shardDecompositionCount",
+          shardpromotioncount: "shardPromotionCount",
+          fire: "fire",
+          cold: "cold",
+          electric: "electric",
+          acid: "acid",
+          poison: "poison",
+          disease: "disease",
+          stat_strength: "statStrength",
+          stat_dexterity: "statDexterity",
+          stat_constitution: "statConstitution",
+          stat_tohit: "statToHit",
+          icon: "image",
+          thumbnail: "image",
+          image: "image",
+        };
+
+        const normalizeKeys = (raw) => {
+          const out = {};
+          Object.entries(raw || {}).forEach(([key, value]) => {
+            const lowered = key.toString().toLowerCase();
+            const mapped = KEY_MAP[lowered] || key.charAt(0).toLowerCase() + key.slice(1);
+            out[mapped] = value;
+          });
+          return out;
+        };
+
         const init = () => {
           fetch(dataUrl.toString())
             .then((response) => {
@@ -532,8 +698,8 @@
               return response.json();
             })
             .then((data) => {
-              items = Array.isArray(data) ? data : [];
-              columns = deriveColumns(items);
+              items = Array.isArray(data) ? data.map((row) => normalizeKeys(row)) : [];
+              columns = TABLE_COLUMNS.slice();
               if (!columns.length) {
                 renderEmpty("Add weapons.json beside this page to see weapons.");
                 return;

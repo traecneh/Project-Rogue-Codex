@@ -599,7 +599,12 @@
               <div class="detail-divider" aria-hidden="true"></div>
               <div>
                 <div class="detail-label">Recommended Weapons</div>
-                <div class="detail-value">Coming soon</div>
+                <div class="detail-value">
+                  <span class="detail-pill" id="recommended-weapons-pill">
+                    Endgame
+                    <span class="detail-tooltip" role="tooltip" id="recommended-weapons-tooltip">Loading...</span>
+                  </span>
+                </div>
               </div>
               <div class="detail-divider" aria-hidden="true"></div>
               <div>
@@ -667,6 +672,7 @@
     <script>
       (() => {
         const dataUrl = new URL("monsters.json", window.location.href);
+        const weaponsUrl = new URL("../items/weapons.json", window.location.href);
         const searchInput = document.getElementById("monster-search");
         const typeFilter = document.getElementById("filter-type");
         const elementFilter = document.getElementById("filter-element");
@@ -838,6 +844,8 @@
         elitePlusSummary: document.getElementById("details-elite-plus-summary"),
         imageFallback: document.getElementById("details-image-fallback"),
         flags: document.getElementById("details-flags"),
+        recommendedWeaponsPill: document.getElementById("recommended-weapons-pill"),
+        recommendedWeaponsTooltip: document.getElementById("recommended-weapons-tooltip"),
       };
 
       const tooltipFields = {
@@ -862,6 +870,7 @@
         let selectedTypes = new Set();
         let selectedElements = new Set();
         let selectedFlags = new Set();
+        let weapons = [];
 
       const renderEmpty = (message) => {
         tableBody.innerHTML = `<tr><td class="table-empty" colspan="8">${message}</td></tr>`;
@@ -988,6 +997,79 @@
           if (scaledMin !== null) return `${formatNumber(scaledMin)}`;
           if (scaledMax !== null) return `${formatNumber(scaledMax)}`;
           return "-";
+        };
+
+        const normalizeWeapon = (raw) => {
+          const map = {
+            dps: "dps",
+            name: "name",
+            elementaldamagetype: "elementalDamageType",
+            elementalDamageType: "elementalDamageType",
+          };
+          const out = {};
+          Object.entries(raw || {}).forEach(([key, value]) => {
+            const lower = key.toString().toLowerCase();
+            const mapped = map[lower] || key;
+            out[mapped] = value;
+          });
+          return out;
+        };
+
+        const getElementMultiplier = (monsterType, weaponElement) => {
+          const list = TYPE_RESISTANCES[normalizeType(monsterType)];
+          if (!list || !list.length) return 1;
+          const target = (weaponElement || "").toLowerCase();
+          const match = list.find((entry) => (entry.element || "").toLowerCase() === target);
+          return match && typeof match.value === "number" ? match.value : 1;
+        };
+
+        const renderRecommendedWeapons = (monster) => {
+          const pill = detailFields.recommendedWeaponsPill;
+          const tooltip = detailFields.recommendedWeaponsTooltip;
+          if (!pill || !tooltip) return;
+
+          tooltip.innerHTML = "";
+
+          if (!Array.isArray(weapons) || !weapons.length) {
+            tooltip.textContent = "No weapons data loaded";
+            return;
+          }
+
+          const list = weapons
+            .map((w) => {
+              const dps = Number(w.dps);
+              if (!Number.isFinite(dps)) return null;
+              const multiplier = getElementMultiplier(monster.monsterType, w.elementalDamageType);
+              return {
+                name: w.name || "Unknown Weapon",
+                element: w.elementalDamageType || "-",
+                effective: dps * multiplier,
+                base: dps,
+              };
+            })
+            .filter(Boolean)
+            .sort((a, b) => b.effective - a.effective)
+            .slice(0, 10);
+
+          if (!list.length) {
+            tooltip.textContent = "No matching weapons";
+            return;
+          }
+
+          list.forEach((entry) => {
+            const row = document.createElement("div");
+            row.className = "detail-tooltip-row";
+            const label = document.createElement("span");
+            label.className = "detail-tooltip-label";
+            label.textContent = entry.name;
+            const val = document.createElement("span");
+            val.textContent = `${formatDps(entry.effective)} DPS`;
+            const color = ELEMENT_COLORS[(entry.element || "").toLowerCase()];
+            if (color) val.style.color = color;
+            row.appendChild(label);
+            row.appendChild(val);
+            tooltip.appendChild(row);
+          });
         };
 
         const normalizeType = (value) => {
@@ -1263,6 +1345,9 @@
               const stat = tooltip.closest(".detail-stat");
               activator = stat ? stat.querySelector(".detail-pill") : null;
             }
+            if (!activator && tooltip.closest("#recommended-weapons-pill")) {
+              activator = document.getElementById("recommended-weapons-pill");
+            }
             if (!activator) return;
 
             const togglePin = () => {
@@ -1298,6 +1383,9 @@
               if (!activator) {
                 const stat = pinnedTooltip.closest(".detail-stat");
                 activator = stat ? stat.querySelector(".detail-pill") : null;
+              }
+              if (!activator && pinnedTooltip.closest("#recommended-weapons-pill")) {
+                activator = document.getElementById("recommended-weapons-pill");
               }
               if (activator && activator.contains(event.target)) return;
               if (pinnedTooltip.contains(event.target)) return;
@@ -1377,6 +1465,7 @@
           renderTypeTooltip(monster.monsterType);
           applyElementColor(monster.elementalAttack, detailFields.element);
           renderFlags(monster);
+          renderRecommendedWeapons(monster);
           attachTooltipPinning();
 
           details.classList.add("show");
@@ -1404,15 +1493,18 @@
         };
 
         const init = () => {
-          fetch(dataUrl.toString())
-            .then((response) => {
-              if (!response.ok) {
-                throw new Error("Failed to load monsters.json");
-              }
+          Promise.all([
+            fetch(dataUrl.toString()).then((response) => {
+              if (!response.ok) throw new Error("Failed to load monsters.json");
               return response.json();
-            })
-            .then((data) => {
-              monsters = Array.isArray(data) ? data : [];
+            }),
+            fetch(weaponsUrl.toString())
+              .then((response) => (response.ok ? response.json() : []))
+              .catch(() => []),
+          ])
+            .then(([monsterData, weaponData]) => {
+              monsters = Array.isArray(monsterData) ? monsterData : [];
+              weapons = Array.isArray(weaponData) ? weaponData.map((w) => normalizeWeapon(w)) : [];
               if (!monsters.length) {
                 renderEmpty("No monsters found in monsters.json.");
                 return;
