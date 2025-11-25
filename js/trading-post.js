@@ -9,6 +9,9 @@
     items: [],
     itemLookup: new Map(),
     listings: [],
+    rarityDefs: [],
+    perks: [],
+    itemFilterText: "",
     auth: null,
     filters: {
       text: "",
@@ -19,12 +22,19 @@
 
   const els = {
     itemSelect: null,
+    itemFilter: null,
     itemPreview: null,
-    previewCard: null,
     form: null,
     submitButton: null,
     listingTypeGroup: null,
+    raritySelect: null,
+    rarityNote: null,
+    perkSelect: null,
+    statStr: null,
+    statDex: null,
+    statCon: null,
     price: null,
+    priceCurrency: null,
     ign: null,
     notes: null,
     formStatus: null,
@@ -42,6 +52,7 @@
     cacheElements();
     initializeAuthFlow();
     wireListingTypeChips();
+    wireItemControls();
     wireForm();
     wireFilters();
     loadItemData();
@@ -49,12 +60,19 @@
 
   function cacheElements() {
     els.itemSelect = document.getElementById("item-select");
+    els.itemFilter = document.getElementById("item-filter");
     els.itemPreview = document.getElementById("item-preview");
-    els.previewCard = document.getElementById("preview-card");
     els.form = document.getElementById("listing-form");
     els.submitButton = els.form ? els.form.querySelector('button[type="submit"]') : null;
     els.listingTypeGroup = document.getElementById("listing-type");
+    els.raritySelect = document.getElementById("rarity-select");
+    els.rarityNote = document.getElementById("rarity-note");
+    els.perkSelect = document.getElementById("perk-select");
+    els.statStr = document.getElementById("stat-str");
+    els.statDex = document.getElementById("stat-dex");
+    els.statCon = document.getElementById("stat-con");
     els.price = document.getElementById("price-input");
+    els.priceCurrency = document.getElementById("price-currency");
     els.ign = document.getElementById("ign-input");
     els.notes = document.getElementById("notes-input");
     els.formStatus = document.getElementById("form-status");
@@ -90,6 +108,36 @@
       }
       sync();
     });
+  }
+
+  function wireItemControls() {
+    if (els.itemFilter) {
+      els.itemFilter.addEventListener("input", (event) => {
+        state.itemFilterText = (event.target.value || "").toLowerCase();
+        renderItemSelect();
+      });
+    }
+    if (els.itemSelect) {
+      els.itemSelect.addEventListener("change", () => {
+        const item = state.itemLookup.get(els.itemSelect.value);
+        renderSelectedItem(item);
+        updateRarityForItem(item);
+      });
+    }
+    if (els.raritySelect) {
+      els.raritySelect.addEventListener("change", () => {
+        const rarity = getSelectedRarity();
+        updateStatSelects(rarity);
+        const currentItem = state.itemLookup.get(els.itemSelect?.value);
+        const allowed = getAllowedRarities(currentItem);
+        const allowedRangeText = allowed.length ? `${allowed[0].name} - ${allowed[allowed.length - 1].name}` : "";
+        setRarityNote(
+          rarity
+            ? `Allowed rarities: ${allowedRangeText || "N/A"}. Bonus stats must total between ${rarity.min} and ${rarity.max}.`
+            : ""
+        );
+      });
+    }
   }
 
   function initializeAuthFlow() {
@@ -320,12 +368,6 @@
       event.preventDefault();
       createListingFromForm();
     });
-    if (els.itemSelect) {
-      els.itemSelect.addEventListener("change", () => {
-        const item = state.itemLookup.get(els.itemSelect.value);
-        renderSelectedItem(item);
-      });
-    }
   }
 
   function wireFilters() {
@@ -352,6 +394,8 @@
   async function loadItemData() {
     setFormStatus("Loading item data...", "");
 
+    state.rarityDefs = getRarityDefinitions();
+
     const [weapons, armors] = await Promise.all([fetchJson("pages/items/weapons.json"), fetchJson("pages/items/armor.json")]);
     const weaponItems = Array.isArray(weapons) ? weapons.map((entry) => normalizeItem(entry, "Weapon")) : [];
     const armorItems = Array.isArray(armors) ? armors.map((entry) => normalizeItem(entry, "Armor")) : [];
@@ -369,6 +413,9 @@
     state.itemLookup = new Map(state.items.map((item) => [item.id, item]));
     renderItemSelect();
     renderSelectedItem(null);
+    updateRarityForItem(null);
+    updateStatSelects(null);
+    void loadPerkOptions();
 
     let persisted = [];
     try {
@@ -400,13 +447,92 @@
     }
   }
 
+  function getRarityDefinitions() {
+    const base = Array.isArray(window.rarityDefinitions)
+      ? window.rarityDefinitions
+      : [
+          { name: "Normal", min: 0, max: 0, color: "#ffffff" },
+          { name: "Uncommon", min: 2, max: 5, color: "#ffd966" },
+          { name: "Rare", min: 6, max: 10, color: "#0000ff" },
+          { name: "Epic", min: 11, max: 15, color: "#741b47" },
+          { name: "Legendary", min: 16, max: 20, color: "#ff9900" },
+          { name: "Mythical", min: 21, max: 25, color: "#6aa84f" },
+          { name: "Ascendant", min: 26, max: 30, color: "#ff0000" },
+        ];
+    return base.map((entry) => ({
+      name: entry.name,
+      min: Number(entry.min ?? 0),
+      max: Number(entry.max ?? 0),
+      color: entry.color || "#ffffff",
+    }));
+  }
+
+  function findRarityIndex(name) {
+    if (!name) return -1;
+    return state.rarityDefs.findIndex((entry) => entry.name.toLowerCase() === String(name).toLowerCase());
+  }
+
+  function getAllowedRarities(item) {
+    const defs = state.rarityDefs;
+    if (!defs.length) return [];
+    const minName = item?.minimumRarity || item?.rarity || defs[0].name;
+    const maxName = item?.maximumRarity || item?.rarity || defs[defs.length - 1].name;
+    let minIndex = findRarityIndex(minName);
+    let maxIndex = findRarityIndex(maxName);
+    if (minIndex === -1) minIndex = 0;
+    if (maxIndex === -1) maxIndex = defs.length - 1;
+    if (minIndex > maxIndex) [minIndex, maxIndex] = [maxIndex, minIndex];
+    return defs.slice(minIndex, maxIndex + 1);
+  }
+
+  async function loadPerkOptions() {
+    if (!els.perkSelect) return;
+    try {
+      if (typeof loadPerkCardData !== "function") {
+        renderPerkOptions([]);
+        return;
+      }
+      const { map } = await loadPerkCardData();
+      const names = [];
+      map.forEach((value) => {
+        if (value.isUnique) return;
+        const name = value.card?.querySelector("h3")?.textContent?.trim() || value.slug || "";
+        if (name) names.push(name);
+      });
+      names.sort((a, b) => a.localeCompare(b));
+      state.perks = names;
+      renderPerkOptions(names);
+    } catch (error) {
+      console.warn("Failed to load perk options", error);
+      renderPerkOptions([]);
+    }
+  }
+
+  function renderPerkOptions(names) {
+    if (!els.perkSelect) return;
+    els.perkSelect.innerHTML = "";
+    const empty = document.createElement("option");
+    empty.value = "";
+    empty.textContent = "No perk";
+    els.perkSelect.appendChild(empty);
+    names.forEach((name) => {
+      const opt = document.createElement("option");
+      opt.value = name;
+      opt.textContent = name;
+      els.perkSelect.appendChild(opt);
+    });
+  }
+
   function normalizeItem(raw, category) {
     const name = (raw?.Name || raw?.name || "").trim() || `${category} Item`;
     const subtype = raw?.Subtype || raw?.Type || (category === "Weapon" ? "Weapon" : "Armor");
-    const rarity = raw?.MinimumRarity || raw?.Rarity || raw?.MaximumRarity || "Unknown";
+    const minimumRarity = raw?.MinimumRarity || raw?.Minimumrarity || raw?.Minimum || raw?.MinimumTier || null;
+    const maximumRarity = raw?.MaximumRarity || raw?.Maximumrarity || raw?.Maximum || raw?.MaximumTier || null;
+    const rarity = minimumRarity || raw?.Rarity || maximumRarity || "Unknown";
     const level = raw?.Level ?? raw?.RequirementAmount ?? null;
     const slug = slugify(name);
     const icon = raw?.Icon ? `images/${category === "Weapon" ? "weapons" : "armors"}/${raw.Icon}` : null;
+    const skillType = raw?.SkillType || raw?.Skill || "";
     return {
       id: `${category}-${slug}`,
       name,
@@ -415,12 +541,16 @@
       rarity,
       level,
       icon,
+      skillType,
+      minimumRarity,
+      maximumRarity,
       raw,
     };
   }
 
   function renderItemSelect() {
     if (!els.itemSelect) return;
+    const currentValue = els.itemSelect.value;
     els.itemSelect.innerHTML = "";
     els.itemSelect.disabled = false;
 
@@ -429,7 +559,16 @@
     placeholder.textContent = "Select an item";
     els.itemSelect.appendChild(placeholder);
 
-    const grouped = groupItemsByCategoryAndSubtype(state.items);
+    const filter = state.itemFilterText;
+    const filteredItems = filter
+      ? state.items.filter((item) => {
+          const name = item.name.toLowerCase();
+          const skill = (item.skillType || "").toLowerCase();
+          return name.includes(filter) || skill.includes(filter);
+        })
+      : state.items;
+
+    const grouped = groupItemsByCategoryAndSubtype(filteredItems);
     grouped.forEach((subtypeMap, category) => {
       subtypeMap.forEach((items, subtype) => {
         const optgroup = document.createElement("optgroup");
@@ -443,6 +582,10 @@
         els.itemSelect.appendChild(optgroup);
       });
     });
+
+    if (currentValue) {
+      els.itemSelect.value = currentValue;
+    }
   }
 
   function groupItemsByCategoryAndSubtype(items) {
@@ -470,7 +613,6 @@
 
   function renderSelectedItem(item) {
     renderPreviewBlock(els.itemPreview, item, "Select an item to see its basics.");
-    renderPreviewBlock(els.previewCard, item, "Choose an item to inspect level, subtype, and rarity.");
   }
 
   function renderPreviewBlock(container, item, emptyText) {
@@ -502,8 +644,16 @@
     const meta = document.createElement("div");
     meta.className = "item-meta";
     meta.appendChild(makeChip(item.rarity || "Unknown rarity"));
+    if (item.skillType) {
+      meta.appendChild(makeChip(item.skillType));
+    }
     if (typeof item.level === "number") {
       meta.appendChild(makeChip(`Level ${item.level}`));
+    }
+    if (item.minimumRarity || item.maximumRarity) {
+      const min = item.minimumRarity || "Any";
+      const max = item.maximumRarity || "Any";
+      meta.appendChild(makeChip(`Rarity: ${min} - ${max}`));
     }
     container.appendChild(meta);
   }
@@ -543,6 +693,84 @@
     return fallback;
   }
 
+  function updateRarityForItem(item) {
+    if (!els.raritySelect) return;
+    if (!item) {
+      setRarityNote("Select an item to see rarity limits.");
+    }
+    const allowed = getAllowedRarities(item);
+    els.raritySelect.innerHTML = "";
+
+    if (!allowed.length) {
+      const opt = document.createElement("option");
+      opt.value = "";
+      opt.textContent = "No rarity available";
+      els.raritySelect.appendChild(opt);
+      els.raritySelect.disabled = true;
+      setRarityNote("");
+      return;
+    }
+
+    els.raritySelect.disabled = false;
+    const allowedRangeText = `${allowed[0].name} - ${allowed[allowed.length - 1].name}`;
+    allowed.forEach((entry, index) => {
+      const opt = document.createElement("option");
+      opt.value = entry.name;
+      opt.textContent = entry.name;
+      if (index === 0) opt.selected = true;
+      els.raritySelect.appendChild(opt);
+    });
+
+    const rarity = getSelectedRarity();
+    updateStatSelects(rarity);
+    if (item) {
+      setRarityNote(
+        rarity
+          ? `Allowed rarities: ${allowedRangeText}. Bonus stats must total between ${rarity.min} and ${rarity.max}.`
+          : ""
+      );
+    }
+  }
+
+  function setRarityNote(text) {
+    if (!els.rarityNote) return;
+    els.rarityNote.textContent = text || "";
+  }
+
+  function getSelectedRarity() {
+    const value = els.raritySelect ? els.raritySelect.value : "";
+    if (!value) return null;
+    return state.rarityDefs.find((entry) => entry.name === value) || null;
+  }
+
+  function updateStatSelects(rarity) {
+    const selects = [els.statStr, els.statDex, els.statCon].filter(Boolean);
+    if (!selects.length) return;
+    const max = rarity ? Math.max(rarity.max || 0, rarity.min || 0) : 30;
+    const range = Array.from({ length: max + 1 }, (_, idx) => idx);
+
+    selects.forEach((select) => {
+      const current = Number(select.value || 0);
+      select.innerHTML = "";
+      range.forEach((num) => {
+        const opt = document.createElement("option");
+        opt.value = num.toString();
+        opt.textContent = num.toString();
+        select.appendChild(opt);
+      });
+      const target = current <= max ? current : 0;
+      select.value = target.toString();
+    });
+
+    if (rarity && rarity.min > 0) {
+      const total =
+        Number(els.statStr?.value || 0) + Number(els.statDex?.value || 0) + Number(els.statCon?.value || 0);
+      if (total === 0) {
+        if (els.statStr) els.statStr.value = rarity.min.toString();
+      }
+    }
+  }
+
   function createListingFromForm() {
     if (!els.form || !els.itemSelect) return;
 
@@ -552,6 +780,26 @@
       setFormStatus("Pick a valid item before posting.", "error");
       return;
     }
+
+    const rarityName = els.raritySelect ? els.raritySelect.value : "";
+    const rarity = rarityName ? state.rarityDefs.find((entry) => entry.name === rarityName) : null;
+    if (!rarity) {
+      setFormStatus("Select a rarity within the item's range.", "error");
+      return;
+    }
+
+    const stats = {
+      str: Number(els.statStr?.value || 0),
+      dex: Number(els.statDex?.value || 0),
+      con: Number(els.statCon?.value || 0),
+    };
+    const statTotal = stats.str + stats.dex + stats.con;
+    if (statTotal < rarity.min || statTotal > rarity.max) {
+      setFormStatus(`Bonus stats must total between ${rarity.min} and ${rarity.max} for ${rarity.name}.`, "error");
+      return;
+    }
+
+    const perkName = (els.perkSelect?.value || "").trim();
 
     if (!state.auth || !state.auth.user) {
       setFormStatus("Sign in with Discord to post a listing.", "error");
@@ -566,6 +814,7 @@
     const listingTypeInput = els.form.querySelector('input[name="listingType"]:checked');
     const listingType = listingTypeInput ? listingTypeInput.value : "WTS";
     const price = (els.price?.value || "").trim();
+    const priceCurrency = els.priceCurrency?.value || "Gold";
     const ign = (els.ign?.value || "").trim();
     const notes = (els.notes?.value || "").trim();
 
@@ -574,9 +823,14 @@
       itemId: item.id,
       listingType,
       price: price || "Offer",
+      priceCurrency,
       discordUser: state.auth.user,
       ign,
       notes,
+      rarity: rarity.name,
+      rarityColor: rarity.color,
+      stats,
+      perk: perkName || null,
       createdAt: Date.now(),
     };
 
@@ -590,6 +844,14 @@
       defaultType.dispatchEvent(new Event("change", { bubbles: true }));
     }
     renderSelectedItem(null);
+    if (els.perkSelect) {
+      els.perkSelect.value = "";
+    }
+    if (els.priceCurrency) {
+      els.priceCurrency.value = "Gold";
+    }
+    updateRarityForItem(null);
+    updateStatSelects(null);
     // TODO: hook this up to a real database (e.g., Firestore).
     void saveListingToBackend(listing);
   }
@@ -625,13 +887,19 @@
       const notes = entry.notes?.toLowerCase() || "";
       const ign = entry.ign?.toLowerCase() || "";
       const userTag = (entry.discordUser?.displayTag || entry.discordUser?.tag || "").toLowerCase();
+      const rarity = (entry.rarity || "").toLowerCase();
+      const perk = (entry.perk || "").toLowerCase();
+      const skill = (item?.skillType || "").toLowerCase();
 
       const matchesText =
         !state.filters.text ||
         name.includes(state.filters.text) ||
         notes.includes(state.filters.text) ||
         ign.includes(state.filters.text) ||
-        userTag.includes(state.filters.text);
+        userTag.includes(state.filters.text) ||
+        rarity.includes(state.filters.text) ||
+        perk.includes(state.filters.text) ||
+        skill.includes(state.filters.text);
 
       const matchesType = state.filters.listingType === "all" || entry.listingType === state.filters.listingType;
       const matchesCategory = state.filters.category === "all" || item?.category === state.filters.category;
@@ -674,8 +942,18 @@
     body.className = "listing-body";
 
     body.appendChild(textLine("Item", item ? `${item.category} - ${item.subtype}` : "Unavailable"));
-    body.appendChild(textLine("Price", entry.price || "Offer"));
+    const priceText = entry.price ? `${entry.price} ${entry.priceCurrency || ""}`.trim() : "Offer";
+    body.appendChild(textLine("Price", priceText));
     body.appendChild(textLine("Discord", formatDiscordUser(entry.discordUser)));
+    if (entry.rarity) {
+      body.appendChild(textLine("Rarity", entry.rarity));
+    }
+    if (entry.perk) {
+      body.appendChild(textLine("Perk", entry.perk));
+    }
+    if (entry.stats) {
+      body.appendChild(textLine("Bonus Stats", formatStats(entry.stats)));
+    }
     if (entry.ign) {
       body.appendChild(textLine("IGN", entry.ign));
     }
@@ -685,9 +963,10 @@
 
     const meta = document.createElement("div");
     meta.className = "listing-meta";
-    if (item?.rarity) meta.appendChild(makeMetaPill(item.rarity));
+    if (entry.rarity) meta.appendChild(makeMetaPill(entry.rarity, entry.rarityColor));
     if (typeof item?.level === "number") meta.appendChild(makeMetaPill(`Level ${item.level}`));
     if (item?.category) meta.appendChild(makeMetaPill(item.category));
+    if (item?.skillType) meta.appendChild(makeMetaPill(item.skillType));
     body.appendChild(meta);
 
     card.appendChild(body);
@@ -696,7 +975,8 @@
 
   function textLine(label, value) {
     const wrapper = document.createElement("div");
-    wrapper.textContent = `${label}: ${value}`;
+    const safeValue = value === undefined || value === null || value === "" ? "—" : value;
+    wrapper.textContent = `${label}: ${safeValue}`;
     return wrapper;
   }
 
@@ -705,10 +985,19 @@
     return user.displayTag || user.tag || user.username || "Discord user";
   }
 
-  function makeMetaPill(text) {
+  function formatStats(stats) {
+    if (!stats) return "";
+    return `STR ${stats.str ?? 0} / DEX ${stats.dex ?? 0} / CON ${stats.con ?? 0}`;
+  }
+
+  function makeMetaPill(text, color) {
     const span = document.createElement("span");
     span.className = "meta-pill";
     span.textContent = text;
+    if (color) {
+      span.style.color = color;
+      span.style.borderColor = color;
+    }
     return span;
   }
 
@@ -752,10 +1041,12 @@
   function seedListings() {
     if (!state.items.length || state.listings.length) return;
     const sample = state.items.slice(0, 3);
+    const defaultRarity = state.rarityDefs[2] || { name: "Rare", color: "#0000ff", min: 6, max: 10 };
     const defaults = [
       {
         listingType: "WTS",
         price: "1200g",
+        priceCurrency: "Gold",
         discordUser: {
           displayTag: "codex-helper#2025",
           tag: "codex-helper#2025",
@@ -763,10 +1054,15 @@
           discriminator: "2025",
         },
         notes: "Clean roll, open to bundle deals.",
+        rarity: defaultRarity.name,
+        rarityColor: defaultRarity.color,
+        stats: { str: 4, dex: 3, con: 2 },
+        perk: "",
       },
       {
         listingType: "WTB",
         price: "Offer",
+        priceCurrency: "Gold",
         discordUser: {
           displayTag: "scout#8888",
           tag: "scout#8888",
@@ -774,10 +1070,15 @@
           discriminator: "8888",
         },
         notes: "Paying extra for max rarity.",
+        rarity: defaultRarity.name,
+        rarityColor: defaultRarity.color,
+        stats: { str: 2, dex: 2, con: 2 },
+        perk: "",
       },
       {
         listingType: "WTT",
         price: "Trade my polearm set",
+        priceCurrency: "Gold",
         discordUser: {
           displayTag: "merc#3377",
           tag: "merc#3377",
@@ -785,6 +1086,10 @@
           discriminator: "3377",
         },
         notes: "Prefer evening trades.",
+        rarity: defaultRarity.name,
+        rarityColor: defaultRarity.color,
+        stats: { str: 3, dex: 3, con: 3 },
+        perk: "",
       },
     ];
 
