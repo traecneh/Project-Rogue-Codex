@@ -83,8 +83,8 @@
             <section class="stat-card">
               <div class="stat-label">Humanoid</div>
               <img
-                src="images/werewolves.gif"
-                alt="Werewolves resistance indicator"
+                data-monster-type="humanoid"
+                alt="Humanoid example"
                 width="32"
                 height="32"
                 class="resistance-icon"
@@ -101,8 +101,8 @@
             <section class="stat-card">
               <div class="stat-label">Giant</div>
               <img
-                src="images/ettins.gif"
-                alt="Ettins resistance indicator"
+                data-monster-type="giant"
+                alt="Giant example"
                 width="32"
                 height="32"
                 class="resistance-icon"
@@ -119,8 +119,8 @@
             <section class="stat-card">
               <div class="stat-label">Animal</div>
               <img
-                src="images/large-slimes.gif"
-                alt="Large slimes resistance indicator"
+                data-monster-type="animal"
+                alt="Animal example"
                 width="32"
                 height="32"
                 class="resistance-icon"
@@ -137,8 +137,8 @@
             <section class="stat-card">
               <div class="stat-label">Beast</div>
               <img
-                src="images/obsidian-leviathons.gif"
-                alt="Obsidian Leviathons resistance indicator"
+                data-monster-type="beast"
+                alt="Beast example"
                 width="32"
                 height="32"
                 class="resistance-icon"
@@ -155,8 +155,8 @@
             <section class="stat-card">
               <div class="stat-label">Undead</div>
               <img
-                src="images/anubis.gif"
-                alt="Anubis resistance indicator"
+                data-monster-type="undead"
+                alt="Undead example"
                 width="32"
                 height="32"
                 class="resistance-icon"
@@ -173,8 +173,8 @@
             <section class="stat-card">
               <div class="stat-label">Demon</div>
               <img
-                src="images/balrons.gif"
-                alt="Balrons resistance indicator"
+                data-monster-type="demon"
+                alt="Demon example"
                 width="32"
                 height="32"
                 class="resistance-icon"
@@ -191,8 +191,8 @@
             <section class="stat-card">
               <div class="stat-label">Fire Beast</div>
               <img
-                src="images/juggernaut.gif"
-                alt="Juggernaut resistance indicator"
+                data-monster-type="fire beast"
+                alt="Fire Beast example"
                 width="32"
                 height="32"
                 class="resistance-icon"
@@ -211,8 +211,8 @@
             <section class="stat-card">
               <div class="stat-label">Ice Beast</div>
               <img
-                src="images/master_of_frost.gif"
-                alt="Master of Frost resistance indicator"
+                data-monster-type="ice beast"
+                alt="Ice Beast example"
                 width="32"
                 height="32"
                 class="resistance-icon"
@@ -229,8 +229,8 @@
             <section class="stat-card">
               <div class="stat-label">Electric Beast</div>
               <img
-                src="images/banished_warden.gif"
-                alt="Banished Warden resistance indicator"
+                data-monster-type="electric beast"
+                alt="Electric Beast example"
                 width="32"
                 height="32"
                 class="resistance-icon"
@@ -247,8 +247,8 @@
             <section class="stat-card">
               <div class="stat-label">Poison Beast</div>
               <img
-                src="images/nycadaemon.gif"
-                alt="Nycadaemon resistance indicator"
+                data-monster-type="poison beast"
+                alt="Poison Beast example"
                 width="32"
                 height="32"
                 class="resistance-icon"
@@ -265,8 +265,8 @@
             <section class="stat-card">
               <div class="stat-label">Disease Beast</div>
               <img
-                src="images/dune_lord.gif"
-                alt="Dune Lord resistance indicator"
+                data-monster-type="disease beast"
+                alt="Disease Beast example"
                 width="32"
                 height="32"
                 class="resistance-icon"
@@ -351,6 +351,107 @@
       if (text.endsWith(".")) text = text.slice(0, -1);
       return `${text}x`;
     }
+
+    (function hydrateResistanceIcons() {
+      const icons = Array.from(document.querySelectorAll(".resistance-icon"));
+      if (!icons.length) return;
+
+      const dataUrl = new URL("../enemies/monsters.json", window.location.href);
+      const TYPE_ALIAS = {
+        electricalbeast: "electric beast",
+        "electrical beast": "electric beast",
+        firebeast: "fire beast",
+        icebeast: "ice beast",
+        poisonbeast: "poison beast",
+        diseasebeast: "disease beast",
+      };
+
+      const normalizeType = (value) => {
+        if (!value) return "";
+        const spaced = value
+          .replace(/([a-z])([A-Z])/g, "$1 $2")
+          .replace(/[_]+/g, " ")
+          .trim()
+          .toLowerCase();
+        return TYPE_ALIAS[spaced] || spaced;
+      };
+
+      const deriveImageCandidates = (monster) => {
+        const candidates = [];
+        const rawName = (monster && monster.name) || "";
+        const spacedName = rawName.replace(/\s+/g, " ").trim();
+        const safeName = spacedName.replace(/[\\/:*?"<>|]/g, "");
+
+        if (monster && monster.image) {
+          candidates.push(monster.image);
+        }
+
+        if (safeName) {
+          const encoded = encodeURI(`images/monsters/${safeName}`);
+          candidates.push(`${encoded}.gif`, `${encoded}.GIF`, `${encoded}.png`, `${encoded}.PNG`);
+        }
+
+        return Array.from(new Set(candidates.filter(Boolean)));
+      };
+
+      const setImageSource = (imgEl, monster) => {
+        const sources = deriveImageCandidates(monster);
+        if (!sources.length) {
+          imgEl.removeAttribute("src");
+          imgEl.alt = "No image";
+          return;
+        }
+        let index = 0;
+        const trySet = () => {
+          imgEl.onerror = () => {
+            index += 1;
+            if (index < sources.length) {
+              trySet();
+            } else {
+              imgEl.onerror = null;
+              imgEl.removeAttribute("src");
+              imgEl.alt = "No image";
+            }
+          };
+          imgEl.onload = () => {
+            imgEl.onload = null;
+          };
+          imgEl.src = sources[index];
+        };
+        trySet();
+      };
+
+      fetch(dataUrl.toString())
+        .then((res) => (res.ok ? res.json() : Promise.reject()))
+        .then((data) => {
+          if (!Array.isArray(data)) return;
+          const byType = data.reduce((acc, monster) => {
+            const key = normalizeType(monster.monsterType);
+            if (!key) return acc;
+            if (!acc[key]) acc[key] = [];
+            acc[key].push(monster);
+            return acc;
+          }, {});
+
+          icons.forEach((img) => {
+            const explicit = img.getAttribute("data-monster-type") || "";
+            const label = (img.closest(".stat-card")?.querySelector(".stat-label")?.textContent || "").trim();
+            const key = normalizeType(explicit || label);
+            const pool = byType[key] || [];
+            const pick = pool.length ? pool[Math.floor(Math.random() * pool.length)] : null;
+            if (pick) {
+              img.alt = pick.name ? `${pick.name} example` : `${label} example`;
+              setImageSource(img, pick);
+            } else {
+              img.removeAttribute("src");
+              img.alt = "No matching monster";
+            }
+          });
+        })
+        .catch(() => {
+          // swallow errors; fallback icons remain blank
+        });
+    })();
   })();
 </script>
 </body>
