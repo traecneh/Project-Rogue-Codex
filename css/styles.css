@@ -160,6 +160,27 @@ body {
   z-index: 20;
 }
 
+.nav-search-results::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.nav-search-results::-webkit-scrollbar-track {
+  background: #0d1118;
+  border-radius: 8px;
+}
+
+.nav-search-results::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #3a414f, #262c36);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px #0b0f16;
+}
+
+.nav-search-results::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #4a5262, #2f3642);
+}
+
 .nav-search.is-open .nav-search-results {
   display: block;
 }
