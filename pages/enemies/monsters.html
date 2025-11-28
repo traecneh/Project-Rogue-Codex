@@ -690,6 +690,28 @@
         const closeBtn = document.getElementById("details-close");
         const MAP_SEARCH_BASE = "https://traecneh.github.io/Project-Rogue-Map/?search=";
 
+        const normalizeMonsterId = (value) => {
+          return (value || "")
+            .toString()
+            .toLowerCase()
+            .replace(/[^a-z0-9_-]+/g, "-")
+            .replace(/^-+|-+$/g, "");
+        };
+
+        const getInitialMonsterId = () => {
+          const params = new URLSearchParams(window.location.search || "");
+          const fromQuery = params.get("monster");
+          if (fromQuery) return normalizeMonsterId(fromQuery);
+          const hash = window.location.hash ? window.location.hash.slice(1) : "";
+          if (hash) {
+            const hashValue = hash.startsWith("monster=") ? hash.slice("monster=".length) : hash;
+            return normalizeMonsterId(hashValue);
+          }
+          return "";
+        };
+
+        let pendingMonsterId = getInitialMonsterId();
+
         const deriveImageCandidates = (monster) => {
           const candidates = [];
           const rawName = (monster && monster.name) || "";
@@ -1366,6 +1388,19 @@
           });
         };
 
+        const maybeSelectPendingMonster = (list) => {
+          if (!pendingMonsterId) return;
+          const normalized = pendingMonsterId;
+          const match = (list || monsters).find((m) => {
+            const idNorm = normalizeMonsterId(m.id);
+            const nameNorm = normalizeMonsterId(m.name);
+            return idNorm === normalized || nameNorm === normalized;
+          });
+          if (!match) return;
+          pendingMonsterId = "";
+          setDetails(match);
+        };
+
         const applyFilterAndSort = () => {
           const term = searchTerm.trim().toLowerCase();
           let list = monsters.slice();
@@ -1410,6 +1445,7 @@
           if (countLabel) {
             countLabel.textContent = `${list.length.toLocaleString("en-US")} result${list.length === 1 ? "" : "s"}`;
           }
+          maybeSelectPendingMonster(list);
         };
 
       const renderTable = (rows) => {

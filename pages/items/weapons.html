@@ -338,7 +338,17 @@
         let sortDir = "asc";
         let searchTerm = "";
         const urlParams = new URLSearchParams(window.location.search);
-        const initialWeaponName = (urlParams.get("weapon") || urlParams.get("weaponName") || "").trim();
+        const normalizeWeaponId = (value) =>
+          (value || "")
+            .toString()
+            .toLowerCase()
+            .replace(/[^a-z0-9_-]+/g, "-")
+            .replace(/^-+|-+$/g, "");
+        const rawWeaponQuery = (urlParams.get("weapon") || urlParams.get("weaponName") || "").trim();
+        const initialWeaponId = normalizeWeaponId(rawWeaponQuery);
+        const initialWeaponSearchTerm = rawWeaponQuery.replace(/-/g, " ").trim();
+        let pendingWeaponId = initialWeaponId;
+        let pendingWeaponName = rawWeaponQuery.toLowerCase();
 
         const titleCase = (text) =>
           text
@@ -451,6 +461,21 @@
             }
           });
           return pill;
+        };
+
+        const getWeaponId = (item) => normalizeWeaponId(item && (item.id || item.name || item.Name));
+
+        const maybeSelectPendingWeapon = (list) => {
+          if (!pendingWeaponId && !pendingWeaponName) return;
+          const match = (list || items).find((w) => {
+            const id = getWeaponId(w);
+            const nameLower = (w.name || w.Name || "").toLowerCase();
+            return (pendingWeaponId && id === pendingWeaponId) || (pendingWeaponName && nameLower === pendingWeaponName);
+          });
+          if (!match) return;
+          pendingWeaponId = "";
+          pendingWeaponName = "";
+          setDetails(match);
         };
 
         const buildHead = () => {
@@ -640,6 +665,7 @@
           }
 
           renderTable(sorted);
+          maybeSelectPendingWeapon(sorted);
         };
 
         const KEY_MAP = {
@@ -708,20 +734,11 @@
               }
               if (columns.includes("name")) sortKey = "name";
               buildHead();
-              if (initialWeaponName) {
-                searchTerm = initialWeaponName;
-                if (searchInput) searchInput.value = initialWeaponName;
+              if (initialWeaponSearchTerm) {
+                searchTerm = initialWeaponSearchTerm;
+                if (searchInput) searchInput.value = initialWeaponSearchTerm;
               }
               applyFilterAndSort();
-
-              if (initialWeaponName) {
-                const match = items.find(
-                  (w) => (w.name || "").toLowerCase() === initialWeaponName.toLowerCase()
-                );
-                if (match) {
-                  setDetails(match);
-                }
-              }
             })
             .catch(() => {
               renderEmpty("Unable to load weapons. Add weapons.json beside this page.");
