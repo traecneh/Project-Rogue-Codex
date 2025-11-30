@@ -582,9 +582,26 @@ function initializeLastUpdated() {
       const commit = commits[0];
       const iso = commit?.commit?.committer?.date || commit?.commit?.author?.date;
       const message = commit?.commit?.message || "";
-      const formatted = formatDate(iso);
-      target.textContent = formatted || "Unavailable";
-      target.title = message ? message.trim() : "";
+      const sha = commit?.sha;
+      if (!sha) throw new Error("No commit sha");
+
+      const statusEndpoint = `https://api.github.com/repos/traecneh/Project-Rogue-Codex/commits/${sha}/status`;
+      return fetch(statusEndpoint)
+        .then((response) => {
+          if (!response.ok) throw new Error("Failed to load status");
+          return response.json();
+        })
+        .then((status) => {
+          const state = status?.state;
+          if (state && state.toLowerCase() === "success") {
+            const formatted = formatDate(iso);
+            target.textContent = formatted || "Unavailable";
+            target.title = message ? message.trim() : "";
+          } else {
+            target.textContent = "Awaiting checks…";
+            target.title = message ? `Pending checks: ${message.trim()}` : "";
+          }
+        });
     })
     .catch(() => {
       target.textContent = "Unavailable";
