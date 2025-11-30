@@ -260,6 +260,7 @@ let MONSTER_SEARCH_INDEX = [];
 let MONSTER_INDEX_PROMISE = null;
 let WEAPON_SEARCH_INDEX = [];
 let WEAPON_INDEX_PROMISE = null;
+let WEAPON_DATA_PROMISE = null;
 
 function escapeHtml(value) {
   return String(value || "").replace(/[&<>"']/g, (char) => {
@@ -468,6 +469,19 @@ function warmWeaponIndex() {
   return loadWeaponSearchIndex().catch(() => {});
 }
 
+function loadWeaponData() {
+  if (WEAPON_DATA_PROMISE) return WEAPON_DATA_PROMISE;
+  const absoluteUrl = getAbsoluteUrl("pages/items/weapons.json");
+  WEAPON_DATA_PROMISE = fetch(absoluteUrl)
+    .then((response) => {
+      if (!response.ok) throw new Error("Failed to fetch weapons.json");
+      return response.json();
+    })
+    .then((data) => (Array.isArray(data) ? data : []))
+    .catch(() => []);
+  return WEAPON_DATA_PROMISE;
+}
+
 function toSearchTerms(query) {
   return String(query || "")
     .toLowerCase()
@@ -578,6 +592,75 @@ function initializeLastUpdated() {
     });
 }
 
+function initializeWeaponSpecialtyReferences() {
+  const containers = document.querySelectorAll("[data-weapon-specialty]");
+  if (!containers.length) return;
+
+  const normalize = (value) => String(value || "").trim().toLowerCase();
+
+  const createLineItem = (label, value) => {
+    if (value === undefined || value === null || value === "") return null;
+    const li = document.createElement("li");
+    const strong = document.createElement("strong");
+    strong.textContent = `${label}: `;
+    li.appendChild(strong);
+    li.appendChild(document.createTextNode(String(value)));
+    return li;
+  };
+
+  const renderForContainer = (container, weapons) => {
+    container.innerHTML = "";
+    if (!weapons.length) {
+      const empty = document.createElement("p");
+      empty.className = "nav-search-empty";
+      empty.textContent = "No matching weapons yet.";
+      container.appendChild(empty);
+      return;
+    }
+    weapons.forEach((weapon) => {
+      const card = document.createElement("section");
+      card.className = "stat-card";
+
+      const title = document.createElement("h3");
+      title.textContent = weapon.Name || weapon.name || weapon.id || "Weapon";
+      card.appendChild(title);
+
+      const list = document.createElement("ul");
+      const entries = [
+        createLineItem("DPS", weapon.DPS ?? weapon.dps),
+        createLineItem("Speed", weapon.Speed ?? weapon.speed),
+        createLineItem("Level", weapon.Level ?? weapon.level),
+        createLineItem("Skill", weapon.SkillType ?? weapon.skillType),
+        createLineItem("Element", weapon.ElementalDamageType ?? weapon.elementalDamageType),
+        createLineItem("Special Effect", weapon.SpecialEffect ?? weapon.specialEffect),
+      ].filter(Boolean);
+
+      entries.forEach((item) => list.appendChild(item));
+      card.appendChild(list);
+      container.appendChild(card);
+    });
+  };
+
+  loadWeaponData()
+    .then((data) => {
+      containers.forEach((container) => {
+        const targetSpec = normalize(container.getAttribute("data-weapon-specialty"));
+        if (!targetSpec) return;
+        const matches = data.filter((weapon) => normalize(weapon.Speciality || weapon.speciality || weapon.specialty) === targetSpec);
+        renderForContainer(container, matches);
+      });
+    })
+    .catch(() => {
+      containers.forEach((container) => {
+        container.innerHTML = "";
+        const error = document.createElement("p");
+        error.className = "nav-search-empty";
+        error.textContent = "Unable to load weapons.";
+        container.appendChild(error);
+      });
+    });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   const sidebarRoot = document.getElementById("sidebar-root");
   const navPromise = fetch("nav.html")
@@ -604,6 +687,7 @@ document.addEventListener("DOMContentLoaded", () => {
     initializeBleedWidget();
     initializeDexCritWidget();
     initializeDexDrWidget();
+    initializeWeaponSpecialtyReferences();
     initializeKeywordLinks();
     initializePerkAnchors();
     initializePerkEmbeds();
