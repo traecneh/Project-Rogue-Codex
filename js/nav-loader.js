@@ -585,22 +585,29 @@ function initializeLastUpdated() {
       const sha = commit?.sha;
       if (!sha) throw new Error("No commit sha");
 
-      const statusEndpoint = `https://api.github.com/repos/traecneh/Project-Rogue-Codex/commits/${sha}/status`;
-      return fetch(statusEndpoint)
+      const checkEndpoint = `https://api.github.com/repos/traecneh/Project-Rogue-Codex/commits/${sha}/check-runs`;
+      return fetch(checkEndpoint, { headers: { Accept: "application/vnd.github+json" } })
         .then((response) => {
-          if (!response.ok) throw new Error("Failed to load status");
+          if (!response.ok) throw new Error("Failed to load check runs");
           return response.json();
         })
-        .then((status) => {
-          const state = status?.state;
-          if (state && state.toLowerCase() === "success") {
-            const formatted = formatDate(iso);
-            target.textContent = formatted || "Unavailable";
-            target.title = message ? message.trim() : "";
-          } else {
-            target.textContent = "Awaiting checks…";
+        .then((checkData) => {
+          const runs = Array.isArray(checkData?.check_runs) ? checkData.check_runs : [];
+          const allCompleted = runs.length > 0 && runs.every((run) => (run.status || "").toLowerCase() === "completed");
+          const anyFailed = runs.some((run) => {
+            const conclusion = (run.conclusion || "").toLowerCase();
+            return conclusion && conclusion !== "success" && conclusion !== "neutral" && conclusion !== "skipped";
+          });
+
+          if (runs.length === 0 || !allCompleted || anyFailed) {
+            target.textContent = "Updating now (Awaiting GitHub checks; refresh soon.)";
             target.title = message ? `Pending checks: ${message.trim()}` : "";
+            return;
           }
+
+          const formatted = formatDate(iso);
+          target.textContent = formatted || "Unavailable";
+          target.title = message ? message.trim() : "";
         });
     })
     .catch(() => {
