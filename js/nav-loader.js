@@ -567,11 +567,14 @@ function initializeLastUpdated() {
       if (!Array.isArray(commits) || !commits.length) throw new Error("No commits found");
       const commit = commits[0];
       const iso = commit?.commit?.committer?.date || commit?.commit?.author?.date;
+      const message = commit?.commit?.message || "";
       const formatted = formatDate(iso);
       target.textContent = formatted || "Unavailable";
+      target.title = message ? message.trim() : "";
     })
     .catch(() => {
       target.textContent = "Unavailable";
+      target.removeAttribute("title");
     });
 }
 
