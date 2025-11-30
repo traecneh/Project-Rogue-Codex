@@ -540,6 +540,41 @@ function runSiteSearch(query) {
   return matches.slice(0, MAX_SEARCH_RESULTS).map((item) => item.entry);
 }
 
+function initializeLastUpdated() {
+  const target = document.getElementById("site-last-updated");
+  if (!target) return;
+
+  const endpoint = "https://api.github.com/repos/traecneh/Project-Rogue-Codex/commits?per_page=1";
+  const formatDate = (iso) => {
+    if (!iso) return null;
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) return null;
+    return date.toLocaleString(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  fetch(endpoint)
+    .then((response) => {
+      if (!response.ok) throw new Error("Failed to load commit data");
+      return response.json();
+    })
+    .then((commits) => {
+      if (!Array.isArray(commits) || !commits.length) throw new Error("No commits found");
+      const commit = commits[0];
+      const iso = commit?.commit?.committer?.date || commit?.commit?.author?.date;
+      const formatted = formatDate(iso);
+      target.textContent = formatted || "Unavailable";
+    })
+    .catch(() => {
+      target.textContent = "Unavailable";
+    });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   const sidebarRoot = document.getElementById("sidebar-root");
   const navPromise = fetch("nav.html")
@@ -553,6 +588,7 @@ document.addEventListener("DOMContentLoaded", () => {
         setRandomLogo();
         initializeSidebar();
         initializeSiteSearch();
+        initializeLastUpdated();
       }
     })
     .catch((error) => console.error(error));

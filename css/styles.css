@@ -1311,5 +1311,27 @@ a:hover {
   z-index: 2;
 }
 
+.nav-footer {
+  margin-top: 0.5rem;
+  padding: 0.75rem 1rem 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.nav-footer-label {
+  display: block;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.75rem;
+  margin-bottom: 0.25rem;
+}
+
+.nav-footer-value {
+  display: block;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
 
 
