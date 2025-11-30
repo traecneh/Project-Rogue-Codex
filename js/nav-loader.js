@@ -600,8 +600,8 @@ function initializeLastUpdated() {
           });
 
           if (runs.length === 0 || !allCompleted || anyFailed) {
-            target.textContent = "Updating now (Awaiting GitHub checks; refresh soon.)";
-            target.title = message ? `Pending checks: ${message.trim()}` : "";
+            target.textContent = "";
+            target.title = "";
             return;
           }
 
