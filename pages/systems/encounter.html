@@ -20,7 +20,7 @@
         <header class="content-header">
           <h1 class="content-title">Encounter System</h1>
           <p class="content-tagline">
-            How encounters paint monsters onto the world, control respawns, and escalate into Elite threats.
+            How encounters paint monsters onto the world, control respawns, and escalate into Elite and Corrupted threats.
           </p>
         </header>
 
@@ -103,7 +103,7 @@
             <section class="stat-card" role="listitem">
               <p class="stat-label">Eligibility</p>
               <h3>Elite Unlock</h3>
-              <p>Flagged encounters can spawn Elite and Elite+ monsters and keep that eligibility for a 6-minute grace window after going Passive.</p>
+              <p>Flagged encounters can spawn Elite, Corrupted, and Elite+ monsters and keep that eligibility for a 6-minute grace window after going Passive.</p>
             </section>
 
             <section class="stat-card" role="listitem">
@@ -121,19 +121,44 @@
                   <img class="elite-random" alt="" aria-hidden="true" width="32" height="32" />
                   <img
                     src="images/elite.gif"
-                    alt="Elite lightning effect"
+                    alt="Elite purple lightning effect"
                     width="32"
                     height="32"
                     class="elite-icon"
                   />
                 </span>
-                Blue Lightning
+                Purple Lightning
               </h3>
               <ul>
-                <li>Spawn chance: <strong>1 in 50</strong></li>
+                <li>Spawn chance: <strong>1 in 33</strong></li>
+                <li><strong>3× health</strong></li>
                 <li><strong>1.5× damage</strong></li>
-                <li><strong>3.0× health</strong></li>
-                <li><strong>3.0× drop rate</strong></li>
+                <li><strong>3× drop rate</strong></li>
+                <li>Base Rarity: <strong>Uncommon</strong></li>
+              </ul>
+            </section>
+            <section class="stat-card">
+              <div class="stat-label">Corrupted</div>
+              <h3>
+                <span class="elite-icon-wrapper">
+                  <img class="elite-random" alt="" aria-hidden="true" width="32" height="32" />
+                  <img
+                    src="images/corrupted.gif"
+                    alt="Corrupted green corruption effect"
+                    width="32"
+                    height="32"
+                    class="elite-icon"
+                  />
+                </span>
+                Green Lightning
+              </h3>
+              <ul>
+                <li>Spawn chance: <strong>1 in 66</strong></li>
+                <li><strong>5× health</strong></li>
+                <li><strong>1.75× damage</strong></li>
+                <li><strong>5× drop rate</strong></li>
+                <li>Base Rarity: <strong>Uncommon</strong></li>
+                <li><strong>Corrupts loot</strong></li>
               </ul>
             </section>
             <section class="stat-card">
@@ -143,7 +168,7 @@
                   <img class="elite-random" alt="" aria-hidden="true" width="32" height="32" />
                   <img
                     src="images/elite+.gif"
-                    alt="Elite+ lightning effect"
+                    alt="Elite+ yellow lightning effect"
                     width="32"
                     height="32"
                     class="elite-icon"
@@ -152,10 +177,11 @@
                 Yellow Lightning
               </h3>
               <ul>
-                <li>Spawn chance: <strong>1 in 150</strong></li>
-                <li><strong>2.0× damage</strong></li>
+                <li>Spawn chance: <strong>1 in 100</strong></li>
                 <li><strong>10.0× health</strong></li>
+                <li><strong>2.0× damage</strong></li>
                 <li><strong>10.0× drop rate</strong></li>
+                <li>Base Rarity: <strong>Rare</strong></li>
               </ul>
             </section>
           </div>
@@ -229,3 +255,5 @@
     </script>
   </body>
 </html>
+
+
