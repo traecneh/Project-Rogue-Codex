@@ -19,7 +19,9 @@
       <main class="main-content">
         <header class="content-header">
           <h1 class="content-title">Dexterity Stat</h1>
-          <p class="content-tagline">Dexterity contributes to melee damage, crit chance, and innate damage reduction.</p>
+          <p class="content-tagline">
+            Dexterity contributes to melee damage, crit chance (Base Dex), and damage reduction (Total Dex).
+          </p>
         </header>
 
         <article class="content-section" id="dex-overview">
@@ -35,13 +37,13 @@
             <section class="stat-card" role="listitem">
               <p class="stat-label">Critical</p>
               <h3>Crit Chance</h3>
-              <p><code>Dex / 3%</code> crit chance at 1.35x damage (base DEX only).</p>
+              <p><code>Base Dex / 2.5%</code> crit chance at 1.35x damage.</p>
             </section>
 
             <section class="stat-card" role="listitem">
               <p class="stat-label">Mitigation</p>
-              <h3>Base DR</h3>
-              <p>Damage reduction: <code>(Dex * 0.00125) / (1 + Dex * 0.00125)</code>.</p>
+              <h3>Damage Reduction</h3>
+              <p>Damage reduction (Total Dex): <code>(Dex * 0.00125) / (1 + Dex * 0.00125)</code>.</p>
             </section>
           </div>
         </article>
@@ -71,53 +73,53 @@
 
         <article class="content-section" id="dex-crit-calculator">
           <h2>Dexterity Crit Chance</h2>
-          <p>Crit chance uses <code>Dex / 3%</code> at 1.35x damage.</p>
+          <p>Crit chance uses <code>Base Dex / 2.5%</code> at 1.35x damage.</p>
           <div class="stat-widget">
             <div class="stat-control">
-              <label for="dex-crit-slider">Dexterity: <span id="dex-crit-value">150</span></label>
+              <label for="dex-crit-slider">Base Dexterity: <span id="dex-crit-value">150</span></label>
               <input type="range" id="dex-crit-slider" min="5" max="500" value="150" step="1" />
             </div>
             <div class="stat-output">
               <span class="stat-output-label">Crit chance</span>
-              <span class="stat-output-value" id="dex-crit-chance-value">50.0% @ 1.35x</span>
+              <span class="stat-output-value" id="dex-crit-chance-value">60.0% @ 1.35x</span>
             </div>
           </div>
         </article>
 
         <article class="content-section" id="dex-dr">
           <h2>Damage Reduction Curve</h2>
-          <p>DR from Dexterity uses <code>[(Base Dex * 0.00125) / (1 + (Base Dex * 0.00125))]%</code>.</p>
+          <p>DR from Dexterity uses <code>[(Total Dex * 0.00125) / (1 + (Total Dex * 0.00125))]%</code>.</p>
           <div class="weight-chart">
             <div class="weight-row">
-              <div class="weight-label">50 DEX</div>
+              <div class="weight-label">50 Total DEX</div>
               <div class="weight-bar" style="--fill:10%;"></div>
               <div class="weight-value">5.88% DR</div>
             </div>
             <div class="weight-row">
-              <div class="weight-label">100 DEX</div>
+              <div class="weight-label">100 Total DEX</div>
               <div class="weight-bar" style="--fill:20%;"></div>
               <div class="weight-value">11.11% DR</div>
             </div>
             <div class="weight-row">
-              <div class="weight-label">150 DEX</div>
+              <div class="weight-label">150 Total DEX</div>
               <div class="weight-bar" style="--fill:30%;"></div>
               <div class="weight-value">15.79% DR</div>
             </div>
             <div class="weight-row">
-              <div class="weight-label">200 DEX</div>
+              <div class="weight-label">200 Total DEX</div>
               <div class="weight-bar" style="--fill:40%;"></div>
               <div class="weight-value">20% DR</div>
             </div>
             <div class="weight-row weight-row-custom">
-              <div class="weight-label" id="dex-dr-label">120 DEX</div>
+              <div class="weight-label" id="dex-dr-label">120 Total DEX</div>
               <div class="weight-bar" id="dex-dr-live-bar" aria-hidden="true"></div>
               <div class="weight-value" id="dex-dr-value">13.04% DR</div>
             </div>
             <div class="weight-slider">
               <input type="range" id="dex-dr-slider" min="5" max="500" value="120" />
               <div class="weight-slider-labels">
-                <span>5 DEX</span>
-                <span>500 DEX</span>
+                <span>5 Total DEX</span>
+                <span>500 Total DEX</span>
               </div>
             </div>
           </div>

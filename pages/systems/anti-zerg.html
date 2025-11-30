@@ -32,6 +32,125 @@
           </p>
 
           <section>
+            <h2>Anti-Zerg Overhaul</h2>
+            <div class="stat-grid" role="list">
+              <section class="stat-card" role="listitem">
+                <p class="stat-label">Modes</p>
+                <h3>Warfront & Open-World</h3>
+                <p>The system still runs in two modes: Warfront and Open-World.</p>
+              </section>
+              <section class="stat-card" role="listitem">
+                <p class="stat-label">Purpose</p>
+                <h3>Prep for Focus Fire</h3>
+                <p>Zerg sizing was overhauled to align with the new Focus Fire / collaborator rules below.</p>
+              </section>
+            </div>
+          </section>
+
+          <section>
+            <h2>Open-World Mode</h2>
+            <div class="stat-grid" role="list">
+              <section class="stat-card" role="listitem">
+                <p class="stat-label">Lookback</p>
+                <h3>3-Minute High-Water</h3>
+                <p>Zerg size is the highest count of guild members in your area over the last <strong>3 minutes</strong>.</p>
+              </section>
+              <section class="stat-card" role="listitem">
+                <p class="stat-label">Hashes</p>
+                <h3>128x128 Tiles</h3>
+                <p>The world is split into <strong>128x128 tile</strong> hashes (8x8 chunks).</p>
+              </section>
+              <section class="stat-card" role="listitem">
+                <p class="stat-label">Neighbors</p>
+                <h3>Adjacency Counts</h3>
+                <p>Guildmates in your hash or any immediately surrounding hash count toward your Zerg.</p>
+              </section>
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Layers</p>
+              <h3>Above + Below</h3>
+              <p>Underground hashes are calculated together with the hashes directly above them.</p>
+            </section>
+          </div>
+          </section>
+
+          <section>
+            <h2>Warfront Mode</h2>
+            <div class="stat-grid" role="list">
+              <section class="stat-card" role="listitem">
+                <p class="stat-label">Lookback</p>
+                <h3>3-Minute High-Water</h3>
+                <p>Zerg size is the highest guild count inside the Warfront over the last <strong>3 minutes</strong>.</p>
+              </section>
+            </div>
+          </section>
+
+          <section>
+            <h2>Focus Fire &amp; Collaboration</h2>
+            <div class="stat-grid" role="list">
+              <section class="stat-card" role="listitem">
+                <p class="stat-label">Activation</p>
+                <h3>Active Participant</h3>
+                <p>After <strong>10+</strong> direct attacks in <strong>10 minutes</strong>, your guild is flagged as an active PvP participant.</p>
+              </section>
+              <section class="stat-card" role="listitem">
+                <p class="stat-label">Targeting</p>
+                <h3>Focus Target</h3>
+                <p>If over <strong>66%</strong> of your guild&apos;s damage goes into one guild, that guild becomes your focus target.</p>
+              </section>
+              <section class="stat-card" role="listitem">
+                <p class="stat-label">Collaboration</p>
+                <h3>Shared Zerg Value</h3>
+                <p>When multiple guilds focus the same target guild, they are flagged as collaborators and their Anti-Zerg values combine.</p>
+              </section>
+            </div>
+          </section>
+
+          <section>
+            <h2>Moderation</h2>
+            <div class="stat-grid" role="list">
+              <section class="stat-card" role="listitem">
+                <p class="stat-label">Collusion Rules</p>
+                <h3>Open Comms</h3>
+                <p>Teams may partner and communicate freely, but all combat is logged for review.</p>
+              </section>
+              <section class="stat-card" role="listitem">
+                <p class="stat-label">Enforcement</p>
+                <h3>Data-Driven</h3>
+                <p>Attempts to game the system will be investigated with empirical logs and punished.</p>
+              </section>
+            </div>
+          </section>
+
+          <section>
+            <h2>Focus Fire Updates</h2>
+            <div class="stat-grid" role="list">
+              <section class="stat-card" role="listitem">
+                <p class="stat-label">Window</p>
+                <h3>5-Minute Activity</h3>
+                <p>Focus Fire collaboration is processed using the previous <strong>5 minutes</strong> of activity.</p>
+              </section>
+
+              <section class="stat-card" role="listitem">
+                <p class="stat-label">Threshold</p>
+                <h3>Effective Attacks</h3>
+                <p>
+                  Minimum Attack Threshold is now <strong>10.0 EFFECTIVE</strong> attacks per Zerg member; attacks
+                  scale as <strong>0.75&ndash;1.50</strong> effective hits based on weapon speed.
+                </p>
+              </section>
+
+              <section class="stat-card" role="listitem">
+                <p class="stat-label">Damage Check</p>
+                <h3>Effective Hit</h3>
+                <p>
+                  An attack only counts as EFFECTIVE if it deals at least <strong>5&ndash;10%</strong> of the target&apos;s
+                  max health in unmitigated damage, scaled by weapon speed from <strong>750 to 1500</strong>.
+                </p>
+              </section>
+            </div>
+          </section>
+
+          <section>
             <h2>How Zerg Size Is Determined</h2>
             <div class="stat-grid" role="list">
               <section class="stat-card" role="listitem">

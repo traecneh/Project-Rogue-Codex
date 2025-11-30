@@ -938,7 +938,7 @@ function initializeDexCritWidget() {
   const update = () => {
     const dexterity = Number(slider.value);
     dexLabel.textContent = `${dexterity}`;
-    const chance = dexterity / 3;
+    const chance = dexterity / 2.5;
     chanceLabel.textContent = `${chance.toFixed(1)}% @ 1.35x`;
   };
 
@@ -963,7 +963,7 @@ function initializeDexDrWidget() {
 
   const update = () => {
     const dex = Number(slider.value);
-    label.textContent = `${dex} DEX`;
+    label.textContent = `${dex} Total DEX`;
     const reduction = computeReduction(dex);
     valueLabel.textContent = `${reduction.toFixed(2)}% DR`;
     const maxDex = Number(slider.max) || 500;
