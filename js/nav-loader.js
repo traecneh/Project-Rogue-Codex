@@ -558,6 +558,9 @@ function initializeLastUpdated() {
   const target = document.getElementById("site-last-updated");
   if (!target) return;
 
+  const existingText = (target.textContent || "").trim();
+  const existingTitle = target.title || "";
+
   const endpoint = "https://api.github.com/repos/traecneh/Project-Rogue-Codex/commits?per_page=1";
   const formatDate = (iso) => {
     if (!iso) return null;
@@ -600,8 +603,9 @@ function initializeLastUpdated() {
           });
 
           if (runs.length === 0 || !allCompleted || anyFailed) {
-            target.textContent = "";
-            target.title = "";
+            // Leave the existing timestamp untouched until checks complete successfully.
+            target.textContent = existingText;
+            target.title = existingTitle;
             return;
           }
 
@@ -611,8 +615,13 @@ function initializeLastUpdated() {
         });
     })
     .catch(() => {
-      target.textContent = "Unavailable";
-      target.removeAttribute("title");
+      if (!existingText) {
+        target.textContent = "Unavailable";
+        target.removeAttribute("title");
+      } else {
+        target.textContent = existingText;
+        target.title = existingTitle;
+      }
     });
 }
 
