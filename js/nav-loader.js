@@ -89,13 +89,6 @@ const SITE_SEARCH_INDEX = [
     keywords: ["stat", "health", "regen", "defense"],
   },
   {
-    title: "Intelligence",
-    url: "pages/stats/intelligence.html",
-    category: "Stats",
-    description: "Intelligence scaling and magic-related bonuses.",
-    keywords: ["stat", "magic", "int", "mana"],
-  },
-  {
     title: "Level",
     url: "pages/stats/level.html",
     category: "Stats",
@@ -136,6 +129,13 @@ const SITE_SEARCH_INDEX = [
     category: "Systems",
     description: "Encounter flow, spawns, and tuning knobs.",
     keywords: ["encounter", "spawn", "combat"],
+  },
+  {
+    title: "Corruption System",
+    url: "pages/systems/corruption.html",
+    category: "Systems",
+    description: "How corruption overrides innates, drop sources, and cleansing.",
+    keywords: ["corruption", "innate", "purge", "loot"],
   },
   {
     title: "Rarity",
@@ -226,8 +226,15 @@ const SITE_SEARCH_INDEX = [
     title: "Craft (Ascendancy)",
     url: "pages/systems/craft.html",
     category: "Ascendancy",
-    description: "Ascendancy crafting station options.",
-    keywords: ["craft", "station", "ascendancy"],
+    description: "Ascendancy shard shop, race scrolls, and imbuement crafting.",
+    keywords: ["craft", "ethereal shards", "ascendancy", "race change"],
+  },
+  {
+    title: "Purge",
+    url: "pages/systems/purge.html",
+    category: "Ascendancy",
+    description: "Purge or cleanse items and recover Tattered Imbuements.",
+    keywords: ["purge", "cleanse", "corruption", "imbuement"],
   },
 ];
 
