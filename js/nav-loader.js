@@ -706,8 +706,6 @@ function initializeLastUpdated() {
     .then((commits) => {
       if (!Array.isArray(commits) || !commits.length) throw new Error("No commits found");
       const capped = commits.slice(0, MAX_COMMITS_TO_CHECK);
-       // Show pending list immediately based on newest commits, before check run resolution.
-      applyPending(capped.map(mapCommitSummary));
       return evaluateCommits(capped).then((result) => {
         const formatted = result.latest ? formatDate(result.latest.iso) : null;
         const newText = formatted || existingText || "Unavailable";
