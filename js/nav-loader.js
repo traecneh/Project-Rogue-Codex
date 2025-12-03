@@ -600,24 +600,30 @@ function areCheckRunsSuccessful(runs) {
   return !anyFailed;
 }
 
+function mapCommitSummary(commit) {
+  return {
+    iso: commit?.commit?.committer?.date || commit?.commit?.author?.date,
+    message: commit?.commit?.message || "",
+  };
+}
+
 function evaluateCommits(commits, index = 0, pending = []) {
   if (!Array.isArray(commits) || !commits.length || index >= commits.length) {
     return Promise.resolve({ latest: null, pending });
   }
   const commit = commits[index];
   const sha = commit?.sha;
-  const iso = commit?.commit?.committer?.date || commit?.commit?.author?.date;
-  const message = commit?.commit?.message || "";
+  const summary = mapCommitSummary(commit);
   if (!sha) return evaluateCommits(commits, index + 1, pending);
 
   return fetchCheckRunsForSha(sha)
     .then((runs) => {
       if (areCheckRunsSuccessful(runs)) {
-        return { latest: { iso, message, sha }, pending };
+        return { latest: { ...summary, sha }, pending };
       }
-      return evaluateCommits(commits, index + 1, pending.concat({ iso, message }));
+      return evaluateCommits(commits, index + 1, pending.concat(summary));
     })
-    .catch(() => evaluateCommits(commits, index + 1, pending.concat({ iso, message })));
+    .catch(() => evaluateCommits(commits, index + 1, pending.concat(summary)));
 }
 
 function initializeLastUpdated() {
@@ -703,6 +709,8 @@ function initializeLastUpdated() {
     .then((commits) => {
       if (!Array.isArray(commits) || !commits.length) throw new Error("No commits found");
       const capped = commits.slice(0, MAX_COMMITS_TO_CHECK);
+       // Show pending list immediately based on newest commits, before check run resolution.
+      applyPending(capped.map(mapCommitSummary));
       return evaluateCommits(capped).then((result) => {
         const formatted = result.latest ? formatDate(result.latest.iso) : null;
         const newText = formatted || existingText || "Unavailable";

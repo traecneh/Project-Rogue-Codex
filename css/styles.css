@@ -1333,5 +1333,9 @@ a:hover {
   color: var(--text-main);
 }
 
+.nav-footer-pending-label {
+  margin-top: 0.75rem;
+}
+
 
 
