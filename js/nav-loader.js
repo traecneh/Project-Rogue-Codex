@@ -560,6 +560,7 @@ const BUILD_LAST_UPDATED = {
   title: "Site Last Updated",
 };
 const MAX_COMMITS_TO_CHECK = 20;
+const MAX_PENDING_TO_DISPLAY = 5;
 
 function loadStoredLastUpdated() {
   try {
@@ -599,26 +600,30 @@ function areCheckRunsSuccessful(runs) {
   return !anyFailed;
 }
 
-function findLatestSuccessfulCommit(commits, index = 0) {
+function evaluateCommits(commits, index = 0, pending = []) {
   if (!Array.isArray(commits) || !commits.length || index >= commits.length) {
-    return Promise.reject(new Error("No successful commits found"));
+    return Promise.resolve({ latest: null, pending });
   }
   const commit = commits[index];
   const sha = commit?.sha;
   const iso = commit?.commit?.committer?.date || commit?.commit?.author?.date;
   const message = commit?.commit?.message || "";
-  if (!sha) return findLatestSuccessfulCommit(commits, index + 1);
+  if (!sha) return evaluateCommits(commits, index + 1, pending);
 
-  return fetchCheckRunsForSha(sha).then((runs) => {
-    if (areCheckRunsSuccessful(runs)) {
-      return { iso, message, sha };
-    }
-    return findLatestSuccessfulCommit(commits, index + 1);
-  });
+  return fetchCheckRunsForSha(sha)
+    .then((runs) => {
+      if (areCheckRunsSuccessful(runs)) {
+        return { latest: { iso, message, sha }, pending };
+      }
+      return evaluateCommits(commits, index + 1, pending.concat({ iso, message }));
+    })
+    .catch(() => evaluateCommits(commits, index + 1, pending.concat({ iso, message })));
 }
 
 function initializeLastUpdated() {
   const target = document.getElementById("site-last-updated");
+  const pendingTarget = document.getElementById("site-updates-pending");
+  const pendingLabel = document.getElementById("site-updates-pending-label");
   if (!target) return;
 
   const endpoint = `https://api.github.com/repos/traecneh/Project-Rogue-Codex/commits?per_page=${MAX_COMMITS_TO_CHECK}`;
@@ -635,12 +640,41 @@ function initializeLastUpdated() {
     });
   };
 
+  const formatPendingList = (list) =>
+    (list || [])
+      .slice(0, MAX_PENDING_TO_DISPLAY)
+      .map((entry) => `${formatDate(entry.iso) || "Unknown"} — ${entry.message ? entry.message.trim() : ""}`.trim())
+      .join("\n");
+
   const applyValue = (text, title) => {
     target.textContent = text;
     if (title) {
       target.title = title;
     } else {
       target.removeAttribute("title");
+    }
+  };
+
+  const applyPending = (pendingList) => {
+    if (!pendingTarget || !pendingLabel) return;
+    const hasPending = Array.isArray(pendingList) && pendingList.length > 0;
+    pendingTarget.style.display = hasPending ? "" : "none";
+    pendingLabel.style.display = hasPending ? "" : "none";
+    if (!hasPending) {
+      pendingTarget.textContent = "";
+      pendingTarget.removeAttribute("title");
+      return;
+    }
+    const summaryText = pendingList
+      .slice(0, MAX_PENDING_TO_DISPLAY)
+      .map((entry) => formatDate(entry.iso) || "Pending")
+      .join(", ");
+    pendingTarget.textContent = summaryText;
+    const tooltip = formatPendingList(pendingList);
+    if (tooltip) {
+      pendingTarget.title = tooltip;
+    } else {
+      pendingTarget.removeAttribute("title");
     }
   };
 
@@ -659,6 +693,7 @@ function initializeLastUpdated() {
 
   let existingText = (target.textContent || "").trim();
   let existingTitle = target.title || "";
+  applyPending([]);
 
   fetch(endpoint)
     .then((response) => {
@@ -668,11 +703,12 @@ function initializeLastUpdated() {
     .then((commits) => {
       if (!Array.isArray(commits) || !commits.length) throw new Error("No commits found");
       const capped = commits.slice(0, MAX_COMMITS_TO_CHECK);
-      return findLatestSuccessfulCommit(capped).then((result) => {
-        const formatted = formatDate(result.iso);
+      return evaluateCommits(capped).then((result) => {
+        const formatted = result.latest ? formatDate(result.latest.iso) : null;
         const newText = formatted || existingText || "Unavailable";
-        const newTitle = result.message ? result.message.trim() : "";
+        const newTitle = result.latest && result.latest.message ? result.latest.message.trim() : "";
         applyValue(newText, newTitle);
+        applyPending(result.pending || []);
         saveStoredLastUpdated({ text: newText, title: newTitle });
       });
     })
