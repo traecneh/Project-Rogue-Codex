@@ -475,7 +475,7 @@
     "attackSpeed": 600,
     "dps": 141.6667,
     "level": 45,
-    "elementalAttack": "Ice",
+    "elementalAttack": "Cold",
     "monsterType": "IceBeast",
     "hpMax": 825
   },
@@ -507,7 +507,7 @@
     "attackSpeed": 750,
     "dps": 186.6667,
     "level": 55,
-    "elementalAttack": "Ice",
+    "elementalAttack": "Cold",
     "monsterType": "Undead",
     "hpMax": 1100
   },
@@ -603,7 +603,7 @@
     "attackSpeed": 1000,
     "dps": 157.5,
     "level": 60,
-    "elementalAttack": "Ice",
+    "elementalAttack": "Cold",
     "monsterType": "IceBeast",
     "hpMax": 1225
   },
@@ -619,7 +619,7 @@
     "attackSpeed": 800,
     "dps": 150,
     "level": 55,
-    "elementalAttack": "Ice",
+    "elementalAttack": "Cold",
     "monsterType": "IceBeast",
     "hpMax": 1100
   },
@@ -667,7 +667,7 @@
     "attackSpeed": 800,
     "dps": 56.25,
     "level": 25,
-    "elementalAttack": "Ice",
+    "elementalAttack": "Cold",
     "monsterType": "Undead",
     "hpMax": 400
   },
@@ -779,7 +779,7 @@
     "attackSpeed": 800,
     "dps": 906.25,
     "level": 80,
-    "elementalAttack": "Ice",
+    "elementalAttack": "Cold",
     "monsterType": "IceBeast",
     "hpMax": 3000
   },
@@ -1035,7 +1035,7 @@
     "attackSpeed": 800,
     "dps": 843.75,
     "level": 70,
-    "elementalAttack": "Ice",
+    "elementalAttack": "Cold",
     "monsterType": "IceBeast",
     "hpMax": 2500
   },
@@ -1051,7 +1051,7 @@
     "attackSpeed": 800,
     "dps": 546.875,
     "level": 65,
-    "elementalAttack": "Ice",
+    "elementalAttack": "Cold",
     "monsterType": "IceBeast",
     "hpMax": 2400
   },
@@ -1067,7 +1067,7 @@
     "attackSpeed": 800,
     "dps": 193.75,
     "level": 60,
-    "elementalAttack": "Ice",
+    "elementalAttack": "Cold",
     "monsterType": "IceBeast",
     "hpMax": 1500
   },
@@ -1083,7 +1083,7 @@
     "attackSpeed": 800,
     "dps": 968.75,
     "level": 85,
-    "elementalAttack": "Ice",
+    "elementalAttack": "Cold",
     "monsterType": "IceBeast",
     "hpMax": 3750
   },
@@ -1275,7 +1275,7 @@
     "attackSpeed": 600,
     "dps": 2166.667,
     "level": 140,
-    "elementalAttack": "Ice",
+    "elementalAttack": "Cold",
     "monsterType": "IceBeast",
     "hpMax": 32500
   },
@@ -1371,7 +1371,7 @@
     "attackSpeed": 600,
     "dps": 70.83334,
     "level": 15,
-    "elementalAttack": "Ice",
+    "elementalAttack": "Cold",
     "monsterType": "IceBeast",
     "hpMax": 90
   },
@@ -1723,7 +1723,7 @@
     "attackSpeed": 800,
     "dps": 206.25,
     "level": 60,
-    "elementalAttack": "Ice",
+    "elementalAttack": "Cold",
     "monsterType": "IceBeast",
     "hpMax": 1700
   },
@@ -1867,7 +1867,7 @@
     "attackSpeed": 600,
     "dps": 116.6667,
     "level": 40,
-    "elementalAttack": "Ice",
+    "elementalAttack": "Cold",
     "monsterType": "IceBeast",
     "hpMax": 800
   },
@@ -1883,7 +1883,7 @@
     "attackSpeed": 750,
     "dps": 203.3333,
     "level": 60,
-    "elementalAttack": "Ice",
+    "elementalAttack": "Cold",
     "monsterType": "Undead",
     "hpMax": 1300
   },
@@ -2155,7 +2155,7 @@
     "attackSpeed": 800,
     "dps": 96.875,
     "level": 35,
-    "elementalAttack": "Ice",
+    "elementalAttack": "Cold",
     "monsterType": "Undead",
     "hpMax": 560
   },
@@ -2187,7 +2187,7 @@
     "attackSpeed": 1000,
     "dps": 142.5,
     "level": 50,
-    "elementalAttack": "Ice",
+    "elementalAttack": "Cold",
     "monsterType": "IceBeast",
     "hpMax": 1050
   },
