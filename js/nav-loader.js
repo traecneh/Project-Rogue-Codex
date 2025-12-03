@@ -555,6 +555,11 @@ function runSiteSearch(query) {
 }
 
 const LAST_UPDATED_STORAGE_KEY = "site-last-updated-cache";
+const BUILD_LAST_UPDATED = {
+  iso: "2025-12-03T11:31:47-05:00",
+  title: "Site Last Updated",
+};
+const MAX_COMMITS_TO_CHECK = 20;
 
 function loadStoredLastUpdated() {
   try {
@@ -573,27 +578,50 @@ function saveStoredLastUpdated(value) {
   }
 }
 
+function fetchCheckRunsForSha(sha) {
+  const checkEndpoint = `https://api.github.com/repos/traecneh/Project-Rogue-Codex/commits/${sha}/check-runs`;
+  return fetch(checkEndpoint, { headers: { Accept: "application/vnd.github+json" } })
+    .then((response) => {
+      if (!response.ok) throw new Error("Failed to load check runs");
+      return response.json();
+    })
+    .then((checkData) => (Array.isArray(checkData?.check_runs) ? checkData.check_runs : []));
+}
+
+function areCheckRunsSuccessful(runs) {
+  if (!Array.isArray(runs) || !runs.length) return false;
+  const allCompleted = runs.every((run) => (run.status || "").toLowerCase() === "completed");
+  if (!allCompleted) return false;
+  const anyFailed = runs.some((run) => {
+    const conclusion = (run.conclusion || "").toLowerCase();
+    return conclusion && conclusion !== "success" && conclusion !== "neutral" && conclusion !== "skipped";
+  });
+  return !anyFailed;
+}
+
+function findLatestSuccessfulCommit(commits, index = 0) {
+  if (!Array.isArray(commits) || !commits.length || index >= commits.length) {
+    return Promise.reject(new Error("No successful commits found"));
+  }
+  const commit = commits[index];
+  const sha = commit?.sha;
+  const iso = commit?.commit?.committer?.date || commit?.commit?.author?.date;
+  const message = commit?.commit?.message || "";
+  if (!sha) return findLatestSuccessfulCommit(commits, index + 1);
+
+  return fetchCheckRunsForSha(sha).then((runs) => {
+    if (areCheckRunsSuccessful(runs)) {
+      return { iso, message, sha };
+    }
+    return findLatestSuccessfulCommit(commits, index + 1);
+  });
+}
+
 function initializeLastUpdated() {
   const target = document.getElementById("site-last-updated");
   if (!target) return;
 
-  const stored = loadStoredLastUpdated();
-  if (stored && stored.text) {
-    target.textContent = stored.text;
-    if (stored.title) {
-      target.title = stored.title;
-    } else {
-      target.removeAttribute("title");
-    }
-  } else {
-    target.textContent = "Unavailable";
-    target.removeAttribute("title");
-  }
-
-  const existingText = (target.textContent || "").trim();
-  const existingTitle = target.title || "";
-
-  const endpoint = "https://api.github.com/repos/traecneh/Project-Rogue-Codex/commits?per_page=1";
+  const endpoint = `https://api.github.com/repos/traecneh/Project-Rogue-Codex/commits?per_page=${MAX_COMMITS_TO_CHECK}`;
   const formatDate = (iso) => {
     if (!iso) return null;
     const date = new Date(iso);
@@ -607,6 +635,31 @@ function initializeLastUpdated() {
     });
   };
 
+  const applyValue = (text, title) => {
+    target.textContent = text;
+    if (title) {
+      target.title = title;
+    } else {
+      target.removeAttribute("title");
+    }
+  };
+
+  const stored = loadStoredLastUpdated();
+  if (stored && stored.text) {
+    applyValue(stored.text, stored.title);
+  } else {
+    const buildText = formatDate(BUILD_LAST_UPDATED.iso);
+    const buildTitle = BUILD_LAST_UPDATED.title || "";
+    if (buildText) {
+      applyValue(buildText, buildTitle);
+    } else {
+      applyValue("Unavailable", "");
+    }
+  }
+
+  let existingText = (target.textContent || "").trim();
+  let existingTitle = target.title || "";
+
   fetch(endpoint)
     .then((response) => {
       if (!response.ok) throw new Error("Failed to load commit data");
@@ -614,44 +667,14 @@ function initializeLastUpdated() {
     })
     .then((commits) => {
       if (!Array.isArray(commits) || !commits.length) throw new Error("No commits found");
-      const commit = commits[0];
-      const iso = commit?.commit?.committer?.date || commit?.commit?.author?.date;
-      const message = commit?.commit?.message || "";
-      const sha = commit?.sha;
-      if (!sha) throw new Error("No commit sha");
-
-      const checkEndpoint = `https://api.github.com/repos/traecneh/Project-Rogue-Codex/commits/${sha}/check-runs`;
-      return fetch(checkEndpoint, { headers: { Accept: "application/vnd.github+json" } })
-        .then((response) => {
-          if (!response.ok) throw new Error("Failed to load check runs");
-          return response.json();
-        })
-        .then((checkData) => {
-          const runs = Array.isArray(checkData?.check_runs) ? checkData.check_runs : [];
-          const allCompleted = runs.length > 0 && runs.every((run) => (run.status || "").toLowerCase() === "completed");
-          const anyFailed = runs.some((run) => {
-            const conclusion = (run.conclusion || "").toLowerCase();
-            return conclusion && conclusion !== "success" && conclusion !== "neutral" && conclusion !== "skipped";
-          });
-
-          if (runs.length === 0 || !allCompleted || anyFailed) {
-            // Leave the existing timestamp untouched until checks complete successfully.
-            target.textContent = existingText;
-            target.title = existingTitle;
-            return;
-          }
-
-          const formatted = formatDate(iso);
-          const newText = formatted || existingText || "Unavailable";
-          const newTitle = message ? message.trim() : "";
-          target.textContent = newText;
-          if (newTitle) {
-            target.title = newTitle;
-          } else {
-            target.removeAttribute("title");
-          }
-          saveStoredLastUpdated({ text: newText, title: newTitle });
-        });
+      const capped = commits.slice(0, MAX_COMMITS_TO_CHECK);
+      return findLatestSuccessfulCommit(capped).then((result) => {
+        const formatted = formatDate(result.iso);
+        const newText = formatted || existingText || "Unavailable";
+        const newTitle = result.message ? result.message.trim() : "";
+        applyValue(newText, newTitle);
+        saveStoredLastUpdated({ text: newText, title: newTitle });
+      });
     })
     .catch(() => {
       /* noop: keep existing cached value */
