@@ -554,9 +554,41 @@ function runSiteSearch(query) {
   return matches.slice(0, MAX_SEARCH_RESULTS).map((item) => item.entry);
 }
 
+const LAST_UPDATED_STORAGE_KEY = "site-last-updated-cache";
+
+function loadStoredLastUpdated() {
+  try {
+    const raw = localStorage.getItem(LAST_UPDATED_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (error) {
+    return null;
+  }
+}
+
+function saveStoredLastUpdated(value) {
+  try {
+    localStorage.setItem(LAST_UPDATED_STORAGE_KEY, JSON.stringify(value));
+  } catch (error) {
+    /* noop: storage may be unavailable */
+  }
+}
+
 function initializeLastUpdated() {
   const target = document.getElementById("site-last-updated");
   if (!target) return;
+
+  const stored = loadStoredLastUpdated();
+  if (stored && stored.text) {
+    target.textContent = stored.text;
+    if (stored.title) {
+      target.title = stored.title;
+    } else {
+      target.removeAttribute("title");
+    }
+  } else {
+    target.textContent = "Unavailable";
+    target.removeAttribute("title");
+  }
 
   const existingText = (target.textContent || "").trim();
   const existingTitle = target.title || "";
@@ -610,18 +642,19 @@ function initializeLastUpdated() {
           }
 
           const formatted = formatDate(iso);
-          target.textContent = formatted || "Unavailable";
-          target.title = message ? message.trim() : "";
+          const newText = formatted || existingText || "Unavailable";
+          const newTitle = message ? message.trim() : "";
+          target.textContent = newText;
+          if (newTitle) {
+            target.title = newTitle;
+          } else {
+            target.removeAttribute("title");
+          }
+          saveStoredLastUpdated({ text: newText, title: newTitle });
         });
     })
     .catch(() => {
-      if (!existingText) {
-        target.textContent = "Unavailable";
-        target.removeAttribute("title");
-      } else {
-        target.textContent = existingText;
-        target.title = existingTitle;
-      }
+      /* noop: keep existing cached value */
     });
 }
 
