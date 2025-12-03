@@ -671,11 +671,8 @@ function initializeLastUpdated() {
       pendingTarget.removeAttribute("title");
       return;
     }
-    const summaryText = pendingList
-      .slice(0, MAX_PENDING_TO_DISPLAY)
-      .map((entry) => formatDate(entry.iso) || "Pending")
-      .join(", ");
-    pendingTarget.textContent = summaryText;
+    const summaryLines = pendingList.slice(0, MAX_PENDING_TO_DISPLAY).map((entry) => formatDate(entry.iso) || "Pending");
+    pendingTarget.innerHTML = summaryLines.map((line) => escapeHtml(line)).join("<br>");
     const tooltip = formatPendingList(pendingList);
     if (tooltip) {
       pendingTarget.title = tooltip;
