@@ -711,7 +711,14 @@ function initializeLastUpdated() {
         const newText = formatted || existingText || "Unavailable";
         const newTitle = result.latest && result.latest.message ? result.latest.message.trim() : "";
         applyValue(newText, newTitle);
-        applyPending(result.pending || []);
+        const latestDate = result.latest ? new Date(result.latest.iso) : null;
+        const pendingFiltered = (result.pending || []).filter((entry) => {
+          if (!latestDate || Number.isNaN(latestDate.getTime())) return false;
+          const pd = entry && entry.iso ? new Date(entry.iso) : null;
+          if (!pd || Number.isNaN(pd.getTime())) return false;
+          return pd > latestDate;
+        });
+        applyPending(pendingFiltered);
         saveStoredLastUpdated({ text: newText, title: newTitle });
       });
     })
