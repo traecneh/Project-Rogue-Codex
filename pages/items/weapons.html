@@ -872,22 +872,17 @@
             [
               ["Fire", formatNumber(res.fire ?? 0)],
               ["Poison", formatNumber(res.poison ?? 0)],
-            ],
-            2
-          );
-          addRow(
-            [
               ["Cold", formatNumber(res.cold ?? 0)],
-              ["Disease", formatNumber(res.disease ?? 0)],
             ],
-            2
+            3
           );
           addRow(
             [
+              ["Disease", formatNumber(res.disease ?? 0)],
               ["Acid", formatNumber(res.acid ?? 0)],
               ["Electric", formatNumber(res.electric ?? 0)],
             ],
-            2
+            3
           );
 
           addDivider();
@@ -896,9 +891,14 @@
 
           addDivider();
 
-          addRow([["Max Rarity", formatValue(item.maxRarityLabel || item.rarity)]], 1);
-          addRow([["Promotion", formatNumber(item.shardPromotionAmount)]], 1);
-          addRow([["Deconstruction", formatNumber(item.shardDecompositionAmount)]], 1);
+          addRow(
+            [
+              ["Max Rarity", formatValue(item.maxRarityLabel || item.rarity)],
+              ["Promotion", formatNumber(item.shardPromotionAmount)],
+              ["Deconstruction", formatNumber(item.shardDecompositionAmount)],
+            ],
+            3
+          );
 
           addDivider();
 
