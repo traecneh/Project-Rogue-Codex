@@ -546,11 +546,11 @@
                 <div class="flag-pills" id="details-flags"></div>
               </div>
             <div class="detail-divider" aria-hidden="true"></div>
-            <div class="detail-stat hoverable">
-              <div class="detail-label">
-                <img src="images/elite.gif" alt="" width="18" height="18" />
-                Elite
-                </div>
+              <div class="detail-stat hoverable">
+                <div class="detail-label">
+                  <img src="images/elite.gif" alt="" width="18" height="18" />
+                  Elite
+                  </div>
                 <div class="detail-value">
                   <span class="detail-pill">
                     <span id="details-elite-summary"></span>
@@ -566,6 +566,31 @@
                       <div class="detail-tooltip-row">
                         <span class="detail-tooltip-label">DPS</span>
                         <span id="tooltip-elite-dps">-</span>
+                      </div>
+                    </span>
+                  </span>
+                </div>
+              </div>
+              <div class="detail-stat hoverable">
+                <div class="detail-label">
+                  <img src="images/corrupted.gif" alt="" width="18" height="18" />
+                  Corrupted
+                </div>
+                <div class="detail-value">
+                  <span class="detail-pill">
+                    <span id="details-corrupted-summary"></span>
+                    <span class="detail-tooltip" role="tooltip">
+                      <div class="detail-tooltip-row">
+                        <span class="detail-tooltip-label">HP Max</span>
+                        <span id="tooltip-corrupted-hp">-</span>
+                      </div>
+                      <div class="detail-tooltip-row">
+                        <span class="detail-tooltip-label">Damage</span>
+                        <span id="tooltip-corrupted-dmg">-</span>
+                      </div>
+                      <div class="detail-tooltip-row">
+                        <span class="detail-tooltip-label">DPS</span>
+                        <span id="tooltip-corrupted-dps">-</span>
                       </div>
                     </span>
                   </span>
@@ -678,7 +703,7 @@
 
     <script>
       (() => {
-        const dataUrl = new URL("monsters.json", window.location.href);
+        const dataUrl = new URL("monsters_data03.json", window.location.href);
         const weaponsUrl = new URL("../items/weapons.json", window.location.href);
         const searchInput = document.getElementById("monster-search");
         const typeFilter = document.getElementById("filter-type");
@@ -708,6 +733,151 @@
             return normalizeMonsterId(hashValue);
           }
           return "";
+        };
+
+        const FLAG_DETAILS = {
+          flying: {
+            label: "Flying",
+            description: "Able to fly over mountains, water, and other objects.",
+          },
+          ethereal: {
+            label: "Ethereal",
+            description: "Able pass through walls and fly over mountains, water, and other objects.",
+          },
+          boss: {
+            label: "Boss",
+            description:
+              "These are the most powerful enemies you can fight. They can pass through non-Boss monsters and are leashed to their spawn area; pulling them out causes a teleport and full heal.",
+          },
+          berserker: { label: "Berserker", description: "Can attack all players adjacent to them." },
+          target_when_hit_ranged_trapped: {
+            label: "Target when Attacked/Ranged/Trapped",
+            description: "Targets when attacked, ranged, or trapped.",
+          },
+          target_when_blocked: {
+            label: "Target when Blocked",
+            description: "Targets when blocked.",
+          },
+          immobile: { label: "Immobile", description: "Does not move from its spawn point." },
+          thorns: { label: "Thorns", description: "Reflects damage when hit." },
+        };
+
+        const formatFlagLabel = (flag) => {
+          if (!flag) return "";
+          const meta = FLAG_DETAILS[flag];
+          if (meta && meta.label) return meta.label;
+          return flag
+            .toString()
+            .replace(/[_]+/g, " ")
+            .replace(/\b\w/g, (c) => c.toUpperCase());
+        };
+
+        const normalizeFlagKey = (key) => {
+          if (!key) return "";
+          return key
+            .toString()
+            .replace(/^(is_|has_)/, "")
+            .replace(/[^a-z0-9_]+/gi, "_")
+            .replace(/^_+|_+$/g, "")
+            .toLowerCase();
+        };
+
+        const extractFlags = (raw) => {
+          const fields = (raw && raw.fields) || {};
+          const fromKnown = {
+            flying: fields.is_flying ?? raw.flying,
+            ethereal: fields.is_ethereal ?? raw.ethereal,
+            boss: fields.is_boss ?? raw.boss,
+            berserker: fields.is_berserker ?? raw.berserker,
+            target_when_hit_ranged_trapped: fields.is_target_when_hit_ranged_trapped ?? raw.is_target_when_hit_ranged_trapped,
+            target_when_blocked: fields.is_target_when_blocked ?? raw.is_target_when_blocked,
+            immobile: fields.is_immobile ?? raw.is_immobile,
+            thorns: fields.has_thorns ?? raw.has_thorns,
+          };
+
+          const flags = new Set();
+          Object.entries(fromKnown).forEach(([key, value]) => {
+            if (value) flags.add(key);
+          });
+
+          if (Array.isArray(raw.flags)) {
+            raw.flags.forEach((flag) => {
+              const normalized = normalizeFlagKey(flag) || flag;
+              if (normalized) flags.add(normalized);
+            });
+          }
+
+          Object.entries(fields).forEach(([key, value]) => {
+            if ((key.startsWith("is_") || key.startsWith("has_")) && value) {
+              const normalized = normalizeFlagKey(key);
+              if (normalized) flags.add(normalized);
+            }
+          });
+
+          return Array.from(flags);
+        };
+
+        const toNumber = (value) => {
+          const num = Number(value);
+          return Number.isFinite(num) ? num : null;
+        };
+
+        const computeDps = (minDamage, maxDamage, attackSpeed) => {
+          const speed = toNumber(attackSpeed);
+          const damages = [toNumber(minDamage), toNumber(maxDamage)].filter((v) => v !== null);
+          if (!damages.length || speed === null || speed <= 0) return null;
+          const avgDamage = damages.reduce((sum, val) => sum + val, 0) / damages.length;
+          return avgDamage * (1000 / speed);
+        };
+
+        const normalizeMonster = (raw) => {
+          if (!raw || typeof raw !== "object") return null;
+          const fields = raw.fields || {};
+          const minDamage = toNumber(fields.min_damage ?? raw.minDamage);
+          const maxDamage = toNumber(fields.max_damage ?? raw.maxDamage);
+          const attackSpeedRaw = toNumber(fields.attack_speed ?? raw.attackSpeed);
+          const attackSpeed = attackSpeedRaw && attackSpeedRaw > 0 ? attackSpeedRaw : null;
+          const movingSpeed = toNumber(fields.movement_speed ?? raw.movingSpeed);
+          const hpMax = toNumber(fields.health ?? raw.hpMax);
+          const level = toNumber(fields.level ?? raw.level);
+          const dps = toNumber(raw.dps) ?? computeDps(minDamage, maxDamage, attackSpeed);
+          const elementalAttackRaw =
+            fields.elemental_attack_label ?? raw.elementalAttack ?? fields.elemental_attack ?? "";
+          const elementalAttack =
+            elementalAttackRaw === 0
+              ? "0"
+              : elementalAttackRaw === null || elementalAttackRaw === undefined
+                ? ""
+                : elementalAttackRaw.toString();
+          const monsterTypeRaw = fields.type_label ?? raw.monsterType ?? fields.type ?? "";
+          const monsterType =
+            monsterTypeRaw === null || monsterTypeRaw === undefined ? "" : monsterTypeRaw.toString();
+          const flags = extractFlags(raw);
+          const baseId = raw.id ?? raw.monsterId ?? raw.name ?? "";
+          const normalizedId = normalizeMonsterId(baseId);
+
+          return {
+            id: normalizedId || normalizeMonsterId(raw.name || ""),
+            name: raw.name || fields.name_label || "Unknown Monster",
+            minDamage,
+            maxDamage,
+            movingSpeed,
+            flying: flags.includes("flying"),
+            ethereal: flags.includes("ethereal"),
+            boss: flags.includes("boss"),
+            attackSpeed,
+            dps,
+            level,
+            elementalAttack,
+            monsterType,
+            hpMax,
+            flags,
+          };
+        };
+
+        const normalizeMonsters = (list) => {
+          if (!Array.isArray(list)) return [];
+          return list.map((entry) => normalizeMonster(entry)).filter(Boolean);
         };
 
         let pendingMonsterId = getInitialMonsterId();
@@ -870,6 +1040,7 @@
         typeTooltip: document.getElementById("details-type-tooltip"),
         element: document.getElementById("details-element"),
         eliteSummary: document.getElementById("details-elite-summary"),
+        corruptedSummary: document.getElementById("details-corrupted-summary"),
         elitePlusSummary: document.getElementById("details-elite-plus-summary"),
         imageFallback: document.getElementById("details-image-fallback"),
         flags: document.getElementById("details-flags"),
@@ -882,6 +1053,11 @@
           hp: document.getElementById("tooltip-elite-hp"),
           dmg: document.getElementById("tooltip-elite-dmg"),
           dps: document.getElementById("tooltip-elite-dps"),
+        },
+        corrupted: {
+          hp: document.getElementById("tooltip-corrupted-hp"),
+          dmg: document.getElementById("tooltip-corrupted-dmg"),
+          dps: document.getElementById("tooltip-corrupted-dps"),
         },
         elitePlus: {
           hp: document.getElementById("tooltip-elite-plus-hp"),
@@ -926,9 +1102,9 @@
               elementOptions.add(element);
             }
 
-            if (m.flying) flagOptions.add("flying");
-            if (m.ethereal) flagOptions.add("ethereal");
-            if (m.boss) flagOptions.add("boss");
+            (Array.isArray(m.flags) ? m.flags : []).forEach((flag) => {
+              if (flag) flagOptions.add(flag);
+            });
           });
 
           if (typeFilter) {
@@ -960,11 +1136,11 @@
           if (flagFilter) {
             flagFilter.innerHTML = "";
             Array.from(flagOptions)
-              .sort((a, b) => a.localeCompare(b))
+              .sort((a, b) => formatFlagLabel(a).localeCompare(formatFlagLabel(b)))
               .forEach((value) => {
                 const opt = document.createElement("option");
                 opt.value = value;
-                opt.textContent = value.charAt(0).toUpperCase() + value.slice(1);
+                opt.textContent = formatFlagLabel(value);
                 opt.selected = selectedFlags.has(value);
                 flagFilter.appendChild(opt);
               });
@@ -1350,16 +1526,7 @@
           const container = detailFields.flags;
           if (!container) return;
           container.innerHTML = "";
-          const descriptions = {
-            boss:
-              "These are the most powerful enemies you can fight. They can pass through non-Boss monsters and are leashed to their spawn area; pulling them out causes a teleport and full heal.",
-            flying: "Able to fly over mountains, water, and other objects.",
-            ethereal: "Able pass through walls and fly over mountains, water, and other objects.",
-          };
-          const flags = [];
-          if (monster.flying) flags.push("flying");
-          if (monster.ethereal) flags.push("ethereal");
-          if (monster.boss) flags.push("boss");
+          const flags = Array.isArray(monster.flags) ? monster.flags : [];
 
           if (!flags.length) {
             const none = document.createElement("span");
@@ -1375,10 +1542,13 @@
             const dot = document.createElement("span");
             dot.className = "flag-dot";
             const label = document.createElement("span");
-            label.textContent = flag.charAt(0).toUpperCase() + flag.slice(1);
+            const meta = FLAG_DETAILS[flag] || {};
+            label.textContent = meta.label || formatFlagLabel(flag);
             const tooltip = document.createElement("span");
             tooltip.className = "flag-tooltip";
-            tooltip.textContent = descriptions[flag] || "";
+            if (meta.description) {
+              tooltip.textContent = meta.description;
+            }
             pill.appendChild(dot);
             pill.appendChild(label);
             if (tooltip.textContent) {
@@ -1425,10 +1595,7 @@
 
           if (selectedFlags.size) {
             list = list.filter((m) => {
-              const flags = [];
-              if (m.flying) flags.push("flying");
-              if (m.ethereal) flags.push("ethereal");
-              if (m.boss) flags.push("boss");
+              const flags = Array.isArray(m.flags) ? m.flags : [];
               return flags.some((flag) => selectedFlags.has(flag));
             });
           }
@@ -1624,6 +1791,9 @@
           if (detailFields.eliteSummary) {
             detailFields.eliteSummary.textContent = "1.5x dmg, 3x HP";
           }
+          if (detailFields.corruptedSummary) {
+            detailFields.corruptedSummary.textContent = "1.75x dmg, 5x HP";
+          }
           if (detailFields.elitePlusSummary) {
             detailFields.elitePlusSummary.textContent = "2.0x dmg, 10x HP";
           }
@@ -1632,6 +1802,15 @@
             tooltipFields.elite.dmg.textContent = formatScaledDamageRange(monster.minDamage, monster.maxDamage, 1.5);
           }
           setVariantValues(monster.dps, 1.5, tooltipFields.elite.dps, formatDps);
+          setVariantValues(monster.hpMax, 5.0, tooltipFields.corrupted.hp);
+          if (tooltipFields.corrupted.dmg) {
+            tooltipFields.corrupted.dmg.textContent = formatScaledDamageRange(
+              monster.minDamage,
+              monster.maxDamage,
+              1.75
+            );
+          }
+          setVariantValues(monster.dps, 1.75, tooltipFields.corrupted.dps, formatDps);
           setVariantValues(monster.hpMax, 10.0, tooltipFields.elitePlus.hp);
           if (tooltipFields.elitePlus.dmg) {
             tooltipFields.elitePlus.dmg.textContent = formatScaledDamageRange(monster.minDamage, monster.maxDamage, 2.0);
@@ -1681,7 +1860,7 @@
         const init = () => {
           Promise.all([
             fetch(dataUrl.toString()).then((response) => {
-              if (!response.ok) throw new Error("Failed to load monsters.json");
+              if (!response.ok) throw new Error("Failed to load monsters_data03.json");
               return response.json();
             }),
             fetch(weaponsUrl.toString())
@@ -1689,17 +1868,17 @@
               .catch(() => []),
           ])
             .then(([monsterData, weaponData]) => {
-              monsters = Array.isArray(monsterData) ? monsterData : [];
+              monsters = normalizeMonsters(monsterData);
               weapons = Array.isArray(weaponData) ? weaponData.map((w) => normalizeWeapon(w)) : [];
               if (!monsters.length) {
-                renderEmpty("No monsters found in monsters.json.");
+                renderEmpty("No monsters found in monsters_data03.json.");
                 return;
               }
               populateFilters(monsters);
               applyFilterAndSort();
             })
             .catch(() => {
-              renderEmpty("Unable to load monsters. Add monsters.json beside this page.");
+              renderEmpty("Unable to load monsters. Add monsters_data03.json beside this page.");
             });
         };
 
