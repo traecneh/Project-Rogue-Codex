@@ -898,7 +898,12 @@
           addRow(
             [
               ["Weight", formatNumber(item.weight)],
-              ["Proc Chance", formatNumber(item.procChance, { maximumFractionDigits: 2 })],
+              [
+                "Proc",
+                item.procChance === null || item.procChance === undefined || item.procChance === ""
+                  ? "-"
+                  : `${formatNumber(item.procChance, { maximumFractionDigits: 2 })}%`,
+              ],
             ],
             2
           );
