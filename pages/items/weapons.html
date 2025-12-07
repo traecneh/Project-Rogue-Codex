@@ -36,6 +36,64 @@
         color: var(--text-muted);
       }
 
+      .item-filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin: 0 0 0.5rem;
+      }
+
+      .item-filter {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+        min-width: 220px;
+      }
+
+      .filter-label {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-muted);
+        margin: 0;
+      }
+
+      .filter-select {
+        background: var(--bg-panel-dark);
+        color: var(--text-main);
+        border: 1px solid var(--border-soft);
+        border-radius: 6px;
+        padding: 0.35rem 0.45rem;
+        min-height: 120px;
+        max-height: 180px;
+        overflow: auto;
+      }
+
+      .filter-select:focus-visible {
+        outline: 1px solid var(--accent);
+      }
+
+      .filter-select::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+      }
+
+      .filter-select::-webkit-scrollbar-track {
+        background: #0d1118;
+        border-radius: 8px;
+      }
+
+      .filter-select::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, #3a414f, #262c36);
+        border: 1px solid var(--border-soft);
+        border-radius: 8px;
+        box-shadow: inset 0 0 0 1px #0b0f16;
+      }
+
+      .filter-select::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(180deg, #4a5262, #2f3642);
+      }
+
       .items-table-wrapper {
         overflow: auto;
         max-height: 70vh;
@@ -267,7 +325,7 @@
       <main class="main-content">
         <header class="content-header">
           <h1 class="content-title">Weapons</h1>
-          <p class="content-tagline">Browse weapons; drop a weapons.json beside this page to see data.</p>
+          <p class="content-tagline">Browse weapons; drop a weapons_data05.json beside this page to see data.</p>
         </header>
 
         <section class="item-details" id="item-details" aria-live="polite">
@@ -298,6 +356,17 @@
             <p class="item-count" id="item-count"></p>
           </div>
 
+          <div class="item-filters" aria-label="Filters">
+            <div class="item-filter">
+              <label class="filter-label" for="filter-type">Type</label>
+              <select id="filter-type" class="filter-select" multiple aria-label="Filter by type"></select>
+            </div>
+            <div class="item-filter">
+              <label class="filter-label" for="filter-element">Element</label>
+              <select id="filter-element" class="filter-select" multiple aria-label="Filter by element"></select>
+            </div>
+          </div>
+
           <div class="items-table-wrapper">
             <table class="items-table" aria-describedby="item-search">
               <thead>
@@ -310,15 +379,18 @@
       </main>
     </div>
 
+
     <script>
       (() => {
         const PAGE = {
           title: "Weapons",
-          dataFile: "weapons.json",
+          dataFile: "weapons_data05.json",
         };
 
         const dataUrl = new URL(PAGE.dataFile, window.location.href);
         const searchInput = document.getElementById("item-search");
+        const typeFilter = document.getElementById("filter-type");
+        const elementFilter = document.getElementById("filter-element");
         const tableHeadRow = document.getElementById("items-head-row");
         const tableBody = document.getElementById("items-body");
         const countLabel = document.getElementById("item-count");
@@ -332,10 +404,65 @@
           properties: document.getElementById("details-properties"),
         };
 
+        const ELEMENT_COLORS = {
+          fire: "#ff5a5a",
+          electric: "#b86bff",
+          poison: "#2f7a2f",
+          cold: "#7cc9ff",
+          acid: "#b38b00",
+          disease: "#ff9c42",
+        };
+
+        const RESISTANCE_LABELS = {
+          fire: "Fire Resistance",
+          cold: "Cold Resistance",
+          electric: "Electric Resistance",
+          acid: "Acid Resistance",
+          poison: "Poison Resistance",
+          disease: "Disease Resistance",
+        };
+
+        const STAT_LABELS = {
+          strength: "Strength",
+          dexterity: "Dexterity",
+          constitution: "Constitution",
+        };
+
+        const HIDDEN_NAMES = new Set(
+          [
+            "Super Super Blunt",
+            "Super Duper Pole",
+            "Super Duper",
+            "Super Duper Blunt",
+            "Super Duper Axe",
+            "GM Deathbringer",
+            "Ghostblade",
+            "Wand of the Winds",
+            "Wand of the Flames",
+            "Tooth Staff",
+            "Krythan Staff",
+            "Bone Staff",
+            "Staff of Might",
+            "Cursed Staff",
+            "Vengeance Sword",
+          ].map((name) => name.toLowerCase())
+        );
+
+        const COLUMNS = [
+          { key: "image", label: "Image", render: (_, item) => createImageThumb(item) },
+          { key: "name", label: "Name" },
+          { key: "type", label: "Type" },
+          { key: "level", label: "Level", format: (value) => formatNumber(value) },
+          { key: "dps", label: "DPS", format: (value) => formatNumber(value, { maximumFractionDigits: 2 }) },
+          { key: "perk", label: "Perk" },
+          { key: "element", label: "Element", render: (value) => createElementBadge(value) },
+        ];
+
         let items = [];
-        let columns = [];
-        let sortKey = "name";
-        let sortDir = "asc";
+        let selectedTypes = new Set();
+        let selectedElements = new Set();
+        let sortKey = "dps";
+        let sortDir = "desc";
         let searchTerm = "";
         const urlParams = new URLSearchParams(window.location.search);
         const normalizeWeaponId = (value) =>
@@ -350,31 +477,13 @@
         let pendingWeaponId = initialWeaponId;
         let pendingWeaponName = rawWeaponQuery.toLowerCase();
 
-        const titleCase = (text) =>
-          text
-            .replace(/([a-z])([A-Z])/g, "$1 $2")
-            .replace(/[_-]+/g, " ")
-            .replace(/\s+/g, " ")
-            .trim()
-            .replace(/\b\w/g, (c) => c.toUpperCase());
-
         const renderEmpty = (message) => {
           tableHeadRow.innerHTML = "";
-          tableBody.innerHTML = `<tr><td class="table-empty" colspan="1">${message}</td></tr>`;
+          tableBody.innerHTML = `<tr><td class="table-empty" colspan="${COLUMNS.length || 1}">${message}</td></tr>`;
           if (countLabel) {
             countLabel.textContent = "0 results";
           }
         };
-
-      const TABLE_COLUMNS = ["image", "name", "level", "dps", "skillType", "specialEffect", "elementalDamageType"];
-      const ELEMENT_COLORS = {
-        fire: "#ff5a5a",
-        electric: "#b86bff",
-        poison: "#2f7a2f",
-        cold: "#7cc9ff",
-        acid: "#b38b00",
-        disease: "#ff9c42",
-      };
 
         const normalizeSortValue = (value) => {
           if (value === null || value === undefined) return "";
@@ -386,16 +495,17 @@
         };
 
         const formatValue = (value) => {
-          if (value === null || value === undefined) return "-";
+          if (value === null || value === undefined || value === "") return "-";
           if (Array.isArray(value)) return value.join(", ");
           if (typeof value === "object") return JSON.stringify(value);
           return value;
         };
 
-        const formatNumber = (value) => {
-          if (value === null || value === undefined) return "-";
-          if (Number.isNaN(Number(value))) return value;
-          return Number(value).toLocaleString("en-US");
+        const formatNumber = (value, options = {}) => {
+          if (value === null || value === undefined || value === "") return "-";
+          const num = Number(value);
+          if (Number.isNaN(num)) return value;
+          return num.toLocaleString("en-US", { maximumFractionDigits: 0, ...options });
         };
 
         const formatRange = (min, max) => {
@@ -407,8 +517,34 @@
           return "-";
         };
 
+        const normalizeFilterValue = (value) => (value || "").toString().trim().toLowerCase();
+
+        const setOptions = (select, options) => {
+          if (!select) return;
+          select.innerHTML = "";
+          options.forEach(({ value, label }) => {
+            const opt = document.createElement("option");
+            opt.value = value;
+            opt.textContent = label;
+            select.appendChild(opt);
+          });
+        };
+
+        const enableToggleSelect = (selectEl) => {
+          if (!selectEl) return;
+          selectEl.addEventListener("mousedown", (event) => {
+            const option = event.target;
+            if (option && option.tagName === "OPTION") {
+              event.preventDefault();
+              option.selected = !option.selected;
+              selectEl.dispatchEvent(new Event("change", { bubbles: true }));
+            }
+          });
+        };
+
         const ensureImage = (img, fallback, src) => {
           if (!img || !fallback) return;
+          fallback.style.display = "none";
           if (!src) {
             img.style.display = "none";
             fallback.style.display = "flex";
@@ -446,30 +582,134 @@
         const createPill = (items) => {
           const pill = document.createElement("span");
           pill.className = "flag-pill";
-          if (!items.length) {
-            pill.textContent = "None";
-            return pill;
-          }
-          items.forEach((entry, idx) => {
-            const part = document.createElement("span");
-            part.textContent = entry;
-            pill.appendChild(part);
-            if (idx !== items.length - 1) {
-              const sep = document.createElement("span");
-              sep.textContent = " • ";
-              pill.appendChild(sep);
-            }
-          });
+          pill.textContent = items.length ? items.join(", ") : "None";
           return pill;
         };
 
-        const getWeaponId = (item) => normalizeWeaponId(item && (item.id || item.name || item.Name));
+        const getElementColor = (value) => ELEMENT_COLORS[(value || "").toString().toLowerCase()] || "";
+
+        const createElementBadge = (value) => {
+          const span = document.createElement("span");
+          span.textContent = formatValue(value);
+          span.style.color = getElementColor(value);
+          return span;
+        };
+
+        const createImageThumb = (item) => {
+          const wrapper = document.createElement("div");
+          wrapper.style.display = "inline-flex";
+          wrapper.style.alignItems = "center";
+          const img = document.createElement("img");
+          img.className = "item-thumb";
+          img.alt = `${item.name || "Item"} image`;
+          const fallback = document.createElement("span");
+          fallback.className = "no-image";
+          fallback.textContent = "No Image";
+          ensureImage(img, fallback, item.image);
+          wrapper.appendChild(img);
+          wrapper.appendChild(fallback);
+          return wrapper;
+        };
+
+        const populateFilters = (data) => {
+          const typeOptions = new Map();
+          const elementOptions = new Set();
+
+          data.forEach((w) => {
+            const typeValue = normalizeFilterValue(w.type);
+            if (typeValue) {
+              if (!typeOptions.has(typeValue)) {
+                typeOptions.set(typeValue, String(w.type));
+              }
+            }
+            const elementValue = normalizeFilterValue(w.element);
+            if (elementValue && elementValue !== "none") {
+              elementOptions.add(String(w.element));
+            }
+          });
+
+          const typeList = Array.from(typeOptions.entries())
+            .sort((a, b) => a[1].localeCompare(b[1]))
+            .map(([value, label]) => ({ value, label }));
+          const elementList = Array.from(elementOptions)
+            .sort((a, b) => a.localeCompare(b))
+            .map((value) => ({ value: normalizeFilterValue(value), label: value }));
+
+          setOptions(typeFilter, typeList);
+          setOptions(elementFilter, elementList);
+        };
+
+        const computeDps = (minDamage, maxDamage, attackSpeed) => {
+          const min = Number(minDamage);
+          const max = Number(maxDamage);
+          const speed = Number(attackSpeed);
+          if (Number.isNaN(min) || Number.isNaN(max) || Number.isNaN(speed) || speed === 0) return null;
+          const avgDamage = (min + max) / 2;
+          return Number((avgDamage * (1000 / speed)).toFixed(2));
+        };
+
+        const buildRarity = (fields) => {
+          const max = fields.max_rarity_label || fields.max_rarity;
+          const maxLabel = max === null || max === undefined || max === "" ? "-" : max;
+          return `Regular - ${maxLabel}`;
+        };
+
+        const normalizeWeapon = (raw) => {
+          const fields = (raw && typeof raw.fields === "object" && raw.fields) || {};
+          const value = fields.value;
+          const sellValue =
+            value === null || value === undefined || value === ""
+              ? null
+              : Number.isNaN(Number(value))
+                ? null
+                : Number(value) / 2;
+
+          return {
+            id: raw && (raw.id ?? raw.ID) ? raw.id ?? raw.ID : normalizeWeaponId(raw && (raw.name || raw.Name)),
+            name: (raw && (raw.name || raw.Name)) || "Unknown",
+            image: raw && (raw.image || raw.icon || raw.thumbnail) ? raw.image || raw.icon || raw.thumbnail : "",
+            level: fields.level_requirement,
+            minDamage: fields.min_damage,
+            maxDamage: fields.max_damage,
+            attackSpeed: fields.attack_speed,
+            dps: computeDps(fields.min_damage, fields.max_damage, fields.attack_speed),
+            type: fields.subtype_label || fields.subtype,
+            perk: fields.perk ? fields.perk_label || fields.perk : "None",
+            element: fields.element_label || (fields.element ? fields.element : "None"),
+            procChance: fields.proc_chance,
+            skillRequirement: fields.skill_requirement,
+            weight: fields.weight,
+            specialty: fields.specialty ? fields.specialty_label || fields.specialty : "None",
+            specialtyAmount: fields.specialty_amount,
+            rarity: buildRarity(fields),
+            toHit: fields.to_hit,
+            value,
+            sellValue,
+            shardDecompositionAmount: fields.shard_decomposition_amount,
+            shardPromotionAmount: fields.shard_promotion_amount,
+            resistances: {
+              fire: fields.fire_resistance,
+              cold: fields.cold_resistance,
+              electric: fields.electric_resistance,
+              acid: fields.acid_resistance,
+              poison: fields.poison_resistance,
+              disease: fields.disease_resistance,
+            },
+            stats: {
+              strength: fields.strength,
+              dexterity: fields.dexterity,
+              constitution: fields.constitution,
+            },
+          };
+        };
+
+        const getWeaponId = (item) => normalizeWeaponId(item && (item.id || item.name));
 
         const maybeSelectPendingWeapon = (list) => {
           if (!pendingWeaponId && !pendingWeaponName) return;
           const match = (list || items).find((w) => {
             const id = getWeaponId(w);
-            const nameLower = (w.name || w.Name || "").toLowerCase();
+            const nameLower = (w.name || "").toLowerCase();
             return (pendingWeaponId && id === pendingWeaponId) || (pendingWeaponName && nameLower === pendingWeaponName);
           });
           if (!match) return;
@@ -480,26 +720,19 @@
 
         const buildHead = () => {
           tableHeadRow.innerHTML = "";
-          TABLE_COLUMNS.forEach((col) => {
+          COLUMNS.forEach((col) => {
             const th = document.createElement("th");
-            const label =
-              col === "elementalDamageType" ? "Element"
-              : col === "dps" ? "DPS"
-              : col === "specialEffect" ? "Perk"
-              : col;
-            th.textContent = titleCase(label);
-            if (col !== "image") {
-              th.dataset.sortKey = col;
-              th.addEventListener("click", () => {
-                if (sortKey === col) {
-                  sortDir = sortDir === "asc" ? "desc" : "asc";
-                } else {
-                  sortKey = col;
-                  sortDir = "asc";
-                }
-                applyFilterAndSort();
-              });
-            }
+            th.textContent = col.label;
+            th.dataset.sortKey = col.key;
+            th.addEventListener("click", () => {
+              if (sortKey === col.key) {
+                sortDir = sortDir === "asc" ? "desc" : "asc";
+              } else {
+                sortKey = col.key;
+                sortDir = "asc";
+              }
+              applyFilterAndSort();
+            });
             tableHeadRow.appendChild(th);
           });
         };
@@ -507,8 +740,7 @@
         const setDetails = (item) => {
           if (!item) return;
           detailFields.name.textContent = item.name || "Unknown";
-          const imgSrc = item.image || item.icon || item.thumbnail || "";
-          ensureImage(detailFields.image, detailFields.imageFallback, imgSrc);
+          ensureImage(detailFields.image, detailFields.imageFallback, item.image);
 
           const container = detailFields.properties;
           container.innerHTML = "";
@@ -516,62 +748,44 @@
           const add = (label, value) => container.appendChild(createCell(label, value));
 
           add("Level", formatNumber(item.level));
-          add("DPS", formatNumber(item.dps));
+          add("DPS", formatNumber(item.dps, { maximumFractionDigits: 2 }));
           add("Damage", formatRange(item.minDamage, item.maxDamage));
           add(
             "Speed",
-            item.speed === null || item.speed === undefined ? "-" : `${formatNumber(item.speed)} ms`
+            item.attackSpeed === null || item.attackSpeed === undefined
+              ? "-"
+              : `${formatNumber(item.attackSpeed)} ms`
           );
-          add("Skill Type", formatValue(item.skillType));
-          add("Subtype", formatValue(item.subtype));
-          add("Perk", formatValue(item.specialEffect));
-          const elementSpan = document.createElement("span");
-          const elementColor = ELEMENT_COLORS[(item.elementalDamageType || "").toLowerCase()];
-          elementSpan.textContent = formatValue(item.elementalDamageType);
-          elementSpan.style.color = elementColor || "";
-          add("Element", elementSpan);
-          add("Proc Chance", formatValue(item.procChance));
-          add("Requirement Type", formatValue(item.requirementType));
-          add("Requirement Amount", formatNumber(item.requirementAmount));
+          add("Type", formatValue(item.type));
+          add("Perk", formatValue(item.perk));
+          add("Element", createElementBadge(item.element));
+          add("Proc Chance", formatNumber(item.procChance, { maximumFractionDigits: 2 }));
+          add("Skill Requirement Amount", formatNumber(item.skillRequirement));
           add("Weight", formatNumber(item.weight));
-          add("Speciality", formatValue(item.speciality));
-          add("Speciality Amount", formatNumber(item.specialityAmount));
-          add(
-            "Rarity",
-            `${formatValue(item.minimumRarity || "-")} - ${formatValue(item.maximumRarity || "-")}`
-          );
-          add("Stat To Hit", formatNumber(item.statToHit));
+          add("Specialty", formatValue(item.specialty));
+          add("Specialty Amount", formatNumber(item.specialtyAmount));
+          add("Rarity", formatValue(item.rarity));
+          add("To Hit", formatNumber(item.toHit));
 
           container.appendChild(Object.assign(document.createElement("div"), { className: "detail-divider" }));
 
-          add("Sell Value", formatNumber(item.sellValue));
           add("Value", formatNumber(item.value));
-          add("Shard Decomposition Count", formatNumber(item.shardDecompositionCount));
-          add("Shard Promotion Count", formatNumber(item.shardPromotionCount));
+          add("Sell Value", formatNumber(item.sellValue, { maximumFractionDigits: 2 }));
+          add("Shard Decomposition Amount", formatNumber(item.shardDecompositionAmount));
+          add("Shard Promotion Amount", formatNumber(item.shardPromotionAmount));
 
           container.appendChild(Object.assign(document.createElement("div"), { className: "detail-divider" }));
 
-          const resistances = [
-            ["Fire", item.fire],
-            ["Cold", item.cold],
-            ["Electric", item.electric],
-            ["Acid", item.acid],
-            ["Poison", item.poison],
-            ["Disease", item.disease],
-          ]
+          const resistances = Object.entries(item.resistances || {})
             .filter(([, val]) => val !== null && val !== undefined && Number(val) !== 0)
-            .map(([label, val]) => `${label}: ${formatNumber(val)}`);
+            .map(([label, val]) => `${RESISTANCE_LABELS[label] || label}: ${formatNumber(val)}`);
           if (resistances.length) {
             add("Resistances", createPill(resistances));
           }
 
-          const stats = [
-            ["Str", item.statStrength],
-            ["Dex", item.statDexterity],
-            ["Con", item.statConstitution],
-          ]
+          const stats = Object.entries(item.stats || {})
             .filter(([, val]) => val !== null && val !== undefined && Number(val) !== 0)
-            .map(([label, val]) => `${label}: ${formatNumber(val)}`);
+            .map(([label, val]) => `${STAT_LABELS[label] || label}: ${formatNumber(val)}`);
           if (stats.length) {
             add("Stats", createPill(stats));
           }
@@ -596,35 +810,23 @@
             const tr = document.createElement("tr");
             tr.dataset.id = item.id || "";
 
-            TABLE_COLUMNS.forEach((col) => {
+            COLUMNS.forEach((col) => {
               const td = document.createElement("td");
-              if (col === "image") {
-                const img = document.createElement("img");
-                img.className = "item-thumb";
-                img.alt = `${item.name || "Item"} image`;
-                const noImg = document.createElement("span");
-                noImg.className = "no-image";
-                noImg.textContent = "No Image";
-                ensureImage(img, noImg, item.image || item.icon || item.thumbnail);
-                if (img.src) {
-                  td.appendChild(img);
+              const value = item[col.key];
+              if (col.render) {
+                const rendered = col.render(value, item);
+                if (rendered instanceof Node) {
+                  td.appendChild(rendered);
                 } else {
-                  td.appendChild(noImg);
+                  td.textContent = formatValue(rendered);
                 }
-          } else {
-            const value = item[col];
-            if (col === "elementalDamageType") {
-              const span = document.createElement("span");
-              const color = ELEMENT_COLORS[(value || "").toLowerCase()];
-              span.textContent = formatValue(value);
-              span.style.color = color || "";
-              td.appendChild(span);
-            } else {
-              td.textContent = formatValue(value);
-            }
-          }
-          tr.appendChild(td);
-        });
+              } else if (col.format) {
+                td.textContent = col.format(value);
+              } else {
+                td.textContent = formatValue(value);
+              }
+              tr.appendChild(td);
+            });
 
             tr.addEventListener("click", () => setDetails(item));
             fragment.appendChild(tr);
@@ -636,13 +838,17 @@
 
         const applyFilterAndSort = () => {
           if (!Array.isArray(items) || !items.length) {
-            renderEmpty("No weapons found in weapons.json.");
+            renderEmpty("No weapons found in weapons_data05.json.");
             return;
           }
 
-          const searchableColumns = TABLE_COLUMNS.filter((c) => c !== "image");
+          const searchableColumns = COLUMNS.map((c) => c.key);
 
           const filtered = items.filter((item) => {
+            const matchesType = selectedTypes.size === 0 || selectedTypes.has(normalizeFilterValue(item.type));
+            const matchesElement =
+              selectedElements.size === 0 || selectedElements.has(normalizeFilterValue(item.element));
+            if (!matchesType || !matchesElement) return false;
             if (!searchTerm) return true;
             const text = searchableColumns
               .map((col) => formatValue(item[col]))
@@ -668,72 +874,28 @@
           maybeSelectPendingWeapon(sorted);
         };
 
-        const KEY_MAP = {
-          dps: "dps",
-          name: "name",
-          skilltype: "skillType",
-          specialeffect: "specialEffect",
-          elementaldamagetype: "elementalDamageType",
-          minimumdamage: "minDamage",
-          maximumdamage: "maxDamage",
-          speed: "speed",
-          level: "level",
-          subtype: "subtype",
-          type: "type",
-          sellvalue: "sellValue",
-          value: "value",
-          weight: "weight",
-          speciality: "speciality",
-          specialityamount: "specialityAmount",
-          procchance: "procChance",
-          requirementtype: "requirementType",
-          requirementamount: "requirementAmount",
-          minimumrarity: "minimumRarity",
-          maximumrarity: "maximumRarity",
-          sharddecompositioncount: "shardDecompositionCount",
-          shardpromotioncount: "shardPromotionCount",
-          fire: "fire",
-          cold: "cold",
-          electric: "electric",
-          acid: "acid",
-          poison: "poison",
-          disease: "disease",
-          stat_strength: "statStrength",
-          stat_dexterity: "statDexterity",
-          stat_constitution: "statConstitution",
-          stat_tohit: "statToHit",
-          icon: "image",
-          thumbnail: "image",
-          image: "image",
-        };
-
-        const normalizeKeys = (raw) => {
-          const out = {};
-          Object.entries(raw || {}).forEach(([key, value]) => {
-            const lowered = key.toString().toLowerCase();
-            const mapped = KEY_MAP[lowered] || key.charAt(0).toLowerCase() + key.slice(1);
-            out[mapped] = value;
-          });
-          return out;
-        };
-
         const init = () => {
           fetch(dataUrl.toString())
             .then((response) => {
               if (!response.ok) {
-                throw new Error("Failed to load weapons.json");
+                throw new Error("Failed to load weapons_data05.json");
               }
               return response.json();
             })
             .then((data) => {
-              items = Array.isArray(data) ? data.map((row) => normalizeKeys(row)) : [];
-              columns = TABLE_COLUMNS.slice();
-              if (!columns.length) {
-                renderEmpty("Add weapons.json beside this page to see weapons.");
+              items = (Array.isArray(data) ? data : [])
+                .map((row) => normalizeWeapon(row))
+                .filter((weapon) => !HIDDEN_NAMES.has((weapon.name || "").toLowerCase()));
+              if (!items.length) {
+                renderEmpty("Add weapons_data05.json beside this page to see weapons.");
                 return;
               }
-              if (columns.includes("name")) sortKey = "name";
+              sortKey = "dps";
+              sortDir = "desc";
+              selectedTypes = new Set();
+              selectedElements = new Set();
               buildHead();
+              populateFilters(items);
               if (initialWeaponSearchTerm) {
                 searchTerm = initialWeaponSearchTerm;
                 if (searchInput) searchInput.value = initialWeaponSearchTerm;
@@ -741,13 +903,29 @@
               applyFilterAndSort();
             })
             .catch(() => {
-              renderEmpty("Unable to load weapons. Add weapons.json beside this page.");
+              renderEmpty("Unable to load weapons. Add weapons_data05.json beside this page.");
             });
         };
 
         if (searchInput) {
           searchInput.addEventListener("input", (event) => {
             searchTerm = event.target.value || "";
+            applyFilterAndSort();
+          });
+        }
+
+        if (typeFilter) {
+          enableToggleSelect(typeFilter);
+          typeFilter.addEventListener("change", () => {
+            selectedTypes = new Set(Array.from(typeFilter.selectedOptions).map((o) => o.value));
+            applyFilterAndSort();
+          });
+        }
+
+        if (elementFilter) {
+          enableToggleSelect(elementFilter);
+          elementFilter.addEventListener("change", () => {
+            selectedElements = new Set(Array.from(elementFilter.selectedOptions).map((o) => o.value));
             applyFilterAndSort();
           });
         }
@@ -759,5 +937,6 @@
         init();
       })();
     </script>
+
   </body>
 </html>
