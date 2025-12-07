@@ -290,7 +290,7 @@
 
       .item-details-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 0.5rem 1rem;
       }
 
@@ -302,6 +302,7 @@
         display: grid;
         gap: 0.5rem 0.75rem;
         margin-bottom: 0.35rem;
+        grid-column: 1 / -1;
       }
 
       .detail-row-cols-1 {
@@ -314,6 +315,10 @@
 
       .detail-row-cols-3 {
         grid-template-columns: repeat(3, minmax(140px, 1fr));
+      }
+
+      .detail-row-cols-4 {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
       }
 
       .detail-label {
@@ -814,11 +819,6 @@
             [
               ["Type", formatValue(item.type)],
               ["DPS", formatNumber(item.dps, { maximumFractionDigits: 2 })],
-            ],
-            2
-          );
-          addRow(
-            [
               ["Damage", formatRange(item.minDamage, item.maxDamage)],
               [
                 "Speed",
@@ -827,20 +827,30 @@
                   : `${formatNumber(item.attackSpeed)} ms`,
               ],
             ],
-            2
+            4
           );
           addRow(
             [
               ["Element", createElementBadge(item.element)],
               ["To Hit", formatNumber(item.toHit)],
+              ["Level", formatNumber(item.level)],
+              [
+                "Proc",
+                item.procChance === null || item.procChance === undefined || item.procChance === ""
+                  ? "-"
+                  : `${formatNumber(item.procChance, { maximumFractionDigits: 2 })}%`,
+              ],
             ],
-            2
+            4
           );
           addRow(
             [
-              ["Level", formatNumber(item.level)],
+              ["Specialty", formatValue(item.specialty)],
+              ["Specialty Amount", formatNumber(item.specialtyAmount)],
+              ["Weight", formatNumber(item.weight)],
+              ["Rarity", formatValue(item.rarity)],
             ],
-            1
+            4
           );
 
           addDivider();
@@ -850,8 +860,9 @@
               ["Strength", formatNumber((item.stats && item.stats.strength) ?? 0)],
               ["Constitution", formatNumber((item.stats && item.stats.constitution) ?? 0)],
               ["Dexterity", formatNumber((item.stats && item.stats.dexterity) ?? 0)],
+              ["", ""],
             ],
-            3
+            4
           );
 
           addDivider();
@@ -895,18 +906,6 @@
 
           addDivider();
 
-          addRow(
-            [
-              ["Weight", formatNumber(item.weight)],
-              [
-                "Proc",
-                item.procChance === null || item.procChance === undefined || item.procChance === ""
-                  ? "-"
-                  : `${formatNumber(item.procChance, { maximumFractionDigits: 2 })}%`,
-              ],
-            ],
-            2
-          );
           addRow(
             [
               ["Value", formatNumber(item.value)],
