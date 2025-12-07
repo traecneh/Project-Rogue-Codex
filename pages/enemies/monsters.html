@@ -129,6 +129,8 @@
         width: 100%;
         border-collapse: collapse;
         min-width: 680px;
+        border: 1px solid var(--border-soft);
+        box-shadow: 0 0 0 1px #0b0f16, 0 8px 16px rgba(0, 0, 0, 0.55);
       }
 
       .monsters-table thead {
@@ -301,6 +303,22 @@
         color: var(--text-main);
         align-items: center;
         white-space: nowrap;
+      }
+
+      .detail-tooltip-row.weapon-row {
+        display: grid;
+        grid-template-columns: 1fr 120px 120px;
+        gap: 0.6rem;
+        align-items: center;
+      }
+
+      .weapon-col-meta {
+        text-align: right;
+      }
+
+      .weapon-col-type {
+        text-align: left;
+        color: var(--text-muted);
       }
 
       .detail-tooltip-label {
@@ -704,7 +722,7 @@
     <script>
       (() => {
         const dataUrl = new URL("monsters_data03.json", window.location.href);
-        const weaponsUrl = new URL("../items/weapons.json", window.location.href);
+        const weaponsUrl = new URL("../items/weapons_data05.json", window.location.href);
         const searchInput = document.getElementById("monster-search");
         const typeFilter = document.getElementById("filter-type");
         const elementFilter = document.getElementById("filter-element");
@@ -875,9 +893,31 @@
           };
         };
 
+        const HIDDEN_MONSTER_NAMES = new Set(
+          [
+            "Fire Wisp",
+            "Fire Bat",
+            "Lava Bat",
+            "Shade",
+            "Dretch Brigand",
+            "Dretch Thug",
+            "Dretch Executioner",
+            "Dretch Warrior",
+            "Dretch Rogue",
+            "Dretch Occulist",
+            "Abyssal Disciple",
+            "Durg",
+            "Frigit",
+            "Bramble",
+          ].map((name) => name.toLowerCase())
+        );
+
         const normalizeMonsters = (list) => {
           if (!Array.isArray(list)) return [];
-          return list.map((entry) => normalizeMonster(entry)).filter(Boolean);
+          return list
+            .map((entry) => normalizeMonster(entry))
+            .filter(Boolean)
+            .filter((monster) => !HIDDEN_MONSTER_NAMES.has((monster.name || "").toLowerCase()));
         };
 
         let pendingMonsterId = getInitialMonsterId();
@@ -1069,8 +1109,8 @@
       let pinDocumentListenerAttached = false;
 
         let monsters = [];
-        let sortKey = "name";
-        let sortDir = "asc";
+        let sortKey = "dps";
+        let sortDir = "desc";
         let searchTerm = "";
         let selectedTypes = new Set();
         let selectedElements = new Set();
@@ -1205,20 +1245,21 @@
         };
 
         const normalizeWeapon = (raw) => {
-          const map = {
-            dps: "dps",
-            name: "name",
-            elementaldamagetype: "elementalDamageType",
-            elementalDamageType: "elementalDamageType",
-            level: "level",
+          if (!raw || typeof raw !== "object") return null;
+          const fields = raw.fields || {};
+
+          const min = toNumber(fields.min_damage);
+          const max = toNumber(fields.max_damage);
+          const speed = toNumber(fields.attack_speed);
+          const dps = computeDps(min, max, speed);
+
+          return {
+            name: raw.name || fields.name_label || "Unknown Weapon",
+            dps,
+            level: toNumber(fields.level_requirement ?? raw.level),
+            elementalDamageType: fields.element_label || fields.element || raw.elementalDamageType || raw.element,
+            type: fields.subtype_label || fields.subtype || raw.type || raw.Type,
           };
-          const out = {};
-          Object.entries(raw || {}).forEach(([key, value]) => {
-            const lower = key.toString().toLowerCase();
-            const mapped = map[lower] || key;
-            out[mapped] = value;
-          });
-          return out;
         };
 
         const getElementMultiplier = (monsterType, weaponElement) => {
@@ -1231,18 +1272,23 @@
 
         const buildWeaponLinkRow = (entry) => {
           const row = document.createElement("div");
-          row.className = "detail-tooltip-row";
+          row.className = "detail-tooltip-row weapon-row";
           const label = document.createElement("a");
           label.className = "detail-tooltip-label";
           label.textContent = entry.name;
           label.href = `pages/items/weapons.html?weapon=${encodeURIComponent(entry.name)}`;
           label.style.color = "inherit";
-          const val = document.createElement("span");
-          val.textContent = entry.meta || "";
+          const metaSpan = document.createElement("span");
+          metaSpan.textContent = entry.meta || "-";
+          metaSpan.className = "weapon-col-meta";
+          const typeSpan = document.createElement("span");
+          typeSpan.textContent = entry.type || "-";
+          typeSpan.className = "weapon-col-type";
           const color = ELEMENT_COLORS[(entry.element || "").toLowerCase()];
-          if (color) val.style.color = color;
+          if (color) metaSpan.style.color = color;
           row.appendChild(label);
-          row.appendChild(val);
+          row.appendChild(metaSpan);
+          row.appendChild(typeSpan);
           return row;
         };
 
@@ -1262,26 +1308,32 @@
           const level = Number(monster.level);
           let ranges = [];
           if (Number.isFinite(level)) {
-            const half = 10;
-            const step = 25; // non-overlapping 20-wide bands with a 5-level gap
-            const centers = new Set();
-            centers.add(level);
-            const prevCenter = level - step;
-            if (prevCenter >= 0) centers.add(prevCenter);
-            for (let c = level + step; c - half < 100; c += step) {
-              centers.add(c);
-            }
+            if (level >= 105) {
+              ranges = [{ label: "Endgame", min: 100, max: Infinity, limit: 10 }];
+            } else {
+              const half = 10;
+              const step = 25; // non-overlapping 20-wide bands with a 5-level gap
+              const centers = new Set();
+              centers.add(level);
+              const prevCenter = level - step;
+              if (prevCenter >= 0) centers.add(prevCenter);
+              for (let c = level + step; c - half < 100; c += step) {
+                centers.add(c);
+              }
 
-            ranges = Array.from(centers)
-              .map((c) => {
-                const min = Math.max(0, c - half);
-                const max = c + half;
-                return { min, max, limit: 5 };
-              })
-              .filter((r) => r.max > r.min)
-              .sort((a, b) => a.min - b.min);
+              ranges = Array.from(centers)
+                .map((c) => {
+                  const min = Math.max(0, c - half);
+                  const max = c + half;
+                  return { min, max, limit: 5 };
+                })
+                .filter((r) => r.max > r.min)
+                .sort((a, b) => a.min - b.min);
+              ranges.push({ label: "Endgame", min: 100, max: Infinity, limit: 10 });
+            }
+          } else {
+            ranges = [{ label: "Endgame", min: 100, max: Infinity, limit: 10 }];
           }
-          ranges.push({ label: "Endgame", min: 100, max: Infinity, limit: 10 });
 
           const buildList = (range) => {
             const list = weapons
@@ -1289,21 +1341,22 @@
                 const dps = Number(w.dps);
                 const wLevel = Number(w.level);
                 if (!Number.isFinite(dps)) return null;
-              if (!Number.isFinite(wLevel)) return null;
-              if (wLevel < range.min) return null;
-              if (range.max !== Infinity && wLevel > range.max) return null;
-              const multiplier = getElementMultiplier(monster.monsterType, w.elementalDamageType);
-              return {
-                name: w.name || "Unknown Weapon",
-                element: w.elementalDamageType || "-",
-                effective: dps * multiplier,
-                base: dps,
-                level: wLevel,
-              };
-            })
-            .filter(Boolean)
-            .sort((a, b) => b.effective - a.effective)
-            .slice(0, range.limit || 5);
+                if (!Number.isFinite(wLevel)) return null;
+                if (wLevel < range.min) return null;
+                if (range.max !== Infinity && wLevel > range.max) return null;
+                const multiplier = getElementMultiplier(monster.monsterType, w.elementalDamageType);
+                return {
+                  name: w.name || "Unknown Weapon",
+                  element: w.elementalDamageType || "-",
+                  type: w.type || "-",
+                  effective: dps * multiplier,
+                  base: dps,
+                  level: wLevel,
+                };
+              })
+              .filter(Boolean)
+              .sort((a, b) => b.effective - a.effective)
+              .slice(0, range.limit || 5);
             return list;
           };
 
@@ -1318,6 +1371,18 @@
             tooltip.className = "detail-tooltip";
             tooltip.role = "tooltip";
 
+            const headerRow = document.createElement("div");
+            headerRow.className = "detail-tooltip-row";
+            const headerLabel = document.createElement("span");
+            headerLabel.className = "detail-tooltip-label";
+            headerLabel.textContent = "DPS uses element/type";
+            headerRow.appendChild(headerLabel);
+            tooltip.appendChild(headerRow);
+
+            const headerDivider = document.createElement("div");
+            headerDivider.className = "detail-tooltip-divider";
+            tooltip.appendChild(headerDivider);
+
             const list = buildList(range);
             if (!list.length) {
               tooltip.textContent = "No matching weapons";
@@ -1326,6 +1391,7 @@
                 const row = buildWeaponLinkRow({
                   name: entry.name,
                   element: entry.element,
+                  type: entry.type,
                   meta: `${formatDps(entry.effective)} DPS`,
                 });
                 tooltip.appendChild(row);
@@ -1359,8 +1425,9 @@
             return;
           }
 
-          const minLevel = Math.max(0, level - 5);
-          const maxLevel = level + 5;
+          const isEndgame = level >= 105;
+          const minLevel = isEndgame ? 105 : Math.max(0, level - 5);
+          const maxLevel = isEndgame ? Infinity : level + 5;
 
           const list = weapons
             .map((w) => {
@@ -1370,7 +1437,8 @@
               return {
                 name: w.name || "Unknown Weapon",
                 element: w.elementalDamageType || "-",
-                meta: `Lvl ${formatNumber(wLevel)}`,
+                meta: `${formatDps(Number(w.dps) || 0)} DPS`,
+                type: w.type || "-",
                 level: wLevel,
               };
             })

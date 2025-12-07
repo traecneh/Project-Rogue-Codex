@@ -95,8 +95,7 @@
       }
 
       .items-table-wrapper {
-        overflow: auto;
-        max-height: 70vh;
+        overflow: visible;
         border: 1px solid var(--border-soft);
         border-radius: 8px;
         background: var(--bg-panel);
@@ -107,10 +106,15 @@
         width: 100%;
         border-collapse: collapse;
         min-width: 640px;
+        border: 1px solid var(--border-soft);
+        box-shadow: 0 0 0 1px #0b0f16, 0 8px 16px rgba(0, 0, 0, 0.55);
       }
 
       .items-table thead {
         background: linear-gradient(to bottom, #303540, #252a33);
+        position: sticky;
+        top: 0;
+        z-index: 3;
       }
 
       .items-table th,
@@ -122,6 +126,7 @@
       }
 
       .items-table th {
+        background: linear-gradient(to bottom, #303540, #252a33);
         position: sticky;
         top: 0;
         z-index: 2;
@@ -130,6 +135,12 @@
         letter-spacing: 0.02em;
         color: #f9fafb;
         white-space: nowrap;
+      }
+
+      .items-table th .sort-indicator {
+        margin-left: 0.35rem;
+        font-size: 0.8rem;
+        color: var(--text-muted);
       }
 
       .items-table tbody tr {
@@ -260,19 +271,16 @@
         color: var(--text-muted);
       }
 
-      .items-table-wrapper::-webkit-scrollbar,
       .item-details::-webkit-scrollbar {
         width: 10px;
         height: 10px;
       }
 
-      .items-table-wrapper::-webkit-scrollbar-track,
       .item-details::-webkit-scrollbar-track {
         background: #0d1118;
         border-radius: 8px;
       }
 
-      .items-table-wrapper::-webkit-scrollbar-thumb,
       .item-details::-webkit-scrollbar-thumb {
         background: linear-gradient(180deg, #3a414f, #262c36);
         border: 1px solid var(--border-soft);
@@ -449,7 +457,7 @@
         );
 
         const COLUMNS = [
-          { key: "image", label: "Image", render: (_, item) => createImageThumb(item) },
+          { key: "image", label: "Image", render: (_, item) => createImageThumb(item), sortable: false },
           { key: "name", label: "Name" },
           { key: "type", label: "Type" },
           { key: "level", label: "Level", format: (value) => formatNumber(value) },
@@ -718,23 +726,53 @@
           setDetails(match);
         };
 
+        const updateSortIndicators = () => {
+          document.querySelectorAll(".items-table th[data-sort-key]").forEach((th) => {
+            const key = th.getAttribute("data-sort-key");
+            const indicator = th.querySelector(".sort-indicator");
+            const isActive = key === sortKey;
+            const ariaSort = isActive ? (sortDir === "asc" ? "ascending" : "descending") : "none";
+            th.setAttribute("aria-sort", ariaSort);
+            if (indicator) {
+              indicator.textContent = isActive ? (sortDir === "asc" ? "\u25B2" : "\u25BC") : "\u2195";
+            }
+          });
+        };
+
         const buildHead = () => {
           tableHeadRow.innerHTML = "";
           COLUMNS.forEach((col) => {
             const th = document.createElement("th");
-            th.textContent = col.label;
-            th.dataset.sortKey = col.key;
-            th.addEventListener("click", () => {
-              if (sortKey === col.key) {
-                sortDir = sortDir === "asc" ? "desc" : "asc";
-              } else {
-                sortKey = col.key;
-                sortDir = "asc";
-              }
-              applyFilterAndSort();
-            });
+            th.setAttribute("scope", "col");
+
+            const labelSpan = document.createElement("span");
+            labelSpan.textContent = col.label;
+            th.appendChild(labelSpan);
+
+            if (col.sortable !== false) {
+              th.dataset.sortKey = col.key;
+              const indicator = document.createElement("span");
+              indicator.className = "sort-indicator";
+              indicator.setAttribute("aria-hidden", "true");
+              indicator.textContent = "\u2195";
+              th.appendChild(indicator);
+
+              th.addEventListener("click", () => {
+                if (sortKey === col.key) {
+                  sortDir = sortDir === "asc" ? "desc" : "asc";
+                } else {
+                  sortKey = col.key;
+                  sortDir = "asc";
+                }
+                applyFilterAndSort();
+              });
+            } else {
+              th.style.cursor = "default";
+            }
+
             tableHeadRow.appendChild(th);
           });
+          updateSortIndicators();
         };
 
         const setDetails = (item) => {
@@ -864,6 +902,8 @@
             if (av > bv) return sortDir === "asc" ? 1 : -1;
             return 0;
           });
+
+          updateSortIndicators();
 
           if (countLabel) {
             const count = sorted.length;
