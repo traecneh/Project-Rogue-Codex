@@ -298,6 +298,24 @@
         padding: 0.3rem 0;
       }
 
+      .detail-row {
+        display: grid;
+        gap: 0.5rem 0.75rem;
+        margin-bottom: 0.35rem;
+      }
+
+      .detail-row-cols-1 {
+        grid-template-columns: 1fr;
+      }
+
+      .detail-row-cols-2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .detail-row-cols-3 {
+        grid-template-columns: repeat(3, minmax(140px, 1fr));
+      }
+
       .detail-label {
         font-size: 0.78rem;
         text-transform: uppercase;
@@ -333,7 +351,6 @@
       <main class="main-content">
         <header class="content-header">
           <h1 class="content-title">Weapons</h1>
-          <p class="content-tagline">Browse weapons; drop a weapons_data05.json beside this page to see data.</p>
         </header>
 
         <section class="item-details" id="item-details" aria-live="polite">
@@ -690,6 +707,7 @@
             specialty: fields.specialty ? fields.specialty_label || fields.specialty : "None",
             specialtyAmount: fields.specialty_amount,
             rarity: buildRarity(fields),
+            maxRarityLabel: fields.max_rarity_label || fields.max_rarity,
             toHit: fields.to_hit,
             value,
             sellValue,
@@ -783,50 +801,114 @@
           const container = detailFields.properties;
           container.innerHTML = "";
 
-          const add = (label, value) => container.appendChild(createCell(label, value));
+          const addDivider = () =>
+            container.appendChild(Object.assign(document.createElement("div"), { className: "detail-divider" }));
+          const addRow = (entries, cols) => {
+            const row = document.createElement("div");
+            row.className = `detail-row detail-row-cols-${cols || 2}`;
+            entries.forEach(([label, value]) => row.appendChild(createCell(label, value)));
+            container.appendChild(row);
+          };
 
-          add("Level", formatNumber(item.level));
-          add("DPS", formatNumber(item.dps, { maximumFractionDigits: 2 }));
-          add("Damage", formatRange(item.minDamage, item.maxDamage));
-          add(
-            "Speed",
-            item.attackSpeed === null || item.attackSpeed === undefined
-              ? "-"
-              : `${formatNumber(item.attackSpeed)} ms`
+          addRow(
+            [
+              ["Type", formatValue(item.type)],
+              ["DPS", formatNumber(item.dps, { maximumFractionDigits: 2 })],
+            ],
+            2
           );
-          add("Type", formatValue(item.type));
-          add("Perk", formatValue(item.perk));
-          add("Element", createElementBadge(item.element));
-          add("Proc Chance", formatNumber(item.procChance, { maximumFractionDigits: 2 }));
-          add("Skill Requirement Amount", formatNumber(item.skillRequirement));
-          add("Weight", formatNumber(item.weight));
-          add("Specialty", formatValue(item.specialty));
-          add("Specialty Amount", formatNumber(item.specialtyAmount));
-          add("Rarity", formatValue(item.rarity));
-          add("To Hit", formatNumber(item.toHit));
+          addRow(
+            [
+              ["Damage", formatRange(item.minDamage, item.maxDamage)],
+              [
+                "Speed",
+                item.attackSpeed === null || item.attackSpeed === undefined
+                  ? "-"
+                  : `${formatNumber(item.attackSpeed)} ms`,
+              ],
+            ],
+            2
+          );
+          addRow(
+            [
+              ["Element", createElementBadge(item.element)],
+              ["To Hit", formatNumber(item.toHit)],
+            ],
+            2
+          );
+          addRow(
+            [
+              ["Level", formatNumber(item.level)],
+            ],
+            1
+          );
 
-          container.appendChild(Object.assign(document.createElement("div"), { className: "detail-divider" }));
+          addDivider();
 
-          add("Value", formatNumber(item.value));
-          add("Sell Value", formatNumber(item.sellValue, { maximumFractionDigits: 2 }));
-          add("Shard Decomposition Amount", formatNumber(item.shardDecompositionAmount));
-          add("Shard Promotion Amount", formatNumber(item.shardPromotionAmount));
+          addRow(
+            [
+              ["Strength", formatNumber((item.stats && item.stats.strength) ?? 0)],
+              ["Constitution", formatNumber((item.stats && item.stats.constitution) ?? 0)],
+              ["Dexterity", formatNumber((item.stats && item.stats.dexterity) ?? 0)],
+            ],
+            3
+          );
 
-          container.appendChild(Object.assign(document.createElement("div"), { className: "detail-divider" }));
+          addDivider();
 
-          const resistances = Object.entries(item.resistances || {})
-            .filter(([, val]) => val !== null && val !== undefined && Number(val) !== 0)
-            .map(([label, val]) => `${RESISTANCE_LABELS[label] || label}: ${formatNumber(val)}`);
-          if (resistances.length) {
-            add("Resistances", createPill(resistances));
-          }
+          const res = item.resistances || {};
+          addRow(
+            [
+              ["Fire", formatNumber(res.fire ?? 0)],
+              ["Poison", formatNumber(res.poison ?? 0)],
+            ],
+            2
+          );
+          addRow(
+            [
+              ["Cold", formatNumber(res.cold ?? 0)],
+              ["Disease", formatNumber(res.disease ?? 0)],
+            ],
+            2
+          );
+          addRow(
+            [
+              ["Acid", formatNumber(res.acid ?? 0)],
+              ["Electric", formatNumber(res.electric ?? 0)],
+            ],
+            2
+          );
 
-          const stats = Object.entries(item.stats || {})
-            .filter(([, val]) => val !== null && val !== undefined && Number(val) !== 0)
-            .map(([label, val]) => `${STAT_LABELS[label] || label}: ${formatNumber(val)}`);
-          if (stats.length) {
-            add("Stats", createPill(stats));
-          }
+          addDivider();
+
+          addRow([["Innate Perk", formatValue(item.perk)]], 1);
+
+          addDivider();
+
+          addRow([["Max Rarity", formatValue(item.maxRarityLabel || item.rarity)]], 1);
+          addRow([["Promotion", formatNumber(item.shardPromotionAmount)]], 1);
+          addRow([["Deconstruction", formatNumber(item.shardDecompositionAmount)]], 1);
+
+          addDivider();
+
+          addRow([["Requirement", `Skill Level ${formatNumber(item.skillRequirement)}`]], 1);
+
+          addDivider();
+
+          addRow(
+            [
+              ["Weight", formatNumber(item.weight)],
+              ["Proc Chance", formatNumber(item.procChance, { maximumFractionDigits: 2 })],
+            ],
+            2
+          );
+          addRow(
+            [
+              ["Value", formatNumber(item.value)],
+              ["Sell Value", formatNumber(item.sellValue, { maximumFractionDigits: 2 })],
+            ],
+            2
+          );
 
           details.classList.add("show");
           details.scrollIntoView({ behavior: "smooth", block: "start" });
