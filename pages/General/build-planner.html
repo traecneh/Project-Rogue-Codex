@@ -184,6 +184,10 @@
       .search-bar {
         margin: 0 0 1rem;
         position: relative;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.75rem;
       }
 
       .search-input {
@@ -207,6 +211,22 @@
         z-index: 10;
         max-height: 280px;
         overflow: auto;
+      }
+
+      .share-button {
+        padding: 0.65rem 0.9rem;
+        border-radius: 10px;
+        border: 1px solid var(--border-soft);
+        background: var(--bg-panel);
+        color: var(--text-main);
+        cursor: pointer;
+        transition: background 0.15s ease, border-color 0.15s ease;
+      }
+
+      .share-button:hover,
+      .share-button:focus-visible {
+        background: var(--bg-panel-dark);
+        border-color: var(--accent);
       }
 
       .suggestion {
@@ -295,6 +315,7 @@
               placeholder="Search weapons or armors..."
               autocomplete="off"
             />
+            <button type="button" id="share-build" class="share-button">Share Build</button>
             <div id="gear-suggestions" class="search-suggestions" style="display: none"></div>
           </div>
 
@@ -1037,7 +1058,23 @@
             .catch(() => {
               dataset.weapons = [];
               dataset.armors = [];
-            });
+          });
+        };
+
+        const copyShareLink = async () => {
+          try {
+            await navigator.clipboard.writeText(window.location.href);
+            const btn = document.getElementById("share-build");
+            if (btn) {
+              const original = btn.textContent;
+              btn.textContent = "Copied!";
+              setTimeout(() => {
+                btn.textContent = original || "Share Build";
+              }, 1200);
+            }
+          } catch (error) {
+            /* ignore clipboard errors */
+          }
         };
 
         if (searchInput) {
@@ -1047,6 +1084,11 @@
               suggestionsEl.style.display = "none";
             }
           });
+        }
+
+        const shareBtn = document.getElementById("share-build");
+        if (shareBtn) {
+          shareBtn.addEventListener("click", copyShareLink);
         }
 
         loadData().then(() => {
