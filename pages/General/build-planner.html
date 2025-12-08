@@ -229,6 +229,26 @@
         border-color: var(--accent);
       }
 
+      .slot-extra-perk {
+        display: none;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        align-items: center;
+      }
+
+      .slot-extra-perk label {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+      }
+
+      .slot-extra-perk select {
+        background: var(--bg-panel-dark);
+        color: var(--text-main);
+        border: 1px solid var(--border-soft);
+        border-radius: 8px;
+        padding: 0.35rem 0.5rem;
+      }
+
       .suggestion {
         padding: 0.65rem 0.75rem;
         cursor: pointer;
@@ -352,6 +372,17 @@
                   <div class="rarity-label" data-rarity-label>—</div>
                   <div class="rarity-max" data-rarity-max>Max: —</div>
                 </div>
+                <div class="slot-extra-perk" data-perk-row>
+                  <label>Extra Perk:</label>
+                  <select data-perk-select>
+                    <option value="">Select perk</option>
+                  </select>
+                  <select data-perk-tier>
+                    <option value="1">Tier 1</option>
+                    <option value="2">Tier 2</option>
+                    <option value="3">Tier 3</option>
+                  </select>
+                </div>
               </div>
             </div>
 
@@ -371,6 +402,17 @@
                   <div class="rarity-label" data-rarity-label>—</div>
                   <div class="rarity-max" data-rarity-max>Max: —</div>
                 </div>
+                <div class="slot-extra-perk" data-perk-row>
+                  <label>Extra Perk:</label>
+                  <select data-perk-select>
+                    <option value="">Select perk</option>
+                  </select>
+                  <select data-perk-tier>
+                    <option value="1">Tier 1</option>
+                    <option value="2">Tier 2</option>
+                    <option value="3">Tier 3</option>
+                  </select>
+                </div>
               </div>
               <div class="slot-card" data-slot="Chest">
                 <button type="button" class="slot-clear" aria-label="Clear slot">&times;</button>
@@ -387,6 +429,17 @@
                   <div class="rarity-label" data-rarity-label>—</div>
                   <div class="rarity-max" data-rarity-max>Max: —</div>
                 </div>
+                <div class="slot-extra-perk" data-perk-row>
+                  <label>Extra Perk:</label>
+                  <select data-perk-select>
+                    <option value="">Select perk</option>
+                  </select>
+                  <select data-perk-tier>
+                    <option value="1">Tier 1</option>
+                    <option value="2">Tier 2</option>
+                    <option value="3">Tier 3</option>
+                  </select>
+                </div>
               </div>
               <div class="slot-card" data-slot="Leggings">
                 <button type="button" class="slot-clear" aria-label="Clear slot">&times;</button>
@@ -402,6 +455,17 @@
                   </div>
                   <div class="rarity-label" data-rarity-label>—</div>
                   <div class="rarity-max" data-rarity-max>Max: —</div>
+                </div>
+                <div class="slot-extra-perk" data-perk-row>
+                  <label>Extra Perk:</label>
+                  <select data-perk-select>
+                    <option value="">Select perk</option>
+                  </select>
+                  <select data-perk-tier>
+                    <option value="1">Tier 1</option>
+                    <option value="2">Tier 2</option>
+                    <option value="3">Tier 3</option>
+                  </select>
                 </div>
               </div>
             </div>
@@ -421,6 +485,17 @@
                   </div>
                   <div class="rarity-label" data-rarity-label>—</div>
                   <div class="rarity-max" data-rarity-max>Max: —</div>
+                </div>
+                <div class="slot-extra-perk" data-perk-row>
+                  <label>Extra Perk:</label>
+                  <select data-perk-select>
+                    <option value="">Select perk</option>
+                  </select>
+                  <select data-perk-tier>
+                    <option value="1">Tier 1</option>
+                    <option value="2">Tier 2</option>
+                    <option value="3">Tier 3</option>
+                  </select>
                 </div>
               </div>
               <div class="slot-card" data-slot="Cosmetic">
@@ -568,6 +643,7 @@
 
         const selectedBySlot = {};
         const STATE_PARAM = "build";
+        let perkOptions = [];
 
         const deriveImageCandidates = (item, folder = "weapons") => {
           const candidates = [];
@@ -619,6 +695,7 @@
           };
           rollRarityBonuses(slot);
           updateSlotRarityUI(slot);
+          updateSlotPerkUI(slot);
           const sources = deriveImageCandidates(item, folder);
           if (!sources.length) {
             img.style.display = "none";
@@ -667,6 +744,7 @@
           }
           card.classList.remove("has-item");
           delete selectedBySlot[slot];
+          updateSlotPerkUI(slot, true);
           updateSlotRarityUI(slot);
           updateTotals();
           persistState();
@@ -683,6 +761,8 @@
             name: item.name,
             kind: item.kind,
             rarityIndex: item.rarityIndex,
+            extraPerkName: item.extraPerkName || null,
+            extraPerkTier: item.extraPerkTier || null,
           }));
           return { slots: entries };
         };
@@ -733,12 +813,12 @@
             setSlotImage(entry.slot, item, folder);
             if (selectedBySlot[entry.slot]) {
               const data = selectedBySlot[entry.slot];
-              data.rarityIndex = Math.min(
-                data.maxRarityIndex,
-                Math.max(0, Number(entry.rarityIndex) || 0)
-              );
+              data.rarityIndex = Math.min(data.maxRarityIndex, Math.max(0, Number(entry.rarityIndex) || 0));
+              data.extraPerkName = entry.extraPerkName || null;
+              data.extraPerkTier = entry.extraPerkTier || null;
               rollRarityBonuses(entry.slot);
               updateSlotRarityUI(entry.slot);
+              updateSlotPerkUI(entry.slot);
             }
           });
           updateTotals();
@@ -859,6 +939,58 @@
           data.bonusResists = { fire: 0, cold: 0, electric: 0, acid: 0, poison: 0, disease: 0 };
         };
 
+        const updateSlotPerkUI = (slot, clearOnly = false) => {
+          const card = slotEls.get(slot);
+          if (!card) return;
+          const row = card.querySelector("[data-perk-row]");
+          const select = card.querySelector("[data-perk-select]");
+          const tierSelect = card.querySelector("[data-perk-tier]");
+          const data = selectedBySlot[slot];
+
+          if (clearOnly || !data || data.rarityIndex < 3) {
+            if (row) row.style.display = "none";
+            if (select) select.value = "";
+            if (tierSelect) tierSelect.value = "1";
+            if (data) {
+              data.extraPerkName = null;
+              data.extraPerkTier = null;
+            }
+            return;
+          }
+
+          if (row) row.style.display = "flex";
+
+          const ensureOptions = () => {
+            if (!select) return;
+            if (select.dataset.bound === "true") return;
+            select.innerHTML = '<option value="">Select perk</option>';
+            perkOptions.forEach((name) => {
+              const opt = document.createElement("option");
+              opt.value = name;
+              opt.textContent = name;
+              select.appendChild(opt);
+            });
+            select.dataset.bound = "true";
+            select.addEventListener("change", () => {
+              data.extraPerkName = select.value || null;
+              persistState();
+              updateTotals();
+            });
+            if (tierSelect) {
+              tierSelect.addEventListener("change", () => {
+                data.extraPerkTier = Number(tierSelect.value) || 1;
+                persistState();
+                updateTotals();
+              });
+            }
+          };
+
+          ensureOptions();
+
+          if (select) select.value = data.extraPerkName || "";
+          if (tierSelect) tierSelect.value = String(data.extraPerkTier || 1);
+        };
+
         const updateSlotRarityUI = (slot) => {
           const card = slotEls.get(slot);
           if (!card) return;
@@ -884,6 +1016,7 @@
           if (maxEl) maxEl.textContent = `Max: ${maxTier.label}`;
           if (incBtn) incBtn.disabled = data.rarityIndex >= data.maxRarityIndex;
           if (decBtn) decBtn.disabled = data.rarityIndex <= 0;
+          updateSlotPerkUI(slot);
         };
 
         const updateTotals = () => {
@@ -922,6 +1055,12 @@
               .filter((p) => p && String(p).trim())
               .map((p) => String(p).trim())
           );
+          selected.forEach((i) => {
+            if (i.extraPerkName) {
+              const tier = i.extraPerkTier || 1;
+              perkSet.add(`${i.extraPerkName} (T${tier})`);
+            }
+          });
 
           if (totals.armor) totals.armor.textContent = totalArmor;
           if (totals.armor)
@@ -1050,6 +1189,20 @@
             fetch(new URL("../items/armors_data06.json", window.location.href)).then((res) =>
               res.ok ? res.json() : []
             ),
+            fetch(new URL("../systems/perks.html", window.location.href))
+              .then((res) => (res.ok ? res.text() : ""))
+              .then((html) => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, "text/html");
+                const names = Array.from(doc.querySelectorAll("#perk-list h3"))
+                  .map((node) => node.textContent || "")
+                  .map((n) => n.trim())
+                  .filter(Boolean);
+                perkOptions = Array.from(new Set(names)).sort((a, b) => a.localeCompare(b));
+              })
+              .catch(() => {
+                perkOptions = [];
+              }),
           ])
             .then(([weapons, armors]) => {
               dataset.weapons = Array.isArray(weapons) ? weapons.map((w) => toWeapon(w)) : [];
