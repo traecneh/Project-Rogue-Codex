@@ -78,6 +78,7 @@ body {
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
+  transition: width 0.2s ease;
 }
 
 .sidebar::-webkit-scrollbar {
@@ -98,6 +99,69 @@ body {
 
 .sidebar::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(180deg, #4a5262, #2f3642);
+}
+
+.sidebar-collapse-toggle {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 1200;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  margin: 0;
+  border-radius: 10px;
+  border: 1px solid var(--border-soft);
+  background: linear-gradient(135deg, #2a313e, #161b24);
+  color: #f7fafc;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow:
+    0 0 0 1px #0b0f16,
+    0 10px 20px rgba(0, 0, 0, 0.6),
+    0 0 20px rgba(75, 255, 75, 0.05);
+  transition:
+    background 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.12s ease,
+    color 0.12s ease;
+}
+
+.sidebar-collapse-toggle:hover,
+.sidebar-collapse-toggle:focus-visible {
+  background: linear-gradient(135deg, #343c4c, #1f2531);
+  color: #ffffff;
+  outline: none;
+  box-shadow:
+    0 0 0 1px rgba(75, 255, 75, 0.4),
+    0 0 12px rgba(75, 255, 75, 0.18),
+    0 8px 16px rgba(0, 0, 0, 0.65);
+}
+
+.sidebar-collapse-toggle:active {
+  transform: translateY(1px);
+}
+
+.sidebar.collapsed {
+  width: 56px;
+  padding: 0.5rem 0.4rem;
+}
+
+.sidebar.collapsed::-webkit-scrollbar {
+  display: none;
+}
+
+.sidebar.collapsed .sidebar-collapse-toggle {
+  transform: rotate(180deg);
+}
+
+.sidebar.collapsed .site-logo,
+.sidebar.collapsed .nav-search,
+.sidebar.collapsed .nav-section,
+.sidebar.collapsed .nav-footer {
+  display: none;
 }
 
 /* Site branding */
@@ -1283,6 +1347,21 @@ a:hover {
     max-height: none;
     overflow: visible;
     overscroll-behavior: auto;
+  }
+
+  .sidebar.collapsed {
+    width: 100%;
+    padding: 0.5rem 0.4rem;
+  }
+
+  .sidebar.collapsed .sidebar-collapse-toggle {
+    margin-left: auto;
+  }
+
+  .sidebar-collapse-toggle {
+    position: fixed;
+    top: 0.75rem;
+    left: 0.75rem;
   }
 
   .main-content {

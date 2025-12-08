@@ -300,6 +300,32 @@
         padding: 0.35rem 0.5rem;
       }
 
+      .slot-stat-adjust {
+        display: none;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      .slot-stat-adjust .stat-label {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        margin-right: 0.25rem;
+      }
+
+      .slot-stat-adjust .stat-row {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+      }
+
+      .slot-stat-adjust .stat-value {
+        min-width: 28px;
+        text-align: right;
+        font-weight: 700;
+        color: var(--text-main);
+      }
+
       .suggestion {
         padding: 0.65rem 0.75rem;
         cursor: pointer;
@@ -407,8 +433,27 @@
                   <div class="rarity-label" data-rarity-label>—</div>
                   <div class="rarity-max" data-rarity-max>Max: —</div>
                 </div>
+                <div class="slot-stat-adjust" data-stat-row>
+                  <div class="stat-row" data-stat="str">
+                    <button type="button" class="rarity-btn" data-stat-dec>-</button>
+                    <span class="stat-value" data-stat-value>0</span>
+                    <button type="button" class="rarity-btn" data-stat-inc>+</button>
+                    <span class="stat-label">Str</span>
+                  </div>
+                  <div class="stat-row" data-stat="dex">
+                    <button type="button" class="rarity-btn" data-stat-dec>-</button>
+                    <span class="stat-value" data-stat-value>0</span>
+                    <button type="button" class="rarity-btn" data-stat-inc>+</button>
+                    <span class="stat-label">Dex</span>
+                  </div>
+                  <div class="stat-row" data-stat="con">
+                    <button type="button" class="rarity-btn" data-stat-dec>-</button>
+                    <span class="stat-value" data-stat-value>0</span>
+                    <button type="button" class="rarity-btn" data-stat-inc>+</button>
+                    <span class="stat-label">Con</span>
+                  </div>
+                </div>
                 <div class="slot-extra-perk" data-perk-row>
-                  <label>Extra Perk:</label>
                   <select data-perk-select>
                     <option value="">Select perk</option>
                   </select>
@@ -434,8 +479,27 @@
                   <div class="rarity-label" data-rarity-label>—</div>
                   <div class="rarity-max" data-rarity-max>Max: —</div>
                 </div>
+                <div class="slot-stat-adjust" data-stat-row>
+                  <div class="stat-row" data-stat="str">
+                    <button type="button" class="rarity-btn" data-stat-dec>-</button>
+                    <span class="stat-value" data-stat-value>0</span>
+                    <button type="button" class="rarity-btn" data-stat-inc>+</button>
+                    <span class="stat-label">Str</span>
+                  </div>
+                  <div class="stat-row" data-stat="dex">
+                    <button type="button" class="rarity-btn" data-stat-dec>-</button>
+                    <span class="stat-value" data-stat-value>0</span>
+                    <button type="button" class="rarity-btn" data-stat-inc>+</button>
+                    <span class="stat-label">Dex</span>
+                  </div>
+                  <div class="stat-row" data-stat="con">
+                    <button type="button" class="rarity-btn" data-stat-dec>-</button>
+                    <span class="stat-value" data-stat-value>0</span>
+                    <button type="button" class="rarity-btn" data-stat-inc>+</button>
+                    <span class="stat-label">Con</span>
+                  </div>
+                </div>
                 <div class="slot-extra-perk" data-perk-row>
-                  <label>Extra Perk:</label>
                   <select data-perk-select>
                     <option value="">Select perk</option>
                   </select>
@@ -464,8 +528,27 @@
                   <div class="rarity-label" data-rarity-label>—</div>
                   <div class="rarity-max" data-rarity-max>Max: —</div>
                 </div>
+                <div class="slot-stat-adjust" data-stat-row>
+                  <div class="stat-row" data-stat="str">
+                    <button type="button" class="rarity-btn" data-stat-dec>-</button>
+                    <span class="stat-value" data-stat-value>0</span>
+                    <button type="button" class="rarity-btn" data-stat-inc>+</button>
+                    <span class="stat-label">Str</span>
+                  </div>
+                  <div class="stat-row" data-stat="dex">
+                    <button type="button" class="rarity-btn" data-stat-dec>-</button>
+                    <span class="stat-value" data-stat-value>0</span>
+                    <button type="button" class="rarity-btn" data-stat-inc>+</button>
+                    <span class="stat-label">Dex</span>
+                  </div>
+                  <div class="stat-row" data-stat="con">
+                    <button type="button" class="rarity-btn" data-stat-dec>-</button>
+                    <span class="stat-value" data-stat-value>0</span>
+                    <button type="button" class="rarity-btn" data-stat-inc>+</button>
+                    <span class="stat-label">Con</span>
+                  </div>
+                </div>
                 <div class="slot-extra-perk" data-perk-row>
-                  <label>Extra Perk:</label>
                   <select data-perk-select>
                     <option value="">Select perk</option>
                   </select>
@@ -491,8 +574,27 @@
                   <div class="rarity-label" data-rarity-label>—</div>
                   <div class="rarity-max" data-rarity-max>Max: —</div>
                 </div>
+                <div class="slot-stat-adjust" data-stat-row>
+                  <div class="stat-row" data-stat="str">
+                    <button type="button" class="rarity-btn" data-stat-dec>-</button>
+                    <span class="stat-value" data-stat-value>0</span>
+                    <button type="button" class="rarity-btn" data-stat-inc>+</button>
+                    <span class="stat-label">Str</span>
+                  </div>
+                  <div class="stat-row" data-stat="dex">
+                    <button type="button" class="rarity-btn" data-stat-dec>-</button>
+                    <span class="stat-value" data-stat-value>0</span>
+                    <button type="button" class="rarity-btn" data-stat-inc>+</button>
+                    <span class="stat-label">Dex</span>
+                  </div>
+                  <div class="stat-row" data-stat="con">
+                    <button type="button" class="rarity-btn" data-stat-dec>-</button>
+                    <span class="stat-value" data-stat-value>0</span>
+                    <button type="button" class="rarity-btn" data-stat-inc>+</button>
+                    <span class="stat-label">Con</span>
+                  </div>
+                </div>
                 <div class="slot-extra-perk" data-perk-row>
-                  <label>Extra Perk:</label>
                   <select data-perk-select>
                     <option value="">Select perk</option>
                   </select>
@@ -518,8 +620,27 @@
                   <div class="rarity-label" data-rarity-label>—</div>
                   <div class="rarity-max" data-rarity-max>Max: —</div>
                 </div>
+                <div class="slot-stat-adjust" data-stat-row>
+                  <div class="stat-row" data-stat="str">
+                    <button type="button" class="rarity-btn" data-stat-dec>-</button>
+                    <span class="stat-value" data-stat-value>0</span>
+                    <button type="button" class="rarity-btn" data-stat-inc>+</button>
+                    <span class="stat-label">Str</span>
+                  </div>
+                  <div class="stat-row" data-stat="dex">
+                    <button type="button" class="rarity-btn" data-stat-dec>-</button>
+                    <span class="stat-value" data-stat-value>0</span>
+                    <button type="button" class="rarity-btn" data-stat-inc>+</button>
+                    <span class="stat-label">Dex</span>
+                  </div>
+                  <div class="stat-row" data-stat="con">
+                    <button type="button" class="rarity-btn" data-stat-dec>-</button>
+                    <span class="stat-value" data-stat-value>0</span>
+                    <button type="button" class="rarity-btn" data-stat-inc>+</button>
+                    <span class="stat-label">Con</span>
+                  </div>
+                </div>
                 <div class="slot-extra-perk" data-perk-row>
-                  <label>Extra Perk:</label>
                   <select data-perk-select>
                     <option value="">Select perk</option>
                   </select>
@@ -549,7 +670,7 @@
                   <div class="rarity-max" data-rarity-max>Max: —</div>
                 </div>
                 <div class="slot-extra-perk" data-perk-row>
-                  <label>Extra Perk:</label>
+                  <!-- extra perk label removed -->
                   <select data-perk-select>
                     <option value="">Select perk</option>
                   </select>
@@ -576,7 +697,7 @@
                   <div class="rarity-max" data-rarity-max>Max: —</div>
                 </div>
                 <div class="slot-extra-perk" data-perk-row>
-                  <label>Extra Perk:</label>
+                  <!-- extra perk label removed -->
                   <select data-perk-select>
                     <option value="">Select perk</option>
                   </select>
@@ -939,6 +1060,9 @@
             rarityIndex: item.rarityIndex,
             extraPerkName: item.extraPerkName || null,
             extraPerkTier: item.extraPerkTier || null,
+            bonusStr: item.bonusStr ?? null,
+            bonusDex: item.bonusDex ?? null,
+            bonusCon: item.bonusCon ?? null,
           }));
 
           const char = {
@@ -1000,9 +1124,13 @@
               data.rarityIndex = Math.min(data.maxRarityIndex, Math.max(0, Number(entry.rarityIndex) || 0));
               data.extraPerkName = entry.extraPerkName || null;
               data.extraPerkTier = entry.extraPerkTier || null;
+              if (typeof entry.bonusStr === "number") data.bonusStr = entry.bonusStr;
+              if (typeof entry.bonusDex === "number") data.bonusDex = entry.bonusDex;
+              if (typeof entry.bonusCon === "number") data.bonusCon = entry.bonusCon;
               rollRarityBonuses(entry.slot);
               updateSlotRarityUI(entry.slot);
               updateSlotPerkUI(entry.slot);
+              updateStatAdjustUI(entry.slot);
             }
           });
 
@@ -1179,6 +1307,26 @@
           data.bonusResists = { fire: 0, cold: 0, electric: 0, acid: 0, poison: 0, disease: 0 };
         };
 
+        const updateStatAdjustUI = (slot) => {
+          const card = slotEls.get(slot);
+          if (!card) return;
+          const row = card.querySelector("[data-stat-row]");
+          const data = selectedBySlot[slot];
+          if (!row || !data || data.rarityIndex < 1) {
+            if (row) row.style.display = "none";
+            return;
+          }
+          row.style.display = "flex";
+          row.querySelectorAll(".stat-row").forEach((container) => {
+            const stat = container.dataset.stat;
+            const valEl = container.querySelector("[data-stat-value]");
+            if (!valEl) return;
+            const current =
+              stat === "str" ? data.bonusStr : stat === "dex" ? data.bonusDex : stat === "con" ? data.bonusCon : 0;
+            valEl.textContent = current;
+          });
+        };
+
         const updateSlotPerkUI = (slot, clearOnly = false) => {
           const card = slotEls.get(slot);
           if (!card) return;
@@ -1257,6 +1405,7 @@
           if (incBtn) incBtn.disabled = data.rarityIndex >= data.maxRarityIndex;
           if (decBtn) decBtn.disabled = data.rarityIndex <= 0;
           updateSlotPerkUI(slot);
+          updateStatAdjustUI(slot);
         };
 
         const updateTotals = () => {
@@ -1432,6 +1581,17 @@
           persistState();
         };
 
+        const adjustStat = (slot, stat, delta) => {
+          const data = selectedBySlot[slot];
+          if (!data) return;
+          if (stat === "str") data.bonusStr = (data.bonusStr || 0) + delta;
+          if (stat === "dex") data.bonusDex = (data.bonusDex || 0) + delta;
+          if (stat === "con") data.bonusCon = (data.bonusCon || 0) + delta;
+          updateStatAdjustUI(slot);
+          updateTotals();
+          persistState();
+        };
+
         slotEls.forEach((card, slot) => {
           const inc = card.querySelector("[data-rarity-inc]");
           const dec = card.querySelector("[data-rarity-dec]");
@@ -1439,6 +1599,13 @@
           if (dec) dec.addEventListener("click", () => adjustRarity(slot, -1));
           const clearBtn = card.querySelector(".slot-clear");
           if (clearBtn) clearBtn.addEventListener("click", () => clearSlot(slot));
+          card.querySelectorAll(".stat-row").forEach((row) => {
+            const stat = row.dataset.stat;
+            const decBtn = row.querySelector("[data-stat-dec]");
+            const incBtn = row.querySelector("[data-stat-inc]");
+            if (decBtn) decBtn.addEventListener("click", () => adjustStat(slot, stat, -1));
+            if (incBtn) incBtn.addEventListener("click", () => adjustStat(slot, stat, 1));
+          });
         });
 
         const buildSuggestions = (query) => {

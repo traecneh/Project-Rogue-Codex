@@ -959,6 +959,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
 function initializeSidebar() {
   const NAV_STATE_STORAGE_KEY = "nav-expanded-state";
+  const NAV_COLLAPSED_STORAGE_KEY = "nav-collapsed-state";
+
+  const sidebarRoot = document.querySelector(".sidebar");
+  const collapseToggle = document.querySelector("[data-collapse-toggle]");
 
   const loadNavState = () => {
     try {
@@ -976,6 +980,44 @@ function initializeSidebar() {
       /* noop: storage may be unavailable */
     }
   };
+
+  const loadCollapsedState = () => {
+    try {
+      return localStorage.getItem(NAV_COLLAPSED_STORAGE_KEY) === "true";
+    } catch (error) {
+      return false;
+    }
+  };
+
+  const saveCollapsedState = (value) => {
+    try {
+      localStorage.setItem(NAV_COLLAPSED_STORAGE_KEY, String(Boolean(value)));
+    } catch (error) {
+      /* noop: storage may be unavailable */
+    }
+  };
+
+  const applyCollapsedState = (collapsed) => {
+    if (sidebarRoot) {
+      sidebarRoot.classList.toggle("collapsed", collapsed);
+    }
+    if (collapseToggle) {
+      collapseToggle.textContent = collapsed ? ">" : "<";
+      collapseToggle.setAttribute("aria-label", collapsed ? "Expand navigation" : "Collapse navigation");
+      collapseToggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
+      collapseToggle.setAttribute("aria-pressed", collapsed ? "true" : "false");
+    }
+  };
+
+  applyCollapsedState(loadCollapsedState());
+
+  if (collapseToggle) {
+    collapseToggle.addEventListener("click", () => {
+      const nextCollapsed = sidebarRoot ? !sidebarRoot.classList.contains("collapsed") : false;
+      applyCollapsedState(nextCollapsed);
+      saveCollapsedState(nextCollapsed);
+    });
+  }
 
   const sections = document.querySelectorAll("[data-section]");
   const navState = loadNavState();
