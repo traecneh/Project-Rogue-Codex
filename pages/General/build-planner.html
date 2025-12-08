@@ -229,6 +229,49 @@
         border-color: var(--accent);
       }
 
+      .char-section {
+        margin: 1rem 0 1.5rem;
+        padding: 1rem;
+        border: 1px solid var(--border-soft);
+        border-radius: 12px;
+        background: var(--bg-panel);
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+      }
+
+      .char-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 0.85rem 1.25rem;
+      }
+
+      .slider-row {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+      }
+
+      .slider-label {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.95rem;
+        color: var(--text-main);
+      }
+
+      .slider-value {
+        font-weight: 700;
+        color: var(--text-main);
+        margin-left: 0.5rem;
+      }
+
+      .slider-input {
+        width: 100%;
+      }
+
+      .calc-section {
+        margin: 0 0 1.5rem;
+      }
+
       .slot-extra-perk {
         display: none;
         flex-wrap: wrap;
@@ -540,6 +583,81 @@
           </div>
         </article>
 
+        <article class="char-section">
+          <h3>Character Details</h3>
+          <div class="char-grid">
+            <div class="slider-row">
+              <div class="slider-label">
+                <span>Level</span>
+                <span class="slider-value" id="val-level">1</span>
+              </div>
+              <input type="range" id="char-level" class="slider-input" min="1" max="105" value="1" />
+            </div>
+            <div class="slider-row">
+              <div class="slider-label">
+                <span>Strength</span>
+                <span class="slider-value" id="val-str">5</span>
+              </div>
+              <input type="range" id="char-str" class="slider-input" min="5" max="500" value="5" />
+            </div>
+            <div class="slider-row">
+              <div class="slider-label">
+                <span>Dexterity</span>
+                <span class="slider-value" id="val-dex">5</span>
+              </div>
+              <input type="range" id="char-dex" class="slider-input" min="5" max="500" value="5" />
+            </div>
+            <div class="slider-row">
+              <div class="slider-label">
+                <span>Constitution</span>
+                <span class="slider-value" id="val-con">5</span>
+              </div>
+              <input type="range" id="char-con" class="slider-input" min="5" max="500" value="5" />
+            </div>
+            <div class="slider-row">
+              <div class="slider-label">
+                <span>Skill</span>
+                <span class="slider-value" id="val-skill">0</span>
+              </div>
+              <input type="range" id="char-skill" class="slider-input" min="0" max="120" value="0" />
+            </div>
+          </div>
+        </article>
+
+        <article class="calc-section summary-section">
+          <h3>Calculated Details</h3>
+          <div class="summary-grid">
+            <div class="summary-card">
+              <div class="summary-label">Max Health</div>
+              <div class="summary-value" id="calc-max-health">0</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-label">Health Regen</div>
+              <div class="summary-value" id="calc-regen">0</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-label">Melee Multiplier</div>
+              <div class="summary-value" id="calc-melee-mult">1.00x</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-label">Max Weight</div>
+              <div class="summary-value" id="calc-max-weight">0</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-label">Bleed Chance</div>
+              <div class="summary-value" id="calc-bleed">0%</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-label">Crit Chance</div>
+              <div class="summary-value" id="calc-crit">0%</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-label">DR</div>
+              <div class="summary-value" id="calc-dr">0%</div>
+            </div>
+          </div>
+        </article>
+
         <section class="summary-section">
           <h3>Combined Stats</h3>
           <div class="summary-grid">
@@ -786,17 +904,25 @@
             extraPerkName: item.extraPerkName || null,
             extraPerkTier: item.extraPerkTier || null,
           }));
-          return { slots: entries };
+
+          const char = {
+            level: toNumber(document.getElementById("char-level")?.value),
+            str: toNumber(document.getElementById("char-str")?.value),
+            dex: toNumber(document.getElementById("char-dex")?.value),
+            con: toNumber(document.getElementById("char-con")?.value),
+            skill: toNumber(document.getElementById("char-skill")?.value),
+          };
+
+          return { slots: entries, char };
         };
 
         const persistState = () => {
           try {
             const state = encodeState();
             const json = JSON.stringify(state);
-            const encoded = btoa(encodeURIComponent(json));
             const url = new URL(window.location.href);
-            if (state.slots.length) {
-              url.searchParams.set(STATE_PARAM, encoded);
+            if (state.slots.length || state.char) {
+              url.searchParams.set(STATE_PARAM, json);
             } else {
               url.searchParams.delete(STATE_PARAM);
             }
@@ -809,10 +935,9 @@
         const decodeState = () => {
           try {
             const url = new URL(window.location.href);
-            const encoded = url.searchParams.get(STATE_PARAM);
-            if (!encoded) return null;
-            const json = decodeURIComponent(atob(encoded));
-            const state = JSON.parse(json);
+            const raw = url.searchParams.get(STATE_PARAM);
+            if (!raw) return null;
+            const state = JSON.parse(raw);
             if (!state || !Array.isArray(state.slots)) return null;
             return state;
           } catch (error) {
@@ -844,6 +969,39 @@
             }
           });
           updateTotals();
+
+          if (state.char) {
+            const setVal = (id, val) => {
+              const el = document.getElementById(id);
+              if (el) el.value = val;
+            };
+            setVal("char-level", state.char.level);
+            setVal("char-str", state.char.str);
+            setVal("char-dex", state.char.dex);
+            setVal("char-con", state.char.con);
+            setVal("char-skill", state.char.skill);
+          }
+        };
+
+        const wireCharacterSliders = () => {
+          const sliders = [
+            { id: "char-level", label: "val-level" },
+            { id: "char-str", label: "val-str" },
+            { id: "char-dex", label: "val-dex" },
+            { id: "char-con", label: "val-con" },
+            { id: "char-skill", label: "val-skill" },
+          ];
+          sliders.forEach(({ id, label }) => {
+            const input = document.getElementById(id);
+            const valueEl = document.getElementById(label);
+            if (!input || !valueEl) return;
+            const update = () => {
+              valueEl.textContent = input.value;
+              updateTotals();
+            };
+            input.addEventListener("input", update);
+            update();
+          });
         };
 
         const toNumber = (value) => {
@@ -863,6 +1021,11 @@
             remaining -= 1;
           }
           return dist;
+        };
+
+        const getCharStat = (id) => {
+          const el = document.getElementById(id);
+          return el ? toNumber(el.value) : 0;
         };
 
         const toArmor = (raw) => {
@@ -1059,9 +1222,15 @@
           const bonusStr = sumObjects(selected, "bonusStr");
           const bonusCon = sumObjects(selected, "bonusCon");
           const bonusDex = sumObjects(selected, "bonusDex");
-          const totalStr = baseStr + bonusStr;
-          const totalCon = baseCon + bonusCon;
-          const totalDex = baseDex + bonusDex;
+          const charStr = getCharStat("char-str");
+          const charDex = getCharStat("char-dex");
+          const charCon = getCharStat("char-con");
+          const baseStrWithChar = baseStr + charStr;
+          const baseDexWithChar = baseDex + charDex;
+          const baseConWithChar = baseCon + charCon;
+          const totalStr = baseStrWithChar + bonusStr;
+          const totalCon = baseConWithChar + bonusCon;
+          const totalDex = baseDexWithChar + bonusDex;
           const totalDps = weapon ? toNumber(weapon.dps) : 0;
           const element = weapon && weapon.element ? weapon.element : "None";
 
@@ -1085,6 +1254,8 @@
             }
           });
 
+          const charLevel = getCharStat("char-level");
+
           if (totals.armor) totals.armor.textContent = totalArmor;
           if (totals.armor)
             totals.armor.title = `Base armor: ${baseArmor}\nRarity bonus: ${rarityArmor}`;
@@ -1094,15 +1265,15 @@
           if (totals.toHit) totals.toHit.textContent = totalToHit;
           if (totals.str) {
             totals.str.textContent = totalStr;
-            totals.str.title = `Base: ${baseStr}\nRarity bonus: ${bonusStr}`;
+            totals.str.title = `Base: ${baseStrWithChar} (items ${baseStr} + character ${charStr})\nRarity bonus: ${bonusStr}`;
           }
           if (totals.con) {
             totals.con.textContent = totalCon;
-            totals.con.title = `Base: ${baseCon}\nRarity bonus: ${bonusCon}`;
+            totals.con.title = `Base: ${baseConWithChar} (items ${baseCon} + character ${charCon})\nRarity bonus: ${bonusCon}`;
           }
           if (totals.dex) {
             totals.dex.textContent = totalDex;
-            totals.dex.title = `Base: ${baseDex}\nRarity bonus: ${bonusDex}`;
+            totals.dex.title = `Base: ${baseDexWithChar} (items ${baseDex} + character ${charDex})\nRarity bonus: ${bonusDex}`;
           }
 
           if (totals.resists) {
@@ -1126,6 +1297,58 @@
 
           if (totals.perks) {
             totals.perks.textContent = perkSet.size ? Array.from(perkSet).join(", ") : "None";
+          }
+
+          const maxHealth = 20 + charLevel * 15 + totalCon * 10 + totalStr * 2;
+          const maxHealthEl = document.getElementById("calc-max-health");
+          if (maxHealthEl) {
+            maxHealthEl.textContent = maxHealth;
+            maxHealthEl.title = `20 + (Level ${charLevel} * 15) + (Con ${totalCon} * 10) + (Str ${totalStr} * 2)`;
+          }
+
+          const baseConOnly = charCon;
+          const regenPerTick = Math.floor(baseConOnly / 3);
+          const regenEl = document.getElementById("calc-regen");
+          if (regenEl) {
+            regenEl.textContent = `${regenPerTick} HP`;
+            regenEl.title = `Constitution from Character Details only: ${baseConOnly} -> ${baseConOnly}/3 rounded down, every 2 seconds`;
+          }
+
+          const charSkill = getCharStat("char-skill");
+          const meleeMult = 1 + charSkill / 50 + totalStr / 100 + totalDex / 200;
+          const meleeEl = document.getElementById("calc-melee-mult");
+          if (meleeEl) {
+            meleeEl.textContent = `${meleeMult.toFixed(2)}x`;
+            meleeEl.title = `1 + (Skill ${charSkill}/50) + (Str ${totalStr}/100) + (Dex ${totalDex}/200)`;
+          }
+
+          const maxWeight = 150 + 3 * totalStr;
+          const maxWeightEl = document.getElementById("calc-max-weight");
+          if (maxWeightEl) {
+            maxWeightEl.textContent = maxWeight;
+            maxWeightEl.title = `150 + (3 * Strength ${totalStr})`;
+          }
+
+          const bleedChance = totalStr * 0.1;
+          const bleedEl = document.getElementById("calc-bleed");
+          if (bleedEl) {
+            bleedEl.textContent = `${bleedChance.toFixed(1)}%`;
+            bleedEl.title = `0.1 * Strength ${totalStr}`;
+          }
+
+          const critChance = (charDex / 2.5).toFixed(1);
+          const critEl = document.getElementById("calc-crit");
+          if (critEl) {
+            critEl.textContent = `${critChance}%`;
+            critEl.title = `Dex from Character Details only: ${charDex} / 2.5 => ${critChance}% @ 1.35x damage`;
+          }
+
+          const drNumerator = totalDex * 0.00125;
+          const dr = (drNumerator / (1 + drNumerator)) * 100;
+          const drEl = document.getElementById("calc-dr");
+          if (drEl) {
+            drEl.textContent = `${dr.toFixed(2)}%`;
+            drEl.title = `[(Total Dex ${totalDex} * 0.00125) / (1 + (Total Dex ${totalDex} * 0.00125))] * 100`;
           }
         };
 
@@ -1272,6 +1495,7 @@
           persistState();
           slotEls.forEach((_, slot) => updateSlotRarityUI(slot));
           updateTotals();
+          wireCharacterSliders();
         });
       })();
     </script>
