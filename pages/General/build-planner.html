@@ -1284,9 +1284,9 @@
           const raceBonusStr = race?.bonus?.str || 0;
           const raceBonusDex = race?.bonus?.dex || 0;
           const raceBonusCon = race?.bonus?.con || 0;
-          const baseStrWithChar = baseStr + charStr + raceBonusStr;
-          const baseDexWithChar = baseDex + charDex + raceBonusDex;
-          const baseConWithChar = baseCon + charCon + raceBonusCon;
+          const baseStrWithChar = baseStr + charStr;
+          const baseDexWithChar = baseDex + charDex;
+          const baseConWithChar = baseCon + charCon;
           const totalStr = baseStrWithChar + bonusStr;
           const totalCon = baseConWithChar + bonusCon;
           const totalDex = baseDexWithChar + bonusDex;
@@ -1326,15 +1326,15 @@
           if (totals.toHit) totals.toHit.textContent = totalToHit;
           if (totals.str) {
             totals.str.textContent = totalStr;
-            totals.str.title = `Base: ${baseStrWithChar} (items ${baseStr} + character ${charStr} + race ${raceBonusStr})\nRarity bonus: ${bonusStr}`;
+            totals.str.title = `Base: ${baseStrWithChar} (items ${baseStr} + character ${charStr})\nRarity bonus: ${bonusStr}`;
           }
           if (totals.con) {
             totals.con.textContent = totalCon;
-            totals.con.title = `Base: ${baseConWithChar} (items ${baseCon} + character ${charCon} + race ${raceBonusCon})\nRarity bonus: ${bonusCon}`;
+            totals.con.title = `Base: ${baseConWithChar} (items ${baseCon} + character ${charCon})\nRarity bonus: ${bonusCon}`;
           }
           if (totals.dex) {
             totals.dex.textContent = totalDex;
-            totals.dex.title = `Base: ${baseDexWithChar} (items ${baseDex} + character ${charDex} + race ${raceBonusDex})\nRarity bonus: ${bonusDex}`;
+            totals.dex.title = `Base: ${baseDexWithChar} (items ${baseDex} + character ${charDex})\nRarity bonus: ${bonusDex}`;
           }
 
           if (totals.resists) {
@@ -1403,12 +1403,12 @@
             }
           }
 
-          const dexForCrit = charDex; // crit uses character dex only, no race bonus
+          const dexForCrit = Math.max(0, charDex - raceBonusDex); // crit uses character dex minus racial bonus
           const critChance = (dexForCrit / 2.5).toFixed(1);
           const critEl = document.getElementById("calc-crit");
           if (critEl) {
             critEl.textContent = `${critChance}%`;
-            critEl.title = `Dex from Character Details only (race bonus excluded): ${dexForCrit} / 2.5 => ${critChance}% @ 1.35x damage`;
+            critEl.title = `Dex from Character Details minus racial bonus (${charDex} - ${raceBonusDex}) / 2.5 => ${critChance}% @ 1.35x damage`;
           }
 
           const drNumerator = totalDex * 0.00125;
