@@ -845,6 +845,7 @@
 
         const toArmor = (raw) => {
           const fields = (raw && raw.fields) || {};
+          const electric = fields.electric_resistance ?? fields.lightning_resistance;
           return {
             kind: "armor",
             name: raw.name || raw.Name,
@@ -860,7 +861,7 @@
             resistances: {
               fire: toNumber(fields.fire_resistance),
               cold: toNumber(fields.cold_resistance),
-              electric: toNumber(fields.electric_resistance),
+              electric: toNumber(electric),
               acid: toNumber(fields.acid_resistance),
               poison: toNumber(fields.poison_resistance),
               disease: toNumber(fields.disease_resistance),
