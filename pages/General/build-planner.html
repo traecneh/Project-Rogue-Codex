@@ -268,6 +268,14 @@
         width: 100%;
       }
 
+      .select-input {
+        background: var(--bg-panel-dark);
+        color: var(--text-main);
+        border: 1px solid var(--border-soft);
+        border-radius: 8px;
+        padding: 0.45rem 0.6rem;
+      }
+
       .calc-section {
         margin: 0 0 1.5rem;
       }
@@ -588,6 +596,14 @@
           <div class="char-grid">
             <div class="slider-row">
               <div class="slider-label">
+                <span>Race</span>
+              </div>
+              <select id="char-race" class="select-input">
+                <option value="">Select race</option>
+              </select>
+            </div>
+            <div class="slider-row">
+              <div class="slider-label">
                 <span>Level</span>
                 <span class="slider-value" id="val-level">1</span>
               </div>
@@ -747,6 +763,18 @@
           disease: "#ff9c42",
         };
 
+        const RACES = [
+          { value: "", label: "Select race", bonus: { str: 0, dex: 0, con: 0 }, perk: null },
+          { value: "human", label: "Human", bonus: { str: 0, dex: 0, con: 0 }, perk: "Desperation" },
+          { value: "tundrian", label: "Tundrian", bonus: { str: 10, dex: 0, con: 0 }, perk: "Frozen Heart" },
+          { value: "brimlock", label: "Brimlock", bonus: { str: 0, dex: 0, con: 5 }, perk: "Demon Blood" },
+          { value: "komodan", label: "Komodan", bonus: { str: 0, dex: 0, con: 5 }, perk: "Magic Shield" },
+          { value: "elf", label: "Elf", bonus: { str: 0, dex: 10, con: 0 }, perk: "Parry" },
+          { value: "orc", label: "Orc", bonus: { str: 0, dex: 0, con: 10 }, perk: "Hazmat" },
+          { value: "gnoll", label: "Gnoll", bonus: { str: 0, dex: 0, con: 5 }, perk: "Rejuvenation" },
+          { value: "dark-elf", label: "Dark Elf", bonus: { str: 0, dex: 5, con: 0 }, perk: "Alchemist" },
+        ];
+
         const normalizeRarityLabel = (label) => {
           const lower = String(label || "").toLowerCase().trim();
           if (!lower) return null;
@@ -784,6 +812,14 @@
         const selectedBySlot = {};
         const STATE_PARAM = "build";
         let perkOptions = [];
+        let raceOptions = [];
+        const raceSelect = document.getElementById("char-race");
+        const populateRaceOptions = () => {
+          if (!raceSelect) return;
+          raceSelect.innerHTML = RACES.map(
+            (r) => `<option value="${r.value}">${r.label}</option>`
+          ).join("");
+        };
 
         const deriveImageCandidates = (item, folder = "weapons") => {
           const candidates = [];
@@ -911,6 +947,7 @@
             dex: toNumber(document.getElementById("char-dex")?.value),
             con: toNumber(document.getElementById("char-con")?.value),
             skill: toNumber(document.getElementById("char-skill")?.value),
+            race: document.getElementById("char-race")?.value || "",
           };
 
           return { slots: entries, char };
@@ -968,7 +1005,6 @@
               updateSlotPerkUI(entry.slot);
             }
           });
-          updateTotals();
 
           if (state.char) {
             const setVal = (id, val) => {
@@ -980,7 +1016,10 @@
             setVal("char-dex", state.char.dex);
             setVal("char-con", state.char.con);
             setVal("char-skill", state.char.skill);
+            setVal("char-race", state.char.race || "");
           }
+
+          updateTotals();
         };
 
         const wireCharacterSliders = () => {
@@ -1002,6 +1041,13 @@
             input.addEventListener("input", update);
             update();
           });
+          if (raceSelect) {
+            if (!raceSelect.options.length) populateRaceOptions();
+            raceSelect.addEventListener("change", () => {
+              updateTotals();
+              persistState();
+            });
+          }
         };
 
         const toNumber = (value) => {
@@ -1026,6 +1072,14 @@
         const getCharStat = (id) => {
           const el = document.getElementById(id);
           return el ? toNumber(el.value) : 0;
+        };
+
+        const getRaceData = (value) => RACES.find((r) => r.value === value) || RACES[0];
+
+        const getRaceTier = (level) => {
+          if (level >= 100) return 3;
+          if (level >= 71) return 2;
+          return 1;
         };
 
         const toArmor = (raw) => {
@@ -1225,9 +1279,14 @@
           const charStr = getCharStat("char-str");
           const charDex = getCharStat("char-dex");
           const charCon = getCharStat("char-con");
-          const baseStrWithChar = baseStr + charStr;
-          const baseDexWithChar = baseDex + charDex;
-          const baseConWithChar = baseCon + charCon;
+          const charLevel = getCharStat("char-level");
+          const race = getRaceData(raceSelect ? raceSelect.value : "");
+          const raceBonusStr = race?.bonus?.str || 0;
+          const raceBonusDex = race?.bonus?.dex || 0;
+          const raceBonusCon = race?.bonus?.con || 0;
+          const baseStrWithChar = baseStr + charStr + raceBonusStr;
+          const baseDexWithChar = baseDex + charDex + raceBonusDex;
+          const baseConWithChar = baseCon + charCon + raceBonusCon;
           const totalStr = baseStrWithChar + bonusStr;
           const totalCon = baseConWithChar + bonusCon;
           const totalDex = baseDexWithChar + bonusDex;
@@ -1253,8 +1312,10 @@
               perkSet.add(`${i.extraPerkName} (T${tier})`);
             }
           });
-
-          const charLevel = getCharStat("char-level");
+          const raceTier = getRaceTier(charLevel);
+          if (race && race.perk) {
+            perkSet.add(`${race.perk} (T${raceTier})`);
+          }
 
           if (totals.armor) totals.armor.textContent = totalArmor;
           if (totals.armor)
@@ -1265,15 +1326,15 @@
           if (totals.toHit) totals.toHit.textContent = totalToHit;
           if (totals.str) {
             totals.str.textContent = totalStr;
-            totals.str.title = `Base: ${baseStrWithChar} (items ${baseStr} + character ${charStr})\nRarity bonus: ${bonusStr}`;
+            totals.str.title = `Base: ${baseStrWithChar} (items ${baseStr} + character ${charStr} + race ${raceBonusStr})\nRarity bonus: ${bonusStr}`;
           }
           if (totals.con) {
             totals.con.textContent = totalCon;
-            totals.con.title = `Base: ${baseConWithChar} (items ${baseCon} + character ${charCon})\nRarity bonus: ${bonusCon}`;
+            totals.con.title = `Base: ${baseConWithChar} (items ${baseCon} + character ${charCon} + race ${raceBonusCon})\nRarity bonus: ${bonusCon}`;
           }
           if (totals.dex) {
             totals.dex.textContent = totalDex;
-            totals.dex.title = `Base: ${baseDexWithChar} (items ${baseDex} + character ${charDex})\nRarity bonus: ${bonusDex}`;
+            totals.dex.title = `Base: ${baseDexWithChar} (items ${baseDex} + character ${charDex} + race ${raceBonusDex})\nRarity bonus: ${bonusDex}`;
           }
 
           if (totals.resists) {
@@ -1332,15 +1393,22 @@
           const bleedChance = totalStr * 0.1;
           const bleedEl = document.getElementById("calc-bleed");
           if (bleedEl) {
-            bleedEl.textContent = `${bleedChance.toFixed(1)}%`;
-            bleedEl.title = `0.1 * Strength ${totalStr}`;
+            const showBleed = charStr >= 100;
+            if (!showBleed) {
+              bleedEl.textContent = "—";
+              bleedEl.title = "Requires 100+ base Strength from Character Details.";
+            } else {
+              bleedEl.textContent = `${bleedChance.toFixed(1)}%`;
+              bleedEl.title = `0.1 * Strength ${totalStr} (base Strength from Character Details: ${charStr})`;
+            }
           }
 
-          const critChance = (charDex / 2.5).toFixed(1);
+          const dexForCrit = charDex; // crit uses character dex only, no race bonus
+          const critChance = (dexForCrit / 2.5).toFixed(1);
           const critEl = document.getElementById("calc-crit");
           if (critEl) {
             critEl.textContent = `${critChance}%`;
-            critEl.title = `Dex from Character Details only: ${charDex} / 2.5 => ${critChance}% @ 1.35x damage`;
+            critEl.title = `Dex from Character Details only (race bonus excluded): ${dexForCrit} / 2.5 => ${critChance}% @ 1.35x damage`;
           }
 
           const drNumerator = totalDex * 0.00125;
@@ -1435,29 +1503,70 @@
             fetch(new URL("../items/armors_data06.json", window.location.href)).then((res) =>
               res.ok ? res.json() : []
             ),
-            fetch(new URL("../systems/perks.html", window.location.href))
-              .then((res) => (res.ok ? res.text() : ""))
-              .then((html) => {
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, "text/html");
-                const names = Array.from(doc.querySelectorAll("#perk-list h3"))
-                  .map((node) => node.textContent || "")
-                  .map((n) => n.trim())
-                  .filter(Boolean);
-                perkOptions = Array.from(new Set(names)).sort((a, b) => a.localeCompare(b));
-              })
-              .catch(() => {
-                perkOptions = [];
-              }),
           ])
             .then(([weapons, armors]) => {
               dataset.weapons = Array.isArray(weapons) ? weapons.map((w) => toWeapon(w)) : [];
               dataset.armors = Array.isArray(armors) ? armors.map((a) => toArmor(a)) : [];
+              // hard-coded perks from perks.html for simplicity
+              perkOptions = [
+                "Alchemist",
+                "Antitoxin",
+                "Beastslayer",
+                "Bloodlust",
+                "Bloodthirster",
+                "Bolstered Strength",
+                "Brutality",
+                "Cleave",
+                "Clot",
+                "Crimson Feast",
+                "Crushing Blows",
+                "Defense",
+                "Discipline",
+                "Dismember",
+                "Dodge",
+                "Electrified Weapons",
+                "Epidemic",
+                "Evade",
+                "Exploit Weakness",
+                "Fast Reflexes",
+                "Fortify",
+                "Glancing Blows",
+                "Hawkeye",
+                "Honed Edge",
+                "Improved Defense",
+                "Improved Dodge",
+                "Improved Parry",
+                "Iron Skin",
+                "Lethal Toxins",
+                "Lifesteal",
+                "Magic Barrier",
+                "Magic Shield",
+                "Parry",
+                "Poisoned Edge",
+                "Quickness",
+                "Rage",
+                "Reinforced Armor",
+                "Rejuvenation",
+                "Resilient",
+                "Retribution",
+                "Serrated Blades",
+                "Shield Mastery",
+                "Spell Shield",
+                "Strength",
+                "Thorns",
+                "Unyielding",
+                "Vampirism",
+                "Venomous",
+                "Vitality",
+                "Weaken",
+                "Wounding",
+                "Zeal",
+              ].sort((a, b) => a.localeCompare(b));
             })
             .catch(() => {
               dataset.weapons = [];
               dataset.armors = [];
-          });
+            });
         };
 
         const copyShareLink = async () => {
@@ -1491,6 +1600,7 @@
         }
 
         loadData().then(() => {
+          populateRaceOptions();
           applySavedState();
           persistState();
           slotEls.forEach((_, slot) => updateSlotRarityUI(slot));
