@@ -12,6 +12,206 @@
     <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
     <link rel="stylesheet" href="css/styles.css" />
     <script src="js/nav-loader.js" defer></script>
+    <style>
+      .planner-section {
+        margin-top: 1rem;
+      }
+
+      .planner-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1rem;
+        align-items: stretch;
+      }
+
+      .planner-col {
+        display: flex;
+        flex-direction: column;
+        gap: 0.9rem;
+        min-height: 440px;
+        padding: 0.25rem;
+      }
+
+      .planner-col--stacked {
+        justify-content: space-between;
+      }
+
+      .planner-col--center {
+        justify-content: center;
+      }
+
+      .planner-spacer {
+        flex: 1 1 auto;
+      }
+
+      .slot-card {
+        background: var(--bg-panel);
+        border: 1px solid var(--border-soft);
+        border-radius: 10px;
+        padding: 0.9rem;
+        min-height: 120px;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+        display: flex;
+        flex-direction: column;
+        gap: 0.65rem;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .slot-card::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.05), transparent 45%);
+        pointer-events: none;
+      }
+
+      .slot-label {
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        font-size: 0.8rem;
+        color: var(--text-muted);
+      }
+
+      .slot-name {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--text-main);
+      }
+
+      .slot-placeholder {
+        border: 1px dashed var(--border-soft);
+        border-radius: 8px;
+        padding: 0.6rem 0.8rem;
+        color: var(--text-muted);
+        background: rgba(255, 255, 255, 0.02);
+        min-height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .slot-visual {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 96px;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid var(--border-soft);
+        overflow: hidden;
+        position: relative;
+      }
+
+      .slot-image {
+        display: none;
+        width: 72px;
+        height: 72px;
+        image-rendering: pixelated;
+        image-rendering: crisp-edges;
+        object-fit: contain;
+      }
+
+      .slot-placeholder--small {
+        margin: 0;
+        border: none;
+        background: transparent;
+      }
+
+      .search-bar {
+        margin: 0 0 1rem;
+        position: relative;
+      }
+
+      .search-input {
+        width: min(520px, 100%);
+        padding: 0.65rem 0.75rem;
+        border-radius: 10px;
+        border: 1px solid var(--border-soft);
+        background: var(--bg-panel-dark);
+        color: var(--text-main);
+      }
+
+      .search-suggestions {
+        position: absolute;
+        top: 110%;
+        left: 0;
+        width: min(520px, 100%);
+        background: var(--bg-panel);
+        border: 1px solid var(--border-soft);
+        border-radius: 10px;
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+        z-index: 10;
+        max-height: 280px;
+        overflow: auto;
+      }
+
+      .suggestion {
+        padding: 0.65rem 0.75rem;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        gap: 0.15rem;
+      }
+
+      .suggestion:hover,
+      .suggestion:focus-visible {
+        background: var(--bg-panel-dark);
+      }
+
+      .suggestion-title {
+        font-weight: 700;
+        color: var(--text-main);
+      }
+
+      .suggestion-meta {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+      }
+
+      .summary-section {
+        margin-top: 1.5rem;
+        border-top: 1px solid var(--border-soft);
+        padding-top: 1.25rem;
+      }
+
+      .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 0.75rem;
+      }
+
+      .summary-card {
+        background: var(--bg-panel);
+        border: 1px solid var(--border-soft);
+        border-radius: 10px;
+        padding: 0.85rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+      }
+
+      .summary-label {
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-size: 0.8rem;
+        color: var(--text-muted);
+      }
+
+      .summary-value {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--text-main);
+      }
+
+      .summary-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.3rem 0.5rem;
+        font-size: 0.95rem;
+      }
+    </style>
   </head>
   <body>
     <div class="layout">
@@ -19,11 +219,438 @@
       <main class="main-content">
         <header class="content-header">
           <h1 class="content-title">Build Planner</h1>
-          <p class="content-tagline">
-            Placeholder for future tools to sketch out stats, gear, and perk paths.
-          </p>
         </header>
+
+        <article class="content-section planner-section">
+          <p class="content-description">Search for items to add them.</p>
+
+          <div class="search-bar">
+            <input
+              type="text"
+              id="gear-search"
+              class="search-input"
+              placeholder="Search weapons or armors..."
+              autocomplete="off"
+            />
+            <div id="gear-suggestions" class="search-suggestions" style="display: none"></div>
+          </div>
+
+          <div class="planner-grid">
+            <div class="planner-col planner-col--center">
+              <div class="slot-card" data-slot="Gauntlets">
+                <div class="slot-label">Slot</div>
+                <div class="slot-name">Gauntlets</div>
+                <div class="slot-visual">
+                  <img class="slot-image" alt="Gauntlets preview" />
+                  <div class="slot-placeholder slot-placeholder--small"></div>
+                </div>
+              </div>
+              <div class="slot-card" data-slot="Shield">
+                <div class="slot-label">Slot</div>
+                <div class="slot-name">Shield</div>
+                <div class="slot-visual">
+                  <img class="slot-image" alt="Shield preview" />
+                  <div class="slot-placeholder slot-placeholder--small"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="planner-col planner-col--stacked">
+              <div class="slot-card" data-slot="Helmet">
+                <div class="slot-label">Slot</div>
+                <div class="slot-name">Helmet</div>
+                <div class="slot-visual">
+                  <img class="slot-image" alt="Helmet preview" />
+                  <div class="slot-placeholder slot-placeholder--small"></div>
+                </div>
+              </div>
+              <div class="slot-card" data-slot="Chest">
+                <div class="slot-label">Slot</div>
+                <div class="slot-name">Chest</div>
+                <div class="slot-visual">
+                  <img class="slot-image" alt="Chest preview" />
+                  <div class="slot-placeholder slot-placeholder--small"></div>
+                </div>
+              </div>
+              <div class="slot-card" data-slot="Leggings">
+                <div class="slot-label">Slot</div>
+                <div class="slot-name">Leggings</div>
+                <div class="slot-visual">
+                  <img class="slot-image" alt="Leggings preview" />
+                  <div class="slot-placeholder slot-placeholder--small"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="planner-col planner-col--center">
+              <div class="slot-card" data-slot="Weapon">
+                <div class="slot-label">Slot</div>
+                <div class="slot-name">Weapon</div>
+                <div class="slot-visual">
+                  <img class="slot-image" alt="Weapon preview" />
+                  <div class="slot-placeholder slot-placeholder--small"></div>
+                </div>
+              </div>
+              <div class="slot-card" data-slot="Cosmetic">
+                <div class="slot-label">Slot</div>
+                <div class="slot-name">Cosmetic</div>
+                <div class="slot-visual">
+                  <img class="slot-image" alt="Cosmetic preview" />
+                  <div class="slot-placeholder slot-placeholder--small"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <section class="summary-section">
+          <h3>Combined Stats</h3>
+          <div class="summary-grid">
+            <div class="summary-card">
+              <div class="summary-label">Armor</div>
+              <div class="summary-value" id="sum-armor">0</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-label">Weight</div>
+              <div class="summary-value" id="sum-weight">0</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-label">DPS</div>
+              <div class="summary-value" id="sum-dps">0</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-label">Element</div>
+              <div class="summary-value" id="sum-element">None</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-label">To Hit</div>
+              <div class="summary-value" id="sum-tohit">0</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-label">Strength</div>
+              <div class="summary-value" id="sum-str">0</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-label">Constitution</div>
+              <div class="summary-value" id="sum-con">0</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-label">Dexterity</div>
+              <div class="summary-value" id="sum-dex">0</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-label">Resistances</div>
+              <div class="summary-value summary-list" id="sum-resists">None</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-label">Innate Perks</div>
+              <div class="summary-value summary-list" id="sum-perks">None</div>
+            </div>
+          </div>
+        </section>
       </main>
     </div>
+
+    <script>
+      (function () {
+        const searchInput = document.getElementById("gear-search");
+        const suggestionsEl = document.getElementById("gear-suggestions");
+        const slotEls = new Map(
+          Array.from(document.querySelectorAll(".slot-card")).map((card) => [card.dataset.slot, card])
+        );
+        const totals = {
+          armor: document.getElementById("sum-armor"),
+          weight: document.getElementById("sum-weight"),
+          dps: document.getElementById("sum-dps"),
+          element: document.getElementById("sum-element"),
+          toHit: document.getElementById("sum-tohit"),
+          str: document.getElementById("sum-str"),
+          con: document.getElementById("sum-con"),
+          dex: document.getElementById("sum-dex"),
+          resists: document.getElementById("sum-resists"),
+          perks: document.getElementById("sum-perks"),
+        };
+
+        const selectedBySlot = {};
+
+        const deriveImageCandidates = (item, folder = "weapons") => {
+          const candidates = [];
+          const direct = typeof item === "string" ? item : item && item.image;
+          if (direct) candidates.push(direct);
+          const name = (item && (item.name || item.Name || item.id)) || "";
+          const safeName = String(name).replace(/[\\/:*?"<>|]/g, "").trim();
+          if (safeName) {
+            const bases = [
+              `images/${folder}`,
+              `../images/${folder}`,
+              `../../images/${folder}`,
+              `/images/${folder}`,
+            ];
+            bases.forEach((base) => {
+              const encoded = encodeURI(`${base}/${safeName}`);
+              candidates.push(`${encoded}.gif`, `${encoded}.GIF`, `${encoded}.png`, `${encoded}.PNG`);
+            });
+          }
+          return Array.from(new Set(candidates.filter(Boolean)));
+        };
+
+        const setSlotImage = (slot, item, folder) => {
+          const card = slotEls.get(slot);
+          if (!card) return;
+          const img = card.querySelector(".slot-image");
+          const placeholder = card.querySelector(".slot-placeholder");
+          if (!img || !placeholder) return;
+          selectedBySlot[slot] = item;
+          const sources = deriveImageCandidates(item, folder);
+          if (!sources.length) {
+            img.style.display = "none";
+            placeholder.style.display = "flex";
+            updateTotals();
+            return;
+          }
+          let index = 0;
+          const trySet = () => {
+            img.onload = () => {
+              img.style.display = "block";
+              placeholder.style.display = "none";
+              updateTotals();
+            };
+            img.onerror = () => {
+              index += 1;
+              if (index < sources.length) {
+                trySet();
+              } else {
+                img.style.display = "none";
+                placeholder.style.display = "flex";
+                updateTotals();
+              }
+            };
+            img.src = sources[index];
+          };
+          trySet();
+        };
+
+        const dataset = {
+          weapons: [],
+          armors: [],
+        };
+
+        const toNumber = (value) => {
+          const num = Number(value);
+          return Number.isNaN(num) ? 0 : num;
+        };
+
+        const sumObjects = (list, key) => list.reduce((acc, obj) => acc + toNumber(obj?.[key]), 0);
+
+        const toArmor = (raw) => {
+          const fields = (raw && raw.fields) || {};
+          return {
+            kind: "armor",
+            name: raw.name || raw.Name,
+            slot: fields.slot_label || fields.slot || "",
+            image: raw.image || raw.icon || raw.thumbnail || "",
+            armor: toNumber(fields.armor),
+            weight: toNumber(fields.weight),
+            toHit: toNumber(fields.to_hit),
+            strength: toNumber(fields.strength),
+            constitution: toNumber(fields.constitution),
+            dexterity: toNumber(fields.dexterity),
+            resistances: {
+              fire: toNumber(fields.fire_resistance),
+              cold: toNumber(fields.cold_resistance),
+              electric: toNumber(fields.electric_resistance),
+              acid: toNumber(fields.acid_resistance),
+              poison: toNumber(fields.poison_resistance),
+              disease: toNumber(fields.disease_resistance),
+            },
+            perk: fields.perk ? fields.perk_label || fields.perk : null,
+          };
+        };
+
+        const computeDps = (minDamage, maxDamage, attackSpeed) => {
+          const min = Number(minDamage);
+          const max = Number(maxDamage);
+          const speed = Number(attackSpeed);
+          if (Number.isNaN(min) || Number.isNaN(max) || Number.isNaN(speed) || speed === 0) return 0;
+          const avgDamage = (min + max) / 2;
+          return Number((avgDamage * (1000 / speed)).toFixed(2));
+        };
+
+        const toWeapon = (raw) => {
+          const fields = (raw && raw.fields) || {};
+          const dps = computeDps(fields.min_damage, fields.max_damage, fields.attack_speed);
+          return {
+            kind: "weapon",
+            name: raw.name || raw.Name,
+            slot: "Weapon",
+            image: raw.image || raw.icon || raw.thumbnail || "",
+            dps,
+            element: fields.element_label || (fields.element ? fields.element : "None"),
+            toHit: toNumber(fields.to_hit),
+            strength: toNumber(fields.strength),
+            constitution: toNumber(fields.constitution),
+            dexterity: toNumber(fields.dexterity),
+            resistances: {
+              fire: toNumber(fields.fire_resistance),
+              cold: toNumber(fields.cold_resistance),
+              electric: toNumber(fields.electric_resistance),
+              acid: toNumber(fields.acid_resistance),
+              poison: toNumber(fields.poison_resistance),
+              disease: toNumber(fields.disease_resistance),
+            },
+            perk: fields.perk ? fields.perk_label || fields.perk : null,
+          };
+        };
+
+        const formatResists = (res) => {
+          const entries = [];
+          const labels = {
+            fire: "Fire",
+            cold: "Cold",
+            electric: "Electric",
+            acid: "Acid",
+            poison: "Poison",
+            disease: "Disease",
+          };
+          Object.entries(res).forEach(([key, val]) => {
+            if (toNumber(val) !== 0) {
+              entries.push(`${labels[key]} ${toNumber(val)}`);
+            }
+          });
+          return entries;
+        };
+
+        const updateTotals = () => {
+          const selected = Object.values(selectedBySlot || {});
+          const armors = selected.filter((i) => i.kind === "armor");
+          const weapons = selected.filter((i) => i.kind === "weapon");
+          const weapon = weapons[0];
+
+          const totalArmor = sumObjects(armors, "armor");
+          const totalWeight = sumObjects(armors, "weight");
+          const totalToHit = sumObjects(selected, "toHit");
+          const totalStr = sumObjects(selected, "strength");
+          const totalCon = sumObjects(selected, "constitution");
+          const totalDex = sumObjects(selected, "dexterity");
+          const totalDps = weapon ? toNumber(weapon.dps) : 0;
+          const element = weapon && weapon.element ? weapon.element : "None";
+
+          const resistTotals = ["fire", "cold", "electric", "acid", "poison", "disease"].reduce((acc, key) => {
+            acc[key] = selected.reduce((sum, item) => sum + toNumber(item.resistances?.[key]), 0);
+            return acc;
+          }, {});
+
+          const perkSet = new Set(
+            selected
+              .map((i) => i.perk)
+              .filter((p) => p && String(p).trim())
+              .map((p) => String(p).trim())
+          );
+
+          if (totals.armor) totals.armor.textContent = totalArmor;
+          if (totals.weight) totals.weight.textContent = totalWeight;
+          if (totals.dps) totals.dps.textContent = totalDps;
+          if (totals.element) totals.element.textContent = element || "None";
+          if (totals.toHit) totals.toHit.textContent = totalToHit;
+          if (totals.str) totals.str.textContent = totalStr;
+          if (totals.con) totals.con.textContent = totalCon;
+          if (totals.dex) totals.dex.textContent = totalDex;
+
+          if (totals.resists) {
+            const list = formatResists(resistTotals);
+            totals.resists.textContent = list.length ? list.join(", ") : "None";
+          }
+
+          if (totals.perks) {
+            totals.perks.textContent = perkSet.size ? Array.from(perkSet).join(", ") : "None";
+          }
+        };
+
+        const buildSuggestions = (query) => {
+          if (!suggestionsEl) return;
+          suggestionsEl.innerHTML = "";
+          if (!query || query.length < 1) {
+            suggestionsEl.style.display = "none";
+            return;
+          }
+          const term = query.toLowerCase();
+          const matches = [...dataset.weapons, ...dataset.armors]
+            .filter((item) => (item.name || "").toLowerCase().includes(term))
+            .slice(0, 12);
+          if (!matches.length) {
+            suggestionsEl.style.display = "none";
+            return;
+          }
+
+          matches.forEach((item) => {
+            const div = document.createElement("div");
+            div.className = "suggestion";
+            div.tabIndex = 0;
+
+            const title = document.createElement("div");
+            title.className = "suggestion-title";
+            title.textContent = item.name || "Unknown";
+
+            const meta = document.createElement("div");
+            meta.className = "suggestion-meta";
+            meta.textContent = `${item.kind === "weapon" ? "Weapon" : "Armor"} • Slot: ${item.slot || "—"}`;
+
+            div.appendChild(title);
+            div.appendChild(meta);
+
+            const handleSelect = () => {
+              const targetSlot = item.slot || "Weapon";
+              setSlotImage(targetSlot, item, item.kind === "weapon" ? "weapons" : "armors");
+              suggestionsEl.style.display = "none";
+              searchInput.value = "";
+              updateTotals();
+            };
+
+            div.addEventListener("click", handleSelect);
+            div.addEventListener("keydown", (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                handleSelect();
+              }
+            });
+
+            suggestionsEl.appendChild(div);
+          });
+
+          suggestionsEl.style.display = "block";
+        };
+
+        const loadData = () => {
+          Promise.all([
+            fetch(new URL("../items/weapons_data05.json", window.location.href)).then((res) =>
+              res.ok ? res.json() : []
+            ),
+            fetch(new URL("../items/armors_data06.json", window.location.href)).then((res) =>
+              res.ok ? res.json() : []
+            ),
+          ])
+            .then(([weapons, armors]) => {
+              dataset.weapons = Array.isArray(weapons) ? weapons.map((w) => toWeapon(w)) : [];
+              dataset.armors = Array.isArray(armors) ? armors.map((a) => toArmor(a)) : [];
+            })
+            .catch(() => {
+              dataset.weapons = [];
+              dataset.armors = [];
+            });
+        };
+
+        if (searchInput) {
+          searchInput.addEventListener("input", (e) => buildSuggestions(e.target.value));
+          document.addEventListener("click", (e) => {
+            if (!suggestionsEl.contains(e.target) && e.target !== searchInput) {
+              suggestionsEl.style.display = "none";
+            }
+          });
+        }
+
+        loadData();
+        updateTotals();
+      })();
+    </script>
   </body>
 </html>
