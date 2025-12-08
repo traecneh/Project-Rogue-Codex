@@ -1043,7 +1043,12 @@
             .then((data) => {
               items = (Array.isArray(data) ? data : [])
                 .map((row) => normalizeWeapon(row))
-                .filter((weapon) => !HIDDEN_NAMES.has((weapon.name || "").toLowerCase()));
+                .filter((weapon) => {
+                  const nameLower = (weapon.name || "").toLowerCase();
+                  const levelNum = Number(weapon.level);
+                  if (nameLower === "flaming sword" && levelNum === 0) return false;
+                  return !HIDDEN_NAMES.has(nameLower);
+                });
               if (!items.length) {
                 renderEmpty("Add weapons_data05.json beside this page to see weapons.");
                 return;
