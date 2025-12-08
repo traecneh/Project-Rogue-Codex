@@ -1002,7 +1002,7 @@ function initializeSidebar() {
       sidebarRoot.classList.toggle("collapsed", collapsed);
     }
     if (collapseToggle) {
-      collapseToggle.textContent = collapsed ? ">" : "<";
+      collapseToggle.textContent = collapsed ? "»" : "«";
       collapseToggle.setAttribute("aria-label", collapsed ? "Expand navigation" : "Collapse navigation");
       collapseToggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
       collapseToggle.setAttribute("aria-pressed", collapsed ? "true" : "false");
