@@ -37,8 +37,7 @@
       }
 
       .items-table-wrapper {
-        overflow: auto;
-        max-height: 70vh;
+        overflow: visible;
         border: 1px solid var(--border-soft);
         border-radius: 8px;
         background: var(--bg-panel);
@@ -53,6 +52,9 @@
 
       .items-table thead {
         background: linear-gradient(to bottom, #303540, #252a33);
+        position: sticky;
+        top: 0;
+        z-index: 3;
       }
 
       .items-table th,
@@ -64,6 +66,7 @@
       }
 
       .items-table th {
+        background: linear-gradient(to bottom, #303540, #252a33);
         position: sticky;
         top: 0;
         z-index: 2;
@@ -72,6 +75,12 @@
         letter-spacing: 0.02em;
         color: #f9fafb;
         white-space: nowrap;
+      }
+
+      .items-table th .sort-indicator {
+        margin-left: 0.35rem;
+        font-size: 0.8rem;
+        color: var(--text-muted);
       }
 
       .items-table tbody tr {
@@ -85,6 +94,64 @@
       .items-table tbody tr:hover {
         background: rgba(75, 255, 75, 0.08);
         cursor: pointer;
+      }
+
+      .item-filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin: 0 0 0.5rem;
+      }
+
+      .item-filter {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+        min-width: 220px;
+      }
+
+      .filter-label {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-muted);
+        margin: 0;
+      }
+
+      .filter-select {
+        background: var(--bg-panel-dark);
+        color: var(--text-main);
+        border: 1px solid var(--border-soft);
+        border-radius: 6px;
+        padding: 0.35rem 0.45rem;
+        min-height: 120px;
+        max-height: 180px;
+        overflow: auto;
+      }
+
+      .filter-select:focus-visible {
+        outline: 1px solid var(--accent);
+      }
+
+      .filter-select::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+      }
+
+      .filter-select::-webkit-scrollbar-track {
+        background: #0d1118;
+        border-radius: 8px;
+      }
+
+      .filter-select::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, #3a414f, #262c36);
+        border: 1px solid var(--border-soft);
+        border-radius: 8px;
+        box-shadow: inset 0 0 0 1px #0b0f16;
+      }
+
+      .filter-select::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(180deg, #4a5262, #2f3642);
       }
 
       .item-thumb {
@@ -224,13 +291,43 @@
 
       .item-details-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 0.5rem 1rem;
       }
 
       .detail-cell {
         padding: 0.3rem 0;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      }
+
+      .detail-divider {
+        grid-column: 1 / -1;
+        height: 1px;
+        margin: 0.35rem 0 0.25rem;
+        background: var(--border-soft);
+        opacity: 0.6;
+      }
+
+      .detail-row {
+        display: grid;
+        gap: 0.5rem 0.75rem;
+        margin-bottom: 0.35rem;
+        grid-column: 1 / -1;
+      }
+
+      .detail-row-cols-1 {
+        grid-template-columns: 1fr;
+      }
+
+      .detail-row-cols-2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .detail-row-cols-3 {
+        grid-template-columns: repeat(3, minmax(140px, 1fr));
+      }
+
+      .detail-row-cols-4 {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
       }
 
       .detail-label {
@@ -260,7 +357,6 @@
       <main class="main-content">
         <header class="content-header">
           <h1 class="content-title">Armors</h1>
-          <p class="content-tagline">Browse armors; drop an armors.json beside this page to see data.</p>
         </header>
 
         <section class="item-details" id="item-details" aria-live="polite">
@@ -291,6 +387,17 @@
             <p class="item-count" id="item-count"></p>
           </div>
 
+          <div class="item-filters" aria-label="Filters">
+            <div class="item-filter">
+              <label class="filter-label" for="filter-slot">Slot</label>
+              <select id="filter-slot" class="filter-select" multiple aria-label="Filter by slot"></select>
+            </div>
+            <div class="item-filter">
+              <label class="filter-label" for="filter-resist">Resistances</label>
+              <select id="filter-resist" class="filter-select" multiple aria-label="Filter by resistance"></select>
+            </div>
+          </div>
+
           <div class="items-table-wrapper">
             <table class="items-table" aria-describedby="item-search">
               <thead>
@@ -307,11 +414,13 @@
       (() => {
         const PAGE = {
           title: "Armors",
-          dataFile: "armors.json",
+          dataFile: "armors_data06.json",
         };
 
         const dataUrl = new URL(PAGE.dataFile, window.location.href);
         const searchInput = document.getElementById("item-search");
+        const slotFilter = document.getElementById("filter-slot");
+        const resistFilter = document.getElementById("filter-resist");
         const tableHeadRow = document.getElementById("items-head-row");
         const tableBody = document.getElementById("items-body");
         const countLabel = document.getElementById("item-count");
@@ -325,11 +434,51 @@
           properties: document.getElementById("details-properties"),
         };
 
+        const COLUMNS = [
+          { key: "image", label: "Image", sortable: false },
+          { key: "name", label: "Name" },
+          { key: "level", label: "Level" },
+          { key: "armor", label: "Armor" },
+          { key: "fireResist", label: "Fire", format: (v) => formatNumber(v) },
+          { key: "poisonResist", label: "Poison", format: (v) => formatNumber(v) },
+          { key: "coldResist", label: "Cold", format: (v) => formatNumber(v) },
+          { key: "diseaseResist", label: "Disease", format: (v) => formatNumber(v) },
+          { key: "acidResist", label: "Acid", format: (v) => formatNumber(v) },
+          { key: "electricResist", label: "Electric", format: (v) => formatNumber(v) },
+        ];
+
         let items = [];
-        let columns = [];
-        let sortKey = "name";
-        let sortDir = "asc";
+        let sortKey = "level";
+        let sortDir = "desc";
         let searchTerm = "";
+        let selectedSlots = new Set();
+        let selectedResists = new Set();
+        const HIDDEN_NAMES = new Set(
+          [
+            "stone of jordan",
+            "abyssal core",
+            "book of the dead",
+            "celestial sceptre",
+            "magus robe",
+            "book of curses",
+            "mystic greaves",
+            "holy robe",
+            "sages leggings",
+            "firestone amulet",
+            "sages robe",
+            "lich robe",
+            "conjurers robe",
+            "apprentice leggings",
+            "ring of intellect",
+            "necklace of intellect",
+            "scholars book",
+            "sand cloth boots",
+            "shield of sands",
+            "sand bracelets",
+            "truesight frames",
+            "sand cloth robe",
+          ].map((n) => n.toLowerCase())
+        );
 
         const titleCase = (text) =>
           text
@@ -347,25 +496,6 @@
           }
         };
 
-        const deriveColumns = (rows) => {
-          const set = new Set();
-          rows.forEach((row) => {
-            Object.keys(row || {}).forEach((key) => set.add(key));
-          });
-          if (!set.size) return [];
-          const preferred = ["name", "slot", "type", "rarity", "level"];
-          const keys = Array.from(set);
-          keys.sort((a, b) => {
-            const ai = preferred.indexOf(a);
-            const bi = preferred.indexOf(b);
-            if (ai !== -1 && bi !== -1) return ai - bi;
-            if (ai !== -1) return -1;
-            if (bi !== -1) return 1;
-            return a.localeCompare(b);
-          });
-          return keys;
-        };
-
         const normalizeSortValue = (value) => {
           if (value === null || value === undefined) return "";
           if (typeof value === "number") return value;
@@ -380,6 +510,167 @@
           if (Array.isArray(value)) return value.join(", ");
           if (typeof value === "object") return JSON.stringify(value);
           return value;
+        };
+
+        const formatNumber = (value, options = {}) => {
+          if (value === null || value === undefined || value === "") return "-";
+          const num = Number(value);
+          if (Number.isNaN(num)) return value;
+          return num.toLocaleString("en-US", { maximumFractionDigits: 0, ...options });
+        };
+
+        const toNumber = (value) => {
+          const num = Number(value);
+          return Number.isFinite(num) ? num : null;
+        };
+
+        const normalizeFilterValue = (value) => (value || "").toString().trim().toLowerCase();
+
+        const setOptions = (select, options) => {
+          if (!select) return;
+          select.innerHTML = "";
+          options.forEach(({ value, label }) => {
+            const opt = document.createElement("option");
+            opt.value = value;
+            opt.textContent = label;
+            select.appendChild(opt);
+          });
+        };
+
+        const enableToggleSelect = (selectEl) => {
+          if (!selectEl) return;
+          selectEl.addEventListener("mousedown", (event) => {
+            const option = event.target;
+            if (option && option.tagName === "OPTION") {
+              event.preventDefault();
+              option.selected = !option.selected;
+              selectEl.dispatchEvent(new Event("change", { bubbles: true }));
+            }
+          });
+        };
+
+        const createCell = (labelText, valueContent) => {
+          const cell = document.createElement("div");
+          cell.className = "detail-cell";
+          const label = document.createElement("span");
+          label.className = "detail-label";
+          label.textContent = labelText;
+          const value = document.createElement("div");
+          value.className = "detail-value";
+          if (valueContent instanceof Node) {
+            value.appendChild(valueContent);
+          } else {
+            value.textContent = valueContent;
+          }
+          cell.appendChild(label);
+          cell.appendChild(value);
+          return cell;
+        };
+
+        const addDivider = (container) =>
+          container.appendChild(Object.assign(document.createElement("div"), { className: "detail-divider" }));
+
+        const addRow = (container, entries, cols) => {
+          const row = document.createElement("div");
+          row.className = `detail-row detail-row-cols-${cols || 2}`;
+          entries.forEach(([label, value]) => row.appendChild(createCell(label, value)));
+          container.appendChild(row);
+        };
+
+        const updateSortIndicators = () => {
+          document.querySelectorAll(".items-table th[data-sort-key]").forEach((th) => {
+            const key = th.getAttribute("data-sort-key");
+            const indicator = th.querySelector(".sort-indicator");
+            const isActive = key === sortKey;
+            const ariaSort = isActive ? (sortDir === "asc" ? "ascending" : "descending") : "none";
+            th.setAttribute("aria-sort", ariaSort);
+            if (indicator) {
+              indicator.textContent = isActive ? (sortDir === "asc" ? "\u25B2" : "\u25BC") : "\u2195";
+            }
+          });
+        };
+
+        const normalizeArmor = (raw) => {
+          const fields = (raw && raw.fields) || {};
+          const valueNum = toNumber(fields.value);
+          return {
+            id: raw && raw.id ? raw.id : (raw.name || "").toLowerCase().replace(/[^a-z0-9_-]+/g, "-"),
+            name: raw.name || "Unknown",
+            slot: fields.slot_label || fields.slot,
+            level: fields.level,
+            armor: fields.armor,
+            weight: fields.weight,
+            maxRarity: fields.max_rarity_label || fields.max_rarity,
+            perk: fields.perk_label || (fields.perk ? fields.perk : "None"),
+            value: valueNum,
+            sellValue: valueNum !== null ? valueNum / 2 : null,
+            promotion: fields.promotion,
+            deconstruction: fields.deconstruction,
+            toHit: fields.to_hit,
+            playerLevelRequirement: toNumber(fields.player_level_requirement),
+            resistances: {
+              fire: fields.fire_resistance,
+              cold: fields.cold_resistance,
+              lightning: fields.lightning_resistance,
+              acid: fields.acid_resistance,
+              poison: fields.poison_resistance,
+              disease: fields.disease_resistance,
+            },
+            fireResist: fields.fire_resistance,
+            poisonResist: fields.poison_resistance,
+            coldResist: fields.cold_resistance,
+            diseaseResist: fields.disease_resistance,
+            acidResist: fields.acid_resistance,
+            electricResist: fields.lightning_resistance,
+            stats: {
+              strength: fields.strength,
+              constitution: fields.constitution,
+              dexterity: fields.dexterity,
+            },
+          };
+        };
+
+        const populateFilters = (data) => {
+          const slotOptions = new Map();
+          const resistOptions = new Set();
+
+          data.forEach((item) => {
+            const slotValue = normalizeFilterValue(item.slot);
+            if (slotValue) {
+              if (!slotOptions.has(slotValue)) slotOptions.set(slotValue, item.slot);
+            }
+            const res = item.resistances || {};
+            [
+              ["fire", res.fire],
+              ["poison", res.poison],
+              ["cold", res.cold],
+              ["disease", res.disease],
+              ["acid", res.acid],
+              ["electric", res.electric || res.lightning],
+            ].forEach(([key, val]) => {
+              if (val !== null && val !== undefined && Number(val) !== 0) {
+                resistOptions.add(key);
+              }
+            });
+          });
+
+          const slotList = Array.from(slotOptions.entries())
+            .sort((a, b) => a[1].localeCompare(b[1]))
+            .map(([value, label]) => ({ value, label }));
+          const resistLabels = {
+            fire: "Fire",
+            poison: "Poison",
+            cold: "Cold",
+            disease: "Disease",
+            acid: "Acid",
+            electric: "Electric",
+          };
+          const resistList = Array.from(resistOptions)
+            .sort((a, b) => resistLabels[a].localeCompare(resistLabels[b]))
+            .map((value) => ({ value, label: resistLabels[value] || value }));
+
+          setOptions(slotFilter, slotList);
+          setOptions(resistFilter, resistList);
         };
 
         const ensureImage = (img, fallback, src) => {
@@ -402,21 +693,33 @@
 
         const buildHead = () => {
           tableHeadRow.innerHTML = "";
-          columns.forEach((col) => {
+          COLUMNS.forEach((col) => {
             const th = document.createElement("th");
-            th.textContent = titleCase(col);
-            th.dataset.sortKey = col;
+            th.setAttribute("scope", "col");
+
+            const labelSpan = document.createElement("span");
+            labelSpan.textContent = col.label;
+            th.appendChild(labelSpan);
+
+            th.dataset.sortKey = col.key;
+            const indicator = document.createElement("span");
+            indicator.className = "sort-indicator";
+            indicator.setAttribute("aria-hidden", "true");
+            indicator.textContent = "\u2195";
+            th.appendChild(indicator);
+
             th.addEventListener("click", () => {
-              if (sortKey === col) {
+              if (sortKey === col.key) {
                 sortDir = sortDir === "asc" ? "desc" : "asc";
               } else {
-                sortKey = col;
+                sortKey = col.key;
                 sortDir = "asc";
               }
               applyFilterAndSort();
             });
             tableHeadRow.appendChild(th);
           });
+          updateSortIndicators();
         };
 
         const setDetails = (item) => {
@@ -427,27 +730,89 @@
 
           const container = detailFields.properties;
           container.innerHTML = "";
-          const keys = Object.keys(item || {});
-          if (!keys.length) {
-            const empty = document.createElement("div");
-            empty.textContent = "No properties to display.";
-            empty.className = "detail-value";
-            container.appendChild(empty);
-          } else {
-            keys.forEach((key) => {
-              const cell = document.createElement("div");
-              cell.className = "detail-cell";
-              const label = document.createElement("span");
-              label.className = "detail-label";
-              label.textContent = titleCase(key);
-              const value = document.createElement("div");
-              value.className = "detail-value";
-              value.textContent = formatValue(item[key]);
-              cell.appendChild(label);
-              cell.appendChild(value);
-              container.appendChild(cell);
-            });
-          }
+
+          addRow(
+            container,
+            [
+              ["Slot", formatValue(item.slot)],
+              ["Level", formatNumber(item.level)],
+              ["Armor", formatNumber(item.armor)],
+              ["Weight", formatNumber(item.weight)],
+            ],
+            4
+          );
+
+          addRow(container, [["To Hit", formatNumber(item.toHit)]], 1);
+
+          addDivider(container);
+
+          addRow(
+            container,
+            [
+              ["Strength", formatNumber((item.stats && item.stats.strength) ?? 0)],
+              ["Constitution", formatNumber((item.stats && item.stats.constitution) ?? 0)],
+              ["Dexterity", formatNumber((item.stats && item.stats.dexterity) ?? 0)],
+              ["", ""],
+            ],
+            4
+          );
+
+          addDivider(container);
+
+          const res = item.resistances || {};
+          addRow(
+            container,
+            [
+              ["Fire", formatNumber(res.fire ?? 0)],
+              ["Poison", formatNumber(res.poison ?? 0)],
+              ["Cold", formatNumber(res.cold ?? 0)],
+            ],
+            3
+          );
+          addRow(
+            container,
+            [
+              ["Disease", formatNumber(res.disease ?? 0)],
+              ["Acid", formatNumber(res.acid ?? 0)],
+              ["Electric", formatNumber(res.lightning ?? res.electric ?? 0)],
+            ],
+            3
+          );
+
+          addDivider(container);
+
+          addRow(container, [["Innate Perk", formatValue(item.perk)]], 1);
+
+          addDivider(container);
+
+          addRow(
+            container,
+            [
+              ["Max Rarity", formatValue(item.maxRarity)],
+              ["Promotion", formatNumber(item.promotion)],
+              ["Deconstruction", formatNumber(item.deconstruction)],
+            ],
+            3
+          );
+
+          addDivider(container);
+
+          addRow(
+            container,
+            [["Requirement", `Player Level ${formatNumber(item.playerLevelRequirement)}`]],
+            1
+          );
+
+          addDivider(container);
+
+          addRow(
+            container,
+            [
+              ["Value", formatNumber(item.value)],
+              ["Sell Value", formatNumber(item.sellValue, { maximumFractionDigits: 2 })],
+            ],
+            2
+          );
 
           details.classList.add("show");
           details.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -469,15 +834,24 @@
             const tr = document.createElement("tr");
             tr.dataset.id = item.id || "";
 
-            columns.forEach((col) => {
+            COLUMNS.forEach((col) => {
               const td = document.createElement("td");
-              const value = item[col];
-              if (typeof value === "string" && value.match(/\.(png|gif|jpg|jpeg)$/i)) {
+              const value = item[col.key];
+              if (col.key === "image") {
                 const img = document.createElement("img");
                 img.className = "item-thumb";
                 img.alt = `${item.name || "Item"} image`;
-                img.src = value;
-                td.appendChild(img);
+                const fallback = document.createElement("span");
+                fallback.className = "no-image";
+                fallback.textContent = "No Image";
+                ensureImage(img, fallback, value);
+                if (img.src) {
+                  td.appendChild(img);
+                } else {
+                  td.appendChild(fallback);
+                }
+              } else if (col.format) {
+                td.textContent = col.format(value);
               } else {
                 td.textContent = formatValue(value);
               }
@@ -494,14 +868,33 @@
 
         const applyFilterAndSort = () => {
           if (!Array.isArray(items) || !items.length) {
-            renderEmpty("No armors found in armors.json.");
+            renderEmpty("No armors found in armors_data06.json.");
             return;
           }
 
           const filtered = items.filter((item) => {
+            const matchesSlot = selectedSlots.size === 0 || selectedSlots.has(normalizeFilterValue(item.slot));
+            if (!matchesSlot) return false;
+
+            if (selectedResists.size) {
+              const res = item.resistances || {};
+              const resMap = {
+                fire: res.fire,
+                poison: res.poison,
+                cold: res.cold,
+                disease: res.disease,
+                acid: res.acid,
+                electric: res.electric || res.lightning,
+              };
+              const hasAll = Array.from(selectedResists).every(
+                (key) => resMap[key] !== null && resMap[key] !== undefined && Number(resMap[key]) !== 0
+              );
+              if (!hasAll) return false;
+            }
+
             if (!searchTerm) return true;
-            const text = columns
-              .map((col) => formatValue(item[col]))
+            const text = COLUMNS
+              .map((col) => formatValue(item[col.key]))
               .join(" ")
               .toLowerCase();
             return text.includes(searchTerm.toLowerCase());
@@ -515,6 +908,8 @@
             return 0;
           });
 
+          updateSortIndicators();
+
           if (countLabel) {
             const count = sorted.length;
             countLabel.textContent = `${count} result${count === 1 ? "" : "s"}`;
@@ -527,29 +922,48 @@
           fetch(dataUrl.toString())
             .then((response) => {
               if (!response.ok) {
-                throw new Error("Failed to load armors.json");
+                throw new Error("Failed to load armors_data06.json");
               }
               return response.json();
             })
             .then((data) => {
-              items = Array.isArray(data) ? data : [];
-              columns = deriveColumns(items);
-              if (!columns.length) {
-                renderEmpty("Add armors.json beside this page to see armors.");
+              items = (Array.isArray(data) ? data : [])
+                .map((row) => normalizeArmor(row))
+                .filter((row) => !HIDDEN_NAMES.has((row.name || "").toLowerCase()));
+              if (!items.length) {
+                renderEmpty("Add armors_data06.json beside this page to see armors.");
                 return;
               }
-              if (columns.includes("name")) sortKey = "name";
+              sortKey = "level";
+              sortDir = "desc";
               buildHead();
+              populateFilters(items);
               applyFilterAndSort();
             })
             .catch(() => {
-              renderEmpty("Unable to load armors. Add armors.json beside this page.");
+              renderEmpty("Unable to load armors. Add armors_data06.json beside this page.");
             });
         };
 
         if (searchInput) {
           searchInput.addEventListener("input", (event) => {
             searchTerm = event.target.value || "";
+            applyFilterAndSort();
+          });
+        }
+
+        if (slotFilter) {
+          enableToggleSelect(slotFilter);
+          slotFilter.addEventListener("change", () => {
+            selectedSlots = new Set(Array.from(slotFilter.selectedOptions).map((o) => o.value));
+            applyFilterAndSort();
+          });
+        }
+
+        if (resistFilter) {
+          enableToggleSelect(resistFilter);
+          resistFilter.addEventListener("change", () => {
+            selectedResists = new Set(Array.from(resistFilter.selectedOptions).map((o) => o.value));
             applyFilterAndSort();
           });
         }

@@ -686,11 +686,16 @@
                   ></div>
                 </div>
               </div>
-              <div class="detail-divider" aria-hidden="true"></div>
-              <div>
-                <div class="detail-label">Recommended Armors</div>
-                <div class="detail-value">Coming soon</div>
-              </div>
+          <div class="detail-divider" aria-hidden="true"></div>
+          <div>
+            <div class="detail-label">Recommended Armors</div>
+            <div class="detail-value">
+              <div
+                id="recommended-armors"
+                style="display: flex; gap: 0.35rem; flex-wrap: wrap;"
+              ></div>
+            </div>
+          </div>
             </div>
           </div>
         </section>
@@ -1096,11 +1101,11 @@
           trySet();
         };
 
-      const detailFields = {
-        name: document.getElementById("details-name"),
-        image: document.getElementById("details-image"),
-        mapLink: document.getElementById("details-map-link"),
-        level: document.getElementById("details-level"),
+        const detailFields = {
+          name: document.getElementById("details-name"),
+          image: document.getElementById("details-image"),
+          mapLink: document.getElementById("details-map-link"),
+          level: document.getElementById("details-level"),
         hp: document.getElementById("details-hp"),
         dmgRange: document.getElementById("details-dmg-range"),
         dps: document.getElementById("details-dps"),
@@ -1111,13 +1116,14 @@
         element: document.getElementById("details-element"),
         eliteSummary: document.getElementById("details-elite-summary"),
         corruptedSummary: document.getElementById("details-corrupted-summary"),
-        elitePlusSummary: document.getElementById("details-elite-plus-summary"),
-        imageFallback: document.getElementById("details-image-fallback"),
-        flags: document.getElementById("details-flags"),
-        targetFlags: document.getElementById("details-target-flags"),
-        lootTable: document.getElementById("loot-table"),
-        recommendedWeapons: document.getElementById("recommended-weapons"),
-      };
+          elitePlusSummary: document.getElementById("details-elite-plus-summary"),
+          imageFallback: document.getElementById("details-image-fallback"),
+          flags: document.getElementById("details-flags"),
+          targetFlags: document.getElementById("details-target-flags"),
+          lootTable: document.getElementById("loot-table"),
+          recommendedWeapons: document.getElementById("recommended-weapons"),
+          recommendedArmors: document.getElementById("recommended-armors"),
+        };
 
       const tooltipFields = {
         elite: {
@@ -1147,6 +1153,55 @@
         let selectedElements = new Set();
         let selectedFlags = new Set();
         let weapons = [];
+        let armors = [];
+
+        const HIDDEN_WEAPON_NAMES = new Set(
+          [
+            "super super blunt",
+            "super duper pole",
+            "super duper",
+            "super duper blunt",
+            "super duper axe",
+            "gm deathbringer",
+            "ghostblade",
+            "wand of the winds",
+            "wand of the flames",
+            "tooth staff",
+            "krythan staff",
+            "bone staff",
+            "staff of might",
+            "cursed staff",
+            "vengeance sword",
+            "staff of partiality",
+          ].map((n) => n.toLowerCase())
+        );
+
+        const HIDDEN_ARMOR_NAMES = new Set(
+          [
+            "stone of jordan",
+            "abyssal core",
+            "book of the dead",
+            "celestial sceptre",
+            "magus robe",
+            "book of curses",
+            "mystic greaves",
+            "holy robe",
+            "sages leggings",
+            "firestone amulet",
+            "sages robe",
+            "lich robe",
+            "conjurers robe",
+            "apprentice leggings",
+            "ring of intellect",
+            "necklace of intellect",
+            "scholars book",
+            "sand cloth boots",
+            "shield of sands",
+            "sand bracelets",
+            "truesight frames",
+            "sand cloth robe",
+          ].map((n) => n.toLowerCase())
+        );
 
       const renderEmpty = (message) => {
         tableBody.innerHTML = `<tr><td class="table-empty" colspan="8">${message}</td></tr>`;
@@ -1293,6 +1348,35 @@
           };
         };
 
+        const normalizeArmor = (raw) => {
+          if (!raw || typeof raw !== "object") return null;
+          const fields = raw.fields || {};
+          const value = toNumber(fields.value);
+          const slot = fields.slot_label || fields.slot || "";
+          const normalizeSlot = (s) => (s || "").toString().trim().toLowerCase();
+          return {
+            id: raw.id || raw.name || "",
+            name: raw.name || "Unknown Armor",
+            slot,
+            slotNorm: normalizeSlot(slot),
+            level: toNumber(fields.level),
+            armor: toNumber(fields.armor),
+            weight: toNumber(fields.weight),
+            maxRarity: fields.max_rarity_label || fields.max_rarity,
+            value,
+            sellValue: value !== null ? value / 2 : null,
+            perk: fields.perk_label || fields.perk || "None",
+            resistances: {
+              fire: toNumber(fields.fire_resistance),
+              cold: toNumber(fields.cold_resistance),
+              poison: toNumber(fields.poison_resistance),
+              disease: toNumber(fields.disease_resistance),
+              acid: toNumber(fields.acid_resistance),
+              electric: toNumber(fields.lightning_resistance),
+            },
+          };
+        };
+
         const getElementMultiplier = (monsterType, weaponElement) => {
           const list = TYPE_RESISTANCES[normalizeType(monsterType)];
           if (!list || !list.length) return 1;
@@ -1432,6 +1516,159 @@
             pill.appendChild(tooltip);
             container.appendChild(pill);
           });
+        };
+
+        const renderRecommendedArmors = (monster) => {
+          const container = detailFields.recommendedArmors;
+          if (!container) return;
+          container.innerHTML = "";
+
+          if (!Array.isArray(armors) || !armors.length) {
+            const pill = document.createElement("span");
+            pill.className = "detail-pill";
+            pill.textContent = "No armors data";
+            container.appendChild(pill);
+            return;
+          }
+
+          const element = (monster.elementalAttack || "").toLowerCase();
+          const elementKey =
+            element.includes("fire") ? "fire"
+            : element.includes("poison") ? "poison"
+            : element.includes("cold") ? "cold"
+            : element.includes("electric") || element.includes("lightning") ? "electric"
+            : element.includes("acid") ? "acid"
+            : element.includes("disease") ? "disease"
+            : null;
+
+          const REQUIRED_SLOTS = ["helmet", "chest", "gauntlets", "leggings", "shield"];
+          const slotLabel = (slot) => slot.charAt(0).toUpperCase() + slot.slice(1);
+
+          const bySlot = new Map();
+          armors
+            .filter((a) => a && a.slotNorm && REQUIRED_SLOTS.includes(a.slotNorm) && !/cosmetic/i.test(a.slot || ""))
+            .forEach((armor) => {
+              const list = bySlot.get(armor.slotNorm) || [];
+              list.push(armor);
+              bySlot.set(armor.slotNorm, list);
+            });
+
+          if (REQUIRED_SLOTS.some((slot) => !bySlot.get(slot) || !bySlot.get(slot).length)) {
+            const pill = document.createElement("span");
+            pill.className = "detail-pill";
+            pill.textContent = "Not enough armor pieces for a full set";
+            container.appendChild(pill);
+            return;
+          }
+
+          const topBySlot = {};
+          const TOP_COUNT = 5;
+          REQUIRED_SLOTS.forEach((slot) => {
+            const list = bySlot.get(slot) || [];
+            const sorted = list
+              .map((a) => {
+                const resist = elementKey ? Number(a.resistances[elementKey]) || 0 : 0;
+                const armorVal = Number(a.armor) || 0;
+                return { armor: a, resist, armorVal };
+              })
+              .sort((a, b) => b.resist - a.resist || b.armorVal - a.armorVal || (b.armor.level || 0) - (a.armor.level || 0))
+              .slice(0, TOP_COUNT);
+            topBySlot[slot] = sorted;
+          });
+
+          if (REQUIRED_SLOTS.some((slot) => !topBySlot[slot].length)) {
+            const pill = document.createElement("span");
+            pill.className = "detail-pill";
+            pill.textContent = "Not enough armor pieces for a full set";
+            container.appendChild(pill);
+            return;
+          }
+
+          const combos = [];
+          const slotsArrays = REQUIRED_SLOTS.map((slot) => topBySlot[slot]);
+          const recurse = (idx, current) => {
+            if (idx === slotsArrays.length) {
+              const totalResist = current.reduce((sum, entry) => sum + (entry.resist || 0), 0);
+              const cappedResist = Math.min(totalResist, 60);
+              const totalArmor = current.reduce((sum, entry) => sum + (entry.armorVal || 0), 0);
+              combos.push({ set: current.map((e) => e.armor), totalResist, cappedResist, totalArmor });
+              return;
+            }
+            slotsArrays[idx].forEach((entry) => recurse(idx + 1, current.concat(entry)));
+          };
+          recurse(0, []);
+
+          combos.sort((a, b) => {
+            if (a.cappedResist !== b.cappedResist) return b.cappedResist - a.cappedResist;
+            return b.totalArmor - a.totalArmor;
+          });
+          const bestSet = combos[0];
+
+          const pill = document.createElement("span");
+          pill.className = "detail-pill";
+          pill.textContent = "Endgame";
+
+          const tooltip = document.createElement("span");
+          tooltip.className = "detail-tooltip";
+          tooltip.role = "tooltip";
+
+          const headerRow = document.createElement("div");
+          headerRow.className = "detail-tooltip-row";
+          const headerLabel = document.createElement("span");
+          headerLabel.className = "detail-tooltip-label";
+          headerLabel.textContent = elementKey
+            ? `Best set vs. ${elementKey.charAt(0).toUpperCase() + elementKey.slice(1)}`
+            : "Best armor set";
+          headerRow.appendChild(headerLabel);
+          tooltip.appendChild(headerRow);
+
+          const headerDivider = document.createElement("div");
+          headerDivider.className = "detail-tooltip-divider";
+          tooltip.appendChild(headerDivider);
+
+          const totalRow = document.createElement("div");
+          totalRow.className = "detail-tooltip-row";
+          const totalLabel = document.createElement("span");
+          totalLabel.className = "detail-tooltip-label";
+          totalLabel.textContent = "Total Resist";
+          const totalVal = document.createElement("span");
+          totalVal.textContent = elementKey
+            ? `${formatNumber(bestSet.cappedResist)} / 60 ${elementKey}`
+            : `${formatNumber(bestSet.cappedResist)} / 60`;
+          totalRow.appendChild(totalLabel);
+          totalRow.appendChild(totalVal);
+          tooltip.appendChild(totalRow);
+
+          const armorRow = document.createElement("div");
+          armorRow.className = "detail-tooltip-row";
+          const armorLabel = document.createElement("span");
+          armorLabel.className = "detail-tooltip-label";
+          armorLabel.textContent = "Total Armor";
+          const armorVal = document.createElement("span");
+          armorVal.textContent = formatNumber(bestSet.totalArmor);
+          armorRow.appendChild(armorLabel);
+          armorRow.appendChild(armorVal);
+          tooltip.appendChild(armorRow);
+
+          const divider = document.createElement("div");
+          divider.className = "detail-tooltip-divider";
+          tooltip.appendChild(divider);
+
+          bestSet.set.forEach((armor) => {
+            const row = document.createElement("div");
+            row.className = "detail-tooltip-row";
+            const label = document.createElement("span");
+            label.className = "detail-tooltip-label";
+            label.textContent = slotLabel(armor.slotNorm);
+            const val = document.createElement("span");
+            val.textContent = `${armor.name}`;
+            row.appendChild(label);
+            row.appendChild(val);
+            tooltip.appendChild(row);
+          });
+
+          pill.appendChild(tooltip);
+          container.appendChild(pill);
         };
 
         const renderLootTable = (monster) => {
@@ -1988,6 +2225,7 @@
           renderFlags(monster);
           renderLootTable(monster);
           renderRecommendedWeapons(monster);
+          renderRecommendedArmors(monster);
           attachTooltipPinning();
 
           details.classList.add("show");
@@ -2023,10 +2261,22 @@
             fetch(weaponsUrl.toString())
               .then((response) => (response.ok ? response.json() : []))
               .catch(() => []),
+            fetch(new URL("../items/armors_data06.json", window.location.href).toString())
+              .then((response) => (response.ok ? response.json() : []))
+              .catch(() => []),
           ])
-            .then(([monsterData, weaponData]) => {
+            .then(([monsterData, weaponData, armorData]) => {
               monsters = normalizeMonsters(monsterData);
-              weapons = Array.isArray(weaponData) ? weaponData.map((w) => normalizeWeapon(w)) : [];
+              weapons = Array.isArray(weaponData)
+                ? weaponData
+                    .map((w) => normalizeWeapon(w))
+                    .filter((w) => w && !HIDDEN_WEAPON_NAMES.has((w.name || "").toLowerCase()))
+                : [];
+              armors = Array.isArray(armorData)
+                ? armorData
+                    .map((a) => normalizeArmor(a))
+                    .filter((a) => a && !HIDDEN_ARMOR_NAMES.has((a.name || "").toLowerCase()))
+                : [];
               if (!monsters.length) {
                 renderEmpty("No monsters found in monsters_data03.json.");
                 return;
