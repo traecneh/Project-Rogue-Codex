@@ -58,6 +58,32 @@
         overflow: hidden;
       }
 
+      .slot-clear {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        background: rgba(0, 0, 0, 0.35);
+        border: 1px solid var(--border-soft);
+        color: var(--text-main);
+        width: 22px;
+        height: 22px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-weight: 700;
+        font-size: 0.85rem;
+        line-height: 1;
+        opacity: 0;
+        transition: opacity 0.15s ease, transform 0.15s ease;
+      }
+
+      .slot-card.has-item .slot-clear {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
       .slot-card::after {
         content: "";
         position: absolute;
@@ -105,8 +131,8 @@
 
       .slot-image {
         display: none;
-        width: 72px;
-        height: 72px;
+        width: 32px;
+        height: 32px;
         image-rendering: pixelated;
         image-rendering: crisp-edges;
         object-fit: contain;
@@ -116,6 +142,43 @@
         margin: 0;
         border: none;
         background: transparent;
+      }
+
+      .slot-rarity {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+
+      .rarity-buttons {
+        display: inline-flex;
+        gap: 0.3rem;
+      }
+
+      .rarity-btn {
+        border: 1px solid var(--border-soft);
+        background: var(--bg-panel-dark);
+        color: var(--text-main);
+        border-radius: 6px;
+        padding: 0.15rem 0.5rem;
+        cursor: pointer;
+      }
+
+      .rarity-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+
+      .rarity-label {
+        font-weight: 700;
+        color: var(--text-main);
+        min-width: 70px;
+      }
+
+      .rarity-max {
+        color: var(--text-muted);
+        font-size: 0.85rem;
       }
 
       .search-bar {
@@ -238,65 +301,121 @@
           <div class="planner-grid">
             <div class="planner-col planner-col--center">
               <div class="slot-card" data-slot="Gauntlets">
-                <div class="slot-label">Slot</div>
+                <button type="button" class="slot-clear" aria-label="Clear slot">&times;</button>
                 <div class="slot-name">Gauntlets</div>
                 <div class="slot-visual">
                   <img class="slot-image" alt="Gauntlets preview" />
                   <div class="slot-placeholder slot-placeholder--small"></div>
                 </div>
+                <div class="slot-rarity">
+                  <div class="rarity-buttons">
+                    <button type="button" class="rarity-btn" data-rarity-dec>-</button>
+                    <button type="button" class="rarity-btn" data-rarity-inc>+</button>
+                  </div>
+                  <div class="rarity-label" data-rarity-label>—</div>
+                  <div class="rarity-max" data-rarity-max>Max: —</div>
+                </div>
               </div>
               <div class="slot-card" data-slot="Shield">
-                <div class="slot-label">Slot</div>
+                <button type="button" class="slot-clear" aria-label="Clear slot">&times;</button>
                 <div class="slot-name">Shield</div>
                 <div class="slot-visual">
                   <img class="slot-image" alt="Shield preview" />
                   <div class="slot-placeholder slot-placeholder--small"></div>
+                </div>
+                <div class="slot-rarity">
+                  <div class="rarity-buttons">
+                    <button type="button" class="rarity-btn" data-rarity-dec>-</button>
+                    <button type="button" class="rarity-btn" data-rarity-inc>+</button>
+                  </div>
+                  <div class="rarity-label" data-rarity-label>—</div>
+                  <div class="rarity-max" data-rarity-max>Max: —</div>
                 </div>
               </div>
             </div>
 
             <div class="planner-col planner-col--stacked">
               <div class="slot-card" data-slot="Helmet">
-                <div class="slot-label">Slot</div>
+                <button type="button" class="slot-clear" aria-label="Clear slot">&times;</button>
                 <div class="slot-name">Helmet</div>
                 <div class="slot-visual">
                   <img class="slot-image" alt="Helmet preview" />
                   <div class="slot-placeholder slot-placeholder--small"></div>
                 </div>
+                <div class="slot-rarity">
+                  <div class="rarity-buttons">
+                    <button type="button" class="rarity-btn" data-rarity-dec>-</button>
+                    <button type="button" class="rarity-btn" data-rarity-inc>+</button>
+                  </div>
+                  <div class="rarity-label" data-rarity-label>—</div>
+                  <div class="rarity-max" data-rarity-max>Max: —</div>
+                </div>
               </div>
               <div class="slot-card" data-slot="Chest">
-                <div class="slot-label">Slot</div>
+                <button type="button" class="slot-clear" aria-label="Clear slot">&times;</button>
                 <div class="slot-name">Chest</div>
                 <div class="slot-visual">
                   <img class="slot-image" alt="Chest preview" />
                   <div class="slot-placeholder slot-placeholder--small"></div>
                 </div>
+                <div class="slot-rarity">
+                  <div class="rarity-buttons">
+                    <button type="button" class="rarity-btn" data-rarity-dec>-</button>
+                    <button type="button" class="rarity-btn" data-rarity-inc>+</button>
+                  </div>
+                  <div class="rarity-label" data-rarity-label>—</div>
+                  <div class="rarity-max" data-rarity-max>Max: —</div>
+                </div>
               </div>
               <div class="slot-card" data-slot="Leggings">
-                <div class="slot-label">Slot</div>
+                <button type="button" class="slot-clear" aria-label="Clear slot">&times;</button>
                 <div class="slot-name">Leggings</div>
                 <div class="slot-visual">
                   <img class="slot-image" alt="Leggings preview" />
                   <div class="slot-placeholder slot-placeholder--small"></div>
+                </div>
+                <div class="slot-rarity">
+                  <div class="rarity-buttons">
+                    <button type="button" class="rarity-btn" data-rarity-dec>-</button>
+                    <button type="button" class="rarity-btn" data-rarity-inc>+</button>
+                  </div>
+                  <div class="rarity-label" data-rarity-label>—</div>
+                  <div class="rarity-max" data-rarity-max>Max: —</div>
                 </div>
               </div>
             </div>
 
             <div class="planner-col planner-col--center">
               <div class="slot-card" data-slot="Weapon">
-                <div class="slot-label">Slot</div>
+                <button type="button" class="slot-clear" aria-label="Clear slot">&times;</button>
                 <div class="slot-name">Weapon</div>
                 <div class="slot-visual">
                   <img class="slot-image" alt="Weapon preview" />
                   <div class="slot-placeholder slot-placeholder--small"></div>
                 </div>
+                <div class="slot-rarity">
+                  <div class="rarity-buttons">
+                    <button type="button" class="rarity-btn" data-rarity-dec>-</button>
+                    <button type="button" class="rarity-btn" data-rarity-inc>+</button>
+                  </div>
+                  <div class="rarity-label" data-rarity-label>—</div>
+                  <div class="rarity-max" data-rarity-max>Max: —</div>
+                </div>
               </div>
               <div class="slot-card" data-slot="Cosmetic">
-                <div class="slot-label">Slot</div>
+                <button type="button" class="slot-clear" aria-label="Clear slot">&times;</button>
                 <div class="slot-name">Cosmetic</div>
                 <div class="slot-visual">
                   <img class="slot-image" alt="Cosmetic preview" />
                   <div class="slot-placeholder slot-placeholder--small"></div>
+                </div>
+                <div class="slot-rarity">
+                  <div class="rarity-buttons">
+                    <button type="button" class="rarity-btn" data-rarity-dec>-</button>
+                    <button type="button" class="rarity-btn" data-rarity-inc>+</button>
+                  </div>
+                  <div class="rarity-label" data-rarity-label>—</div>
+                  <div class="rarity-max" data-rarity-max>Max: —</div>
                 </div>
               </div>
             </div>
@@ -358,6 +477,61 @@
         const slotEls = new Map(
           Array.from(document.querySelectorAll(".slot-card")).map((card) => [card.dataset.slot, card])
         );
+        const RARITY_TIERS = [
+          { label: "Common", statMin: 0, statMax: 0, bonusAC: 0 },
+          { label: "Uncommon", statMin: 2, statMax: 5, bonusAC: 0 },
+          { label: "Rare", statMin: 6, statMax: 10, bonusAC: 0 },
+          { label: "Epic", statMin: 11, statMax: 15, bonusAC: 2 },
+          { label: "Legendary", statMin: 16, statMax: 20, bonusAC: 3 },
+          { label: "Mythical", statMin: 21, statMax: 25, bonusAC: 4 },
+          { label: "Ascendant", statMin: 26, statMax: 30, bonusAC: 5 },
+        ];
+
+        const rarityLabelIndex = RARITY_TIERS.reduce((acc, tier, idx) => {
+          acc[tier.label.toLowerCase()] = idx;
+          return acc;
+        }, {});
+
+        const RARITY_COLORS = {
+          Common: "#ffffff",
+          Uncommon: "#ffd966",
+          Rare: "#0000ff",
+          Epic: "#741b47",
+          Legendary: "#ff9900",
+          Mythical: "#6aa84f",
+          Ascendant: "#ff0000",
+        };
+
+        const RESIST_COLORS = {
+          fire: "#ff5a5a",
+          electric: "#b86bff",
+          poison: "#2f7a2f",
+          cold: "#7cc9ff",
+          acid: "#b38b00",
+          disease: "#ff9c42",
+        };
+
+        const normalizeRarityLabel = (label) => {
+          const lower = String(label || "").toLowerCase().trim();
+          if (!lower) return null;
+          if (lower === "normal" || lower === "regular" || lower === "common") return "Common";
+          return RARITY_TIERS.find((t) => t.label.toLowerCase() === lower)?.label || null;
+        };
+
+        const rarityIndexFromLabel = (label) => {
+          const normalized = normalizeRarityLabel(label);
+          if (!normalized) return 0;
+          return rarityLabelIndex[normalized.toLowerCase()] ?? 0;
+        };
+
+        const rarityLabelFromValue = (value) => {
+          if (value === null || value === undefined || value === "") return null;
+          if (typeof value === "number") {
+            return RARITY_TIERS[value] ? RARITY_TIERS[value].label : null;
+          }
+          return normalizeRarityLabel(value);
+        };
+
         const totals = {
           armor: document.getElementById("sum-armor"),
           weight: document.getElementById("sum-weight"),
@@ -400,7 +574,29 @@
           const img = card.querySelector(".slot-image");
           const placeholder = card.querySelector(".slot-placeholder");
           if (!img || !placeholder) return;
-          selectedBySlot[slot] = item;
+          card.classList.add("has-item");
+          const titleEl = card.querySelector(".slot-name");
+          if (titleEl) {
+            titleEl.textContent = item?.name || card.dataset.slot || "";
+          }
+          const maxRarityLabel = item.maxRarityLabel || item.max_rarity_label || item.max_rarity;
+          const maxRarityIndex = Math.min(
+            RARITY_TIERS.length - 1,
+            rarityIndexFromLabel(maxRarityLabel !== undefined ? maxRarityLabel : 0)
+          );
+          const rarityIndex = 0; // start at Common regardless of current selection
+          selectedBySlot[slot] = {
+            ...item,
+            rarityIndex,
+            maxRarityIndex,
+            bonusStr: 0,
+            bonusDex: 0,
+            bonusCon: 0,
+            bonusAC: 0,
+            bonusResists: { fire: 0, cold: 0, electric: 0, acid: 0, poison: 0, disease: 0 },
+          };
+          rollRarityBonuses(slot);
+          updateSlotRarityUI(slot);
           const sources = deriveImageCandidates(item, folder);
           if (!sources.length) {
             img.style.display = "none";
@@ -430,6 +626,28 @@
           trySet();
         };
 
+        const clearSlot = (slot) => {
+          const card = slotEls.get(slot);
+          if (!card) return;
+          const img = card.querySelector(".slot-image");
+          const placeholder = card.querySelector(".slot-placeholder");
+          const titleEl = card.querySelector(".slot-name");
+          if (img) {
+            img.removeAttribute("src");
+            img.style.display = "none";
+          }
+          if (placeholder) {
+            placeholder.style.display = "flex";
+          }
+          if (titleEl) {
+            titleEl.textContent = card.dataset.slot || "";
+          }
+          card.classList.remove("has-item");
+          delete selectedBySlot[slot];
+          updateSlotRarityUI(slot);
+          updateTotals();
+        };
+
         const dataset = {
           weapons: [],
           armors: [],
@@ -442,6 +660,18 @@
 
         const sumObjects = (list, key) => list.reduce((acc, obj) => acc + toNumber(obj?.[key]), 0);
 
+        const allocateStats = (total) => {
+          let remaining = Math.max(0, Math.round(total));
+          const dist = { str: 0, dex: 0, con: 0 };
+          const keys = ["str", "dex", "con"];
+          while (remaining > 0) {
+            const key = keys[Math.floor(Math.random() * keys.length)];
+            dist[key] += 1;
+            remaining -= 1;
+          }
+          return dist;
+        };
+
         const toArmor = (raw) => {
           const fields = (raw && raw.fields) || {};
           return {
@@ -449,6 +679,7 @@
             name: raw.name || raw.Name,
             slot: fields.slot_label || fields.slot || "",
             image: raw.image || raw.icon || raw.thumbnail || "",
+            maxRarityLabel: fields.max_rarity_label || fields.max_rarity,
             armor: toNumber(fields.armor),
             weight: toNumber(fields.weight),
             toHit: toNumber(fields.to_hit),
@@ -484,6 +715,7 @@
             name: raw.name || raw.Name,
             slot: "Weapon",
             image: raw.image || raw.icon || raw.thumbnail || "",
+            maxRarityLabel: fields.max_rarity_label || fields.max_rarity,
             dps,
             element: fields.element_label || (fields.element ? fields.element : "None"),
             toHit: toNumber(fields.to_hit),
@@ -514,10 +746,53 @@
           };
           Object.entries(res).forEach(([key, val]) => {
             if (toNumber(val) !== 0) {
-              entries.push(`${labels[key]} ${toNumber(val)}`);
+              entries.push({ label: labels[key], value: toNumber(val), color: RESIST_COLORS[key] });
             }
           });
           return entries;
+        };
+
+        const rollRarityBonuses = (slot) => {
+          const data = selectedBySlot[slot];
+          if (!data) return;
+          const tier = RARITY_TIERS[data.rarityIndex] || RARITY_TIERS[0];
+          const statTotal =
+            tier.statMin === tier.statMax
+              ? tier.statMin
+              : Math.floor(Math.random() * (tier.statMax - tier.statMin + 1)) + tier.statMin;
+          const stats = allocateStats(statTotal);
+          data.bonusStr = stats.str;
+          data.bonusDex = stats.dex;
+          data.bonusCon = stats.con;
+          data.bonusAC = tier.bonusAC;
+          data.bonusResists = { fire: 0, cold: 0, electric: 0, acid: 0, poison: 0, disease: 0 };
+        };
+
+        const updateSlotRarityUI = (slot) => {
+          const card = slotEls.get(slot);
+          if (!card) return;
+          const labelEl = card.querySelector("[data-rarity-label]");
+          const maxEl = card.querySelector("[data-rarity-max]");
+          const incBtn = card.querySelector("[data-rarity-inc]");
+          const decBtn = card.querySelector("[data-rarity-dec]");
+          const data = selectedBySlot[slot];
+
+          if (!data) {
+            if (labelEl) labelEl.textContent = "—";
+            if (maxEl) maxEl.textContent = "Max: —";
+            if (incBtn) incBtn.disabled = true;
+            if (decBtn) decBtn.disabled = true;
+            if (labelEl) labelEl.style.color = "var(--text-main)";
+            return;
+          }
+
+          const tier = RARITY_TIERS[data.rarityIndex] || RARITY_TIERS[0];
+          const maxTier = RARITY_TIERS[data.maxRarityIndex] || RARITY_TIERS[RARITY_TIERS.length - 1];
+          if (labelEl) labelEl.textContent = tier.label;
+          if (labelEl) labelEl.style.color = RARITY_COLORS[tier.label] || "var(--text-main)";
+          if (maxEl) maxEl.textContent = `Max: ${maxTier.label}`;
+          if (incBtn) incBtn.disabled = data.rarityIndex >= data.maxRarityIndex;
+          if (decBtn) decBtn.disabled = data.rarityIndex <= 0;
         };
 
         const updateTotals = () => {
@@ -526,17 +801,27 @@
           const weapons = selected.filter((i) => i.kind === "weapon");
           const weapon = weapons[0];
 
-          const totalArmor = sumObjects(armors, "armor");
+          const totalArmor = sumObjects(armors, "armor") + selected.reduce((acc, a) => acc + toNumber(a.bonusAC), 0);
+          const baseArmor = sumObjects(armors, "armor");
+          const rarityArmor = selected.reduce((acc, a) => acc + toNumber(a.bonusAC), 0);
           const totalWeight = sumObjects(armors, "weight");
           const totalToHit = sumObjects(selected, "toHit");
-          const totalStr = sumObjects(selected, "strength");
-          const totalCon = sumObjects(selected, "constitution");
-          const totalDex = sumObjects(selected, "dexterity");
+          const baseStr = sumObjects(selected, "strength");
+          const baseCon = sumObjects(selected, "constitution");
+          const baseDex = sumObjects(selected, "dexterity");
+          const bonusStr = sumObjects(selected, "bonusStr");
+          const bonusCon = sumObjects(selected, "bonusCon");
+          const bonusDex = sumObjects(selected, "bonusDex");
+          const totalStr = baseStr + bonusStr;
+          const totalCon = baseCon + bonusCon;
+          const totalDex = baseDex + bonusDex;
           const totalDps = weapon ? toNumber(weapon.dps) : 0;
           const element = weapon && weapon.element ? weapon.element : "None";
 
           const resistTotals = ["fire", "cold", "electric", "acid", "poison", "disease"].reduce((acc, key) => {
-            acc[key] = selected.reduce((sum, item) => sum + toNumber(item.resistances?.[key]), 0);
+            acc[key] =
+              selected.reduce((sum, item) => sum + toNumber(item.resistances?.[key]), 0) +
+              selected.reduce((sum, item) => sum + toNumber(item.bonusResists?.[key]), 0);
             return acc;
           }, {});
 
@@ -548,23 +833,68 @@
           );
 
           if (totals.armor) totals.armor.textContent = totalArmor;
+          if (totals.armor)
+            totals.armor.title = `Base armor: ${baseArmor}\nRarity bonus: ${rarityArmor}`;
           if (totals.weight) totals.weight.textContent = totalWeight;
           if (totals.dps) totals.dps.textContent = totalDps;
           if (totals.element) totals.element.textContent = element || "None";
           if (totals.toHit) totals.toHit.textContent = totalToHit;
-          if (totals.str) totals.str.textContent = totalStr;
-          if (totals.con) totals.con.textContent = totalCon;
-          if (totals.dex) totals.dex.textContent = totalDex;
+          if (totals.str) {
+            totals.str.textContent = totalStr;
+            totals.str.title = `Base: ${baseStr}\nRarity bonus: ${bonusStr}`;
+          }
+          if (totals.con) {
+            totals.con.textContent = totalCon;
+            totals.con.title = `Base: ${baseCon}\nRarity bonus: ${bonusCon}`;
+          }
+          if (totals.dex) {
+            totals.dex.textContent = totalDex;
+            totals.dex.title = `Base: ${baseDex}\nRarity bonus: ${bonusDex}`;
+          }
 
           if (totals.resists) {
             const list = formatResists(resistTotals);
-            totals.resists.textContent = list.length ? list.join(", ") : "None";
+            if (!list.length) {
+              totals.resists.textContent = "None";
+            } else {
+              totals.resists.innerHTML = "";
+              list.forEach((item, idx) => {
+                const span = document.createElement("span");
+                span.textContent = `${item.label} ${item.value}`;
+                if (item.color) span.style.color = item.color;
+                totals.resists.appendChild(span);
+                if (idx < list.length - 1) {
+                  const comma = document.createTextNode(", ");
+                  totals.resists.appendChild(comma);
+                }
+              });
+            }
           }
 
           if (totals.perks) {
             totals.perks.textContent = perkSet.size ? Array.from(perkSet).join(", ") : "None";
           }
         };
+
+        const adjustRarity = (slot, delta) => {
+          const data = selectedBySlot[slot];
+          if (!data) return;
+          const next = Math.min(Math.max(data.rarityIndex + delta, 0), data.maxRarityIndex);
+          if (next === data.rarityIndex) return;
+          data.rarityIndex = next;
+          rollRarityBonuses(slot);
+          updateSlotRarityUI(slot);
+          updateTotals();
+        };
+
+        slotEls.forEach((card, slot) => {
+          const inc = card.querySelector("[data-rarity-inc]");
+          const dec = card.querySelector("[data-rarity-dec]");
+          if (inc) inc.addEventListener("click", () => adjustRarity(slot, 1));
+          if (dec) dec.addEventListener("click", () => adjustRarity(slot, -1));
+          const clearBtn = card.querySelector(".slot-clear");
+          if (clearBtn) clearBtn.addEventListener("click", () => clearSlot(slot));
+        });
 
         const buildSuggestions = (query) => {
           if (!suggestionsEl) return;
@@ -649,6 +979,7 @@
         }
 
         loadData();
+        slotEls.forEach((_, slot) => updateSlotRarityUI(slot));
         updateTotals();
       })();
     </script>
