@@ -957,19 +957,55 @@
 
         let pendingMonsterId = getInitialMonsterId();
 
+        const monsterImageManifest = new Map();
+        const loadMonsterImageManifest = () => {
+          if (monsterImageManifest.size) return;
+          fetch(new URL("images/monsters/manifest.json", window.location.href).toString())
+            .then((res) => (res.ok ? res.json() : Promise.reject()))
+            .then((list) => {
+              const entries = Array.isArray(list) ? list : [];
+              entries.forEach((path) => {
+                const file = String(path || "").split("/").pop() || "";
+                const base = file.replace(/\.[^.]+$/, "").toLowerCase();
+                if (base) monsterImageManifest.set(base, path);
+              });
+            })
+            .catch(() => {});
+        };
+
+        loadMonsterImageManifest();
+
         const deriveImageCandidates = (monster) => {
           const candidates = [];
           const rawName = (monster && monster.name) || "";
           const spacedName = rawName.replace(/\s+/g, " ").trim();
           const safeName = spacedName.replace(/[\\/:*?"<>|]/g, "");
+          const safeKey = safeName.toLowerCase();
 
           if (monster && monster.image) {
             candidates.push(monster.image);
           }
 
+          if (safeKey && monsterImageManifest.has(safeKey)) {
+            candidates.push(monsterImageManifest.get(safeKey));
+          }
+
           if (safeName) {
-            const encoded = encodeURI(`images/monsters/${safeName}`);
-            candidates.push(`${encoded}.gif`, `${encoded}.GIF`, `${encoded}.png`, `${encoded}.PNG`);
+            const bases = [
+              "../../images/monsters",
+              "/images/monsters",
+              "../images/monsters",
+              "images/monsters",
+            ];
+            bases.forEach((base) => {
+              const encoded = encodeURI(`${base}/${safeName}`);
+              candidates.push(
+                `${encoded}.gif`,
+                `${encoded}.GIF`,
+                `${encoded}.png`,
+                `${encoded}.PNG`
+              );
+            });
           }
 
           return Array.from(new Set(candidates.filter(Boolean)));
@@ -1407,6 +1443,26 @@
           return row;
         };
 
+        const buildArmorLinkRow = (entry) => {
+          const row = document.createElement("div");
+          row.className = "detail-tooltip-row weapon-row";
+          const label = document.createElement("a");
+          label.className = "detail-tooltip-label";
+          label.textContent = entry.name;
+          label.href = `pages/items/armors.html?armor=${encodeURIComponent(entry.name)}`;
+          label.style.color = "inherit";
+          const armorSpan = document.createElement("span");
+          armorSpan.textContent = entry.meta || "-";
+          armorSpan.className = "weapon-col-meta";
+          const slotSpan = document.createElement("span");
+          slotSpan.textContent = entry.slot || "-";
+          slotSpan.className = "weapon-col-type";
+          row.appendChild(label);
+          row.appendChild(armorSpan);
+          row.appendChild(slotSpan);
+          return row;
+        };
+
         const renderRecommendedWeapons = (monster) => {
           const container = detailFields.recommendedWeapons;
           if (!container) return;
@@ -1753,6 +1809,62 @@
 
           pill.appendChild(tooltip);
           container.appendChild(pill);
+
+          const armorList = armors
+            .map((a) => {
+              const aLevel = Number(a.level);
+              if (!Number.isFinite(aLevel)) return null;
+              if (aLevel < minLevel || aLevel > maxLevel) return null;
+              return {
+                name: a.name || "Unknown Armor",
+                slot: a.slot || a.slotNorm || "-",
+                meta: `Armor ${formatNumber(a.armor)}`,
+                level: aLevel,
+              };
+            })
+            .filter(Boolean)
+            .sort((a, b) => b.level - a.level)
+            .slice(0, 10);
+
+          const armorPill = document.createElement("span");
+          armorPill.className = "detail-pill";
+          armorPill.textContent = "Armors";
+
+          const armorTooltip = document.createElement("span");
+          armorTooltip.className = "detail-tooltip";
+          armorTooltip.role = "tooltip";
+
+          const armorRangeRow = document.createElement("div");
+          armorRangeRow.className = "detail-tooltip-row";
+          const armorRangeLabel = document.createElement("span");
+          armorRangeLabel.className = "detail-tooltip-label";
+          armorRangeLabel.textContent = "Levels";
+          const armorRangeVal = document.createElement("span");
+          armorRangeVal.textContent = `${formatNumber(minLevel)} - ${formatNumber(maxLevel)}`;
+          armorRangeRow.appendChild(armorRangeLabel);
+          armorRangeRow.appendChild(armorRangeVal);
+          armorTooltip.appendChild(armorRangeRow);
+
+          const armorDivider = document.createElement("div");
+          armorDivider.className = "detail-tooltip-divider";
+          armorTooltip.appendChild(armorDivider);
+
+          if (!armorList.length) {
+            const emptyRow = document.createElement("div");
+            emptyRow.className = "detail-tooltip-row";
+            const emptyLabel = document.createElement("span");
+            emptyLabel.className = "detail-tooltip-label";
+            emptyLabel.textContent = "No armors in range";
+            emptyRow.appendChild(emptyLabel);
+            armorTooltip.appendChild(emptyRow);
+          } else {
+            armorList.forEach((entry) => {
+              armorTooltip.appendChild(buildArmorLinkRow(entry));
+            });
+          }
+
+          armorPill.appendChild(armorTooltip);
+          container.appendChild(armorPill);
         };
 
         const normalizeType = (value) => {

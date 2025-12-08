@@ -421,6 +421,10 @@
         const searchInput = document.getElementById("item-search");
         const slotFilter = document.getElementById("filter-slot");
         const resistFilter = document.getElementById("filter-resist");
+        const urlParams = new URLSearchParams(window.location.search);
+        const initialArmorQuery = (urlParams.get("armor") || urlParams.get("armorName") || "").trim();
+        const initialArmorSearchTerm = initialArmorQuery.replace(/-/g, " ").trim();
+        let pendingArmorName = initialArmorQuery.toLowerCase();
         const tableHeadRow = document.getElementById("items-head-row");
         const tableBody = document.getElementById("items-body");
         const countLabel = document.getElementById("item-count");
@@ -549,6 +553,8 @@
           });
         };
 
+        const getArmorId = (item) => (item && item.name ? item.name.toString().toLowerCase() : "");
+
         const createCell = (labelText, valueContent) => {
           const cell = document.createElement("div");
           cell.className = "detail-cell";
@@ -673,22 +679,55 @@
           setOptions(resistFilter, resistList);
         };
 
-        const ensureImage = (img, fallback, src) => {
+        const deriveImageCandidates = (item, folder = "armors") => {
+          const candidates = [];
+          const direct = typeof item === "string" ? item : item && item.image;
+          if (direct) candidates.push(direct);
+          const name = (item && (item.name || item.Name || item.id)) || "";
+          const spaced = String(name).replace(/\s+/g, " ").trim();
+          const safeName = spaced.replace(/[\\/:*?"<>|]/g, "");
+          if (safeName) {
+            const bases = [
+              `images/${folder}`,
+              `../images/${folder}`,
+              `../../images/${folder}`,
+              `/images/${folder}`,
+            ];
+            bases.forEach((base) => {
+              const encoded = encodeURI(`${base}/${safeName}`);
+              candidates.push(`${encoded}.gif`, `${encoded}.GIF`, `${encoded}.png`, `${encoded}.PNG`);
+            });
+          }
+          return Array.from(new Set(candidates.filter(Boolean)));
+        };
+
+        const ensureImage = (img, fallback, item, folder = "armors") => {
           if (!img || !fallback) return;
-          if (!src) {
+          fallback.style.display = "none";
+          const sources = deriveImageCandidates(item, folder);
+          if (!sources.length) {
             img.style.display = "none";
             fallback.style.display = "flex";
             return;
           }
-          img.onload = () => {
-            img.style.display = "block";
-            fallback.style.display = "none";
+          let index = 0;
+          const trySet = () => {
+            img.onload = () => {
+              img.style.display = "block";
+              fallback.style.display = "none";
+            };
+            img.onerror = () => {
+              index += 1;
+              if (index < sources.length) {
+                trySet();
+              } else {
+                img.style.display = "none";
+                fallback.style.display = "flex";
+              }
+            };
+            img.src = sources[index];
           };
-          img.onerror = () => {
-            img.style.display = "none";
-            fallback.style.display = "flex";
-          };
-          img.src = src;
+          trySet();
         };
 
         const buildHead = () => {
@@ -725,8 +764,7 @@
         const setDetails = (item) => {
           if (!item) return;
           detailFields.name.textContent = item.name || "Unknown";
-          const imgSrc = item.image || item.icon || item.thumbnail || "";
-          ensureImage(detailFields.image, detailFields.imageFallback, imgSrc);
+          ensureImage(detailFields.image, detailFields.imageFallback, item, "armors");
 
           const container = detailFields.properties;
           container.innerHTML = "";
@@ -844,12 +882,9 @@
                 const fallback = document.createElement("span");
                 fallback.className = "no-image";
                 fallback.textContent = "No Image";
-                ensureImage(img, fallback, value);
-                if (img.src) {
-                  td.appendChild(img);
-                } else {
-                  td.appendChild(fallback);
-                }
+                ensureImage(img, fallback, item, "armors");
+                td.appendChild(img);
+                td.appendChild(fallback);
               } else if (col.format) {
                 td.textContent = col.format(value);
               } else {
@@ -864,6 +899,15 @@
 
           tableBody.innerHTML = "";
           tableBody.appendChild(fragment);
+          maybeSelectPendingArmor(rows);
+        };
+
+        const maybeSelectPendingArmor = (list) => {
+          if (!pendingArmorName) return;
+          const match = (list || items).find((a) => getArmorId(a) === pendingArmorName);
+          if (!match) return;
+          pendingArmorName = "";
+          setDetails(match);
         };
 
         const applyFilterAndSort = () => {
@@ -938,6 +982,10 @@
               sortDir = "desc";
               buildHead();
               populateFilters(items);
+              if (initialArmorSearchTerm) {
+                searchTerm = initialArmorSearchTerm;
+                if (searchInput) searchInput.value = initialArmorSearchTerm;
+              }
               applyFilterAndSort();
             })
             .catch(() => {

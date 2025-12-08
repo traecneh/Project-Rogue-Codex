@@ -283,6 +283,127 @@ function normalizeSlug(value) {
     .replace(/^-+|-+$/g, "");
 }
 
+const HIDDEN_MONSTER_NAMES = new Set(
+  [
+    "Fire Wisp",
+    "Fire Bat",
+    "Lava Bat",
+    "Shade",
+    "Dretch Brigand",
+    "Dretch Thug",
+    "Dretch Executioner",
+    "Dretch Warrior",
+    "Dretch Rogue",
+    "Dretch Occulist",
+    "Abyssal Disciple",
+    "Durg",
+    "Frigit",
+    "Bramble",
+  ].map((name) => name.toLowerCase())
+);
+
+const HIDDEN_WEAPON_NAMES = new Set(
+  [
+    "Super Super Blunt",
+    "Super Duper Pole",
+    "Super Duper",
+    "Super Duper Blunt",
+    "Super Duper Axe",
+    "GM Deathbringer",
+    "Ghostblade",
+    "Wand of the Winds",
+    "Wand of the Flames",
+    "Tooth Staff",
+    "Krythan Staff",
+    "Bone Staff",
+    "Staff of Might",
+    "Cursed Staff",
+    "Vengeance Sword",
+    "Staff of Partiality",
+  ].map((name) => name.toLowerCase())
+);
+
+const computeDps = (minDamage, maxDamage, attackSpeed) => {
+  const min = Number(minDamage);
+  const max = Number(maxDamage);
+  const speed = Number(attackSpeed);
+  if (Number.isNaN(min) || Number.isNaN(max) || Number.isNaN(speed) || speed === 0) return null;
+  const avgDamage = (min + max) / 2;
+  return Number((avgDamage * (1000 / speed)).toFixed(2));
+};
+
+const normalizeNavMonster = (monster) => {
+  if (!monster) return null;
+  const fields = (monster && typeof monster.fields === "object" && monster.fields) || {};
+  const name = monster.name || monster.Name;
+  const slug = normalizeSlug(name || monster.id);
+  if (!slug) return null;
+  const toNumberOrNull = (value) => {
+    const num = Number(value);
+    return Number.isNaN(num) ? null : num;
+  };
+  const level = toNumberOrNull(fields.level ?? monster.level ?? monster.Level);
+  const type = fields.type_label || monster.monsterType || monster.type || monster.type_label;
+  const elementRaw =
+    fields.elemental_attack_label || monster.element || monster.elementalAttack || monster.elementalDamageType;
+  const element = elementRaw === 0 ? "None" : elementRaw;
+  const minDamage = toNumberOrNull(fields.min_damage ?? monster.min_damage ?? monster.minDamage);
+  const maxDamage = toNumberOrNull(fields.max_damage ?? monster.max_damage ?? monster.maxDamage);
+  const attackSpeed = toNumberOrNull(fields.attack_speed ?? monster.attack_speed ?? monster.attackSpeed);
+  const hpMax = toNumberOrNull(fields.health ?? monster.hp ?? monster.hpMax ?? monster.health);
+  const movingSpeed = toNumberOrNull(fields.movement_speed ?? monster.moving_speed ?? monster.movingSpeed);
+
+  return {
+    name: name || slug,
+    slug,
+    level,
+    monsterType: type,
+    elementalAttack: element,
+    minDamage,
+    maxDamage,
+    attackSpeed,
+    dps: computeDps(minDamage, maxDamage, attackSpeed),
+    hpMax,
+    movingSpeed,
+  };
+};
+
+const normalizeNavWeapon = (weapon) => {
+  if (!weapon) return null;
+  const fields = (weapon && typeof weapon.fields === "object" && weapon.fields) || {};
+  const name = weapon.name || weapon.Name;
+  const slug = normalizeSlug(name || weapon.id);
+  if (!slug) return null;
+  const toNumberOrNull = (value) => {
+    const num = Number(value);
+    return Number.isNaN(num) ? null : num;
+  };
+  const minDamage = toNumberOrNull(fields.min_damage ?? weapon.min_damage ?? weapon.minDamage);
+  const maxDamage = toNumberOrNull(fields.max_damage ?? weapon.max_damage ?? weapon.maxDamage);
+  const attackSpeed = toNumberOrNull(fields.attack_speed ?? weapon.attack_speed ?? weapon.attackSpeed);
+  const level = toNumberOrNull(fields.level_requirement ?? weapon.level ?? weapon.Level);
+  const type = fields.subtype_label || fields.subtype || weapon.type;
+  const elementRaw = fields.element_label || fields.element || weapon.elementalDamageType || weapon.element;
+  const element = elementRaw === 0 ? "None" : elementRaw;
+  const specialty = fields.specialty ? fields.specialty_label || String(fields.specialty) : null;
+  const perk = fields.perk ? fields.perk_label || fields.perk : null;
+
+  return {
+    id: weapon.id ?? weapon.ID ?? slug,
+    name: name || slug,
+    slug,
+    level,
+    attackSpeed,
+    minDamage,
+    maxDamage,
+    dps: computeDps(minDamage, maxDamage, attackSpeed),
+    type,
+    element,
+    specialty,
+    perk,
+  };
+};
+
 function titleCaseWords(text) {
   return String(text || "")
     .replace(/([a-z])([A-Z])/g, "$1 $2")
@@ -369,21 +490,19 @@ function warmSearchCorpus() {
 }
 
 function buildMonsterSearchEntry(monster) {
-  if (!monster) return null;
-  const slug = normalizeSlug(monster.id || monster.name);
-  if (!slug) return null;
-  const type = monster.monsterType || "";
-  const element = monster.elementalAttack || "";
-  const level = Number(monster.level);
+  const normalized = normalizeNavMonster(monster);
+  if (!normalized) return null;
+  const { slug, name, monsterType, elementalAttack, level, dps } = normalized;
   const parts = [];
-  if (type) parts.push(type.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/_/g, " "));
-  if (element) parts.push(`Element: ${element}`);
   if (Number.isFinite(level)) parts.push(`Lvl ${Math.round(level)}`);
+  if (Number.isFinite(dps)) parts.push(`DPS ${dps}`);
+  if (monsterType) parts.push(titleCaseWords(String(monsterType)));
+  if (elementalAttack && String(elementalAttack).toLowerCase() !== "none") parts.push(`Element: ${elementalAttack}`);
 
-  const keywords = [slug, monster.id, monster.name, type, element].filter(Boolean);
+  const keywords = [slug, normalized.name, monsterType, elementalAttack].filter(Boolean);
 
   return normalizeSearchEntry({
-    title: monster.name || slug,
+    title: name || slug,
     url: `pages/enemies/monsters.html?monster=${encodeURIComponent(slug)}`,
     category: "Monsters",
     description: parts.join(" • ") || "Monster stats, damage, and loot.",
@@ -395,15 +514,18 @@ function buildMonsterSearchEntry(monster) {
 
 function loadMonsterSearchIndex() {
   if (MONSTER_INDEX_PROMISE) return MONSTER_INDEX_PROMISE;
-  const absoluteUrl = getAbsoluteUrl("pages/enemies/monsters.json");
+  const absoluteUrl = getAbsoluteUrl("pages/enemies/monsters_data03.json");
   MONSTER_INDEX_PROMISE = fetch(absoluteUrl)
     .then((response) => {
-      if (!response.ok) throw new Error("Failed to fetch monsters.json");
+      if (!response.ok) throw new Error("Failed to fetch monsters_data03.json");
       return response.json();
     })
     .then((data) => {
       const list = Array.isArray(data) ? data : [];
-      MONSTER_SEARCH_INDEX = list.map((monster) => buildMonsterSearchEntry(monster)).filter(Boolean);
+      const filtered = list.filter(
+        (monster) => !HIDDEN_MONSTER_NAMES.has(String(monster.name || monster.Name || "").toLowerCase())
+      );
+      MONSTER_SEARCH_INDEX = filtered.map((monster) => buildMonsterSearchEntry(monster)).filter(Boolean);
       return MONSTER_SEARCH_INDEX;
     })
     .catch(() => {
@@ -418,21 +540,16 @@ function warmMonsterIndex() {
 }
 
 function buildWeaponSearchEntry(weapon) {
-  if (!weapon) return null;
-  const name = weapon.name || weapon.Name || weapon.id;
-  const slug = normalizeSlug(name || weapon.id);
-  if (!slug) return null;
-  const element = weapon.elementalDamageType || weapon.ElementalDamageType || "";
-  const skill = weapon.skillType || weapon.SkillType || weapon.type || "";
-  const level = Number(weapon.level || weapon.Level);
-  const dps = weapon.dps || weapon.DPS;
+  const normalized = normalizeNavWeapon(weapon);
+  if (!normalized) return null;
+  const { slug, name, element, type, level, dps, specialty, perk } = normalized;
   const parts = [];
   if (Number.isFinite(level)) parts.push(`Lvl ${Math.round(level)}`);
-  if (dps !== undefined && dps !== null && dps !== "") parts.push(`DPS ${dps}`);
-  if (skill) parts.push(titleCaseWords(String(skill)));
-  if (element) parts.push(`Element: ${element}`);
+  if (Number.isFinite(dps)) parts.push(`DPS ${dps}`);
+  if (type) parts.push(titleCaseWords(String(type)));
+  if (element && String(element).toLowerCase() !== "none") parts.push(`Element: ${element}`);
 
-  const keywords = [name, slug, element, skill, weapon.specialEffect || weapon.SpecialEffect].filter(Boolean);
+  const keywords = [name, slug, element, type, specialty, perk].filter(Boolean);
 
   return normalizeSearchEntry({
     title: name || slug,
@@ -447,15 +564,18 @@ function buildWeaponSearchEntry(weapon) {
 
 function loadWeaponSearchIndex() {
   if (WEAPON_INDEX_PROMISE) return WEAPON_INDEX_PROMISE;
-  const absoluteUrl = getAbsoluteUrl("pages/items/weapons.json");
+  const absoluteUrl = getAbsoluteUrl("pages/items/weapons_data05.json");
   WEAPON_INDEX_PROMISE = fetch(absoluteUrl)
     .then((response) => {
-      if (!response.ok) throw new Error("Failed to fetch weapons.json");
+      if (!response.ok) throw new Error("Failed to fetch weapons_data05.json");
       return response.json();
     })
     .then((data) => {
       const list = Array.isArray(data) ? data : [];
-      WEAPON_SEARCH_INDEX = list.map((weapon) => buildWeaponSearchEntry(weapon)).filter(Boolean);
+      const filtered = list.filter(
+        (weapon) => !HIDDEN_WEAPON_NAMES.has(String(weapon.name || weapon.Name || "").toLowerCase())
+      );
+      WEAPON_SEARCH_INDEX = filtered.map((weapon) => buildWeaponSearchEntry(weapon)).filter(Boolean);
       return WEAPON_SEARCH_INDEX;
     })
     .catch(() => {
@@ -471,13 +591,19 @@ function warmWeaponIndex() {
 
 function loadWeaponData() {
   if (WEAPON_DATA_PROMISE) return WEAPON_DATA_PROMISE;
-  const absoluteUrl = getAbsoluteUrl("pages/items/weapons.json");
+  const absoluteUrl = getAbsoluteUrl("pages/items/weapons_data05.json");
   WEAPON_DATA_PROMISE = fetch(absoluteUrl)
     .then((response) => {
-      if (!response.ok) throw new Error("Failed to fetch weapons.json");
+      if (!response.ok) throw new Error("Failed to fetch weapons_data05.json");
       return response.json();
     })
-    .then((data) => (Array.isArray(data) ? data : []))
+    .then((data) => {
+      const list = Array.isArray(data) ? data : [];
+      const filtered = list.filter(
+        (weapon) => !HIDDEN_WEAPON_NAMES.has(String(weapon.name || weapon.Name || "").toLowerCase())
+      );
+      return filtered.map((weapon) => normalizeNavWeapon(weapon)).filter(Boolean);
+    })
     .catch(() => []);
   return WEAPON_DATA_PROMISE;
 }
@@ -757,17 +883,17 @@ function initializeWeaponSpecialtyReferences() {
       card.className = "stat-card";
 
       const title = document.createElement("h3");
-      title.textContent = weapon.Name || weapon.name || weapon.id || "Weapon";
+      title.textContent = weapon.name || weapon.id || "Weapon";
       card.appendChild(title);
 
       const list = document.createElement("ul");
       const entries = [
-        createLineItem("DPS", weapon.DPS ?? weapon.dps),
-        createLineItem("Speed", weapon.Speed ?? weapon.speed),
-        createLineItem("Level", weapon.Level ?? weapon.level),
-        createLineItem("Skill", weapon.SkillType ?? weapon.skillType),
-        createLineItem("Element", weapon.ElementalDamageType ?? weapon.elementalDamageType),
-        createLineItem("Special Effect", weapon.SpecialEffect ?? weapon.specialEffect),
+        createLineItem("DPS", weapon.dps),
+        createLineItem("Speed", weapon.attackSpeed ? `${weapon.attackSpeed} ms` : weapon.attackSpeed),
+        createLineItem("Level", weapon.level),
+        createLineItem("Type", weapon.type),
+        createLineItem("Element", weapon.element),
+        createLineItem("Perk", weapon.perk),
       ].filter(Boolean);
 
       entries.forEach((item) => list.appendChild(item));
@@ -781,7 +907,7 @@ function initializeWeaponSpecialtyReferences() {
       containers.forEach((container) => {
         const targetSpec = normalize(container.getAttribute("data-weapon-specialty"));
         if (!targetSpec) return;
-        const matches = data.filter((weapon) => normalize(weapon.Speciality || weapon.speciality || weapon.specialty) === targetSpec);
+        const matches = data.filter((weapon) => normalize(weapon.specialty) === targetSpec);
         renderForContainer(container, matches);
       });
     })

@@ -364,7 +364,7 @@
       const icons = Array.from(document.querySelectorAll(".resistance-icon"));
       if (!icons.length) return;
 
-      const dataUrl = new URL("../enemies/monsters.json", window.location.href);
+        const dataUrl = new URL("../enemies/monsters_data03.json", window.location.href);
       const TYPE_ALIAS = {
         electricalbeast: "electric beast",
         "electrical beast": "electric beast",
@@ -372,6 +372,8 @@
         icebeast: "ice beast",
         poisonbeast: "poison beast",
         diseasebeast: "disease beast",
+        human: "humanoid",
+        humanoid: "humanoid",
       };
 
       const normalizeType = (value) => {
@@ -395,8 +397,16 @@
         }
 
         if (safeName) {
-          const encoded = encodeURI(`images/monsters/${safeName}`);
-          candidates.push(`${encoded}.gif`, `${encoded}.GIF`, `${encoded}.png`, `${encoded}.PNG`);
+          const bases = [
+            "../../images/monsters",
+            "/images/monsters",
+            "../images/monsters",
+            "images/monsters",
+          ];
+          bases.forEach((base) => {
+            const encoded = encodeURI(`${base}/${safeName}`);
+            candidates.push(`${encoded}.gif`, `${encoded}.GIF`, `${encoded}.png`, `${encoded}.PNG`);
+          });
         }
 
         return Array.from(new Set(candidates.filter(Boolean)));
@@ -443,7 +453,14 @@
         .then((data) => {
           if (!Array.isArray(data)) return;
           const byType = data.reduce((acc, monster) => {
-            const key = normalizeType(monster.monsterType);
+            const fields = (monster && typeof monster.fields === "object" && monster.fields) || {};
+            const type =
+              monster.monsterType ||
+              monster.type ||
+              fields.type_label ||
+              fields.type ||
+              (fields.type_label === 0 ? "None" : "");
+            const key = normalizeType(type);
             if (!key) return acc;
             if (!acc[key]) acc[key] = [];
             acc[key].push(monster);

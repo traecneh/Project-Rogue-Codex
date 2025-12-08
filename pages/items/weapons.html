@@ -572,23 +572,55 @@
           });
         };
 
-        const ensureImage = (img, fallback, src) => {
+        const deriveImageCandidates = (item, folder = "weapons") => {
+          const candidates = [];
+          const direct = typeof item === "string" ? item : item && item.image;
+          if (direct) candidates.push(direct);
+          const name = (item && (item.name || item.Name || item.id)) || "";
+          const spaced = String(name).replace(/\s+/g, " ").trim();
+          const safeName = spaced.replace(/[\\/:*?"<>|]/g, "");
+          if (safeName) {
+            const bases = [
+              `images/${folder}`,
+              `../images/${folder}`,
+              `../../images/${folder}`,
+              `/images/${folder}`,
+            ];
+            bases.forEach((base) => {
+              const encoded = encodeURI(`${base}/${safeName}`);
+              candidates.push(`${encoded}.gif`, `${encoded}.GIF`, `${encoded}.png`, `${encoded}.PNG`);
+            });
+          }
+          return Array.from(new Set(candidates.filter(Boolean)));
+        };
+
+        const ensureImage = (img, fallback, item, folder = "weapons") => {
           if (!img || !fallback) return;
           fallback.style.display = "none";
-          if (!src) {
+          const sources = deriveImageCandidates(item, folder);
+          if (!sources.length) {
             img.style.display = "none";
             fallback.style.display = "flex";
             return;
           }
-          img.onload = () => {
-            img.style.display = "block";
-            fallback.style.display = "none";
+          let index = 0;
+          const trySet = () => {
+            img.onload = () => {
+              img.style.display = "block";
+              fallback.style.display = "none";
+            };
+            img.onerror = () => {
+              index += 1;
+              if (index < sources.length) {
+                trySet();
+              } else {
+                img.style.display = "none";
+                fallback.style.display = "flex";
+              }
+            };
+            img.src = sources[index];
           };
-          img.onerror = () => {
-            img.style.display = "none";
-            fallback.style.display = "flex";
-          };
-          img.src = src;
+          trySet();
         };
 
         const createCell = (labelText, valueContent) => {
@@ -635,7 +667,7 @@
           const fallback = document.createElement("span");
           fallback.className = "no-image";
           fallback.textContent = "No Image";
-          ensureImage(img, fallback, item.image);
+          ensureImage(img, fallback, item);
           wrapper.appendChild(img);
           wrapper.appendChild(fallback);
           return wrapper;
@@ -801,7 +833,7 @@
         const setDetails = (item) => {
           if (!item) return;
           detailFields.name.textContent = item.name || "Unknown";
-          ensureImage(detailFields.image, detailFields.imageFallback, item.image);
+          ensureImage(detailFields.image, detailFields.imageFallback, item);
 
           const container = detailFields.properties;
           container.innerHTML = "";
