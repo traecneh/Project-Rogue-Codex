@@ -546,6 +546,7 @@
         };
 
         const selectedBySlot = {};
+        const STATE_PARAM = "build";
 
         const deriveImageCandidates = (item, folder = "weapons") => {
           const candidates = [];
@@ -624,6 +625,7 @@
             img.src = sources[index];
           };
           trySet();
+          persistState();
         };
 
         const clearSlot = (slot) => {
@@ -646,11 +648,79 @@
           delete selectedBySlot[slot];
           updateSlotRarityUI(slot);
           updateTotals();
+          persistState();
         };
 
         const dataset = {
           weapons: [],
           armors: [],
+        };
+
+        const encodeState = () => {
+          const entries = Object.entries(selectedBySlot).map(([slot, item]) => ({
+            slot,
+            name: item.name,
+            kind: item.kind,
+            rarityIndex: item.rarityIndex,
+          }));
+          return { slots: entries };
+        };
+
+        const persistState = () => {
+          try {
+            const state = encodeState();
+            const json = JSON.stringify(state);
+            const encoded = btoa(encodeURIComponent(json));
+            const url = new URL(window.location.href);
+            if (state.slots.length) {
+              url.searchParams.set(STATE_PARAM, encoded);
+            } else {
+              url.searchParams.delete(STATE_PARAM);
+            }
+            window.history.replaceState({}, "", url.toString());
+          } catch (error) {
+            /* ignore */
+          }
+        };
+
+        const decodeState = () => {
+          try {
+            const url = new URL(window.location.href);
+            const encoded = url.searchParams.get(STATE_PARAM);
+            if (!encoded) return null;
+            const json = decodeURIComponent(atob(encoded));
+            const state = JSON.parse(json);
+            if (!state || !Array.isArray(state.slots)) return null;
+            return state;
+          } catch (error) {
+            return null;
+          }
+        };
+
+        const applySavedState = () => {
+          const state = decodeState();
+          if (!state) return;
+          const findItem = (kind, name) => {
+            const list = kind === "weapon" ? dataset.weapons : dataset.armors;
+            const lower = String(name || "").toLowerCase();
+            return list.find((item) => String(item.name || "").toLowerCase() === lower);
+          };
+          state.slots.forEach((entry) => {
+            const item = findItem(entry.kind, entry.name);
+            if (!item) return;
+            const folder = entry.kind === "weapon" ? "weapons" : "armors";
+            setSlotImage(entry.slot, item, folder);
+            if (selectedBySlot[entry.slot]) {
+              const data = selectedBySlot[entry.slot];
+              data.rarityIndex = Math.min(
+                data.maxRarityIndex,
+                Math.max(0, Number(entry.rarityIndex) || 0)
+              );
+              rollRarityBonuses(entry.slot);
+              updateSlotRarityUI(entry.slot);
+            }
+          });
+          updateTotals();
         };
 
         const toNumber = (value) => {
@@ -885,6 +955,7 @@
           rollRarityBonuses(slot);
           updateSlotRarityUI(slot);
           updateTotals();
+          persistState();
         };
 
         slotEls.forEach((card, slot) => {
@@ -951,7 +1022,7 @@
         };
 
         const loadData = () => {
-          Promise.all([
+          return Promise.all([
             fetch(new URL("../items/weapons_data05.json", window.location.href)).then((res) =>
               res.ok ? res.json() : []
             ),
@@ -978,9 +1049,12 @@
           });
         }
 
-        loadData();
-        slotEls.forEach((_, slot) => updateSlotRarityUI(slot));
-        updateTotals();
+        loadData().then(() => {
+          applySavedState();
+          persistState();
+          slotEls.forEach((_, slot) => updateSlotRarityUI(slot));
+          updateTotals();
+        });
       })();
     </script>
   </body>
