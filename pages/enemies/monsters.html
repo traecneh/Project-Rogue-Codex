@@ -960,7 +960,8 @@
         const monsterImageManifest = new Map();
         const loadMonsterImageManifest = () => {
           if (monsterImageManifest.size) return;
-          fetch(new URL("images/monsters/manifest.json", window.location.href).toString())
+          const manifestUrl = new URL("../../images/monsters/manifest.json", window.location.href).toString();
+          fetch(manifestUrl)
             .then((res) => (res.ok ? res.json() : Promise.reject()))
             .then((list) => {
               const entries = Array.isArray(list) ? list : [];
