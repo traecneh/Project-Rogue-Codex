@@ -572,24 +572,41 @@
           });
         };
 
+        const imageManifestCache = new Map();
+        const loadImageManifest = (folder) => {
+          if (imageManifestCache.has(folder)) return imageManifestCache.get(folder);
+          const map = new Map();
+          imageManifestCache.set(folder, map);
+          fetch(`images/${folder}/manifest.json`)
+            .then((res) => (res.ok ? res.json() : Promise.reject()))
+            .then((list) => {
+              const entries = Array.isArray(list) ? list : [];
+              entries.forEach((path) => {
+                const file = String(path || "").split("/").pop() || "";
+                const base = file.replace(/\.[^.]+$/, "").toLowerCase();
+                if (base) map.set(base, path);
+              });
+            })
+            .catch(() => {});
+          return map;
+        };
+
+        loadImageManifest("weapons");
+
         const deriveImageCandidates = (item, folder = "weapons") => {
           const candidates = [];
           const direct = typeof item === "string" ? item : item && item.image;
           if (direct) candidates.push(direct);
           const name = (item && (item.name || item.Name || item.id)) || "";
-          const spaced = String(name).replace(/\s+/g, " ").trim();
-          const safeName = spaced.replace(/[\\/:*?"<>|]/g, "");
-          if (safeName) {
-            const bases = [
-              `images/${folder}`,
-              `../images/${folder}`,
-              `../../images/${folder}`,
-              `/images/${folder}`,
-            ];
-            bases.forEach((base) => {
-              const encoded = encodeURI(`${base}/${safeName}`);
-              candidates.push(`${encoded}.gif`, `${encoded}.GIF`, `${encoded}.png`, `${encoded}.PNG`);
-            });
+          const trimmed = String(name).trim();
+          const lower = trimmed.toLowerCase();
+          const manifest = imageManifestCache.get(folder);
+          if (manifest && lower && manifest.has(lower)) {
+            candidates.push(manifest.get(lower));
+          }
+          if (trimmed) {
+            const encoded = encodeURIComponent(trimmed);
+            candidates.push(`images/${folder}/${encoded}.gif`, `images/${folder}/${encoded}.png`);
           }
           return Array.from(new Set(candidates.filter(Boolean)));
         };
