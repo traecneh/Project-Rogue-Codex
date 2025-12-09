@@ -420,7 +420,10 @@
 
     state.rarityDefs = getRarityDefinitions();
 
-    const [weapons, armors] = await Promise.all([fetchJson("pages/items/weapons.json"), fetchJson("pages/items/armor.json")]);
+    const [weapons, armors] = await Promise.all([
+      fetchJson("pages/items/weapons_data05.json"),
+      fetchJson("pages/items/armors_data06.json"),
+    ]);
     const weaponItems = Array.isArray(weapons) ? weapons.map((entry) => normalizeItem(entry, "Weapon")) : [];
     const armorItems = Array.isArray(armors) ? armors.map((entry) => normalizeItem(entry, "Armor")) : [];
 

@@ -25,33 +25,6 @@
         letter-spacing: 0.08em;
       }
 
-      .trading-overview {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-        gap: 0.8rem;
-        margin-top: 0.6rem;
-      }
-
-      .trading-overview .trade-pill {
-        border: 1px solid var(--border-soft);
-        border-radius: 8px;
-        padding: 0.8rem 1rem;
-        background: linear-gradient(135deg, rgba(50, 60, 75, 0.85), rgba(16, 20, 27, 0.9));
-        box-shadow: 0 0 0 1px #0b0f16, 0 6px 14px rgba(0, 0, 0, 0.55);
-      }
-
-      .trading-overview h3 {
-        margin: 0 0 0.35rem;
-        font-size: 1rem;
-        color: var(--accent-blue);
-      }
-
-      .trading-overview p {
-        margin: 0;
-        color: var(--text-muted);
-        line-height: 1.5;
-      }
-
       .trading-layout {
         display: grid;
         grid-template-columns: 1fr;
@@ -504,28 +477,6 @@
             Post, search, and refine community listings without leaving the Codex.
           </p>
         </header>
-
-        <article class="content-section" id="trading-overview">
-          <h2>Marketplace Snapshot</h2>
-          <p>
-            All interactions are client-side for now; data loads from the existing item JSON and stays in memory until
-            you refresh. Filters and previews are designed to swap to a real backend later.
-          </p>
-          <div class="trading-overview">
-            <div class="trade-pill">
-              <h3>Live Filters</h3>
-              <p>Search by name, listing type, or item category. Updates instantly against your current in-memory board.</p>
-            </div>
-            <div class="trade-pill">
-              <h3>Item-Aware Form</h3>
-              <p>Selector is powered by <code>weapons.json</code> + <code>armor.json</code> (future) so only valid gear can be listed.</p>
-            </div>
-            <div class="trade-pill">
-              <h3>Discord Sign-in</h3>
-              <p>Uses Discord identify (implicit grant) with tokens kept client-side. Future: persistence, expiration dates, and price tracking.</p>
-            </div>
-          </div>
-        </article>
 
         <article class="content-section" id="trading-workbench">
           <div class="trading-layout">
