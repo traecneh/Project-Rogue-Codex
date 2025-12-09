@@ -977,35 +977,22 @@
 
         const deriveImageCandidates = (monster) => {
           const candidates = [];
-          const rawName = (monster && monster.name) || "";
-          const spacedName = rawName.replace(/\s+/g, " ").trim();
-          const safeName = spacedName.replace(/[\\/:*?"<>|]/g, "");
-          const safeKey = safeName.toLowerCase();
+          const rawName = (monster && monster.name ? String(monster.name) : "").trim();
+          const lowerName = rawName.toLowerCase();
+          const pngExceptions = new Set(["demon spire", "dragon spire", "master spire", "winter spire"]);
 
           if (monster && monster.image) {
             candidates.push(monster.image);
           }
 
-          if (safeKey && monsterImageManifest.has(safeKey)) {
-            candidates.push(monsterImageManifest.get(safeKey));
+          if (lowerName && monsterImageManifest.has(lowerName)) {
+            candidates.push(monsterImageManifest.get(lowerName));
           }
 
-          if (safeName) {
-            const bases = [
-              "../../images/monsters",
-              "/images/monsters",
-              "../images/monsters",
-              "images/monsters",
-            ];
-            bases.forEach((base) => {
-              const encoded = encodeURI(`${base}/${safeName}`);
-              candidates.push(
-                `${encoded}.gif`,
-                `${encoded}.GIF`,
-                `${encoded}.png`,
-                `${encoded}.PNG`
-              );
-            });
+          if (rawName) {
+            const encodedName = encodeURIComponent(rawName);
+            const ext = pngExceptions.has(lowerName) ? "png" : "gif";
+            candidates.push(`images/monsters/${encodedName}.${ext}`);
           }
 
           return Array.from(new Set(candidates.filter(Boolean)));
