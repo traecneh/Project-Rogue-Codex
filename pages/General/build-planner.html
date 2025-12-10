@@ -1559,12 +1559,11 @@
             maxHealthEl.title = `20 + (Level ${charLevel} * 15) + (Con ${totalCon} * 10) + (Str ${totalStr} * 2)`;
           }
 
-          const baseConOnly = charCon;
-          const regenPerTick = Math.floor(baseConOnly / 3);
+          const regenPerTick = Math.floor(totalCon / 3);
           const regenEl = document.getElementById("calc-regen");
           if (regenEl) {
             regenEl.textContent = `${regenPerTick} HP`;
-            regenEl.title = `Constitution from Character Details only: ${baseConOnly} -> ${baseConOnly}/3 rounded down, every 2 seconds`;
+            regenEl.title = `Total Constitution (base + items + rarity): ${totalCon} -> ${totalCon}/3 rounded down, every 2 seconds`;
           }
 
           const charSkill = getCharStat("char-skill");
