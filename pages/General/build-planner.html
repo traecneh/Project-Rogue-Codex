@@ -19,17 +19,17 @@
 
       .planner-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 1rem;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 0.75rem;
         align-items: stretch;
       }
 
       .planner-col {
         display: flex;
         flex-direction: column;
-        gap: 0.9rem;
-        min-height: 440px;
-        padding: 0.25rem;
+        gap: 0.75rem;
+        min-height: 0;
+        padding: 0.15rem;
       }
 
       .planner-col--stacked {
@@ -48,12 +48,12 @@
         background: var(--bg-panel);
         border: 1px solid var(--border-soft);
         border-radius: 10px;
-        padding: 0.9rem;
-        min-height: 120px;
+        padding: 0.75rem;
+        min-height: 100px;
         box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
         display: flex;
         flex-direction: column;
-        gap: 0.65rem;
+        gap: 0.5rem;
         position: relative;
         overflow: hidden;
       }
@@ -108,7 +108,7 @@
       .slot-placeholder {
         border: 1px dashed var(--border-soft);
         border-radius: 8px;
-        padding: 0.6rem 0.8rem;
+        padding: 0.45rem 0.65rem;
         color: var(--text-muted);
         background: rgba(255, 255, 255, 0.02);
         min-height: 48px;
@@ -118,10 +118,13 @@
       }
 
       .slot-visual {
-        display: flex;
+        display: inline-flex;
         align-items: center;
         justify-content: center;
-        min-height: 96px;
+        align-self: center;
+        width: 92px;
+        min-height: 92px;
+        padding: 0.35rem;
         border-radius: 8px;
         background: rgba(255, 255, 255, 0.03);
         border: 1px solid var(--border-soft);
@@ -147,7 +150,7 @@
       .slot-rarity {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
+        gap: 0.4rem;
         flex-wrap: wrap;
       }
 
@@ -666,8 +669,28 @@
                     <button type="button" class="rarity-btn" data-rarity-dec>-</button>
                     <button type="button" class="rarity-btn" data-rarity-inc>+</button>
                   </div>
-                  <div class="rarity-label" data-rarity-label>—</div>
-                  <div class="rarity-max" data-rarity-max>Max: —</div>
+                  <div class="rarity-label" data-rarity-label>-</div>
+                  <div class="rarity-max" data-rarity-max>Max: -</div>
+                </div>
+                <div class="slot-stat-adjust" data-stat-row>
+                  <div class="stat-row" data-stat="str">
+                    <button type="button" class="rarity-btn" data-stat-dec>-</button>
+                    <span class="stat-value" data-stat-value>0</span>
+                    <button type="button" class="rarity-btn" data-stat-inc>+</button>
+                    <span class="stat-label">Str</span>
+                  </div>
+                  <div class="stat-row" data-stat="dex">
+                    <button type="button" class="rarity-btn" data-stat-dec>-</button>
+                    <span class="stat-value" data-stat-value>0</span>
+                    <button type="button" class="rarity-btn" data-stat-inc>+</button>
+                    <span class="stat-label">Dex</span>
+                  </div>
+                  <div class="stat-row" data-stat="con">
+                    <button type="button" class="rarity-btn" data-stat-dec>-</button>
+                    <span class="stat-value" data-stat-value>0</span>
+                    <button type="button" class="rarity-btn" data-stat-inc>+</button>
+                    <span class="stat-label">Con</span>
+                  </div>
                 </div>
                 <div class="slot-extra-perk" data-perk-row>
                   <!-- extra perk label removed -->
@@ -693,8 +716,28 @@
                     <button type="button" class="rarity-btn" data-rarity-dec>-</button>
                     <button type="button" class="rarity-btn" data-rarity-inc>+</button>
                   </div>
-                  <div class="rarity-label" data-rarity-label>—</div>
-                  <div class="rarity-max" data-rarity-max>Max: —</div>
+                  <div class="rarity-label" data-rarity-label>-</div>
+                  <div class="rarity-max" data-rarity-max>Max: -</div>
+                </div>
+                <div class="slot-stat-adjust" data-stat-row>
+                  <div class="stat-row" data-stat="str">
+                    <button type="button" class="rarity-btn" data-stat-dec>-</button>
+                    <span class="stat-value" data-stat-value>0</span>
+                    <button type="button" class="rarity-btn" data-stat-inc>+</button>
+                    <span class="stat-label">Str</span>
+                  </div>
+                  <div class="stat-row" data-stat="dex">
+                    <button type="button" class="rarity-btn" data-stat-dec>-</button>
+                    <span class="stat-value" data-stat-value>0</span>
+                    <button type="button" class="rarity-btn" data-stat-inc>+</button>
+                    <span class="stat-label">Dex</span>
+                  </div>
+                  <div class="stat-row" data-stat="con">
+                    <button type="button" class="rarity-btn" data-stat-dec>-</button>
+                    <span class="stat-value" data-stat-value>0</span>
+                    <button type="button" class="rarity-btn" data-stat-inc>+</button>
+                    <span class="stat-label">Con</span>
+                  </div>
                 </div>
                 <div class="slot-extra-perk" data-perk-row>
                   <!-- extra perk label removed -->
@@ -1683,52 +1726,40 @@
                 "Bloodthirster",
                 "Bolstered Strength",
                 "Brutality",
-                "Cleave",
-                "Clot",
-                "Crimson Feast",
-                "Crushing Blows",
-                "Defense",
-                "Discipline",
-                "Dismember",
-                "Dodge",
-                "Electrified Weapons",
+                "Consecration",
+                "Critical Aegis",
+                "Demonsbane",
+                "Desperation",
+                "Destruction",
                 "Epidemic",
-                "Evade",
-                "Exploit Weakness",
-                "Fast Reflexes",
-                "Fortify",
-                "Glancing Blows",
+                "Executioner",
+                "Garrote",
                 "Hawkeye",
-                "Honed Edge",
-                "Improved Defense",
-                "Improved Dodge",
-                "Improved Parry",
-                "Iron Skin",
+                "Iceshatter",
+                "Immunization",
+                "Impenetrable",
+                "Juggernaut",
+                "Knowledge",
                 "Lethal Toxins",
                 "Lifesteal",
-                "Magic Barrier",
                 "Magic Shield",
+                "Moneybags",
+                "Overpower",
                 "Parry",
-                "Poisoned Edge",
-                "Quickness",
-                "Rage",
-                "Reinforced Armor",
                 "Rejuvenation",
-                "Resilient",
-                "Retribution",
-                "Serrated Blades",
-                "Shield Mastery",
-                "Spell Shield",
-                "Strength",
-                "Thorns",
-                "Unyielding",
+                "Demon Blood",
+                "Frozen Heart",
+                "Lightning Field",
+                "Touriquet",
+                "Hazmat",
+                "Antacid",
+                "Swiftness",
+                "Tenacity",
+                "Toxic Shell",
                 "Vampirism",
-                "Venomous",
+                "Venomshock",
                 "Vitality",
-                "Weaken",
-                "Wounding",
-                "Zeal",
-              ].sort((a, b) => a.localeCompare(b));
+              ];
             })
             .catch(() => {
               dataset.weapons = [];
