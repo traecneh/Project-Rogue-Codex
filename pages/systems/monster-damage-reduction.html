@@ -20,44 +20,48 @@
         <header class="content-header">
           <h1 class="content-title">Monster Damage Reduction</h1>
           <p class="content-tagline">
-            Calculator for monster damage reduction by level gap (max 30%).
+            Current in-game scaling: starts at +20, caps at +30, monsters hit harder and take less damage (up to 25%, monsters 100+ count as 100).
           </p>
         </header>
 
         <article class="content-section">
           <h2>Key Points</h2>
           <ul>
-            <li>If monster level is at or below player level: 0% reduction (full damage).</li>
-            <li>Reduction scales linearly between each band&rsquo;s start and cap thresholds.</li>
-            <li>Higher-level players have higher start thresholds before reduction begins.</li>
-            <li>Monsters above level 100 are treated as level 100 for reduction.</li>
-            <li>Max reduction is 30%; damage received = 100% - reduction.</li>
+            <li>No change until the monster is at least 20 levels above you.</li>
+            <li>From +20 to +30 gap, the effect ramps linearly.</li>
+            <li>Max shift is 25%: monsters deal up to 25% more damage and take up to 25% less damage.</li>
+            <li>Gaps above +30 stay capped; gaps below +20 (or negative) stay at 0%.</li>
+            <li>The same thresholds apply to every player level (no per-level bands).</li>
+            <li>Monster levels above 100 are treated as level 100 for this calculation.</li>
           </ul>
 
           <section>
-            <h2>Level Bands</h2>
-            <div class="stat-grid" role="list" aria-label="Monster damage reduction level bands">
+            <h2>Current Scaling</h2>
+            <div class="stat-grid" role="list" aria-label="Current monster damage reduction rules">
               <section class="stat-card" role="listitem">
-                <p class="stat-label">Levels 0&ndash;25</p>
-                <h3>Starts at +10 levels</h3>
-                <p>Ramps from +10 to +20 level difference up to <strong>30%</strong> reduction.</p>
+                <p class="stat-label">Start Threshold</p>
+                <h3>+20 level gap</h3>
+                <p>No change until the monster is 20+ levels above you.</p>
               </section>
               <section class="stat-card" role="listitem">
-                <p class="stat-label">Levels 26&ndash;50</p>
-                <h3>Starts at +20 levels</h3>
-                <p>Ramps from +20 to +30 level difference up to <strong>30%</strong> reduction.</p>
+                <p class="stat-label">Full Effect</p>
+                <h3>+30 level gap</h3>
+                <p>At +30 or more, scaling is fully capped.</p>
               </section>
               <section class="stat-card" role="listitem">
-                <p class="stat-label">Levels 51+</p>
-                <h3>Starts at +30 levels</h3>
-                <p>Ramps from +30 to +40 level difference up to <strong>30%</strong> reduction.</p>
+                <p class="stat-label">Max Shift</p>
+                <h3>25%</h3>
+                <p>Monsters deal more and take less; both capped at 25%.</p>
               </section>
             </div>
           </section>
 
           <section>
             <h2>Calculator</h2>
-            <p>Adjust levels; monster slider moves in 5-level steps (values &gt;100 are treated as 100).</p>
+            <p>
+              Adjust levels to see the current in-game scaling (linear from +20 to +30, capped at 25%).
+              Monster levels above 100 are treated as 100 for this calculation.
+            </p>
             <div class="stat-widget" data-monster-dr-widget>
               <div class="stat-control">
                 <label for="player-level">Player Level &mdash; <span data-player-value>25</span></label>
@@ -73,14 +77,14 @@
               </div>
               <div class="stat-control">
                 <label for="monster-level">
-                  Monster Level &mdash; <span data-monster-value>45</span><span data-monster-cap></span>
+                  Monster Level &mdash; <span data-monster-value>50</span><span data-monster-cap></span>
                 </label>
                 <input
                   type="range"
                   id="monster-level"
                   min="5"
                   max="120"
-                  value="45"
+                  value="50"
                   step="5"
                   data-monster-input
                 />
@@ -88,22 +92,27 @@
               <div class="stat-grid" aria-label="Monster damage reduction results">
                 <section class="stat-card">
                   <p class="stat-label">Level Difference</p>
-                  <h3 data-level-gap>+20</h3>
-                  <p data-band-note>Scaling band: 0-25 (start +10, cap +20)</p>
+                  <h3 data-level-gap>+25</h3>
+                  <p data-gap-note>Scaling starts at +20 and caps at +30.</p>
                 </section>
                 <section class="stat-card">
-                  <p class="stat-label">Damage Reduction</p>
-                  <h3 data-reduction-value>30%</h3>
-                  <p>Percent cut to incoming monster damage.</p>
+                  <p class="stat-label">Scaling Amount</p>
+                  <h3 data-scaling-value>12.5%</h3>
+                  <p>Applied equally to monster damage boost and their damage reduction.</p>
                 </section>
                 <section class="stat-card">
-                  <p class="stat-label">Damage Received</p>
-                  <h3 data-received-value>70%</h3>
-                  <p>What lands after reduction.</p>
+                  <p class="stat-label">Monster Damage Dealt</p>
+                  <h3 data-monster-damage>112.5%</h3>
+                  <p>What you receive after their bonus.</p>
+                </section>
+                <section class="stat-card">
+                  <p class="stat-label">Your Damage vs Monster</p>
+                  <h3 data-player-damage>87.5%</h3>
+                  <p>Your outgoing damage after their reduction.</p>
                 </section>
               </div>
               <p class="calculator-note" data-result-note>
-                At +20, this band is capped at 30% reduction.
+                At +25, monsters deal 12.5% more damage and take 12.5% less damage.
               </p>
             </div>
           </section>
@@ -121,78 +130,88 @@
         const monsterValue = widget.querySelector("[data-monster-value]");
         const monsterCap = widget.querySelector("[data-monster-cap]");
         const gapValue = widget.querySelector("[data-level-gap]");
-        const bandNote = widget.querySelector("[data-band-note]");
-        const reductionValue = widget.querySelector("[data-reduction-value]");
-        const receivedValue = widget.querySelector("[data-received-value]");
+        const gapNote = widget.querySelector("[data-gap-note]");
+        const scalingValue = widget.querySelector("[data-scaling-value]");
+        const monsterDamageValue = widget.querySelector("[data-monster-damage]");
+        const playerDamageValue = widget.querySelector("[data-player-damage]");
         const resultNote = widget.querySelector("[data-result-note]");
 
-        const maxReduction = 30;
-        const bands = [
-          { min: 0, max: 25, start: 10, cap: 20 },
-          { min: 26, max: 50, start: 20, cap: 30 },
-          { min: 51, max: Infinity, start: 30, cap: 40 }
-        ];
+        const startGap = 20;
+        const capGap = 30;
+        const maxEffect = 25;
+        const monsterLevelCap = 100;
 
-        const formatPercent = (value) => `${Math.round(value)}%`;
+        const formatPercent = (value) => {
+          const rounded = Math.round(value * 10) / 10;
+          const text = Number.isInteger(rounded) ? rounded.toString() : rounded.toFixed(1);
+          return `${text}%`;
+        };
+
         const formatGap = (gap) => (gap === 0 ? "Even level" : `${gap > 0 ? "+" : ""}${gap}`);
 
-        function getBand(level) {
-          return bands.find((band) => level >= band.min && level <= band.max) || bands[bands.length - 1];
-        }
+        function calculateEffect(playerLevel, monsterLevel) {
+          const gap = monsterLevel - playerLevel;
 
-        function calculateReduction(playerLevel, monsterLevel) {
-          const levelGap = monsterLevel - playerLevel;
-          const band = getBand(playerLevel);
-          const bandLabel =
-            band.max === Infinity
-              ? `${band.min}+ (start +${band.start}, cap +${band.cap})`
-              : `${band.min}-${band.max} (start +${band.start}, cap +${band.cap})`;
-
-          if (levelGap <= 0) {
+          if (gap <= 0) {
             return {
-              reduction: 0,
-              bandLabel,
-              note: "Monster level is equal or lower; reduction is 0%.",
-              gap: levelGap
+              effect: 0,
+              note: "Monster is at or below your level; no scaling applies.",
+              gap
             };
           }
 
-          if (levelGap <= band.start) {
+          if (gap <= startGap) {
             return {
-              reduction: 0,
-              bandLabel,
-              note: `Reduction starts at +${band.start} for this band.`,
-              gap: levelGap
+              effect: 0,
+              note: `Scaling begins at +${startGap}; current gap is ${formatGap(gap)}.`,
+              gap
             };
           }
 
-          const scalingWindow = band.cap - band.start;
-          const gapIntoWindow = Math.min(levelGap, band.cap) - band.start;
-          const reduction = Math.min(maxReduction, (gapIntoWindow / scalingWindow) * maxReduction);
+          const clampedGap = Math.min(gap, capGap);
+          const scalingWindow = capGap - startGap;
+          const gapIntoWindow = clampedGap - startGap;
+          const effect = (gapIntoWindow / scalingWindow) * maxEffect;
+          const note =
+            gap >= capGap
+              ? `Gap is +${capGap} or higher; effect is capped at ${formatPercent(maxEffect)}.`
+              : `${gapIntoWindow} levels into the +${startGap} to +${capGap} window.`;
 
-          const capped = levelGap >= band.cap;
-          const note = capped
-            ? `Gap is +${band.cap} or higher; reduction is capped at ${maxReduction}%.`
-            : `Gap is +${levelGap}; ${gapIntoWindow} levels into this band's scaling window.`;
-
-          return { reduction, bandLabel, note, gap: levelGap };
+          return { effect, note, gap };
         }
 
         function update() {
           const playerLevel = Number(playerInput.value);
           const rawMonsterLevel = Number(monsterInput.value);
-          const monsterLevel = Math.min(rawMonsterLevel, 100);
-          const { reduction, bandLabel, note, gap } = calculateReduction(playerLevel, monsterLevel);
-          const damageReceived = Math.max(0, 100 - reduction);
+          const monsterLevel = Math.min(rawMonsterLevel, monsterLevelCap);
+          const { effect, note, gap } = calculateEffect(playerLevel, monsterLevel);
+
+          const monsterDamage = 100 + effect;
+          const playerDamage = Math.max(0, 100 - effect);
 
           playerValue.textContent = playerLevel;
           monsterValue.textContent = rawMonsterLevel;
-          monsterCap.textContent = rawMonsterLevel > 100 ? " (treated as 100)" : "";
+          monsterCap.textContent = rawMonsterLevel > monsterLevelCap ? ` (treated as ${monsterLevelCap})` : "";
           gapValue.textContent = formatGap(gap);
-          bandNote.textContent = `Scaling band: ${bandLabel}`;
-          reductionValue.textContent = formatPercent(reduction);
-          receivedValue.textContent = formatPercent(damageReceived);
-          resultNote.textContent = note;
+          gapNote.textContent = note;
+          scalingValue.textContent = formatPercent(effect);
+          monsterDamageValue.textContent = formatPercent(monsterDamage);
+          playerDamageValue.textContent = formatPercent(playerDamage);
+
+          if (effect === 0) {
+            resultNote.textContent =
+              gap <= 0
+                ? "Monster is not high enough level to trigger any scaling."
+                : `Gap is ${formatGap(gap)}; scaling starts at +${startGap}.`;
+          } else {
+            const capNote =
+              rawMonsterLevel > monsterLevelCap
+                ? ` Using treated level ${monsterLevelCap} for scaling.`
+                : "";
+            resultNote.textContent = `At ${formatGap(gap)}, monsters deal ${formatPercent(
+              effect
+            )} more damage and take ${formatPercent(effect)} less from you.${capNote}`;
+          }
         }
 
         playerInput.addEventListener("input", update);
