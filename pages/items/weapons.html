@@ -328,6 +328,10 @@
         grid-template-columns: repeat(4, minmax(0, 1fr));
       }
 
+      .detail-row-cols-5 {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+      }
+
       .detail-label {
         font-size: 0.78rem;
         text-transform: uppercase;
@@ -450,6 +454,12 @@
           disease: "#ff9c42",
         };
 
+        const PERK_TIER_COLORS = {
+          1: "rgb(6, 177, 66)",
+          2: "rgb(223, 0, 220)",
+          3: "rgb(208, 103, 0)",
+        };
+
         const RESISTANCE_LABELS = {
           fire: "Fire Resistance",
           cold: "Cold Resistance",
@@ -491,7 +501,7 @@
           { key: "type", label: "Type" },
           { key: "level", label: "Level", format: (value) => formatNumber(value) },
           { key: "dps", label: "DPS", format: (value) => formatNumber(value, { maximumFractionDigits: 2 }) },
-          { key: "perk", label: "Perk" },
+          { key: "perk", label: "Perk", render: (value) => createPerkBadge(value) },
           { key: "element", label: "Element", render: (value) => createElementBadge(value) },
         ];
 
@@ -647,12 +657,16 @@
           trySet();
         };
 
-        const createCell = (labelText, valueContent) => {
+        const createCell = (labelContent, valueContent) => {
           const cell = document.createElement("div");
           cell.className = "detail-cell";
           const label = document.createElement("span");
           label.className = "detail-label";
-          label.textContent = labelText;
+          if (labelContent instanceof Node) {
+            label.appendChild(labelContent);
+          } else {
+            label.textContent = labelContent;
+          }
           const value = document.createElement("div");
           value.className = "detail-value";
           if (valueContent instanceof Node) {
@@ -678,6 +692,23 @@
           const span = document.createElement("span");
           span.textContent = formatValue(value);
           span.style.color = getElementColor(value);
+          return span;
+        };
+
+        const getPerkTierColor = (value) => {
+          if (!value) return "";
+          const text = String(value);
+          const match = text.match(/tier\s*([123])/i) || text.match(/\bT([123])\b/i);
+          if (!match) return "";
+          const tier = Number(match[1]);
+          return PERK_TIER_COLORS[tier] || "";
+        };
+
+        const createPerkBadge = (value) => {
+          const span = document.createElement("span");
+          span.textContent = formatValue(value);
+          const color = getPerkTierColor(value);
+          if (color) span.style.color = color;
           return span;
         };
 
@@ -874,39 +905,27 @@
           addRow(
             [
               ["Type", formatValue(item.type)],
+              ["Level", formatNumber(item.level)],
               ["DPS", formatNumber(item.dps, { maximumFractionDigits: 2 })],
-              ["Damage", formatRange(item.minDamage, item.maxDamage)],
-              [
-                "Speed",
-                item.attackSpeed === null || item.attackSpeed === undefined
-                  ? "-"
-                  : `${formatNumber(item.attackSpeed)} ms`,
-              ],
+              ["Weight", formatNumber(item.weight)],
+              ["To Hit", formatNumber(item.toHit)],
             ],
-            4
+            5
           );
           addRow(
             [
               ["Element", createElementBadge(item.element)],
-              ["To Hit", formatNumber(item.toHit)],
-              ["Level", formatNumber(item.level)],
               [
                 "Proc",
                 item.procChance === null || item.procChance === undefined || item.procChance === ""
                   ? "-"
                   : `${formatNumber(item.procChance, { maximumFractionDigits: 2 })}%`,
               ],
-            ],
-            4
-          );
-          addRow(
-            [
+              ["Damage", formatRange(item.minDamage, item.maxDamage)],
               ["Specialty", formatValue(item.specialty)],
               ["Specialty Amount", formatNumber(item.specialtyAmount)],
-              ["Weight", formatNumber(item.weight)],
-              ["Rarity", formatValue(item.rarity)],
             ],
-            4
+            5
           );
 
           addDivider();
@@ -916,34 +935,43 @@
               ["Strength", formatNumber((item.stats && item.stats.strength) ?? 0)],
               ["Constitution", formatNumber((item.stats && item.stats.constitution) ?? 0)],
               ["Dexterity", formatNumber((item.stats && item.stats.dexterity) ?? 0)],
-              ["", ""],
             ],
-            4
+            3
           );
 
           addDivider();
 
           const res = item.resistances || {};
+          const makeResistEntry = (key, labelText, rawValue) => {
+            const color = ELEMENT_COLORS[key];
+            const labelSpan = document.createElement("span");
+            labelSpan.textContent = labelText;
+            if (color) labelSpan.style.color = color;
+            const valueSpan = document.createElement("span");
+            valueSpan.textContent = formatNumber(rawValue ?? 0);
+            if (color) valueSpan.style.color = color;
+            return [labelSpan, valueSpan];
+          };
           addRow(
             [
-              ["Fire", formatNumber(res.fire ?? 0)],
-              ["Poison", formatNumber(res.poison ?? 0)],
-              ["Cold", formatNumber(res.cold ?? 0)],
+              makeResistEntry("fire", "Fire", res.fire),
+              makeResistEntry("poison", "Poison", res.poison),
+              makeResistEntry("cold", "Cold", res.cold),
             ],
             3
           );
           addRow(
             [
-              ["Disease", formatNumber(res.disease ?? 0)],
-              ["Acid", formatNumber(res.acid ?? 0)],
-              ["Electric", formatNumber(res.electric ?? 0)],
+              makeResistEntry("disease", "Disease", res.disease),
+              makeResistEntry("acid", "Acid", res.acid),
+              makeResistEntry("electric", "Electric", res.electric),
             ],
             3
           );
 
           addDivider();
 
-          addRow([["Innate Perk", formatValue(item.perk)]], 1);
+          addRow([["Innate Perk", createPerkBadge(item.perk)]], 1);
 
           addDivider();
 
