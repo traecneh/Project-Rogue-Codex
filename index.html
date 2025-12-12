@@ -11,6 +11,7 @@
   <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
 
   <link rel="stylesheet" href="css/styles.css" />
+  <script src="js/release-countdown.js" defer></script>
   <script src="js/site-search.js" defer></script>
   <script src="js/weapon-specialty.js" defer></script>
   <script src="js/stat-widgets.js" defer></script>
@@ -30,6 +31,39 @@
       <header class="content-header">
         <h1 class="content-title">Project Rogue Codex</h1>
       </header>
+
+      <section class="content-section release-countdown" aria-labelledby="release-countdown-title">
+        <div class="countdown-panel" data-release-countdown data-target-utc="2026-01-15T19:00:00Z">
+          <div class="countdown-meta">
+            <div class="countdown-heading">
+              <div class="countdown-kicker">Project Rogue</div>
+              <h2 id="release-countdown-title" class="countdown-title">Nocturn Blight</h2>
+              <p class="countdown-subtitle">
+                Releases January 15th 2 EST <span class="countdown-accent">(This is a placeholder date)</span>
+              </p>
+            </div>
+          </div>
+
+          <div class="countdown-grid" role="group" aria-label="Countdown">
+            <div class="countdown-block">
+              <div class="countdown-value" data-countdown-days>--</div>
+              <div class="countdown-label">Days</div>
+            </div>
+            <div class="countdown-block">
+              <div class="countdown-value" data-countdown-hours>--</div>
+              <div class="countdown-label">Hours</div>
+            </div>
+            <div class="countdown-block">
+              <div class="countdown-value" data-countdown-minutes>--</div>
+              <div class="countdown-label">Minutes</div>
+            </div>
+            <div class="countdown-block">
+              <div class="countdown-value" data-countdown-seconds>--</div>
+              <div class="countdown-label">Seconds</div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       <article class="content-section" id="overview">
         <h2>Project Rogue Timeline</h2>
@@ -164,5 +198,3 @@
   </div>
 </body>
 </html>
-
-
