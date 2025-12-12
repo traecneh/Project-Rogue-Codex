@@ -445,6 +445,15 @@
           properties: document.getElementById("details-properties"),
         };
 
+        const RESIST_COLORS = {
+          fire: "#ff5a5a",
+          electric: "#b86bff",
+          poison: "#2f7a2f",
+          cold: "#7cc9ff",
+          acid: "#b38b00",
+          disease: "#ff9c42",
+        };
+
         const COLUMNS = [
           { key: "image", label: "Image", sortable: false },
           { key: "name", label: "Name" },
@@ -771,6 +780,11 @@
 
             const labelSpan = document.createElement("span");
             labelSpan.textContent = col.label;
+            const resistKey = col.key.replace(/Resist$/, "").toLowerCase();
+            const resistColor = RESIST_COLORS[resistKey];
+            if (resistColor) {
+              labelSpan.style.color = resistColor;
+            }
             th.appendChild(labelSpan);
 
             th.dataset.sortKey = col.key;
@@ -929,6 +943,11 @@
                 td.textContent = col.format(value);
               } else {
                 td.textContent = formatValue(value);
+              }
+              const resistKey = col.key.replace(/Resist$/, "").toLowerCase();
+              const resistColor = RESIST_COLORS[resistKey];
+              if (resistColor) {
+                td.style.color = resistColor;
               }
               tr.appendChild(td);
             });
