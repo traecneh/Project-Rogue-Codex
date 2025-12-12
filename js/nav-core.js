@@ -99,6 +99,7 @@ function initializeSidebar() {
 
   const sidebarRoot = document.querySelector(".sidebar");
   const collapseToggle = document.querySelector("[data-collapse-toggle]");
+  const layoutRoot = document.querySelector(".layout");
 
   const loadNavState = () => {
     try {
@@ -137,8 +138,11 @@ function initializeSidebar() {
     if (sidebarRoot) {
       sidebarRoot.classList.toggle("collapsed", collapsed);
     }
+    if (layoutRoot) {
+      layoutRoot.classList.toggle("nav-collapsed", collapsed);
+    }
     if (collapseToggle) {
-      collapseToggle.textContent = collapsed ? "»" : "«";
+      collapseToggle.textContent = collapsed ? "\u00BB" : "\u00AB";
       collapseToggle.setAttribute("aria-label", collapsed ? "Expand navigation" : "Collapse navigation");
       collapseToggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
       collapseToggle.setAttribute("aria-pressed", collapsed ? "true" : "false");

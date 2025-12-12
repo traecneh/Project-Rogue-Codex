@@ -67,6 +67,10 @@ body {
   background: linear-gradient(145deg, #050609, #12161f);
 }
 
+.layout.nav-collapsed {
+  gap: 0;
+}
+
 /* Sidebar */
 .sidebar {
   width: 260px;
@@ -145,8 +149,10 @@ body {
 }
 
 .sidebar.collapsed {
-  width: 56px;
-  padding: 0.5rem 0.4rem;
+  width: 0;
+  padding: 0;
+  overflow: hidden;
+  scrollbar-gutter: auto;
 }
 
 .sidebar.collapsed::-webkit-scrollbar {
@@ -1356,12 +1362,10 @@ a:hover {
   }
 
   .sidebar.collapsed {
-    width: 100%;
-    padding: 0.5rem 0.4rem;
-  }
-
-  .sidebar.collapsed .sidebar-collapse-toggle {
-    margin-left: auto;
+    width: 0;
+    padding: 0;
+    max-height: 0;
+    overflow: hidden;
   }
 
   .sidebar-collapse-toggle {
@@ -1427,5 +1431,11 @@ a:hover {
   .discord-cta,
   .discord-cta::after {
     animation: none !important;
+  }
+
+  .sidebar,
+  .sidebar-collapse-toggle,
+  .nav-link {
+    transition: none !important;
   }
 }
