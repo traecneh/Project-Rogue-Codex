@@ -12,6 +12,7 @@
 <link href="images/project-rogue-favicon-180.png" rel="icon" sizes="180x180" type="image/png"/>
 <link href="images/project-rogue-favicon-512.png" rel="icon" sizes="512x512" type="image/png"/>
 <link href="css/styles.css" rel="stylesheet"/>
+<script src="js/utils.js"></script>
 <script src="js/site-search.js" defer></script>
 <script src="js/weapon-specialty.js" defer></script>
 <script src="js/stat-widgets.js" defer></script>
@@ -301,7 +302,14 @@
 </div>
 <script>
   (function () {
-    const ELEMENT_COLORS = {
+    const utils = window.RogueCodexUtils || {};
+    const fetchJsonCached =
+      utils.fetchJsonCached ||
+      ((targetUrl) =>
+        fetch(targetUrl)
+          .then((res) => (res.ok ? res.json() : null))
+          .catch(() => null));
+    const ELEMENT_COLORS = utils.ELEMENT_COLORS || {
       fire: "#ff5a5a",
       electric: "#b86bff",
       poison: "#2f7a2f",
@@ -455,8 +463,7 @@
         return a;
       };
 
-      fetch(dataUrl.toString())
-        .then((res) => (res.ok ? res.json() : Promise.reject()))
+      fetchJsonCached(dataUrl.toString())
         .then((data) => {
           if (!Array.isArray(data)) return;
           const byType = data.reduce((acc, monster) => {

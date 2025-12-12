@@ -11,6 +11,7 @@
     <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
     <link rel="stylesheet" href="css/styles.css" />
+    <script src="js/utils.js"></script>
     <script src="js/site-search.js" defer></script>
     <script src="js/weapon-specialty.js" defer></script>
     <script src="js/stat-widgets.js" defer></script>
@@ -774,6 +775,21 @@
         const details = document.getElementById("monster-details");
         const closeBtn = document.getElementById("details-close");
         const MAP_SEARCH_BASE = "https://traecneh.github.io/Project-Rogue-Map/?search=";
+        const utils = window.RogueCodexUtils || {};
+        const fetchJsonCached =
+          utils.fetchJsonCached ||
+          ((targetUrl) =>
+            fetch(targetUrl)
+              .then((res) => (res.ok ? res.json() : []))
+              .catch(() => []));
+        const ELEMENT_COLORS = utils.ELEMENT_COLORS || {
+          fire: "#ff5a5a",
+          electric: "#b86bff",
+          poison: "#2f7a2f",
+          cold: "#7cc9ff",
+          acid: "#b38b00",
+          disease: "#ff9c42",
+        };
 
         const normalizeMonsterId = (value) => {
           return (value || "")
@@ -1004,15 +1020,6 @@
           }
 
           return Array.from(new Set(candidates.filter(Boolean)));
-        };
-
-        const ELEMENT_COLORS = {
-          fire: "#ff5a5a",
-          electric: "#b86bff",
-          poison: "#2f7a2f",
-          cold: "#7cc9ff",
-          acid: "#b38b00",
-          disease: "#ff9c42",
         };
 
         const TYPE_RESISTANCES = {
@@ -1286,6 +1293,10 @@
                 opt.value = value;
                 opt.textContent = value.charAt(0).toUpperCase() + value.slice(1);
                 opt.selected = selectedElements.has(value);
+                const color = ELEMENT_COLORS[value];
+                if (color && value !== "none") {
+                  opt.style.color = color;
+                }
                 elementFilter.appendChild(opt);
               });
           }
@@ -2361,19 +2372,12 @@
 
         const init = () => {
           Promise.all([
-            fetch(dataUrl.toString()).then((response) => {
-              if (!response.ok) throw new Error("Failed to load monsters_data03.json");
-              return response.json();
-            }),
-            fetch(weaponsUrl.toString())
-              .then((response) => (response.ok ? response.json() : []))
-              .catch(() => []),
-            fetch(new URL("../items/armors_data06.json", window.location.href).toString())
-              .then((response) => (response.ok ? response.json() : []))
-              .catch(() => []),
+            fetchJsonCached(dataUrl.toString()),
+            fetchJsonCached(weaponsUrl.toString()),
+            fetchJsonCached(new URL("../items/armors_data06.json", window.location.href).toString()),
           ])
             .then(([monsterData, weaponData, armorData]) => {
-              monsters = normalizeMonsters(monsterData);
+              monsters = normalizeMonsters(Array.isArray(monsterData) ? monsterData : []);
               weapons = Array.isArray(weaponData)
                 ? weaponData
                     .map((w) => normalizeWeapon(w))

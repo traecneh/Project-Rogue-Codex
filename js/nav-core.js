@@ -96,6 +96,8 @@ document.addEventListener("DOMContentLoaded", () => {
 function initializeSidebar() {
   const NAV_STATE_STORAGE_KEY = "nav-expanded-state";
   const NAV_COLLAPSED_STORAGE_KEY = "nav-collapsed-state";
+  const NAV_SCROLL_STORAGE_KEY = "nav-scroll-top";
+  const MOBILE_BREAKPOINT_PX = 800;
 
   const sidebarRoot = document.querySelector(".sidebar");
   const collapseToggle = document.querySelector("[data-collapse-toggle]");
@@ -150,6 +152,44 @@ function initializeSidebar() {
   };
 
   applyCollapsedState(loadCollapsedState());
+
+  if (sidebarRoot) {
+    try {
+      const savedScrollTop = Number(sessionStorage.getItem(NAV_SCROLL_STORAGE_KEY) || 0);
+      if (Number.isFinite(savedScrollTop) && savedScrollTop > 0) {
+        sidebarRoot.scrollTop = savedScrollTop;
+      }
+    } catch (error) {
+      /* noop */
+    }
+
+    let pendingScrollSave = null;
+    sidebarRoot.addEventListener(
+      "scroll",
+      () => {
+        if (pendingScrollSave) return;
+        pendingScrollSave = window.requestAnimationFrame(() => {
+          pendingScrollSave = null;
+          try {
+            sessionStorage.setItem(NAV_SCROLL_STORAGE_KEY, String(sidebarRoot.scrollTop || 0));
+          } catch (error) {
+            /* noop */
+          }
+        });
+      },
+      { passive: true }
+    );
+
+    sidebarRoot.addEventListener("click", (event) => {
+      const target = event.target instanceof Element ? event.target.closest("a.nav-link, a.nav-search-result") : null;
+      if (!target) return;
+      if (target.getAttribute("target") === "_blank") return;
+      if (window.innerWidth <= MOBILE_BREAKPOINT_PX) {
+        applyCollapsedState(true);
+        saveCollapsedState(true);
+      }
+    });
+  }
 
   if (collapseToggle) {
     collapseToggle.addEventListener("click", () => {

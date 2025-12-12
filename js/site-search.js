@@ -243,16 +243,30 @@ function normalizeSearchEntry(entry) {
 }
 
 const NORMALIZED_SEARCH_INDEX = SITE_SEARCH_INDEX.map(normalizeSearchEntry);
-const DEFAULT_SEARCH_RESULTS = NORMALIZED_SEARCH_INDEX.filter((entry) => entry.featured).slice(0, MAX_SEARCH_RESULTS);
 const FULL_TEXT_CACHE = new Map();
 const FULL_TEXT_PROMISES = new Map();
 const INTERNAL_SEARCH_PAGES = NORMALIZED_SEARCH_INDEX.filter((entry) => entry.url && !/^https?:\/\//i.test(entry.url));
-let SEARCH_CORPUS_WARM_PROMISE = null;
 let MONSTER_SEARCH_INDEX = [];
 let MONSTER_INDEX_PROMISE = null;
 let WEAPON_SEARCH_INDEX = [];
 let WEAPON_INDEX_PROMISE = null;
 let WEAPON_DATA_PROMISE = null;
+let ARMOR_SEARCH_INDEX = [];
+let ARMOR_INDEX_PROMISE = null;
+
+function fetchJsonMaybeCached(absoluteUrl, errorMessage) {
+  const cachedFetch =
+    window.RogueCodexUtils && typeof window.RogueCodexUtils.fetchJsonCached === "function"
+      ? window.RogueCodexUtils.fetchJsonCached
+      : null;
+  if (cachedFetch) {
+    return cachedFetch(absoluteUrl);
+  }
+  return fetch(absoluteUrl).then((response) => {
+    if (!response.ok) throw new Error(errorMessage || `Failed to fetch ${absoluteUrl}`);
+    return response.json();
+  });
+}
 
 function escapeHtml(value) {
   return String(value || "").replace(/[&<>"']/g, (char) => {
@@ -312,6 +326,39 @@ const HIDDEN_WEAPON_NAMES = new Set(
     "Cursed Staff",
     "Vengeance Sword",
     "Staff of Partiality",
+  ].map((name) => name.toLowerCase())
+);
+
+const HIDDEN_ARMOR_NAMES = new Set(
+  [
+    "stone of jordan",
+    "abyssal core",
+    "book of the dead",
+    "celestial sceptre",
+    "magus robe",
+    "book of curses",
+    "mystic greaves",
+    "holy robe",
+    "sages leggings",
+    "firestone amulet",
+    "sages robe",
+    "lich robe",
+    "conjurers robe",
+    "apprentice leggings",
+    "ring of intellect",
+    "necklace of intellect",
+    "scholars book",
+    "sand cloth boots",
+    "shield of sands",
+    "sand bracelets",
+    "truesight frames",
+    "sand cloth robe",
+    "elder dragon shield",
+    "shield of the gods",
+    "serpent shield",
+    "serpent leggings",
+    "serpent helm",
+    "serpent plate",
   ].map((name) => name.toLowerCase())
 );
 
@@ -396,6 +443,46 @@ const normalizeNavWeapon = (weapon) => {
   };
 };
 
+const normalizeNavArmor = (armor) => {
+  if (!armor) return null;
+  const fields = (armor && typeof armor.fields === "object" && armor.fields) || {};
+  const name = armor.name || armor.Name;
+  const slug = normalizeSlug(name || armor.id);
+  if (!slug) return null;
+  const toNumberOrNull = (value) => {
+    const num = Number(value);
+    return Number.isNaN(num) ? null : num;
+  };
+  const level = toNumberOrNull(fields.level ?? armor.level ?? armor.Level);
+  const slot = fields.slot_label || fields.slot || armor.slot;
+  const armorValue = toNumberOrNull(fields.armor ?? armor.armor);
+  const weight = toNumberOrNull(fields.weight ?? armor.weight);
+  const perk = fields.perk ? fields.perk_label || fields.perk : null;
+  const corruptedPerk = fields.corrupted_perk ? fields.corrupted_perk_label || fields.corrupted_perk : null;
+  const electric = fields.electric_resistance ?? fields.lightning_resistance ?? armor.electricResist;
+  const resistances = {
+    fire: toNumberOrNull(fields.fire_resistance ?? armor.fireResist),
+    cold: toNumberOrNull(fields.cold_resistance ?? armor.coldResist),
+    electric: toNumberOrNull(electric),
+    acid: toNumberOrNull(fields.acid_resistance ?? armor.acidResist),
+    poison: toNumberOrNull(fields.poison_resistance ?? armor.poisonResist),
+    disease: toNumberOrNull(fields.disease_resistance ?? armor.diseaseResist),
+  };
+
+  return {
+    id: armor.id ?? armor.ID ?? slug,
+    name: name || slug,
+    slug,
+    level,
+    slot,
+    armor: armorValue,
+    weight,
+    perk,
+    corruptedPerk,
+    resistances,
+  };
+};
+
 function titleCaseWords(text) {
   return String(text || "")
     .replace(/([a-z])([A-Z])/g, "$1 $2")
@@ -473,14 +560,6 @@ function fetchAndCachePageText(url) {
   return promise;
 }
 
-function warmSearchCorpus() {
-  if (SEARCH_CORPUS_WARM_PROMISE) return SEARCH_CORPUS_WARM_PROMISE;
-  SEARCH_CORPUS_WARM_PROMISE = Promise.all(INTERNAL_SEARCH_PAGES.map((entry) => fetchAndCachePageText(entry.url))).catch(
-    () => {}
-  );
-  return SEARCH_CORPUS_WARM_PROMISE;
-}
-
 function buildMonsterSearchEntry(monster) {
   const normalized = normalizeNavMonster(monster);
   if (!normalized) return null;
@@ -497,7 +576,7 @@ function buildMonsterSearchEntry(monster) {
     title: name || slug,
     url: `pages/enemies/monsters.html?monster=${encodeURIComponent(slug)}`,
     category: "Monsters",
-    description: parts.join("  ") || "Monster stats, damage, and loot.",
+    description: parts.join(" • ") || "Monster stats, damage, and loot.",
     keywords,
     isMonster: true,
     monsterId: slug,
@@ -507,11 +586,7 @@ function buildMonsterSearchEntry(monster) {
 function loadMonsterSearchIndex() {
   if (MONSTER_INDEX_PROMISE) return MONSTER_INDEX_PROMISE;
   const absoluteUrl = getAbsoluteUrl("pages/enemies/monsters_data03.json");
-  MONSTER_INDEX_PROMISE = fetch(absoluteUrl)
-    .then((response) => {
-      if (!response.ok) throw new Error("Failed to fetch monsters_data03.json");
-      return response.json();
-    })
+  MONSTER_INDEX_PROMISE = fetchJsonMaybeCached(absoluteUrl, "Failed to fetch monsters_data03.json")
     .then((data) => {
       const list = Array.isArray(data) ? data : [];
       const filtered = list.filter(
@@ -525,10 +600,6 @@ function loadMonsterSearchIndex() {
       return MONSTER_SEARCH_INDEX;
     });
   return MONSTER_INDEX_PROMISE;
-}
-
-function warmMonsterIndex() {
-  return loadMonsterSearchIndex().catch(() => {});
 }
 
 function buildWeaponSearchEntry(weapon) {
@@ -547,27 +618,81 @@ function buildWeaponSearchEntry(weapon) {
     title: name || slug,
     url: `pages/items/weapons.html?weapon=${encodeURIComponent(slug)}`,
     category: "Weapons",
-    description: parts.join("  ") || "Weapon stats, DPS, speed, and perks.",
+    description: parts.join(" • ") || "Weapon stats, DPS, speed, and perks.",
     keywords,
     isWeapon: true,
     weaponId: slug,
   });
 }
 
-function loadWeaponSearchIndex() {
-  if (WEAPON_INDEX_PROMISE) return WEAPON_INDEX_PROMISE;
-  const absoluteUrl = getAbsoluteUrl("pages/items/weapons_data05.json");
-  WEAPON_INDEX_PROMISE = fetch(absoluteUrl)
-    .then((response) => {
-      if (!response.ok) throw new Error("Failed to fetch weapons_data05.json");
-      return response.json();
-    })
+function buildArmorSearchEntry(armor) {
+  const normalized = normalizeNavArmor(armor);
+  if (!normalized) return null;
+  const {
+    slug,
+    name,
+    slot,
+    level,
+    armor: armorValue,
+    weight,
+    perk,
+    corruptedPerk,
+    resistances,
+  } = normalized;
+
+  const parts = [];
+  if (Number.isFinite(level)) parts.push(`Lvl ${Math.round(level)}`);
+  if (Number.isFinite(armorValue)) parts.push(`Armor ${armorValue}`);
+  if (slot) parts.push(titleCaseWords(String(slot)));
+  if (Number.isFinite(weight)) parts.push(`Wt ${weight}`);
+
+  const resistKeys = resistances
+    ? Object.entries(resistances)
+        .filter(([, val]) => Number.isFinite(val) && val !== 0)
+        .map(([key]) => titleCaseWords(key))
+    : [];
+  if (resistKeys.length) {
+    parts.push(`Resists: ${resistKeys.join(", ")}`);
+  }
+
+  const keywords = [name, slug, slot, perk, corruptedPerk, ...resistKeys].filter(Boolean);
+
+  return normalizeSearchEntry({
+    title: name || slug,
+    url: `pages/items/armors.html?armor=${encodeURIComponent(name || slug)}`,
+    category: "Armors",
+    description: parts.join(" • ") || "Armor stats, resistances, slots, and perks.",
+    keywords,
+    isArmor: true,
+    armorId: slug,
+  });
+}
+
+function loadArmorSearchIndex() {
+  if (ARMOR_INDEX_PROMISE) return ARMOR_INDEX_PROMISE;
+  const absoluteUrl = getAbsoluteUrl("pages/items/armors_data06.json");
+  ARMOR_INDEX_PROMISE = fetchJsonMaybeCached(absoluteUrl, "Failed to fetch armors_data06.json")
     .then((data) => {
       const list = Array.isArray(data) ? data : [];
       const filtered = list.filter(
-        (weapon) => !HIDDEN_WEAPON_NAMES.has(String(weapon.name || weapon.Name || "").toLowerCase())
+        (armor) => !HIDDEN_ARMOR_NAMES.has(String(armor.name || armor.Name || "").toLowerCase())
       );
-      WEAPON_SEARCH_INDEX = filtered.map((weapon) => buildWeaponSearchEntry(weapon)).filter(Boolean);
+      ARMOR_SEARCH_INDEX = filtered.map((armor) => buildArmorSearchEntry(armor)).filter(Boolean);
+      return ARMOR_SEARCH_INDEX;
+    })
+    .catch(() => {
+      ARMOR_SEARCH_INDEX = [];
+      return ARMOR_SEARCH_INDEX;
+    });
+  return ARMOR_INDEX_PROMISE;
+}
+
+function loadWeaponSearchIndex() {
+  if (WEAPON_INDEX_PROMISE) return WEAPON_INDEX_PROMISE;
+  WEAPON_INDEX_PROMISE = loadWeaponData()
+    .then((data) => {
+      const list = Array.isArray(data) ? data : [];
+      WEAPON_SEARCH_INDEX = list.map((weapon) => buildWeaponSearchEntry(weapon)).filter(Boolean);
       return WEAPON_SEARCH_INDEX;
     })
     .catch(() => {
@@ -577,18 +702,10 @@ function loadWeaponSearchIndex() {
   return WEAPON_INDEX_PROMISE;
 }
 
-function warmWeaponIndex() {
-  return loadWeaponSearchIndex().catch(() => {});
-}
-
 function loadWeaponData() {
   if (WEAPON_DATA_PROMISE) return WEAPON_DATA_PROMISE;
   const absoluteUrl = getAbsoluteUrl("pages/items/weapons_data05.json");
-  WEAPON_DATA_PROMISE = fetch(absoluteUrl)
-    .then((response) => {
-      if (!response.ok) throw new Error("Failed to fetch weapons_data05.json");
-      return response.json();
-    })
+  WEAPON_DATA_PROMISE = fetchJsonMaybeCached(absoluteUrl, "Failed to fetch weapons_data05.json")
     .then((data) => {
       const list = Array.isArray(data) ? data : [];
       const filtered = list.filter(
@@ -644,21 +761,25 @@ function runSiteSearch(query) {
   const terms = toSearchTerms(query);
   loadMonsterSearchIndex();
   loadWeaponSearchIndex();
+  loadArmorSearchIndex();
   if (!terms.length) {
-    const defaults = DEFAULT_SEARCH_RESULTS.length ? DEFAULT_SEARCH_RESULTS : NORMALIZED_SEARCH_INDEX;
-    return defaults.slice(0, MAX_SEARCH_RESULTS);
+    return [];
   }
 
   const matches = [];
-  const corpus = NORMALIZED_SEARCH_INDEX.concat(MONSTER_SEARCH_INDEX, WEAPON_SEARCH_INDEX);
+  const corpus = NORMALIZED_SEARCH_INDEX.concat(MONSTER_SEARCH_INDEX, WEAPON_SEARCH_INDEX, ARMOR_SEARCH_INDEX);
   corpus.forEach((entry) => {
-    const shouldUseFullText =
-      entry.url && !entry.isMonster && !isExternalUrl(entry.url) && !FULL_TEXT_CACHE.has(entry.url) && !FULL_TEXT_PROMISES.has(entry.url);
-    if (shouldUseFullText) {
+    const baseScore = scoreSearchEntry(entry, terms);
+    const canUseFullText =
+      entry.url &&
+      !entry.isMonster &&
+      !entry.isWeapon &&
+      !entry.isArmor &&
+      !isExternalUrl(entry.url);
+    if (canUseFullText && baseScore > 0 && !FULL_TEXT_CACHE.has(entry.url) && !FULL_TEXT_PROMISES.has(entry.url)) {
       fetchAndCachePageText(entry.url);
     }
-    const baseScore = scoreSearchEntry(entry, terms);
-    const fullTextScore = entry.isMonster || entry.isWeapon ? 0 : scoreFullText(FULL_TEXT_CACHE.get(entry.url), terms);
+    const fullTextScore = canUseFullText ? scoreFullText(FULL_TEXT_CACHE.get(entry.url), terms) : 0;
     const score = baseScore + fullTextScore;
     if (score <= 0) return;
     const titleHits = terms.filter((term) => entry.titleLower.includes(term)).length;
@@ -736,6 +857,24 @@ function initializeSiteSearch() {
     resultsEl.appendChild(fragment);
   };
 
+  const prefetchOnHover = (linkEl) => {
+    const href = linkEl.getAttribute("href") || "";
+    if (!href) return;
+    if (isExternalUrl(href)) return;
+    if (href.includes("?") || href.includes("#")) return;
+    fetchAndCachePageText(href);
+  };
+
+  resultsEl.addEventListener("mouseover", (event) => {
+    const target = event.target instanceof Element ? event.target.closest("a.nav-search-result") : null;
+    if (target) prefetchOnHover(target);
+  });
+
+  document.addEventListener("mouseover", (event) => {
+    const target = event.target instanceof Element ? event.target.closest("a.nav-link[href]") : null;
+    if (target) prefetchOnHover(target);
+  });
+
   const setActiveResult = (index) => {
     const links = resultsEl.querySelectorAll(".nav-search-result");
     links.forEach((link) => link.classList.remove("active"));
@@ -777,6 +916,9 @@ function initializeSiteSearch() {
     }
     if (WEAPON_INDEX_PROMISE) {
       pendingFetches.push(WEAPON_INDEX_PROMISE);
+    }
+    if (ARMOR_INDEX_PROMISE) {
+      pendingFetches.push(ARMOR_INDEX_PROMISE);
     }
     if (pendingFetches.length && query) {
       Promise.allSettled(pendingFetches).then(() => {
@@ -842,10 +984,4 @@ function initializeSiteSearch() {
 
   updateResults({ autoOpen: false });
   setOpen(false);
-
-  Promise.allSettled([warmSearchCorpus(), warmMonsterIndex(), warmWeaponIndex()]).then(() => {
-    if (input.value.trim()) {
-      updateResults({ autoOpen: true });
-    }
-  });
 }

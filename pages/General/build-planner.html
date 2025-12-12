@@ -11,6 +11,7 @@
     <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
     <link rel="stylesheet" href="css/styles.css" />
+    <script src="js/utils.js"></script>
     <script src="js/site-search.js" defer></script>
     <script src="js/weapon-specialty.js" defer></script>
     <script src="js/stat-widgets.js" defer></script>
@@ -1718,13 +1719,15 @@
         };
 
         const loadData = () => {
+          const fetchJsonCached =
+            window.RogueCodexUtils?.fetchJsonCached ||
+            ((targetUrl) =>
+              fetch(targetUrl)
+                .then((res) => (res.ok ? res.json() : []))
+                .catch(() => []));
           return Promise.all([
-            fetch(new URL("../items/weapons_data05.json", window.location.href)).then((res) =>
-              res.ok ? res.json() : []
-            ),
-            fetch(new URL("../items/armors_data06.json", window.location.href)).then((res) =>
-              res.ok ? res.json() : []
-            ),
+            fetchJsonCached(new URL("../items/weapons_data05.json", window.location.href).toString()),
+            fetchJsonCached(new URL("../items/armors_data06.json", window.location.href).toString()),
           ])
             .then(([weapons, armors]) => {
               dataset.weapons = Array.isArray(weapons) ? weapons.map((w) => toWeapon(w)) : [];

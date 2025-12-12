@@ -464,6 +464,13 @@
   }
 
   async function fetchJson(url) {
+    const cachedFetch =
+      window.RogueCodexUtils && typeof window.RogueCodexUtils.fetchJsonCached === "function"
+        ? window.RogueCodexUtils.fetchJsonCached
+        : null;
+    if (cachedFetch) {
+      return await cachedFetch(url);
+    }
     try {
       const response = await fetch(url);
       if (!response.ok) throw new Error(`Failed to load ${url}`);
