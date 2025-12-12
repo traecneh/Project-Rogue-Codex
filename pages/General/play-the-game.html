@@ -11,7 +11,14 @@
     <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
     <link rel="stylesheet" href="css/styles.css" />
-    <script src="js/nav-loader.js" defer></script>
+    <script src="js/site-search.js" defer></script>
+    <script src="js/weapon-specialty.js" defer></script>
+    <script src="js/stat-widgets.js" defer></script>
+    <script src="js/keyword-links.js" defer></script>
+    <script src="js/cursor-toggle.js" defer></script>
+    <script src="js/perks.js" defer></script>
+    <script src="js/rarity-roller.js" defer></script>
+    <script src="js/nav-core.js" defer></script>
   </head>
   <body>
     <div class="layout">
@@ -64,6 +71,8 @@
       document.addEventListener("DOMContentLoaded", () => {
         const wrap = document.querySelector(".discord-cta-wrap");
         if (!wrap) return;
+        const prefersReducedMotion =
+          window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
         const sprite = document.createElement("img");
         sprite.className = "discord-monster";
@@ -183,19 +192,24 @@
           }
         };
 
-        stepMove();
-        setInterval(stepMove, 300);
-        setInterval(swapMonster, 5000);
-        setInterval(setEliteState, 5000);
-        setEliteState();
+        if (prefersReducedMotion) {
+          applyPosition(0, 0);
+          eliteBadge.style.opacity = 0;
+        } else {
+          stepMove();
+          setInterval(stepMove, 300);
+          setInterval(swapMonster, 5000);
+          setInterval(setEliteState, 5000);
+          setEliteState();
 
-        window.addEventListener("resize", () => {
-          const currentWidth = window.innerWidth;
-          if (Math.abs(currentWidth - lastWidth) < 1) return;
-          lastWidth = currentWidth;
-          pathOffsets = buildPath();
-          idx = 0;
-        });
+          window.addEventListener("resize", () => {
+            const currentWidth = window.innerWidth;
+            if (Math.abs(currentWidth - lastWidth) < 1) return;
+            lastWidth = currentWidth;
+            pathOffsets = buildPath();
+            idx = 0;
+          });
+        }
       });
     </script>
   </body>

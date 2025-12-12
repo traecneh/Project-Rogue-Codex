@@ -93,7 +93,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 100,
       "slot_label": "Chest",
       "max_rarity_label": "Common"
@@ -193,7 +193,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 100,
       "slot_label": "Chest",
       "max_rarity_label": "Common"
@@ -293,7 +293,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 100,
       "slot_label": "Chest",
       "max_rarity_label": "Common"
@@ -393,7 +393,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 400,
       "slot_label": "Chest",
       "max_rarity_label": "Common"
@@ -493,7 +493,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 800,
       "slot_label": "Chest",
       "max_rarity_label": "Common"
@@ -593,7 +593,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 600,
       "slot_label": "Chest",
       "max_rarity_label": "Common"
@@ -693,7 +693,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 2000,
       "slot_label": "Chest",
       "max_rarity_label": "Common"
@@ -793,7 +793,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 2500,
       "slot_label": "Chest",
       "max_rarity_label": "Common"
@@ -893,7 +893,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 6000,
       "slot_label": "Chest",
       "max_rarity_label": "Common"
@@ -993,7 +993,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 3500,
       "slot_label": "Chest",
       "max_rarity_label": "Common"
@@ -1093,7 +1093,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 4500,
       "slot_label": "Chest",
       "max_rarity_label": "Common"
@@ -1193,7 +1193,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 12500,
       "slot_label": "Chest",
       "max_rarity_label": "Uncommon"
@@ -1293,7 +1293,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 15000,
       "slot_label": "Chest",
       "max_rarity_label": "Uncommon"
@@ -1393,7 +1393,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 20000,
       "slot_label": "Chest",
       "max_rarity_label": "Rare"
@@ -1493,7 +1493,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 230000,
       "slot_label": "Chest",
       "max_rarity_label": "Ascendant",
@@ -1594,7 +1594,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 100000,
       "slot_label": "Chest",
       "max_rarity_label": "Legendary",
@@ -1695,7 +1695,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 100000,
       "slot_label": "Chest",
       "max_rarity_label": "Legendary"
@@ -1795,7 +1795,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 100000,
       "slot_label": "Chest",
       "max_rarity_label": "Legendary",
@@ -1896,7 +1896,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 15000,
       "slot_label": "Chest",
       "max_rarity_label": "Uncommon"
@@ -1996,7 +1996,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 250000,
       "slot_label": "Chest",
       "max_rarity_label": "Ascendant"
@@ -2096,7 +2096,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 250000,
       "slot_label": "Chest",
       "max_rarity_label": "Ascendant",
@@ -2197,7 +2197,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 15000,
       "slot_label": "Chest",
       "max_rarity_label": "Uncommon"
@@ -2297,7 +2297,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 30000,
       "slot_label": "Chest",
       "max_rarity_label": "Epic"
@@ -2397,7 +2397,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 30000,
       "slot_label": "Chest",
       "max_rarity_label": "Rare"
@@ -2497,7 +2497,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 250000,
       "slot_label": "Chest",
       "max_rarity_label": "Ascendant"
@@ -2597,7 +2597,7 @@
       "to_hit": 0,
       "unknown_93": 59,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 750000,
       "slot_label": "Chest",
       "max_rarity_label": "Ascendant",
@@ -2698,7 +2698,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 35000,
       "slot_label": "Chest",
       "max_rarity_label": "Epic"
@@ -2798,7 +2798,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 150000,
       "slot_label": "Chest",
       "max_rarity_label": "Mythical"
@@ -2898,7 +2898,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 50000,
       "slot_label": "Chest",
       "max_rarity_label": "Legendary"
@@ -2998,7 +2998,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 250000,
       "slot_label": "Chest",
       "max_rarity_label": "Ascendant"
@@ -3098,7 +3098,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 500000,
       "slot_label": "Chest",
       "max_rarity_label": "Ascendant",
@@ -3199,7 +3199,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 500000,
       "slot_label": "Chest",
       "max_rarity_label": "Ascendant",
@@ -3300,7 +3300,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 750000,
       "slot_label": "Chest",
       "max_rarity_label": "Ascendant",
@@ -3401,7 +3401,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 140000,
       "slot_label": "Chest",
       "max_rarity_label": "Legendary"
@@ -3501,7 +3501,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 140000,
       "slot_label": "Chest",
       "max_rarity_label": "Legendary"
@@ -3601,7 +3601,7 @@
       "to_hit": 0,
       "unknown_93": 58,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 750000,
       "slot_label": "Chest",
       "max_rarity_label": "Ascendant",
@@ -3702,7 +3702,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 25000,
       "slot_label": "Chest",
       "max_rarity_label": "Rare"
@@ -3802,7 +3802,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 500000,
       "slot_label": "Chest",
       "max_rarity_label": "Ascendant"
@@ -3902,7 +3902,7 @@
       "to_hit": 10,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 250000,
       "slot_label": "Chest",
       "max_rarity_label": "Ascendant",
@@ -4003,7 +4003,7 @@
       "to_hit": 0,
       "unknown_93": 43,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 750000,
       "slot_label": "Chest",
       "max_rarity_label": "Ascendant",
@@ -4104,7 +4104,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 250000,
       "slot_label": "Chest",
       "max_rarity_label": "Ascendant"
@@ -4204,7 +4204,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 250000,
       "slot_label": "Chest",
       "max_rarity_label": "Ascendant",
@@ -4305,7 +4305,7 @@
       "to_hit": 0,
       "unknown_93": 68,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 0,
       "max_rarity_label": "Ascendant",
       "perk_label": "Knowledge (Tier 3)"
@@ -4405,7 +4405,7 @@
       "to_hit": 0,
       "unknown_93": 67,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 250000,
       "slot_label": "Chest",
       "max_rarity_label": "Ascendant",
@@ -4506,7 +4506,7 @@
       "to_hit": 0,
       "unknown_93": 69,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 250000,
       "slot_label": "Chest",
       "max_rarity_label": "Ascendant",
@@ -4607,7 +4607,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 0,
       "max_rarity_label": "Common"
     }
@@ -4706,7 +4706,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 230000,
       "slot_label": "Chest",
       "max_rarity_label": "Ascendant",
@@ -4807,7 +4807,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 225000,
       "slot_label": "Chest",
       "max_rarity_label": "Ascendant",
@@ -4908,7 +4908,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 100,
       "slot_label": "Helmet",
       "max_rarity_label": "Common"
@@ -5008,7 +5008,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 400,
       "slot_label": "Helmet",
       "max_rarity_label": "Common"
@@ -5108,7 +5108,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 600,
       "slot_label": "Helmet",
       "max_rarity_label": "Common"
@@ -5208,7 +5208,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 200,
       "slot_label": "Helmet",
       "max_rarity_label": "Common"
@@ -5308,7 +5308,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 1200,
       "slot_label": "Helmet",
       "max_rarity_label": "Common"
@@ -5408,7 +5408,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 1600,
       "slot_label": "Helmet",
       "max_rarity_label": "Common"
@@ -5508,7 +5508,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 2000,
       "slot_label": "Helmet",
       "max_rarity_label": "Common"
@@ -5608,7 +5608,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 2400,
       "slot_label": "Helmet",
       "max_rarity_label": "Common"
@@ -5708,7 +5708,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 2800,
       "slot_label": "Helmet",
       "max_rarity_label": "Common"
@@ -5808,7 +5808,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 3000,
       "slot_label": "Helmet",
       "max_rarity_label": "Common"
@@ -5908,7 +5908,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 125000,
       "slot_label": "Helmet",
       "max_rarity_label": "Mythical"
@@ -6008,7 +6008,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 125000,
       "slot_label": "Helmet",
       "max_rarity_label": "Mythical",
@@ -6109,7 +6109,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 4000,
       "slot_label": "Helmet",
       "max_rarity_label": "Common"
@@ -6209,7 +6209,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 4500,
       "slot_label": "Helmet",
       "max_rarity_label": "Common"
@@ -6309,7 +6309,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 6000,
       "slot_label": "Helmet",
       "max_rarity_label": "Common"
@@ -6409,7 +6409,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 5000,
       "slot_label": "Helmet",
       "max_rarity_label": "Common"
@@ -6509,7 +6509,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 14000,
       "slot_label": "Helmet",
       "max_rarity_label": "Uncommon"
@@ -6609,7 +6609,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 230000,
       "slot_label": "Helmet",
       "max_rarity_label": "Ascendant"
@@ -6709,7 +6709,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 230000,
       "slot_label": "Helmet",
       "max_rarity_label": "Ascendant"
@@ -6809,7 +6809,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 230000,
       "slot_label": "Helmet",
       "max_rarity_label": "Ascendant"
@@ -6909,7 +6909,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 230000,
       "slot_label": "Helmet",
       "max_rarity_label": "Ascendant"
@@ -7009,7 +7009,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 75000,
       "slot_label": "Helmet",
       "max_rarity_label": "Mythical"
@@ -7109,7 +7109,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 450000,
       "slot_label": "Helmet",
       "max_rarity_label": "Ascendant",
@@ -7210,7 +7210,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 100000,
       "slot_label": "Helmet",
       "max_rarity_label": "Legendary"
@@ -7310,7 +7310,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 100000,
       "slot_label": "Helmet",
       "max_rarity_label": "Legendary"
@@ -7410,7 +7410,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 750000,
       "slot_label": "Helmet",
       "max_rarity_label": "Ascendant",
@@ -7511,7 +7511,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 450000,
       "slot_label": "Helmet",
       "max_rarity_label": "Ascendant"
@@ -7611,7 +7611,7 @@
       "to_hit": 10,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 500000,
       "slot_label": "Helmet",
       "max_rarity_label": "Ascendant",
@@ -7712,7 +7712,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 20000,
       "slot_label": "Helmet",
       "max_rarity_label": "Legendary"
@@ -7812,7 +7812,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 5000,
       "slot_label": "Helmet",
       "max_rarity_label": "Rare"
@@ -7912,7 +7912,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 18000,
       "slot_label": "Helmet",
       "max_rarity_label": "Uncommon"
@@ -8012,7 +8012,7 @@
       "to_hit": 0,
       "unknown_93": 76,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 750000,
       "slot_label": "Helmet",
       "max_rarity_label": "Ascendant",
@@ -8113,7 +8113,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 230000,
       "slot_label": "Helmet",
       "max_rarity_label": "Ascendant",
@@ -8214,7 +8214,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 230000,
       "slot_label": "Helmet",
       "max_rarity_label": "Ascendant",
@@ -8315,7 +8315,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 1000000,
       "slot_label": "Helmet",
       "max_rarity_label": "Ascendant",
@@ -8416,7 +8416,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 230000,
       "slot_label": "Helmet",
       "max_rarity_label": "Ascendant",
@@ -8517,7 +8517,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 230000,
       "slot_label": "Helmet",
       "max_rarity_label": "Ascendant"
@@ -8617,7 +8617,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 230000,
       "slot_label": "Helmet",
       "max_rarity_label": "Ascendant",
@@ -8718,11 +8718,12 @@
       "to_hit": 10,
       "unknown_93": 30,
       "unknown_94": 1,
-      "unknown_95": 104,
+      "corrupted_perk": 104,
       "value": 500000,
       "slot_label": "Helmet",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Destruction (Tier 3)"
+      "perk_label": "Destruction (Tier 3)",
+      "corrupted_perk_label": "Flame Buffet (Tier 1)"
     }
   },
   {
@@ -8819,7 +8820,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 200000,
       "slot_label": "Helmet",
       "max_rarity_label": "Ascendant",
@@ -8920,7 +8921,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 100,
       "slot_label": "Shield",
       "max_rarity_label": "Common"
@@ -9020,7 +9021,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 800,
       "slot_label": "Shield",
       "max_rarity_label": "Common"
@@ -9120,7 +9121,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 600,
       "slot_label": "Shield",
       "max_rarity_label": "Common"
@@ -9220,7 +9221,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 1600,
       "slot_label": "Shield",
       "max_rarity_label": "Common"
@@ -9320,7 +9321,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 1500,
       "slot_label": "Shield",
       "max_rarity_label": "Common"
@@ -9420,7 +9421,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 2000,
       "slot_label": "Shield",
       "max_rarity_label": "Common"
@@ -9520,7 +9521,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 2500,
       "slot_label": "Shield",
       "max_rarity_label": "Common"
@@ -9620,7 +9621,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 4500,
       "slot_label": "Shield",
       "max_rarity_label": "Common"
@@ -9720,7 +9721,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 4500,
       "slot_label": "Shield",
       "max_rarity_label": "Common"
@@ -9820,7 +9821,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 4500,
       "slot_label": "Shield",
       "max_rarity_label": "Common"
@@ -9920,7 +9921,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 4500,
       "slot_label": "Shield",
       "max_rarity_label": "Common"
@@ -10020,7 +10021,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 4500,
       "slot_label": "Shield",
       "max_rarity_label": "Common"
@@ -10120,7 +10121,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 4500,
       "slot_label": "Shield",
       "max_rarity_label": "Common"
@@ -10220,7 +10221,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 5000,
       "slot_label": "Shield",
       "max_rarity_label": "Common"
@@ -10320,7 +10321,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 6000,
       "slot_label": "Shield",
       "max_rarity_label": "Common"
@@ -10420,7 +10421,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 4000,
       "slot_label": "Shield",
       "max_rarity_label": "Common"
@@ -10520,7 +10521,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 7500,
       "slot_label": "Shield",
       "max_rarity_label": "Common"
@@ -10620,7 +10621,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 6000,
       "slot_label": "Shield",
       "max_rarity_label": "Common"
@@ -10720,7 +10721,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 6500,
       "slot_label": "Shield",
       "max_rarity_label": "Common"
@@ -10820,7 +10821,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 50000,
       "slot_label": "Shield",
       "max_rarity_label": "Legendary"
@@ -10920,7 +10921,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 75000,
       "slot_label": "Shield",
       "max_rarity_label": "Legendary"
@@ -11020,7 +11021,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 75000,
       "slot_label": "Shield",
       "max_rarity_label": "Legendary"
@@ -11120,7 +11121,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 50000,
       "slot_label": "Shield",
       "max_rarity_label": "Legendary"
@@ -11220,7 +11221,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 245000,
       "slot_label": "Shield",
       "max_rarity_label": "Ascendant",
@@ -11321,7 +11322,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 75000,
       "slot_label": "Shield",
       "max_rarity_label": "Legendary"
@@ -11421,7 +11422,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 245000,
       "slot_label": "Shield",
       "max_rarity_label": "Ascendant",
@@ -11522,7 +11523,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 50000,
       "slot_label": "Shield",
       "max_rarity_label": "Legendary"
@@ -11622,7 +11623,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 245000,
       "slot_label": "Shield",
       "max_rarity_label": "Ascendant",
@@ -11723,7 +11724,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 75000,
       "slot_label": "Shield",
       "max_rarity_label": "Mythical"
@@ -11823,7 +11824,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 245000,
       "slot_label": "Shield",
       "max_rarity_label": "Ascendant",
@@ -11924,7 +11925,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 300000,
       "slot_label": "Shield",
       "max_rarity_label": "Ascendant",
@@ -12025,7 +12026,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 40000,
       "slot_label": "Shield",
       "max_rarity_label": "Mythical"
@@ -12125,7 +12126,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 750000,
       "slot_label": "Shield",
       "max_rarity_label": "Ascendant",
@@ -12226,7 +12227,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 135000,
       "slot_label": "Shield",
       "max_rarity_label": "Legendary"
@@ -12326,7 +12327,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 135000,
       "slot_label": "Shield",
       "max_rarity_label": "Legendary"
@@ -12426,7 +12427,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 0,
       "slot_label": "Shield",
       "max_rarity_label": "Ascendant",
@@ -12527,7 +12528,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 300000,
       "slot_label": "Shield",
       "max_rarity_label": "Ascendant",
@@ -12628,7 +12629,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 750000,
       "slot_label": "Shield",
       "max_rarity_label": "Ascendant",
@@ -12729,7 +12730,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 10000,
       "slot_label": "Shield",
       "max_rarity_label": "Rare"
@@ -12829,7 +12830,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 18000,
       "slot_label": "Shield",
       "max_rarity_label": "Rare"
@@ -12929,7 +12930,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 245000,
       "slot_label": "Shield",
       "max_rarity_label": "Ascendant",
@@ -13030,7 +13031,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 245000,
       "slot_label": "Shield",
       "max_rarity_label": "Ascendant",
@@ -13131,7 +13132,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 200000,
       "slot_label": "Shield",
       "max_rarity_label": "Ascendant"
@@ -13231,7 +13232,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 300000,
       "slot_label": "Shield",
       "max_rarity_label": "Ascendant",
@@ -13332,7 +13333,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 0,
       "slot_label": "Shield",
       "max_rarity_label": "Common"
@@ -13432,7 +13433,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 245000,
       "slot_label": "Shield",
       "max_rarity_label": "Ascendant",
@@ -13533,7 +13534,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 245000,
       "slot_label": "Shield",
       "max_rarity_label": "Ascendant",
@@ -13634,11 +13635,12 @@
       "to_hit": 0,
       "unknown_93": 31,
       "unknown_94": 1,
-      "unknown_95": 523,
+      "corrupted_perk": 523,
       "value": 0,
       "slot_label": "Shield",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Juggernaut"
+      "perk_label": "Juggernaut (Tier 3)",
+      "corrupted_perk_label": "Parry (Tier 3)"
     }
   },
   {
@@ -13735,7 +13737,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 200000,
       "slot_label": "Shield",
       "max_rarity_label": "Ascendant",
@@ -13836,7 +13838,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 245000,
       "slot_label": "Shield",
       "max_rarity_label": "Ascendant",
@@ -13937,7 +13939,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 100,
       "slot_label": "Leggings",
       "max_rarity_label": "Common"
@@ -14037,7 +14039,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 200,
       "slot_label": "Leggings",
       "max_rarity_label": "Common"
@@ -14137,7 +14139,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 300,
       "slot_label": "Leggings",
       "max_rarity_label": "Common"
@@ -14237,7 +14239,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 1000,
       "slot_label": "Leggings",
       "max_rarity_label": "Common"
@@ -14337,7 +14339,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 4000,
       "slot_label": "Leggings",
       "max_rarity_label": "Common"
@@ -14437,7 +14439,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 4000,
       "slot_label": "Leggings",
       "max_rarity_label": "Common"
@@ -14537,7 +14539,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 6000,
       "slot_label": "Leggings",
       "max_rarity_label": "Common"
@@ -14637,7 +14639,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 12000,
       "slot_label": "Leggings",
       "max_rarity_label": "Uncommon"
@@ -14737,7 +14739,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 16000,
       "slot_label": "Leggings",
       "max_rarity_label": "Uncommon"
@@ -14837,7 +14839,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 25000,
       "slot_label": "Leggings",
       "max_rarity_label": "Rare"
@@ -14937,7 +14939,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 235000,
       "slot_label": "Leggings",
       "max_rarity_label": "Ascendant"
@@ -15037,7 +15039,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 235000,
       "slot_label": "Leggings",
       "max_rarity_label": "Ascendant"
@@ -15137,7 +15139,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 75000,
       "slot_label": "Leggings",
       "max_rarity_label": "Legendary"
@@ -15237,7 +15239,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 235000,
       "slot_label": "Leggings",
       "max_rarity_label": "Ascendant"
@@ -15337,7 +15339,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 235000,
       "slot_label": "Leggings",
       "max_rarity_label": "Ascendant"
@@ -15437,7 +15439,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 150000,
       "slot_label": "Leggings",
       "max_rarity_label": "Mythical"
@@ -15537,7 +15539,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 400000,
       "slot_label": "Leggings",
       "max_rarity_label": "Ascendant",
@@ -15638,7 +15640,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 130000,
       "slot_label": "Leggings",
       "max_rarity_label": "Legendary"
@@ -15738,7 +15740,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 130000,
       "slot_label": "Leggings",
       "max_rarity_label": "Legendary"
@@ -15838,7 +15840,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 400000,
       "slot_label": "Leggings",
       "max_rarity_label": "Ascendant"
@@ -15938,7 +15940,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 25000,
       "slot_label": "Leggings",
       "max_rarity_label": "Rare"
@@ -16038,7 +16040,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 125000,
       "slot_label": "Leggings",
       "max_rarity_label": "Mythical",
@@ -16139,7 +16141,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 1000000,
       "slot_label": "Leggings",
       "max_rarity_label": "Ascendant",
@@ -16240,7 +16242,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 235000,
       "slot_label": "Leggings",
       "max_rarity_label": "Ascendant",
@@ -16341,7 +16343,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 235000,
       "slot_label": "Leggings",
       "max_rarity_label": "Ascendant"
@@ -16441,7 +16443,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 235000,
       "slot_label": "Leggings",
       "max_rarity_label": "Ascendant",
@@ -16542,7 +16544,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 235000,
       "slot_label": "Leggings",
       "max_rarity_label": "Ascendant",
@@ -16643,7 +16645,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 235000,
       "slot_label": "Leggings",
       "max_rarity_label": "Ascendant",
@@ -16744,7 +16746,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 200000,
       "slot_label": "Leggings",
       "max_rarity_label": "Ascendant",
@@ -16845,7 +16847,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 100,
       "slot_label": "Gauntlets",
       "max_rarity_label": "Common"
@@ -16945,7 +16947,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 150,
       "slot_label": "Gauntlets",
       "max_rarity_label": "Common"
@@ -17045,7 +17047,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 200,
       "slot_label": "Gauntlets",
       "max_rarity_label": "Common"
@@ -17145,7 +17147,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 150,
       "slot_label": "Gauntlets",
       "max_rarity_label": "Common"
@@ -17245,7 +17247,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 1000,
       "slot_label": "Gauntlets",
       "max_rarity_label": "Common"
@@ -17345,7 +17347,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 1500,
       "slot_label": "Gauntlets",
       "max_rarity_label": "Common"
@@ -17445,7 +17447,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 2000,
       "slot_label": "Gauntlets",
       "max_rarity_label": "Common"
@@ -17545,7 +17547,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 4000,
       "slot_label": "Gauntlets",
       "max_rarity_label": "Common"
@@ -17645,7 +17647,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 4000,
       "slot_label": "Gauntlets",
       "max_rarity_label": "Common"
@@ -17745,7 +17747,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 5000,
       "slot_label": "Gauntlets",
       "max_rarity_label": "Common"
@@ -17845,7 +17847,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 25000,
       "slot_label": "Gauntlets",
       "max_rarity_label": "Rare"
@@ -17945,7 +17947,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 9000,
       "slot_label": "Gauntlets",
       "max_rarity_label": "Uncommon"
@@ -18045,7 +18047,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 12000,
       "slot_label": "Gauntlets",
       "max_rarity_label": "Uncommon"
@@ -18145,7 +18147,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 225000,
       "slot_label": "Gauntlets",
       "max_rarity_label": "Ascendant"
@@ -18245,7 +18247,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 225000,
       "slot_label": "Gauntlets",
       "max_rarity_label": "Ascendant"
@@ -18345,7 +18347,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 75000,
       "slot_label": "Gauntlets",
       "max_rarity_label": "Legendary"
@@ -18445,7 +18447,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 225000,
       "slot_label": "Gauntlets",
       "max_rarity_label": "Ascendant"
@@ -18545,7 +18547,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 225000,
       "slot_label": "Gauntlets",
       "max_rarity_label": "Ascendant"
@@ -18645,7 +18647,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 275000,
       "slot_label": "Gauntlets",
       "max_rarity_label": "Ascendant"
@@ -18745,7 +18747,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 125000,
       "slot_label": "Gauntlets",
       "max_rarity_label": "Legendary"
@@ -18845,7 +18847,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 125000,
       "slot_label": "Gauntlets",
       "max_rarity_label": "Legendary"
@@ -18945,7 +18947,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 275000,
       "slot_label": "Gauntlets",
       "max_rarity_label": "Ascendant"
@@ -19045,7 +19047,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 12000,
       "slot_label": "Gauntlets",
       "max_rarity_label": "Rare"
@@ -19145,7 +19147,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 1000000,
       "slot_label": "Gauntlets",
       "max_rarity_label": "Ascendant"
@@ -19245,7 +19247,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 225000,
       "slot_label": "Gauntlets",
       "max_rarity_label": "Ascendant",
@@ -19346,7 +19348,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 225000,
       "slot_label": "Gauntlets",
       "max_rarity_label": "Ascendant"
@@ -19446,7 +19448,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 225000,
       "slot_label": "Gauntlets",
       "max_rarity_label": "Ascendant",
@@ -19547,7 +19549,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 225000,
       "slot_label": "Gauntlets",
       "max_rarity_label": "Ascendant",
@@ -19648,7 +19650,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 225000,
       "slot_label": "Gauntlets",
       "max_rarity_label": "Ascendant",
@@ -19749,7 +19751,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 200000,
       "slot_label": "Gauntlets",
       "max_rarity_label": "Ascendant",
@@ -19850,7 +19852,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 0,
       "slot_label": "Cosmetic",
       "max_rarity_label": "Ascendant",
@@ -19951,11 +19953,12 @@
       "to_hit": 0,
       "unknown_93": 51,
       "unknown_94": 1,
-      "unknown_95": 541,
+      "corrupted_perk": 541,
       "value": 0,
       "slot_label": "Cosmetic",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Vampirism (Tier 2)"
+      "perk_label": "Vampirism (Tier 2)",
+      "corrupted_perk_label": "Vampirism (Tier 3)"
     }
   },
   {
@@ -20052,11 +20055,12 @@
       "to_hit": 0,
       "unknown_93": 49,
       "unknown_94": 1,
-      "unknown_95": 513,
+      "corrupted_perk": 513,
       "value": 0,
       "slot_label": "Cosmetic",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Lifesteal (Tier 2)"
+      "perk_label": "Lifesteal (Tier 2)",
+      "corrupted_perk_label": "Lifesteal (Tier 3)"
     }
   },
   {
@@ -20153,7 +20157,7 @@
       "to_hit": 0,
       "unknown_93": 61,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 0,
       "slot_label": "Cosmetic",
       "max_rarity_label": "Ascendant",
@@ -20254,11 +20258,12 @@
       "to_hit": 0,
       "unknown_93": 70,
       "unknown_94": 1,
-      "unknown_95": 522,
+      "corrupted_perk": 522,
       "value": 0,
       "slot_label": "Cosmetic",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Juggernaut (Tier 2)"
+      "perk_label": "Juggernaut (Tier 2)",
+      "corrupted_perk_label": "Juggernaut (Tier 3)"
     }
   },
   {
@@ -20355,11 +20360,12 @@
       "to_hit": 0,
       "unknown_93": 36,
       "unknown_94": 1,
-      "unknown_95": 536,
+      "corrupted_perk": 536,
       "value": 0,
       "slot_label": "Cosmetic",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Tourniquet (Tier 2)"
+      "perk_label": "Tourniquet (Tier 2)",
+      "corrupted_perk_label": "Tourniquet (Tier 3)"
     }
   },
   {
@@ -20456,11 +20462,12 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 519,
+      "corrupted_perk": 519,
       "value": 0,
       "slot_label": "Cosmetic",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Bolstered Strength (Tier 2)"
+      "perk_label": "Bolstered Strength (Tier 2)",
+      "corrupted_perk_label": "Bolstered Strength (Tier 3)"
     }
   },
   {
@@ -20557,11 +20564,12 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 525,
+      "corrupted_perk": 525,
       "value": 0,
       "slot_label": "Cosmetic",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Knowledge (Tier 2)"
+      "perk_label": "Knowledge (Tier 2)",
+      "corrupted_perk_label": "Knowledge (Tier 3)"
     }
   },
   {
@@ -20658,11 +20666,12 @@
       "to_hit": 0,
       "unknown_93": 73,
       "unknown_94": 1,
-      "unknown_95": 514,
+      "corrupted_perk": 514,
       "value": 0,
       "slot_label": "Cosmetic",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Vampirisim (Tier 1)"
+      "perk_label": "Vampirisim (Tier 1)",
+      "corrupted_perk_label": "Vampirisim (Tier 2)"
     }
   },
   {
@@ -20759,11 +20768,12 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 518,
+      "corrupted_perk": 518,
       "value": 0,
       "slot_label": "Cosmetic",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Vitality (Tier 2)"
+      "perk_label": "Vitality (Tier 2)",
+      "corrupted_perk_label": "Vitality (Tier 3)"
     }
   },
   {
@@ -20860,11 +20870,12 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 526,
+      "corrupted_perk": 526,
       "value": 0,
       "slot_label": "Cosmetic",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Moneybags (Tier 2)"
+      "perk_label": "Moneybags (Tier 2)",
+      "corrupted_perk_label": "Moneybags (Tier 3)"
     }
   },
   {
@@ -20961,11 +20972,12 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 515,
+      "corrupted_perk": 515,
       "value": 0,
       "slot_label": "Cosmetic",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Rejuvenation (Tier 2)"
+      "perk_label": "Rejuvenation (Tier 2)",
+      "corrupted_perk_label": "Rejuvenation (Tier 3)"
     }
   },
   {
@@ -21062,11 +21074,12 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 516,
+      "corrupted_perk": 516,
       "value": 0,
       "slot_label": "Cosmetic",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Antitoxin (Tier 2)"
+      "perk_label": "Antitoxin (Tier 2)",
+      "corrupted_perk_label": "Antitoxin (Tier 3)"
     }
   },
   {
@@ -21163,11 +21176,12 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 517,
+      "corrupted_perk": 517,
       "value": 0,
       "slot_label": "Cosmetic",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Immunization (Tier 2)"
+      "perk_label": "Immunization (Tier 2)",
+      "corrupted_perk_label": "Immunization (Tier 3)"
     }
   },
   {
@@ -21264,11 +21278,12 @@
       "to_hit": 0,
       "unknown_93": 60,
       "unknown_94": 1,
-      "unknown_95": 560,
+      "corrupted_perk": 560,
       "value": 0,
       "slot_label": "Cosmetic",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Bloodlust (Tier 2)"
+      "perk_label": "Bloodlust (Tier 2)",
+      "corrupted_perk_label": "Bloodlust (Tier 3)"
     }
   },
   {
@@ -21365,11 +21380,12 @@
       "to_hit": 0,
       "unknown_93": 24,
       "unknown_94": 1,
-      "unknown_95": 523,
+      "corrupted_perk": 523,
       "value": 0,
       "slot_label": "Cosmetic",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Parry (Tier 2)"
+      "perk_label": "Parry (Tier 2)",
+      "corrupted_perk_label": "Parry (Tier 3)"
     }
   },
   {
@@ -21466,7 +21482,7 @@
       "to_hit": 0,
       "unknown_93": 30,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 0,
       "slot_label": "Cosmetic",
       "max_rarity_label": "Ascendant",
@@ -21567,11 +21583,12 @@
       "to_hit": 0,
       "unknown_93": 31,
       "unknown_94": 1,
-      "unknown_95": 533,
+      "corrupted_perk": 533,
       "value": 0,
       "slot_label": "Cosmetic",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Demon Blood (Tier 2)"
+      "perk_label": "Demon Blood (Tier 2)",
+      "corrupted_perk_label": "Demon Blood (Tier 3)"
     }
   },
   {
@@ -21668,11 +21685,12 @@
       "to_hit": 0,
       "unknown_93": 43,
       "unknown_94": 1,
-      "unknown_95": 534,
+      "corrupted_perk": 534,
       "value": 0,
       "slot_label": "Cosmetic",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Frozen Heart (Tier 2)"
+      "perk_label": "Frozen Heart (Tier 2)",
+      "corrupted_perk_label": "Frozen Heart (Tier 3)"
     }
   },
   {
@@ -21769,11 +21787,12 @@
       "to_hit": 0,
       "unknown_93": 48,
       "unknown_94": 1,
-      "unknown_95": 524,
+      "corrupted_perk": 524,
       "value": 0,
       "slot_label": "Cosmetic",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Alchemist (Tier 2)"
+      "perk_label": "Alchemist (Tier 2)",
+      "corrupted_perk_label": "Alchemist (Tier 3)"
     }
   },
   {
@@ -21870,7 +21889,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 0,
       "slot_label": "Cosmetic",
       "max_rarity_label": "Ascendant",
@@ -21971,11 +21990,12 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 537,
+      "corrupted_perk": 537,
       "value": 0,
       "slot_label": "Cosmetic",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Hazmat (Tier 2)"
+      "perk_label": "Hazmat (Tier 2)",
+      "corrupted_perk_label": "Hazmat (Tier 3)"
     }
   },
   {
@@ -22072,11 +22092,12 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 538,
+      "corrupted_perk": 538,
       "value": 0,
       "slot_label": "Cosmetic",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Antacid (Tier 2)"
+      "perk_label": "Antacid (Tier 2)",
+      "corrupted_perk_label": "Antacid (Tier 3)"
     }
   },
   {
@@ -22173,11 +22194,12 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 535,
+      "corrupted_perk": 535,
       "value": 0,
       "slot_label": "Cosmetic",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Lightning Field (Tier 2)"
+      "perk_label": "Lightning Field (Tier 2)",
+      "corrupted_perk_label": "Lightning Field (Tier 3)"
     }
   },
   {
@@ -22274,7 +22296,7 @@
       "to_hit": 0,
       "unknown_93": 73,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 0,
       "slot_label": "Cosmetic",
       "max_rarity_label": "Ascendant"
@@ -22374,7 +22396,7 @@
       "to_hit": 0,
       "unknown_93": 32,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 0,
       "slot_label": "Cosmetic",
       "max_rarity_label": "Ascendant",
@@ -22475,7 +22497,7 @@
       "to_hit": 0,
       "unknown_93": 1,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 0,
       "slot_label": "Cosmetic",
       "max_rarity_label": "Ascendant",
@@ -22576,7 +22598,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 0,
       "slot_label": "Cosmetic",
       "max_rarity_label": "Ascendant",
@@ -22677,7 +22699,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 0,
       "slot_label": "Cosmetic",
       "max_rarity_label": "Ascendant",
@@ -22778,11 +22800,12 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 542,
+      "corrupted_perk": 542,
       "value": 0,
       "slot_label": "Cosmetic",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Garrote (Tier 2)"
+      "perk_label": "Garrote (Tier 2)",
+      "corrupted_perk_label": "Garrote (Tier 3)"
     }
   },
   {
@@ -22879,7 +22902,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 0,
       "slot_label": "Cosmetic",
       "max_rarity_label": "Ascendant",
@@ -22980,11 +23003,12 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 521,
+      "corrupted_perk": 521,
       "value": 0,
       "slot_label": "Cosmetic",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Magic Shield (Tier 2)"
+      "perk_label": "Magic Shield (Tier 2)",
+      "corrupted_perk_label": "Magic Shield (Tier 3)"
     }
   },
   {
@@ -23081,7 +23105,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 0,
       "slot_label": "Cosmetic",
       "max_rarity_label": "Ascendant"
@@ -23181,11 +23205,12 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 548,
+      "corrupted_perk": 548,
       "value": 0,
       "slot_label": "Cosmetic",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Lethal Toxins (Tier 2)"
+      "perk_label": "Lethal Toxins (Tier 2)",
+      "corrupted_perk_label": "Lethal Toxins (Tier 3)"
     }
   },
   {
@@ -23282,11 +23307,12 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 547,
+      "corrupted_perk": 547,
       "value": 0,
       "slot_label": "Cosmetic",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Epidemic (Tier 2)"
+      "perk_label": "Epidemic (Tier 2)",
+      "corrupted_perk_label": "Epidemic (Tier 3)"
     }
   },
   {
@@ -23383,7 +23409,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 0,
       "max_rarity_label": "Common",
       "perk_label": "Overpower (Tier 2)"
@@ -23483,7 +23509,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 0,
       "slot_label": "Cosmetic",
       "max_rarity_label": "Ascendant"
@@ -23583,11 +23609,12 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 563,
+      "corrupted_perk": 563,
       "value": 0,
       "slot_label": "Cosmetic",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Critical Aegis (Tier 2)"
+      "perk_label": "Critical Aegis (Tier 2)",
+      "corrupted_perk_label": "Bloodlust (Tier 2)"
     }
   },
   {
@@ -23684,11 +23711,12 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 549,
+      "corrupted_perk": 549,
       "value": 0,
       "slot_label": "Cosmetic",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Destruction (Tier 2)"
+      "perk_label": "Destruction (Tier 2)",
+      "corrupted_perk_label": "Destruction (Tier 3)"
     }
   },
   {
@@ -23785,7 +23813,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 0,
       "slot_label": "Cosmetic",
       "max_rarity_label": "Ascendant",
@@ -23886,7 +23914,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 0,
+      "corrupted_perk": 0,
       "value": 0,
       "slot_label": "Cosmetic",
       "max_rarity_label": "Ascendant",
@@ -23987,11 +24015,12 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "unknown_95": 564,
+      "corrupted_perk": 564,
       "value": 0,
       "slot_label": "Cosmetic",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Toxic Shell (Tier 2)"
+      "perk_label": "Toxic Shell (Tier 2)",
+      "corrupted_perk_label": "Toxic Shell (Tier 3)"
     }
   }
 ]
