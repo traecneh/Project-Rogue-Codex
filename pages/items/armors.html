@@ -1043,8 +1043,11 @@
             }
 
             if (!searchTerm) return true;
-            const text = COLUMNS
-              .map((col) => formatValue(item[col.key]))
+            const text = [
+              ...COLUMNS.map((col) => formatValue(item[col.key])),
+              formatValue(item.perk),
+              formatValue(item.corruptedPerk),
+            ]
               .join(" ")
               .toLowerCase();
             return text.includes(searchTerm.toLowerCase());
