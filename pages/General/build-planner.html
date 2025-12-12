@@ -107,6 +107,26 @@
         color: var(--text-muted);
       }
 
+      .slot-item-link {
+        display: none;
+        color: var(--text-main);
+        text-decoration: none;
+        cursor: pointer;
+        line-height: 1.1;
+      }
+
+      .slot-card.has-item .slot-item-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        flex-wrap: wrap;
+      }
+
+      .slot-item-link:hover,
+      .slot-item-link:focus-visible {
+        text-decoration: underline;
+      }
+
       .slot-name {
         font-size: 1.1rem;
         font-weight: 700;
@@ -188,8 +208,7 @@
       }
 
       .rarity-max {
-        color: var(--text-muted);
-        font-size: 0.85rem;
+        display: none;
       }
 
       .search-bar {
@@ -350,6 +369,10 @@
         background: var(--bg-panel-dark);
       }
 
+      .suggestion.is-active {
+        background: var(--bg-panel-dark);
+      }
+
       .suggestion-title {
         font-weight: 700;
         color: var(--text-main);
@@ -402,6 +425,22 @@
         gap: 0.3rem 0.5rem;
         font-size: 0.95rem;
       }
+
+      .summary-chip {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.15rem 0.55rem;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(0, 0, 0, 0.25);
+        font-size: 0.85rem;
+        line-height: 1.2;
+        white-space: nowrap;
+      }
+
+      .summary-chip[data-muted="true"] {
+        opacity: 0.55;
+      }
     </style>
   </head>
   <body>
@@ -424,14 +463,21 @@
               autocomplete="off"
             />
             <button type="button" id="share-build" class="share-button">Share Build</button>
-            <div id="gear-suggestions" class="search-suggestions" style="display: none"></div>
+            <div
+              id="gear-suggestions"
+              class="search-suggestions"
+              role="listbox"
+              aria-label="Search suggestions"
+              style="display: none"
+            ></div>
           </div>
 
           <div class="planner-grid">
             <div class="planner-col planner-col--center">
               <div class="slot-card" data-slot="Gauntlets">
                 <button type="button" class="slot-clear" aria-label="Clear slot">&times;</button>
-                <div class="slot-name">Gauntlets</div>
+                <div class="slot-label">Gauntlets</div>
+                <a class="slot-name slot-item-link" data-slot-item tabindex="-1"></a>
                 <div class="slot-visual">
                   <img class="slot-image" alt="Gauntlets preview" />
                   <div class="slot-placeholder slot-placeholder--small"></div>
@@ -477,7 +523,8 @@
               </div>
               <div class="slot-card" data-slot="Shield">
                 <button type="button" class="slot-clear" aria-label="Clear slot">&times;</button>
-                <div class="slot-name">Shield</div>
+                <div class="slot-label">Shield</div>
+                <a class="slot-name slot-item-link" data-slot-item tabindex="-1"></a>
                 <div class="slot-visual">
                   <img class="slot-image" alt="Shield preview" />
                   <div class="slot-placeholder slot-placeholder--small"></div>
@@ -526,7 +573,8 @@
             <div class="planner-col planner-col--stacked">
               <div class="slot-card" data-slot="Helmet">
                 <button type="button" class="slot-clear" aria-label="Clear slot">&times;</button>
-                <div class="slot-name">Helmet</div>
+                <div class="slot-label">Helmet</div>
+                <a class="slot-name slot-item-link" data-slot-item tabindex="-1"></a>
                 <div class="slot-visual">
                   <img class="slot-image" alt="Helmet preview" />
                   <div class="slot-placeholder slot-placeholder--small"></div>
@@ -572,7 +620,8 @@
               </div>
               <div class="slot-card" data-slot="Chest">
                 <button type="button" class="slot-clear" aria-label="Clear slot">&times;</button>
-                <div class="slot-name">Chest</div>
+                <div class="slot-label">Chest</div>
+                <a class="slot-name slot-item-link" data-slot-item tabindex="-1"></a>
                 <div class="slot-visual">
                   <img class="slot-image" alt="Chest preview" />
                   <div class="slot-placeholder slot-placeholder--small"></div>
@@ -618,7 +667,8 @@
               </div>
               <div class="slot-card" data-slot="Leggings">
                 <button type="button" class="slot-clear" aria-label="Clear slot">&times;</button>
-                <div class="slot-name">Leggings</div>
+                <div class="slot-label">Leggings</div>
+                <a class="slot-name slot-item-link" data-slot-item tabindex="-1"></a>
                 <div class="slot-visual">
                   <img class="slot-image" alt="Leggings preview" />
                   <div class="slot-placeholder slot-placeholder--small"></div>
@@ -667,7 +717,8 @@
             <div class="planner-col planner-col--center">
               <div class="slot-card" data-slot="Weapon">
                 <button type="button" class="slot-clear" aria-label="Clear slot">&times;</button>
-                <div class="slot-name">Weapon</div>
+                <div class="slot-label">Weapon</div>
+                <a class="slot-name slot-item-link" data-slot-item tabindex="-1"></a>
                 <div class="slot-visual">
                   <img class="slot-image" alt="Weapon preview" />
                   <div class="slot-placeholder slot-placeholder--small"></div>
@@ -714,7 +765,8 @@
               </div>
               <div class="slot-card" data-slot="Cosmetic">
                 <button type="button" class="slot-clear" aria-label="Clear slot">&times;</button>
-                <div class="slot-name">Cosmetic</div>
+                <div class="slot-label">Cosmetic</div>
+                <a class="slot-name slot-item-link" data-slot-item tabindex="-1"></a>
                 <div class="slot-visual">
                   <img class="slot-image" alt="Cosmetic preview" />
                   <div class="slot-placeholder slot-placeholder--small"></div>
@@ -886,7 +938,7 @@
               <div class="summary-value summary-list" id="sum-resists">None</div>
             </div>
             <div class="summary-card">
-              <div class="summary-label">Innate Perks</div>
+              <div class="summary-label">Perks</div>
               <div class="summary-value summary-list" id="sum-perks">None</div>
             </div>
           </div>
@@ -901,6 +953,40 @@
         const slotEls = new Map(
           Array.from(document.querySelectorAll(".slot-card")).map((card) => [card.dataset.slot, card])
         );
+
+        let activeSuggestionIndex = -1;
+        const getSuggestionItems = () =>
+          suggestionsEl ? Array.from(suggestionsEl.querySelectorAll(".suggestion")) : [];
+
+        const clearActiveSuggestion = () => {
+          const items = getSuggestionItems();
+          items.forEach((el) => {
+            el.classList.remove("is-active");
+            el.setAttribute("aria-selected", "false");
+          });
+          activeSuggestionIndex = -1;
+        };
+
+        const setActiveSuggestion = (nextIndex, { focus = true } = {}) => {
+          const items = getSuggestionItems();
+          if (!items.length) return;
+
+          const index = Math.max(0, Math.min(nextIndex, items.length - 1));
+          items.forEach((el, i) => {
+            const isActive = i === index;
+            el.classList.toggle("is-active", isActive);
+            el.setAttribute("aria-selected", isActive ? "true" : "false");
+          });
+          activeSuggestionIndex = index;
+          if (focus) items[index].focus();
+        };
+
+        const closeSuggestions = ({ keepContent = false } = {}) => {
+          if (!suggestionsEl) return;
+          clearActiveSuggestion();
+          suggestionsEl.style.display = "none";
+          if (!keepContent) suggestionsEl.innerHTML = "";
+        };
         const RARITY_TIERS = [
           { label: "Common", statMin: 0, statMax: 0, bonusAC: 0 },
           { label: "Uncommon", statMin: 2, statMax: 5, bonusAC: 0 },
@@ -993,6 +1079,15 @@
           ).join("");
         };
 
+        const getItemHref = (item) => {
+          if (!item) return "";
+          const name = String(item.name || "").trim();
+          if (!name) return "";
+          if (item.kind === "weapon") return `pages/items/weapons.html?weapon=${encodeURIComponent(name)}`;
+          if (item.kind === "armor") return `pages/items/armors.html?armor=${encodeURIComponent(name)}`;
+          return "";
+        };
+
         const deriveImageCandidates = (item, folder = "weapons") => {
           const candidates = [];
           const direct = typeof item === "string" ? item : item && item.image;
@@ -1014,23 +1109,40 @@
           return Array.from(new Set(candidates.filter(Boolean)));
         };
 
-        const setSlotImage = (slot, item, folder) => {
+        const setSlotImage = (slot, item, folder, options = {}) => {
+          const restoreState = options && typeof options === "object" ? options.restoreState : null;
+          const skipPersist = Boolean(options && typeof options === "object" && options.skipPersist);
           const card = slotEls.get(slot);
           if (!card) return;
           const img = card.querySelector(".slot-image");
           const placeholder = card.querySelector(".slot-placeholder");
           if (!img || !placeholder) return;
           card.classList.add("has-item");
-          const titleEl = card.querySelector(".slot-name");
+          const titleEl = card.querySelector("[data-slot-item]");
           if (titleEl) {
-            titleEl.textContent = item?.name || card.dataset.slot || "";
+            const itemName = String(item?.name || "").trim();
+            titleEl.textContent = itemName || "Unknown";
+            const href = getItemHref(item);
+            if (href) {
+              titleEl.setAttribute("href", href);
+              titleEl.tabIndex = 0;
+              titleEl.setAttribute("aria-label", `Open ${itemName}`);
+            } else {
+              titleEl.removeAttribute("href");
+              titleEl.tabIndex = -1;
+              titleEl.removeAttribute("aria-label");
+            }
           }
           const maxRarityLabel = item.maxRarityLabel || item.max_rarity_label || item.max_rarity;
           const maxRarityIndex = Math.min(
             RARITY_TIERS.length - 1,
             rarityIndexFromLabel(maxRarityLabel !== undefined ? maxRarityLabel : 0)
           );
-          const rarityIndex = 0; // start at Common regardless of current selection
+
+          const restoredRarityIndex = restoreState ? Math.max(0, Number(restoreState.rarityIndex) || 0) : 0;
+          const rarityIndex = restoreState
+            ? Math.min(maxRarityIndex, restoredRarityIndex)
+            : 0; // start at Common for new selections
           selectedBySlot[slot] = {
             ...item,
             rarityIndex,
@@ -1041,7 +1153,22 @@
             bonusAC: 0,
             bonusResists: { fire: 0, cold: 0, electric: 0, acid: 0, poison: 0, disease: 0 },
           };
-          rollRarityBonuses(slot);
+
+          if (restoreState) {
+            const data = selectedBySlot[slot];
+            data.extraPerkName = restoreState.extraPerkName || null;
+            data.extraPerkTier = restoreState.extraPerkTier || null;
+            data.bonusStr = typeof restoreState.bonusStr === "number" ? restoreState.bonusStr : 0;
+            data.bonusDex = typeof restoreState.bonusDex === "number" ? restoreState.bonusDex : 0;
+            data.bonusCon = typeof restoreState.bonusCon === "number" ? restoreState.bonusCon : 0;
+
+            const tier = getRarityTier(data.rarityIndex);
+            data.bonusAC = tier.bonusAC;
+            normalizeRarityBonuses(data);
+          } else {
+            rollRarityBonuses(slot);
+          }
+
           updateSlotRarityUI(slot);
           updateSlotPerkUI(slot);
           const sources = deriveImageCandidates(item, folder);
@@ -1069,9 +1196,9 @@
               }
             };
             img.src = sources[index];
-          };
-          trySet();
-          persistState();
+           };
+           trySet();
+          if (!skipPersist) schedulePersistState();
         };
 
         const clearSlot = (slot) => {
@@ -1079,7 +1206,7 @@
           if (!card) return;
           const img = card.querySelector(".slot-image");
           const placeholder = card.querySelector(".slot-placeholder");
-          const titleEl = card.querySelector(".slot-name");
+          const titleEl = card.querySelector("[data-slot-item]");
           if (img) {
             img.removeAttribute("src");
             img.style.display = "none";
@@ -1088,14 +1215,18 @@
             placeholder.style.display = "flex";
           }
           if (titleEl) {
-            titleEl.textContent = card.dataset.slot || "";
+            titleEl.textContent = "";
+            titleEl.removeAttribute("href");
+            titleEl.tabIndex = -1;
+            titleEl.removeAttribute("aria-label");
           }
           card.classList.remove("has-item");
           delete selectedBySlot[slot];
           updateSlotPerkUI(slot, true);
           updateSlotRarityUI(slot);
+          updateStatAdjustUI(slot);
           updateTotals();
-          persistState();
+          schedulePersistState();
         };
 
         const dataset = {
@@ -1144,6 +1275,20 @@
           }
         };
 
+        let persistTimer = null;
+        const schedulePersistState = (delay = 200) => {
+          if (persistTimer) window.clearTimeout(persistTimer);
+          persistTimer = window.setTimeout(() => {
+            persistTimer = null;
+            persistState();
+          }, delay);
+        };
+        const persistStateNow = () => {
+          if (persistTimer) window.clearTimeout(persistTimer);
+          persistTimer = null;
+          persistState();
+        };
+
         const decodeState = () => {
           try {
             const url = new URL(window.location.href);
@@ -1169,20 +1314,7 @@
             const item = findItem(entry.kind, entry.name);
             if (!item) return;
             const folder = entry.kind === "weapon" ? "weapons" : "armors";
-            setSlotImage(entry.slot, item, folder);
-            if (selectedBySlot[entry.slot]) {
-              const data = selectedBySlot[entry.slot];
-              data.rarityIndex = Math.min(data.maxRarityIndex, Math.max(0, Number(entry.rarityIndex) || 0));
-              data.extraPerkName = entry.extraPerkName || null;
-              data.extraPerkTier = entry.extraPerkTier || null;
-              if (typeof entry.bonusStr === "number") data.bonusStr = entry.bonusStr;
-              if (typeof entry.bonusDex === "number") data.bonusDex = entry.bonusDex;
-              if (typeof entry.bonusCon === "number") data.bonusCon = entry.bonusCon;
-              rollRarityBonuses(entry.slot);
-              updateSlotRarityUI(entry.slot);
-              updateSlotPerkUI(entry.slot);
-              updateStatAdjustUI(entry.slot);
-            }
+            setSlotImage(entry.slot, item, folder, { restoreState: entry, skipPersist: true });
           });
 
           if (state.char) {
@@ -1213,18 +1345,19 @@
             const input = document.getElementById(id);
             const valueEl = document.getElementById(label);
             if (!input || !valueEl) return;
-            const update = () => {
+            const update = (shouldPersist = false) => {
               valueEl.textContent = input.value;
               updateTotals();
+              if (shouldPersist) schedulePersistState();
             };
-            input.addEventListener("input", update);
-            update();
+            input.addEventListener("input", () => update(true));
+            update(false);
           });
           if (raceSelect) {
             if (!raceSelect.options.length) populateRaceOptions();
             raceSelect.addEventListener("change", () => {
               updateTotals();
-              persistState();
+              schedulePersistState();
             });
           }
         };
@@ -1235,6 +1368,38 @@
         };
 
         const sumObjects = (list, key) => list.reduce((acc, obj) => acc + toNumber(obj?.[key]), 0);
+
+        const getRarityTier = (rarityIndex) => RARITY_TIERS[rarityIndex] || RARITY_TIERS[0];
+
+        const getRarityStatCap = (rarityIndex) => {
+          const tier = getRarityTier(rarityIndex);
+          const max = Number(tier?.statMax);
+          return Number.isFinite(max) ? Math.min(30, Math.max(0, Math.trunc(max))) : 0;
+        };
+
+        const getBonusStatSum = (data) =>
+          toNumber(data?.bonusStr) + toNumber(data?.bonusDex) + toNumber(data?.bonusCon);
+
+        const normalizeRarityBonuses = (data) => {
+          if (!data) return;
+          data.bonusStr = Math.max(0, Math.trunc(toNumber(data.bonusStr)));
+          data.bonusDex = Math.max(0, Math.trunc(toNumber(data.bonusDex)));
+          data.bonusCon = Math.max(0, Math.trunc(toNumber(data.bonusCon)));
+
+          const cap = getRarityStatCap(data.rarityIndex);
+          let sum = getBonusStatSum(data);
+          if (sum <= cap) return;
+
+          let overflow = sum - cap;
+          const keys = ["bonusStr", "bonusDex", "bonusCon"].sort((a, b) => toNumber(data[b]) - toNumber(data[a]));
+          for (const key of keys) {
+            if (overflow <= 0) break;
+            const current = toNumber(data[key]);
+            const reduce = Math.min(current, overflow);
+            data[key] = current - reduce;
+            overflow -= reduce;
+          }
+        };
 
         const allocateStats = (total) => {
           let remaining = Math.max(0, Math.round(total));
@@ -1327,7 +1492,8 @@
           };
         };
 
-        const formatResists = (res) => {
+        const formatResists = (res, options = {}) => {
+          const includeZero = Boolean(options.includeZero);
           const entries = [];
           const labels = {
             fire: "Fire",
@@ -1337,9 +1503,10 @@
             poison: "Poison",
             disease: "Disease",
           };
-          Object.entries(res).forEach(([key, val]) => {
-            if (toNumber(val) !== 0) {
-              entries.push({ label: labels[key], value: toNumber(val), color: RESIST_COLORS[key] });
+          Object.entries(labels).forEach(([key, label]) => {
+            const value = toNumber(res ? res[key] : 0);
+            if (value !== 0 || includeZero) {
+              entries.push({ label, value, color: RESIST_COLORS[key] });
             }
           });
           return entries;
@@ -1371,6 +1538,11 @@
             return;
           }
           row.style.display = "flex";
+          normalizeRarityBonuses(data);
+          const cap = getRarityStatCap(data.rarityIndex);
+          const sum = getBonusStatSum(data);
+          const remaining = Math.max(0, cap - sum);
+          row.title = `Rarity bonus stats: ${sum}/${cap} (remaining ${remaining})`;
           row.querySelectorAll(".stat-row").forEach((container) => {
             const stat = container.dataset.stat;
             const valEl = container.querySelector("[data-stat-value]");
@@ -1378,6 +1550,10 @@
             const current =
               stat === "str" ? data.bonusStr : stat === "dex" ? data.bonusDex : stat === "con" ? data.bonusCon : 0;
             valEl.textContent = current;
+            const decBtn = container.querySelector("[data-stat-dec]");
+            const incBtn = container.querySelector("[data-stat-inc]");
+            if (decBtn) decBtn.disabled = current <= 0;
+            if (incBtn) incBtn.disabled = remaining <= 0;
           });
         };
 
@@ -1415,13 +1591,13 @@
             select.dataset.bound = "true";
             select.addEventListener("change", () => {
               data.extraPerkName = select.value || null;
-              persistState();
+              schedulePersistState();
               updateTotals();
             });
             if (tierSelect) {
               tierSelect.addEventListener("change", () => {
                 data.extraPerkTier = Number(tierSelect.value) || 1;
-                persistState();
+                schedulePersistState();
                 updateTotals();
               });
             }
@@ -1443,11 +1619,12 @@
           const data = selectedBySlot[slot];
 
           if (!data) {
-            if (labelEl) labelEl.textContent = "—";
-            if (maxEl) maxEl.textContent = "Max: —";
+            if (labelEl) labelEl.textContent = "-";
+            if (maxEl) maxEl.textContent = "";
             if (incBtn) incBtn.disabled = true;
             if (decBtn) decBtn.disabled = true;
             if (labelEl) labelEl.style.color = "var(--text-main)";
+            if (labelEl) labelEl.title = "";
             return;
           }
 
@@ -1455,7 +1632,8 @@
           const maxTier = RARITY_TIERS[data.maxRarityIndex] || RARITY_TIERS[RARITY_TIERS.length - 1];
           if (labelEl) labelEl.textContent = tier.label;
           if (labelEl) labelEl.style.color = RARITY_COLORS[tier.label] || "var(--text-main)";
-          if (maxEl) maxEl.textContent = `Max: ${maxTier.label}`;
+          if (maxEl) maxEl.textContent = "";
+          if (labelEl) labelEl.title = `Max rarity: ${maxTier.label}`;
           if (incBtn) incBtn.disabled = data.rarityIndex >= data.maxRarityIndex;
           if (decBtn) decBtn.disabled = data.rarityIndex <= 0;
           updateSlotPerkUI(slot);
@@ -1544,26 +1722,47 @@
           }
 
           if (totals.resists) {
-            const list = formatResists(resistTotals);
-            if (!list.length) {
+            const list = formatResists(resistTotals, { includeZero: true });
+            const hasAny = list.some((entry) => toNumber(entry.value) !== 0);
+            if (!hasAny) {
               totals.resists.textContent = "None";
             } else {
               totals.resists.innerHTML = "";
-              list.forEach((item, idx) => {
-                const span = document.createElement("span");
-                span.textContent = `${item.label} ${item.value}`;
-                if (item.color) span.style.color = item.color;
-                totals.resists.appendChild(span);
-                if (idx < list.length - 1) {
-                  const comma = document.createTextNode(", ");
-                  totals.resists.appendChild(comma);
+              list.forEach((item) => {
+                const chip = document.createElement("span");
+                chip.className = "summary-chip";
+                chip.textContent = `${item.label} ${item.value}`;
+                if (item.color) {
+                  chip.style.color = item.color;
+                  chip.style.borderColor = item.color;
                 }
+                if (toNumber(item.value) === 0) {
+                  chip.setAttribute("data-muted", "true");
+                }
+                totals.resists.appendChild(chip);
               });
             }
           }
 
           if (totals.perks) {
-            totals.perks.textContent = perkSet.size ? Array.from(perkSet).join(", ") : "None";
+            if (!perkSet.size) {
+              totals.perks.textContent = "None";
+            } else {
+              const utils = window.RogueCodexUtils || {};
+              const getPerkTierColor = utils.getPerkTierColor || (() => "");
+              totals.perks.innerHTML = "";
+              Array.from(perkSet).forEach((perk) => {
+                const chip = document.createElement("span");
+                chip.className = "summary-chip";
+                chip.textContent = perk;
+                const color = getPerkTierColor(perk);
+                if (color) {
+                  chip.style.color = color;
+                  chip.style.borderColor = color;
+                }
+                totals.perks.appendChild(chip);
+              });
+            }
           }
 
           const maxHealth = 20 + charLevel * 15 + totalCon * 10 + totalStr * 2;
@@ -1634,18 +1833,24 @@
           rollRarityBonuses(slot);
           updateSlotRarityUI(slot);
           updateTotals();
-          persistState();
+          schedulePersistState();
         };
 
         const adjustStat = (slot, stat, delta) => {
           const data = selectedBySlot[slot];
-          if (!data) return;
-          if (stat === "str") data.bonusStr = (data.bonusStr || 0) + delta;
-          if (stat === "dex") data.bonusDex = (data.bonusDex || 0) + delta;
-          if (stat === "con") data.bonusCon = (data.bonusCon || 0) + delta;
+          if (!data || data.rarityIndex < 1) return;
+          normalizeRarityBonuses(data);
+          const cap = getRarityStatCap(data.rarityIndex);
+          const sum = getBonusStatSum(data);
+          if (delta > 0 && sum >= cap) return;
+
+          if (stat === "str") data.bonusStr = toNumber(data.bonusStr) + delta;
+          if (stat === "dex") data.bonusDex = toNumber(data.bonusDex) + delta;
+          if (stat === "con") data.bonusCon = toNumber(data.bonusCon) + delta;
+          normalizeRarityBonuses(data);
           updateStatAdjustUI(slot);
           updateTotals();
-          persistState();
+          schedulePersistState();
         };
 
         slotEls.forEach((card, slot) => {
@@ -1667,23 +1872,26 @@
         const buildSuggestions = (query) => {
           if (!suggestionsEl) return;
           suggestionsEl.innerHTML = "";
-          if (!query || query.length < 1) {
-            suggestionsEl.style.display = "none";
+          clearActiveSuggestion();
+          const term = String(query || "").trim().toLowerCase();
+          if (!term) {
+            closeSuggestions();
             return;
           }
-          const term = query.toLowerCase();
           const matches = [...dataset.weapons, ...dataset.armors]
             .filter((item) => (item.name || "").toLowerCase().includes(term))
             .slice(0, 12);
           if (!matches.length) {
-            suggestionsEl.style.display = "none";
+            closeSuggestions();
             return;
           }
 
-          matches.forEach((item) => {
+          matches.forEach((item, idx) => {
             const div = document.createElement("div");
             div.className = "suggestion";
-            div.tabIndex = 0;
+            div.tabIndex = -1;
+            div.setAttribute("role", "option");
+            div.setAttribute("aria-selected", "false");
 
             const title = document.createElement("div");
             title.className = "suggestion-title";
@@ -1691,7 +1899,7 @@
 
             const meta = document.createElement("div");
             meta.className = "suggestion-meta";
-            meta.textContent = `${item.kind === "weapon" ? "Weapon" : "Armor"} • Slot: ${item.slot || "—"}`;
+            meta.textContent = `${item.kind === "weapon" ? "Weapon" : "Armor"} \u2022 Slot: ${item.slot || "—"}`;
 
             div.appendChild(title);
             div.appendChild(meta);
@@ -1699,12 +1907,15 @@
             const handleSelect = () => {
               const targetSlot = item.slot || "Weapon";
               setSlotImage(targetSlot, item, item.kind === "weapon" ? "weapons" : "armors");
-              suggestionsEl.style.display = "none";
+              closeSuggestions();
               searchInput.value = "";
+              searchInput.focus();
               updateTotals();
             };
 
             div.addEventListener("click", handleSelect);
+            div.addEventListener("mouseenter", () => setActiveSuggestion(idx, { focus: false }));
+            div.addEventListener("focus", () => setActiveSuggestion(idx, { focus: false }));
             div.addEventListener("keydown", (e) => {
               if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
@@ -1784,6 +1995,7 @@
 
         const copyShareLink = async () => {
           try {
+            persistStateNow();
             await navigator.clipboard.writeText(window.location.href);
             const btn = document.getElementById("share-build");
             if (btn) {
@@ -1800,9 +2012,78 @@
 
         if (searchInput) {
           searchInput.addEventListener("input", (e) => buildSuggestions(e.target.value));
+          searchInput.addEventListener("focus", () => {
+            if (searchInput.value && searchInput.value.trim()) {
+              buildSuggestions(searchInput.value);
+            }
+          });
+          searchInput.addEventListener("keydown", (e) => {
+            if (!suggestionsEl) return;
+
+            if (e.key === "Escape") {
+              closeSuggestions();
+              return;
+            }
+
+            if (e.key === "ArrowDown") {
+              e.preventDefault();
+              if (suggestionsEl.style.display === "none" && searchInput.value.trim()) {
+                buildSuggestions(searchInput.value);
+              }
+              const items = getSuggestionItems();
+              if (!items.length) return;
+              const next = activeSuggestionIndex < 0 ? 0 : Math.min(activeSuggestionIndex + 1, items.length - 1);
+              setActiveSuggestion(next);
+              return;
+            }
+
+            if (e.key === "ArrowUp") {
+              e.preventDefault();
+              if (suggestionsEl.style.display === "none" && searchInput.value.trim()) {
+                buildSuggestions(searchInput.value);
+              }
+              const items = getSuggestionItems();
+              if (!items.length) return;
+              const next = activeSuggestionIndex < 0 ? items.length - 1 : Math.max(activeSuggestionIndex - 1, 0);
+              setActiveSuggestion(next);
+            }
+          });
+
+          if (suggestionsEl) {
+            suggestionsEl.addEventListener("keydown", (e) => {
+              const items = getSuggestionItems();
+              if (!items.length) return;
+              const currentIndex = items.indexOf(document.activeElement);
+              if (currentIndex < 0) return;
+
+              if (e.key === "Escape") {
+                e.preventDefault();
+                closeSuggestions();
+                searchInput.focus();
+                return;
+              }
+
+              if (e.key === "ArrowDown") {
+                e.preventDefault();
+                setActiveSuggestion(Math.min(currentIndex + 1, items.length - 1));
+                return;
+              }
+
+              if (e.key === "ArrowUp") {
+                e.preventDefault();
+                if (currentIndex <= 0) {
+                  clearActiveSuggestion();
+                  searchInput.focus();
+                  return;
+                }
+                setActiveSuggestion(currentIndex - 1);
+              }
+            });
+          }
+
           document.addEventListener("click", (e) => {
             if (!suggestionsEl.contains(e.target) && e.target !== searchInput) {
-              suggestionsEl.style.display = "none";
+              closeSuggestions();
             }
           });
         }
@@ -1815,7 +2096,7 @@
         loadData().then(() => {
           populateRaceOptions();
           applySavedState();
-          persistState();
+          persistStateNow();
           slotEls.forEach((_, slot) => updateSlotRarityUI(slot));
           updateTotals();
           wireCharacterSliders();
