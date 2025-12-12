@@ -11,6 +11,53 @@
     <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
     <link rel="stylesheet" href="css/styles.css" />
+    <style>
+      .perk-index {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        margin: 0 0 1rem;
+        padding: 0.75rem;
+        border: 1px solid var(--border-soft);
+        border-radius: var(--radius-md);
+        background: linear-gradient(180deg, var(--bg-panel-gradient-start), var(--bg-panel-gradient-end));
+      }
+
+      .perk-index-label {
+        color: var(--text-muted);
+        font-size: 0.95rem;
+      }
+
+      .perk-index-select {
+        min-width: min(360px, 100%);
+        padding: 0.5rem 0.6rem;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border-soft);
+        background: var(--bg-panel-dark);
+        color: var(--text-main);
+      }
+
+      .perk-index-select:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+
+      .stat-card.perk-jump-target {
+        border-color: var(--accent);
+        outline: 2px solid rgba(75, 255, 75, 0.45);
+        outline-offset: 3px;
+        box-shadow:
+          0 0 0 1px rgba(75, 255, 75, 0.12),
+          0 0 18px rgba(75, 255, 75, 0.18);
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .stat-card.perk-jump-target {
+          transition: none;
+        }
+      }
+    </style>
     <script src="js/site-search.js" defer></script>
     <script src="js/weapon-specialty.js" defer></script>
     <script src="js/stat-widgets.js" defer></script>
@@ -84,6 +131,12 @@
 
         <article class="content-section" id="perk-list">
           <h2>Perks</h2>
+          <div class="perk-index" aria-label="Perk index">
+            <label class="perk-index-label" for="perk-jump">Jump to perk</label>
+            <select id="perk-jump" class="perk-index-select" aria-label="Jump to perk">
+              <option value="">Loading perks…</option>
+            </select>
+          </div>
           <div class="stat-grid perk-grid">
           <section class="stat-card">
             <h3>Alchemist</h3>
@@ -242,10 +295,42 @@
             </p>
           </section>
           <section class="stat-card">
-            <h3>Resistances</h3>
+            <span id="perk-resistances"></span>
+            <h3>Demon Blood</h3>
             <p>
-              <em>(Demon Blood, Frozen Heart, Lightning Field, Touriquet, Hazmat, Antacid)</em> &mdash; increases
-              element-specific resistance by <strong>[8/10/12]%</strong>.
+              Increases <span style="color: var(--resist-fire)">Fire</span> resistance by <strong>[8/10/12]%</strong>.
+            </p>
+          </section>
+          <section class="stat-card">
+            <h3>Frozen Heart</h3>
+            <p>
+              Increases <span style="color: var(--resist-cold)">Cold</span> resistance by <strong>[8/10/12]%</strong>.
+            </p>
+          </section>
+          <section class="stat-card">
+            <h3>Lightning Field</h3>
+            <p>
+              Increases <span style="color: var(--resist-electric)">Lightning</span> resistance by
+              <strong>[8/10/12]%</strong>.
+            </p>
+          </section>
+          <section class="stat-card">
+            <h3>Tourniquet</h3>
+            <p>
+              Increases <span style="color: var(--resist-poison)">Poison</span> resistance by <strong>[8/10/12]%</strong>.
+            </p>
+          </section>
+          <section class="stat-card">
+            <h3>Hazmat</h3>
+            <p>
+              Increases <span style="color: var(--resist-disease)">Disease</span> resistance by
+              <strong>[8/10/12]%</strong>.
+            </p>
+          </section>
+          <section class="stat-card">
+            <h3>Antacid</h3>
+            <p>
+              Increases <span style="color: var(--resist-acid)">Acid</span> resistance by <strong>[8/10/12]%</strong>.
             </p>
           </section>
           <section class="stat-card">
@@ -355,7 +440,174 @@
         </article>
       </main>
     </div>
+
+    <script>
+      (() => {
+        const perkJump = document.getElementById("perk-jump");
+        let highlightedCard = null;
+
+        const getPreferredScrollBehavior = () => {
+          try {
+            return window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+          } catch (error) {
+            return "smooth";
+          }
+        };
+
+        const getPerkSlug = (name) => {
+          if (!name) return "";
+          const slug = String(name)
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-+|-+$/g, "");
+          return slug ? `perk-${slug}` : "";
+        };
+
+        const fetchPerksIndex = async () => {
+          try {
+            const url = new URL("pages/systems/perks.json", document.baseURI).toString();
+            const response = await fetch(url);
+            if (!response.ok) throw new Error("Failed to load perks.json");
+            return await response.json();
+          } catch (error) {
+            console.warn(error.message || error);
+            return null;
+          }
+        };
+
+        const highlightCard = (node) => {
+          const card = node ? node.closest?.(".stat-card") || node : null;
+          if (!card) return;
+
+          if (highlightedCard && highlightedCard !== card) {
+            highlightedCard.classList.remove("perk-jump-target");
+          }
+
+          highlightedCard = card;
+          card.classList.add("perk-jump-target");
+        };
+
+        const jumpToSlug = (slug, { updateHistory = false } = {}) => {
+          const targetSlug = (slug || "").replace(/^#/, "");
+          if (!targetSlug) return;
+          const target = document.getElementById(targetSlug);
+          if (!target) return;
+          target.scrollIntoView({ behavior: getPreferredScrollBehavior(), block: "start" });
+          highlightCard(target);
+          if (updateHistory) {
+            try {
+              history.replaceState(null, "", `#${targetSlug}`);
+            } catch (error) {
+              /* noop */
+            }
+          }
+        };
+
+        const bindCardIds = (perks) => {
+          const cards = Array.from(document.querySelectorAll("#perk-list .stat-card, #unique-effects .stat-card"));
+          if (!cards.length) return;
+
+          const byName = new Map();
+          perks.forEach((entry) => {
+            if (!entry || typeof entry.name !== "string") return;
+            byName.set(entry.name.trim().toLowerCase(), entry);
+          });
+
+          cards.forEach((card) => {
+            const name = card.querySelector("h3")?.textContent?.trim() || "";
+            if (!name) return;
+            const entry = byName.get(name.toLowerCase());
+            const slug = entry?.slug || getPerkSlug(name);
+            if (slug) card.id = slug;
+            card.setAttribute("data-perk-name", name);
+          });
+        };
+
+        const populatePerkJump = (perks) => {
+          if (!perkJump) return;
+
+          const normal = perks
+            .filter((entry) => entry && typeof entry.name === "string")
+            .filter((entry) => entry.isUnique !== true)
+            .map((entry) => ({
+              name: entry.name.trim(),
+              slug: entry.slug || getPerkSlug(entry.name),
+              group: entry.group ? String(entry.group).trim() : "",
+            }))
+            .filter((entry) => entry.name && entry.slug);
+
+          const unique = perks
+            .filter((entry) => entry && typeof entry.name === "string")
+            .filter((entry) => entry.isUnique === true)
+            .map((entry) => ({ name: entry.name.trim(), slug: entry.slug || getPerkSlug(entry.name) }))
+            .filter((entry) => entry.name && entry.slug);
+
+          const grouped = new Map();
+          const ungrouped = [];
+          normal.forEach((entry) => {
+            if (entry.group) {
+              const items = grouped.get(entry.group) || [];
+              items.push(entry);
+              grouped.set(entry.group, items);
+              return;
+            }
+            ungrouped.push(entry);
+          });
+          ungrouped.sort((a, b) => a.name.localeCompare(b.name));
+          unique.sort((a, b) => a.name.localeCompare(b.name));
+
+          perkJump.innerHTML = "";
+          const placeholder = document.createElement("option");
+          placeholder.value = "";
+          placeholder.textContent = "Jump to…";
+          perkJump.appendChild(placeholder);
+
+          const appendGroup = (label, items) => {
+            if (!items.length) return;
+            const group = document.createElement("optgroup");
+            group.label = label;
+            items.forEach((item) => {
+              const opt = document.createElement("option");
+              opt.value = item.slug;
+              opt.textContent = item.name;
+              group.appendChild(opt);
+            });
+            perkJump.appendChild(group);
+          };
+
+          appendGroup("Perks", ungrouped);
+          grouped.forEach((items, label) => appendGroup(label, items));
+          appendGroup("Unique Perks", unique);
+
+          perkJump.addEventListener("change", () => {
+            const slug = perkJump.value || "";
+            if (!slug) return;
+            jumpToSlug(slug, { updateHistory: true });
+          });
+        };
+
+        document.addEventListener("DOMContentLoaded", async () => {
+          const index = await fetchPerksIndex();
+          const perks = Array.isArray(index?.perks) ? index.perks : [];
+          if (!perks.length) {
+            if (perkJump) {
+              perkJump.innerHTML = '<option value="">Perks unavailable</option>';
+            }
+            return;
+          }
+          bindCardIds(perks);
+          populatePerkJump(perks);
+
+          if (window.location.hash) {
+            jumpToSlug(window.location.hash, { updateHistory: false });
+          }
+
+          window.addEventListener("hashchange", () => {
+            if (!window.location.hash) return;
+            jumpToSlug(window.location.hash, { updateHistory: false });
+          });
+        });
+      })();
+    </script>
   </body>
 </html>
-
-

@@ -1156,7 +1156,8 @@
 
           if (restoreState) {
             const data = selectedBySlot[slot];
-            data.extraPerkName = restoreState.extraPerkName || null;
+            const restoredExtraPerkName = restoreState.extraPerkName || null;
+            data.extraPerkName = restoredExtraPerkName === "Touriquet" ? "Tourniquet" : restoredExtraPerkName;
             data.extraPerkTier = restoreState.extraPerkTier || null;
             data.bonusStr = typeof restoreState.bonusStr === "number" ? restoreState.bonusStr : 0;
             data.bonusDex = typeof restoreState.bonusDex === "number" ? restoreState.bonusDex : 0;
@@ -1939,53 +1940,25 @@
           return Promise.all([
             fetchJsonCached(new URL("../items/weapons_data05.json", window.location.href).toString()),
             fetchJsonCached(new URL("../items/armors_data06.json", window.location.href).toString()),
+            fetchJsonCached(new URL("../systems/perks.json", window.location.href).toString()),
           ])
-            .then(([weapons, armors]) => {
+            .then(([weapons, armors, perksIndex]) => {
               dataset.weapons = Array.isArray(weapons) ? weapons.map((w) => toWeapon(w)) : [];
               dataset.armors = Array.isArray(armors) ? armors.map((a) => toArmor(a)) : [];
-              // hard-coded perks from perks.html for simplicity
-              perkOptions = [
-                "Alchemist",
-                "Antitoxin",
-                "Beastslayer",
-                "Bloodlust",
-                "Bloodthirster",
-                "Bolstered Strength",
-                "Brutality",
-                "Consecration",
-                "Critical Aegis",
-                "Demonsbane",
-                "Desperation",
-                "Destruction",
-                "Epidemic",
-                "Executioner",
-                "Garrote",
-                "Hawkeye",
-                "Iceshatter",
-                "Immunization",
-                "Impenetrable",
-                "Juggernaut",
-                "Knowledge",
-                "Lethal Toxins",
-                "Lifesteal",
-                "Magic Shield",
-                "Moneybags",
-                "Overpower",
-                "Parry",
-                "Rejuvenation",
-                "Demon Blood",
-                "Frozen Heart",
-                "Lightning Field",
-                "Touriquet",
-                "Hazmat",
-                "Antacid",
-                "Swiftness",
-                "Tenacity",
-                "Toxic Shell",
-                "Vampirism",
-                "Venomshock",
-                "Vitality",
-              ];
+              const perks = Array.isArray(perksIndex?.perks) ? perksIndex.perks : [];
+              const seen = new Set();
+              perkOptions = perks
+                .filter((entry) => entry && typeof entry.name === "string")
+                .filter((entry) => entry.isUnique !== true)
+                .filter((entry) => entry.selectable !== false)
+                .map((entry) => entry.name.trim())
+                .filter(Boolean)
+                .filter((name) => {
+                  const key = name.toLowerCase();
+                  if (seen.has(key)) return false;
+                  seen.add(key);
+                  return true;
+                });
             })
             .catch(() => {
               dataset.weapons = [];
