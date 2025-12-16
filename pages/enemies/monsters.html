@@ -280,6 +280,39 @@
         gap: 0.5rem 1rem;
       }
 
+      .detail-span {
+        grid-column: 1 / -1;
+      }
+
+      .detail-subgrid {
+        grid-column: 1 / -1;
+        display: grid;
+        gap: 0.5rem 1rem;
+      }
+
+      .detail-subgrid.cols-3 {
+        grid-template-columns: repeat(3, minmax(170px, 1fr));
+      }
+
+      .detail-subgrid.cols-4 {
+        grid-template-columns: repeat(4, minmax(170px, 1fr));
+      }
+
+      .detail-pill-grid {
+        display: grid;
+        gap: 0.35rem;
+        justify-items: start;
+        align-items: start;
+      }
+
+      .detail-pill-grid.cols-3 {
+        grid-template-columns: repeat(3, minmax(170px, 1fr));
+      }
+
+      .detail-pill-grid.cols-4 {
+        grid-template-columns: repeat(4, minmax(170px, 1fr));
+      }
+
       .detail-label {
         font-size: 0.8rem;
         text-transform: uppercase;
@@ -514,10 +547,24 @@
         .monster-details-info {
           grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
         }
+
+        .detail-subgrid.cols-3,
+        .detail-subgrid.cols-4,
+        .detail-pill-grid.cols-3,
+        .detail-pill-grid.cols-4 {
+          grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        }
       }
 
       @media (max-width: 640px) {
         .monster-details-info {
+          grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        }
+
+        .detail-subgrid.cols-3,
+        .detail-subgrid.cols-4,
+        .detail-pill-grid.cols-3,
+        .detail-pill-grid.cols-4 {
           grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
         }
       }
@@ -594,116 +641,112 @@
               </div>
               <div class="detail-divider" aria-hidden="true"></div>
               <div class="flag-block">
-              <div class="detail-label">Flags</div>
-              <div class="flag-pills" id="details-flags"></div>
-            </div>
-            <div class="flag-block">
-              <div class="detail-label">Target When Flags</div>
-              <div class="flag-pills" id="details-target-flags"></div>
-            </div>
-            <div class="detail-divider" aria-hidden="true"></div>
-            <div class="detail-stat hoverable">
-              <div class="detail-label">
-                <img src="images/elite.gif" alt="" width="18" height="18" />
-                Elite
+                <div class="detail-label">Flags</div>
+                <div class="flag-pills" id="details-flags"></div>
+              </div>
+              <div class="flag-block">
+                <div class="detail-label">Target When Flags</div>
+                <div class="flag-pills" id="details-target-flags"></div>
+              </div>
+              <div class="detail-divider" aria-hidden="true"></div>
+              <div class="detail-subgrid cols-3">
+                <div class="detail-stat hoverable">
+                  <div class="detail-label">
+                    <img src="images/elite.gif" alt="" width="18" height="18" />
+                    Elite
                   </div>
-                <div class="detail-value">
-                  <span class="detail-pill">
-                    <span id="details-elite-summary"></span>
-                    <span class="detail-tooltip" role="tooltip">
-                      <div class="detail-tooltip-row">
-                        <span class="detail-tooltip-label">HP Max</span>
-                        <span id="tooltip-elite-hp">-</span>
-                      </div>
-                      <div class="detail-tooltip-row">
-                        <span class="detail-tooltip-label">Damage</span>
-                        <span id="tooltip-elite-dmg">-</span>
-                      </div>
-                      <div class="detail-tooltip-row">
-                        <span class="detail-tooltip-label">DPS</span>
-                        <span id="tooltip-elite-dps">-</span>
-                      </div>
+                  <div class="detail-value">
+                    <span class="detail-pill">
+                      <span id="details-elite-summary"></span>
+                      <span class="detail-tooltip" role="tooltip">
+                        <div class="detail-tooltip-row">
+                          <span class="detail-tooltip-label">HP Max</span>
+                          <span id="tooltip-elite-hp">-</span>
+                        </div>
+                        <div class="detail-tooltip-row">
+                          <span class="detail-tooltip-label">Damage</span>
+                          <span id="tooltip-elite-dmg">-</span>
+                        </div>
+                        <div class="detail-tooltip-row">
+                          <span class="detail-tooltip-label">DPS</span>
+                          <span id="tooltip-elite-dps">-</span>
+                        </div>
+                      </span>
                     </span>
-                  </span>
+                  </div>
                 </div>
-              </div>
-              <div class="detail-stat hoverable">
-                <div class="detail-label">
-                  <img src="images/corrupted.gif" alt="" width="18" height="18" />
-                  Corrupted
-                </div>
-                <div class="detail-value">
-                  <span class="detail-pill">
-                    <span id="details-corrupted-summary"></span>
-                    <span class="detail-tooltip" role="tooltip">
-                      <div class="detail-tooltip-row">
-                        <span class="detail-tooltip-label">HP Max</span>
-                        <span id="tooltip-corrupted-hp">-</span>
-                      </div>
-                      <div class="detail-tooltip-row">
-                        <span class="detail-tooltip-label">Damage</span>
-                        <span id="tooltip-corrupted-dmg">-</span>
-                      </div>
-                      <div class="detail-tooltip-row">
-                        <span class="detail-tooltip-label">DPS</span>
-                        <span id="tooltip-corrupted-dps">-</span>
-                      </div>
+                <div class="detail-stat hoverable">
+                  <div class="detail-label">
+                    <img src="images/corrupted.gif" alt="" width="18" height="18" />
+                    Corrupted
+                  </div>
+                  <div class="detail-value">
+                    <span class="detail-pill">
+                      <span id="details-corrupted-summary"></span>
+                      <span class="detail-tooltip" role="tooltip">
+                        <div class="detail-tooltip-row">
+                          <span class="detail-tooltip-label">HP Max</span>
+                          <span id="tooltip-corrupted-hp">-</span>
+                        </div>
+                        <div class="detail-tooltip-row">
+                          <span class="detail-tooltip-label">Damage</span>
+                          <span id="tooltip-corrupted-dmg">-</span>
+                        </div>
+                        <div class="detail-tooltip-row">
+                          <span class="detail-tooltip-label">DPS</span>
+                          <span id="tooltip-corrupted-dps">-</span>
+                        </div>
+                      </span>
                     </span>
-                  </span>
+                  </div>
                 </div>
-              </div>
-              <div class="detail-stat hoverable">
-                <div class="detail-label">
-                  <img src="images/elite+.gif" alt="" width="18" height="18" />
-                  Elite+
-                </div>
-                <div class="detail-value">
-                  <span class="detail-pill">
-                    <span id="details-elite-plus-summary"></span>
-                    <span class="detail-tooltip" role="tooltip">
-                      <div class="detail-tooltip-row">
-                        <span class="detail-tooltip-label">HP Max</span>
-                        <span id="tooltip-elite-plus-hp">-</span>
-                      </div>
-                      <div class="detail-tooltip-row">
-                        <span class="detail-tooltip-label">Damage</span>
-                        <span id="tooltip-elite-plus-dmg">-</span>
-                      </div>
-                      <div class="detail-tooltip-row">
-                        <span class="detail-tooltip-label">DPS</span>
-                        <span id="tooltip-elite-plus-dps">-</span>
-                      </div>
+                <div class="detail-stat hoverable">
+                  <div class="detail-label">
+                    <img src="images/elite+.gif" alt="" width="18" height="18" />
+                    Elite+
+                  </div>
+                  <div class="detail-value">
+                    <span class="detail-pill">
+                      <span id="details-elite-plus-summary"></span>
+                      <span class="detail-tooltip" role="tooltip">
+                        <div class="detail-tooltip-row">
+                          <span class="detail-tooltip-label">HP Max</span>
+                          <span id="tooltip-elite-plus-hp">-</span>
+                        </div>
+                        <div class="detail-tooltip-row">
+                          <span class="detail-tooltip-label">Damage</span>
+                          <span id="tooltip-elite-plus-dmg">-</span>
+                        </div>
+                        <div class="detail-tooltip-row">
+                          <span class="detail-tooltip-label">DPS</span>
+                          <span id="tooltip-elite-plus-dps">-</span>
+                        </div>
+                      </span>
                     </span>
-                  </span>
+                  </div>
                 </div>
               </div>
               <div class="detail-divider" aria-hidden="true"></div>
-              <div>
+              <div class="detail-span">
                 <div class="detail-label">Loot Table</div>
                 <div class="detail-value">
-                  <div id="loot-table" style="display: flex; gap: 0.35rem; flex-wrap: wrap;"></div>
+                  <div id="loot-table" class="detail-pill-grid cols-3"></div>
                 </div>
               </div>
               <div class="detail-divider" aria-hidden="true"></div>
-              <div>
+              <div class="detail-span">
                 <div class="detail-label">Recommended Weapons</div>
                 <div class="detail-value">
-                  <div
-                    id="recommended-weapons"
-                    style="display: flex; gap: 0.35rem; flex-wrap: wrap;"
-                  ></div>
+                  <div id="recommended-weapons" class="detail-pill-grid cols-4"></div>
                 </div>
               </div>
-          <div class="detail-divider" aria-hidden="true"></div>
-          <div>
-            <div class="detail-label">Recommended Armors</div>
-            <div class="detail-value">
-              <div
-                id="recommended-armors"
-                style="display: flex; gap: 0.35rem; flex-wrap: wrap;"
-              ></div>
-            </div>
-          </div>
+              <div class="detail-divider" aria-hidden="true"></div>
+              <div class="detail-span">
+                <div class="detail-label">Recommended Armors</div>
+                <div class="detail-value">
+                  <div id="recommended-armors" class="detail-pill-grid cols-4"></div>
+                </div>
+              </div>
             </div>
           </div>
         </section>
