@@ -923,11 +923,13 @@
             elementalAttackRaw === 0
               ? "0"
               : elementalAttackRaw === null || elementalAttackRaw === undefined
-                ? ""
-                : elementalAttackRaw.toString();
+                 ? ""
+                 : elementalAttackRaw.toString();
           const monsterTypeRaw = fields.type_label ?? raw.monsterType ?? fields.type ?? "";
           const monsterType =
             monsterTypeRaw === null || monsterTypeRaw === undefined ? "" : monsterTypeRaw.toString();
+          const uncommonTatter = fields.uncommon_tatter_label ?? "None";
+          const rareTatter = fields.rare_tatter_label ?? "None";
           const flags = extractFlags(raw);
           const baseId = raw.id ?? raw.monsterId ?? raw.name ?? "";
           const normalizedId = normalizeMonsterId(baseId);
@@ -947,6 +949,8 @@
             elementalAttack,
             monsterType,
             hpMax,
+            uncommonTatter,
+            rareTatter,
             flags,
           };
         };
@@ -1733,16 +1737,57 @@
           container.appendChild(pill);
         };
 
+        const buildTatteredImbuementsPill = (monster) => {
+          const normalizeText = (value) => (value === null || value === undefined ? "" : value.toString().trim());
+          const isNone = (value) => {
+            const text = normalizeText(value);
+            return !text || text.toLowerCase() === "none";
+          };
+          const uncommon = monster ? monster.uncommonTatter : "";
+          const rare = monster ? monster.rareTatter : "";
+          if (isNone(uncommon) && isNone(rare)) return null;
+
+          const pill = document.createElement("span");
+          pill.className = "detail-pill";
+          pill.textContent = "Tatters";
+
+          const tooltip = document.createElement("span");
+          tooltip.className = "detail-tooltip";
+          tooltip.role = "tooltip";
+
+          const addRow = (labelText, valueText) => {
+            const row = document.createElement("div");
+            row.className = "detail-tooltip-row";
+            const label = document.createElement("span");
+            label.className = "detail-tooltip-label";
+            label.textContent = labelText;
+            const value = document.createElement("span");
+            value.textContent = normalizeText(valueText) || "-";
+            row.appendChild(label);
+            row.appendChild(value);
+            tooltip.appendChild(row);
+          };
+
+          addRow("Uncommon Tatter", uncommon);
+          addRow("Rare Tatter", rare);
+
+          pill.appendChild(tooltip);
+          return pill;
+        };
+
         const renderLootTable = (monster) => {
           const container = detailFields.lootTable;
           if (!container) return;
           container.innerHTML = "";
+
+          const tatterPill = buildTatteredImbuementsPill(monster);
 
           if (!Array.isArray(weapons) || !weapons.length) {
             const pill = document.createElement("span");
             pill.className = "detail-pill";
             pill.textContent = "No weapons data";
             container.appendChild(pill);
+            if (tatterPill) container.appendChild(tatterPill);
             return;
           }
 
@@ -1752,6 +1797,7 @@
             pill.className = "detail-pill";
             pill.textContent = "No level data";
             container.appendChild(pill);
+            if (tatterPill) container.appendChild(tatterPill);
             return;
           }
 
@@ -1871,6 +1917,8 @@
 
           armorPill.appendChild(armorTooltip);
           container.appendChild(armorPill);
+
+          if (tatterPill) container.appendChild(tatterPill);
         };
 
         const normalizeType = (value) => {
@@ -2089,10 +2137,14 @@
 
           if (term) {
             list = list.filter((m) => {
+              const uncommonTatter = (m.uncommonTatter || "").toString().trim().toLowerCase();
+              const rareTatter = (m.rareTatter || "").toString().trim().toLowerCase();
               return (
                 (m.name && m.name.toLowerCase().includes(term)) ||
                 (m.monsterType && m.monsterType.toLowerCase().includes(term)) ||
-                (m.elementalAttack && m.elementalAttack.toLowerCase().includes(term))
+                (m.elementalAttack && m.elementalAttack.toLowerCase().includes(term)) ||
+                (uncommonTatter && uncommonTatter !== "none" && uncommonTatter.includes(term)) ||
+                (rareTatter && rareTatter !== "none" && rareTatter.includes(term))
               );
             });
           }

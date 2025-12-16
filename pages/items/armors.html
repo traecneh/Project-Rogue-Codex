@@ -832,6 +832,12 @@
           updateSortIndicators();
         };
 
+        const formatRequirement = (requirement) => {
+          if (requirement === 2) return "Evil Reputation";
+          if (requirement === 6) return "Good Reputation";
+          return `Player Level ${formatNumber(requirement)}`;
+        };
+
         const setDetails = (item) => {
           if (!item) return;
           detailFields.name.textContent = item.name || "Unknown";
@@ -923,7 +929,7 @@
 
           addRow(
             container,
-            [["Requirement", `Player Level ${formatNumber(item.playerLevelRequirement)}`]],
+            [["Requirement", formatRequirement(item.playerLevelRequirement)]],
             1
           );
 
