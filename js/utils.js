@@ -1,14 +1,42 @@
 (() => {
   const DEFAULT_JSON_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
+  const PERKS_INDEX_SCHEMA_VERSION = 3;
   const jsonMemoryCache = new Map();
+  let perkIndexPromise = null;
+  let perkIndexMap = null;
 
   function getAbsoluteUrl(url) {
     if (!url) return "";
     try {
-      return new URL(url, window.location.href).toString();
+      const base = typeof document !== "undefined" && document.baseURI ? document.baseURI : window.location.href;
+      return new URL(url, base).toString();
     } catch (error) {
       return String(url);
     }
+  }
+
+  function getPerksIndexUrl() {
+    try {
+      const base = typeof document !== "undefined" && document.baseURI ? document.baseURI : window.location.href;
+      const resolved = new URL("pages/systems/perks.json", base);
+      if (resolved.protocol === "http:" || resolved.protocol === "https:") {
+        resolved.searchParams.set("v", String(PERKS_INDEX_SCHEMA_VERSION));
+      }
+      return resolved.toString();
+    } catch (error) {
+      return "pages/systems/perks.json";
+    }
+  }
+
+  function extractPerkBaseName(value) {
+    const raw = (value || "").toString().trim();
+    if (!raw || raw === "-" || raw.toLowerCase() === "none") return "";
+    return raw
+      .replace(/\s*\(\s*tier\s*\d+\s*\)\s*$/i, "")
+      .replace(/\s*\(\s*t\s*\d+\s*\)\s*$/i, "")
+      .replace(/\s*tier\s*\d+\s*$/i, "")
+      .replace(/\s*t\s*\d+\s*$/i, "")
+      .trim();
   }
 
   function safeReadSession(key) {
@@ -87,6 +115,56 @@
     return promise;
   }
 
+  function loadPerkIndexMap() {
+    if (perkIndexMap) return Promise.resolve(perkIndexMap);
+    if (perkIndexPromise) return perkIndexPromise;
+
+    const url = getPerksIndexUrl();
+    perkIndexPromise = fetchJsonCached(url, {
+      cacheKey: `perks-index-v${PERKS_INDEX_SCHEMA_VERSION}`,
+      ttlMs: DEFAULT_JSON_TTL_MS,
+    })
+      .then((data) => {
+        const entries = Array.isArray(data?.perks) ? data.perks : null;
+        if (!entries || !entries.length) {
+          throw new Error("Perks index unavailable");
+        }
+        const map = new Map();
+        entries.forEach((entry) => {
+          const name = entry && typeof entry.name === "string" ? entry.name.trim() : "";
+          if (!name) return;
+          map.set(name.toLowerCase(), entry);
+        });
+        if (!map.size) {
+          throw new Error("Perks index empty");
+        }
+        perkIndexMap = map;
+        return map;
+      })
+      .catch((error) => {
+        console.warn(error?.message || error);
+        return new Map();
+      })
+      .finally(() => {
+        perkIndexPromise = null;
+      });
+
+    return perkIndexPromise;
+  }
+
+  function formatPerkTooltip(entry, fallbackName) {
+    const name = (entry && typeof entry.name === "string" && entry.name.trim()) || fallbackName || "";
+    const details = Array.isArray(entry?.details) ? entry.details : [];
+    const cleanDetails = details.map((line) => (line || "").toString().trim()).filter(Boolean);
+    if (!name) return cleanDetails.join("\n");
+    if (!cleanDetails.length) return name;
+
+    const [firstDetail, ...rest] = cleanDetails;
+    const firstLine = `${name} — ${firstDetail}`.trim();
+    if (!rest.length) return firstLine;
+    return [firstLine, ...rest].join("\n");
+  }
+
   const ELEMENT_COLORS = {
     fire: "#ff5a5a",
     electric: "#b86bff",
@@ -151,6 +229,18 @@
     span.textContent = formatValue(value);
     const color = getPerkTierColor(value);
     if (color) span.style.color = color;
+
+    const perkName = extractPerkBaseName(value);
+    if (!perkName) return span;
+    span.title = perkName;
+
+    loadPerkIndexMap().then((map) => {
+      const entry = map.get(perkName.toLowerCase());
+      if (!entry) return;
+      const tooltip = formatPerkTooltip(entry, perkName);
+      if (tooltip) span.title = tooltip;
+    });
+
     return span;
   }
 
@@ -179,4 +269,3 @@
     createElementBadge,
   });
 })();
-

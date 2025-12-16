@@ -1,59 +1,303 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 3,
   "perks": [
-    { "name": "Alchemist", "slug": "perk-alchemist", "isUnique": false },
-    { "name": "Antitoxin", "slug": "perk-antitoxin", "isUnique": false },
-    { "name": "Beastslayer", "slug": "perk-beastslayer", "isUnique": false },
-    { "name": "Bloodlust", "slug": "perk-bloodlust", "isUnique": false },
-    { "name": "Bloodthirster", "slug": "perk-bloodthirster", "isUnique": false },
-    { "name": "Bolstered Strength", "slug": "perk-bolstered-strength", "isUnique": false },
-    { "name": "Brutality", "slug": "perk-brutality", "isUnique": false },
-    { "name": "Consecration", "slug": "perk-consecration", "isUnique": false },
-    { "name": "Critical Aegis", "slug": "perk-critical-aegis", "isUnique": false },
-    { "name": "Demonsbane", "slug": "perk-demonsbane", "isUnique": false },
-    { "name": "Desperation", "slug": "perk-desperation", "isUnique": false },
-    { "name": "Destruction", "slug": "perk-destruction", "isUnique": false },
-    { "name": "Epidemic", "slug": "perk-epidemic", "isUnique": false },
-    { "name": "Executioner", "slug": "perk-executioner", "isUnique": false },
-    { "name": "Garrote", "slug": "perk-garrote", "isUnique": false },
-    { "name": "Hawkeye", "slug": "perk-hawkeye", "isUnique": false },
-    { "name": "Iceshatter", "slug": "perk-iceshatter", "isUnique": false },
-    { "name": "Immunization", "slug": "perk-immunization", "isUnique": false },
-    { "name": "Impenetrable", "slug": "perk-impenetrable", "isUnique": false },
-    { "name": "Juggernaut", "slug": "perk-juggernaut", "isUnique": false },
-    { "name": "Knowledge", "slug": "perk-knowledge", "isUnique": false },
-    { "name": "Lethal Toxins", "slug": "perk-lethal-toxins", "isUnique": false },
-    { "name": "Lifesteal", "slug": "perk-lifesteal", "isUnique": false },
-    { "name": "Magic Shield", "slug": "perk-magic-shield", "isUnique": false },
-    { "name": "Moneybags", "slug": "perk-moneybags", "isUnique": false },
-    { "name": "Overpower", "slug": "perk-overpower", "isUnique": false },
-    { "name": "Parry", "slug": "perk-parry", "isUnique": false },
-    { "name": "Rejuvenation", "slug": "perk-rejuvenation", "isUnique": false },
-    { "name": "Demon Blood", "slug": "perk-demon-blood", "isUnique": false, "group": "Resistances", "resistance": "fire" },
-    { "name": "Frozen Heart", "slug": "perk-frozen-heart", "isUnique": false, "group": "Resistances", "resistance": "cold" },
+    {
+      "name": "Alchemist",
+      "slug": "perk-alchemist",
+      "isUnique": false,
+      "details": ["Potions heal an additional [30/40/50]%, additive."]
+    },
+    {
+      "name": "Antitoxin",
+      "slug": "perk-antitoxin",
+      "isUnique": false,
+      "details": ["[20/25/30]% chance to avoid poison, additive."]
+    },
+    {
+      "name": "Beastslayer",
+      "slug": "perk-beastslayer",
+      "isUnique": false,
+      "details": ["[11/13/15]% bonus damage against Beasts and Animals, additive."]
+    },
+    {
+      "name": "Bloodlust",
+      "slug": "perk-bloodlust",
+      "isUnique": false,
+      "details": [
+        "[3/4/5]% chance on attack to grant Bloodlust, increasing attack speed by 250 for 12 + [0/1.5/3] seconds; chance additive.",
+        "At the end of Bloodlust, you become exhausted for 1 minute and cannot trigger Bloodlust; each instance reduces exhaustion by [6/9/12] seconds, additive."
+      ]
+    },
+    {
+      "name": "Bloodthirster",
+      "slug": "perk-bloodthirster",
+      "isUnique": false,
+      "details": ["(21/26/31/36)% chance for attacks to heal you for [4/6/8]% of max health in PvP; half effectiveness in PvE."]
+    },
+    {
+      "name": "Bolstered Strength",
+      "slug": "perk-bolstered-strength",
+      "isUnique": false,
+      "details": ["Increases max weight by [125/175/225]."]
+    },
+    {
+      "name": "Brutality",
+      "slug": "perk-brutality",
+      "isUnique": false,
+      "details": [
+        "(2/3/3/4)% chance on attack to grant +20% Strength for 60 seconds plus an additional [15/30/45] seconds; bonus duration is additive."
+      ]
+    },
+    {
+      "name": "Consecration",
+      "slug": "perk-consecration",
+      "isUnique": false,
+      "details": ["[11/13/15]% bonus damage against Undead and Disease Beasts, additive."]
+    },
+    {
+      "name": "Critical Aegis",
+      "slug": "perk-critical-aegis",
+      "isUnique": false,
+      "details": [
+        "Grants an Overshield for [15/22.5/30]% of Critical Damage dealt.",
+        "Doubles in PvP as damage is mitigatable."
+      ]
+    },
+    {
+      "name": "Demonsbane",
+      "slug": "perk-demonsbane",
+      "isUnique": false,
+      "details": ["[11/13/15]% bonus damage against Demons and Fire Beasts, additive."]
+    },
+    {
+      "name": "Desperation",
+      "slug": "perk-desperation",
+      "isUnique": false,
+      "details": ["Base damage bonus: 2% per perk.", "Additional scaling: up to [6/8/10]% bonus damage based on missing health."]
+    },
+    {
+      "name": "Destruction",
+      "slug": "perk-destruction",
+      "isUnique": false,
+      "details": ["Increases damage dealt by [4/5/6]%."]
+    },
+    {
+      "name": "Epidemic",
+      "slug": "perk-epidemic",
+      "isUnique": false,
+      "details": ["Increases Disease Damage Dealt by [3/4/5]%, additive.", "[4/6/8]% bonus disease chance, additive."]
+    },
+    {
+      "name": "Executioner",
+      "slug": "perk-executioner",
+      "isUnique": false,
+      "details": ["[11/13/15]% bonus damage against Humanoids and Giants, additive."]
+    },
+    {
+      "name": "Garrote",
+      "slug": "perk-garrote",
+      "isUnique": false,
+      "details": [
+        "This perk only works if you have 100 base Strength.",
+        "Increases Bleed Chance by [4/5/6]%.",
+        "Increases Bleed Damage by [2.5/3.0/3.5]%."
+      ]
+    },
+    {
+      "name": "Hawkeye",
+      "slug": "perk-hawkeye",
+      "isUnique": false,
+      "details": ["Increases To-Hit by [8/10/12].", "Increases Crit Chance by [3/4/5]%."]
+    },
+    {
+      "name": "Iceshatter",
+      "slug": "perk-iceshatter",
+      "isUnique": false,
+      "details": ["[11/13/15]% bonus damage against Ice Beasts, additive."]
+    },
+    {
+      "name": "Immunization",
+      "slug": "perk-immunization",
+      "isUnique": false,
+      "details": ["[20/25/30]% chance to avoid disease, additive."]
+    },
+    {
+      "name": "Impenetrable",
+      "slug": "perk-impenetrable",
+      "isUnique": false,
+      "details": ["Increases Armor by [4/5/6]."]
+    },
+    {
+      "name": "Juggernaut",
+      "slug": "perk-juggernaut",
+      "isUnique": false,
+      "details": ["20% chance to reduce damage taken by [25/30/35]%, multiplicative."]
+    },
+    {
+      "name": "Knowledge",
+      "slug": "perk-knowledge",
+      "isUnique": false,
+      "details": ["[10/12.5/15]% increase to experience gained, additive."]
+    },
+    {
+      "name": "Lethal Toxins",
+      "slug": "perk-lethal-toxins",
+      "isUnique": false,
+      "details": ["Increases Poison Damage dealt by [3/4/5]%, additive.", "[4/6/8]% bonus poison chance, additive."]
+    },
+    { "name": "Lifesteal", "slug": "perk-lifesteal", "isUnique": false, "details": ["Steals [6/8/10]% of your damage in PvP; half effectiveness in PvE."] },
+    { "name": "Magic Shield", "slug": "perk-magic-shield", "isUnique": false, "details": ["Increases all resistances by [2/3/4]%."] },
+    { "name": "Moneybags", "slug": "perk-moneybags", "isUnique": false, "details": ["Monsters drop an additional [20/25/30]% gold."] },
+    {
+      "name": "Overpower",
+      "slug": "perk-overpower",
+      "isUnique": false,
+      "details": ["Increases Crit Damage by [5/6/7]%.", "Increases Crit Chance by [3/4/5]%."]
+    },
+    {
+      "name": "Parry",
+      "slug": "perk-parry",
+      "isUnique": false,
+      "details": ["(6/7/9/10)% chance (based on weapon speed) to parry, reducing damage taken by [70/80/90]%, multiplicative."]
+    },
+    {
+      "name": "Rejuvenation",
+      "slug": "perk-rejuvenation",
+      "isUnique": false,
+      "details": ["Heals an additional [10/15/20] per Constitution tick, plus [2/3/4] per tick for every 25 player levels; additive."]
+    },
+    {
+      "name": "Demon Blood",
+      "slug": "perk-demon-blood",
+      "isUnique": false,
+      "group": "Resistances",
+      "resistance": "fire",
+      "details": ["Increases Fire resistance by [8/10/12]%."]
+    },
+    {
+      "name": "Frozen Heart",
+      "slug": "perk-frozen-heart",
+      "isUnique": false,
+      "group": "Resistances",
+      "resistance": "cold",
+      "details": ["Increases Cold resistance by [8/10/12]%."]
+    },
     {
       "name": "Lightning Field",
       "slug": "perk-lightning-field",
       "isUnique": false,
       "group": "Resistances",
-      "resistance": "electric"
+      "resistance": "electric",
+      "details": ["Increases Lightning resistance by [8/10/12]%."]
     },
-    { "name": "Tourniquet", "slug": "perk-tourniquet", "isUnique": false, "group": "Resistances", "resistance": "poison" },
-    { "name": "Hazmat", "slug": "perk-hazmat", "isUnique": false, "group": "Resistances", "resistance": "disease" },
-    { "name": "Antacid", "slug": "perk-antacid", "isUnique": false, "group": "Resistances", "resistance": "acid" },
-    { "name": "Swiftness", "slug": "perk-swiftness", "isUnique": false },
-    { "name": "Tenacity", "slug": "perk-tenacity", "isUnique": false },
-    { "name": "Toxic Shell", "slug": "perk-toxic-shell", "isUnique": false },
-    { "name": "Vampirism", "slug": "perk-vampirism", "isUnique": false },
-    { "name": "Venomshock", "slug": "perk-venomshock", "isUnique": false },
-    { "name": "Vitality", "slug": "perk-vitality", "isUnique": false },
-    { "name": "Blood Siphon", "slug": "perk-blood-siphon", "isUnique": true },
-    { "name": "Crimson Feast", "slug": "perk-crimson-feast", "isUnique": true },
-    { "name": "Envenomation", "slug": "perk-envenomation", "isUnique": true },
-    { "name": "Flame Buffet", "slug": "perk-flame-buffet", "isUnique": true },
-    { "name": "Lycan", "slug": "perk-lycan", "isUnique": true },
-    { "name": "Plague Eater", "slug": "perk-plague-eater", "isUnique": true },
-    { "name": "Runic", "slug": "perk-runic", "isUnique": true },
-    { "name": "Vengeance", "slug": "perk-vengeance", "isUnique": true }
+    {
+      "name": "Tourniquet",
+      "slug": "perk-tourniquet",
+      "isUnique": false,
+      "group": "Resistances",
+      "resistance": "poison",
+      "details": ["Increases Poison resistance by [8/10/12]%."]
+    },
+    {
+      "name": "Hazmat",
+      "slug": "perk-hazmat",
+      "isUnique": false,
+      "group": "Resistances",
+      "resistance": "disease",
+      "details": ["Increases Disease resistance by [8/10/12]%."]
+    },
+    {
+      "name": "Antacid",
+      "slug": "perk-antacid",
+      "isUnique": false,
+      "group": "Resistances",
+      "resistance": "acid",
+      "details": ["Increases Acid resistance by [8/10/12]%."]
+    },
+    {
+      "name": "Swiftness",
+      "slug": "perk-swiftness",
+      "isUnique": false,
+      "details": ["(2/3/3/4)% chance on attack to grant +20% Dexterity for 60 seconds plus [15/30/45] bonus seconds; additive."]
+    },
+    {
+      "name": "Tenacity",
+      "slug": "perk-tenacity",
+      "isUnique": false,
+      "details": ["(2/3/3/4)% chance when attacked to grant +20% Constitution for 60 seconds plus [15/30/45] bonus seconds; additive."]
+    },
+    {
+      "name": "Toxic Shell",
+      "slug": "perk-toxic-shell",
+      "isUnique": false,
+      "details": ["Grants an Overshield for [30/40/50]% of Poison Damage dealt.", "Doubles in PvP as damage is mitigatable."]
+    },
+    {
+      "name": "Vampirism",
+      "slug": "perk-vampirism",
+      "isUnique": false,
+      "details": [
+        "(8/10/11/13)% chance to trigger a HoT that heals every 5 seconds for 5 ticks:",
+        "PvP: [3/3.75/4.5]% of target max health.",
+        "PvE: [1/1.5/2]% of target max health (capped at 4000)."
+      ]
+    },
+    {
+      "name": "Venomshock",
+      "slug": "perk-venomshock",
+      "isUnique": false,
+      "details": ["[11/13/15]% bonus damage against Electric and Poison Beasts, additive."]
+    },
+    { "name": "Vitality", "slug": "perk-vitality", "isUnique": false, "details": ["Increases player health by [200/250/300]."] },
+    {
+      "name": "Blood Siphon",
+      "slug": "perk-blood-siphon",
+      "isUnique": true,
+      "details": ["When you cause bleed, gain a HoT equal to [33/66/100]% of your bleed damage; half effectiveness in PvE."]
+    },
+    {
+      "name": "Crimson Feast",
+      "slug": "perk-crimson-feast",
+      "isUnique": true,
+      "details": ["When you disease a target, gain a HoT equal to [33/66/100]% of your disease damage; halved in PvE."]
+    },
+    {
+      "name": "Envenomation",
+      "slug": "perk-envenomation",
+      "isUnique": true,
+      "details": ["Allows poisons regardless of weapon element.", "+[5/10/15]% poison chance, additive."]
+    },
+    {
+      "name": "Flame Buffet",
+      "slug": "perk-flame-buffet",
+      "isUnique": true,
+      "details": ["(15/20/25/30)% chance to inflict a DoT dealing [50-100 / 100-200 / 200-300] damage per tick."]
+    },
+    {
+      "name": "Lycan",
+      "slug": "perk-lycan",
+      "isUnique": true,
+      "details": ["Allows diseases regardless of weapon element.", "+[5/10/15]% disease chance, additive."]
+    },
+    {
+      "name": "Plague Eater",
+      "slug": "perk-plague-eater",
+      "isUnique": true,
+      "details": [
+        "Chance equal to your offensive disease chance to reflect disease on attackers, dealing [5/10/15]% of damage taken per tick; additive."
+      ]
+    },
+    {
+      "name": "Runic",
+      "slug": "perk-runic",
+      "isUnique": true,
+      "details": ["Steals [10/12.5/15]% of your damage in PvE or [20/25/30]% of your damage in PvP."]
+    },
+    {
+      "name": "Vengeance",
+      "slug": "perk-vengeance",
+      "isUnique": true,
+      "details": ["{Con/3}% chance to deal an additional [0.2-0.25 Con / 0.25-0.33 Con / 0.33-0.5 Con] Constitution damage; additive."]
+    }
   ]
 }
