@@ -356,6 +356,79 @@
         color: #fff;
       }
 
+      .detail-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.2rem 0.65rem;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: linear-gradient(135deg, rgba(44, 50, 64, 0.9), rgba(28, 33, 43, 0.9));
+        color: #e8ecf2;
+        font-weight: 700;
+        letter-spacing: 0.03em;
+        position: relative;
+      }
+
+      .detail-pill:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+
+      .detail-tooltip-divider {
+        height: 1px;
+        background: var(--border-soft);
+        opacity: 0.65;
+        margin: 0.25rem 0;
+      }
+
+      .detail-pill .detail-tooltip {
+        position: absolute;
+        left: 0;
+        top: 110%;
+        margin-top: 0.1rem;
+        padding: 0.4rem 0.55rem;
+        border-radius: 6px;
+        background: #11151c;
+        border: 1px solid var(--border-soft);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5);
+        display: none;
+        min-width: 220px;
+        width: max-content;
+        max-height: 320px;
+        overflow: auto;
+        white-space: nowrap;
+        z-index: 5;
+      }
+
+      .detail-pill:hover .detail-tooltip,
+      .detail-pill:focus-within .detail-tooltip {
+        display: block;
+      }
+
+      .detail-tooltip.is-pinned {
+        display: block;
+      }
+
+      .detail-tooltip.perk-tooltip {
+        white-space: normal;
+        min-width: 260px;
+        max-width: min(520px, 70vw);
+        line-height: 1.3;
+      }
+
+      .perk-tooltip-title {
+        font-weight: 800;
+        color: #ffffff;
+        margin-bottom: 0.25rem;
+      }
+
+      .perk-tooltip-line {
+        font-weight: 400;
+        color: var(--text-main);
+        white-space: normal;
+      }
+
       @media (max-width: 640px) {
         .item-details-grid {
           grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -467,6 +540,21 @@
             span.textContent = formatValue(value);
             return span;
           });
+        const getPerkTierColor = utils.getPerkTierColor || (() => "");
+
+        const PERKS_SCHEMA_VERSION = 3;
+        let perkIndexByName = new Map();
+        const perksUrl = (() => {
+          try {
+            const resolved = new URL("../systems/perks.json", window.location.href);
+            if (resolved.protocol === "http:" || resolved.protocol === "https:") {
+              resolved.searchParams.set("v", String(PERKS_SCHEMA_VERSION));
+            }
+            return resolved.toString();
+          } catch (error) {
+            return "../systems/perks.json";
+          }
+        })();
 
         const COLUMNS = [
           { key: "image", label: "Image", sortable: false },
@@ -838,10 +926,133 @@
           return `Player Level ${formatNumber(requirement)}`;
         };
 
+        const extractPerkBaseName = (value) => {
+          const raw = (value || "").toString().trim();
+          if (!raw || raw === "-" || raw.toLowerCase() === "none") return "";
+          return raw
+            .replace(/\s*\(\s*tier\s*\d+\s*\)\s*$/i, "")
+            .replace(/\s*\(\s*t\s*\d+\s*\)\s*$/i, "")
+            .replace(/\s*tier\s*\d+\s*$/i, "")
+            .replace(/\s*t\s*\d+\s*$/i, "")
+            .trim();
+        };
+
+        const createPerkDetailPill = (value) => {
+          const labelText = formatValue(value);
+          const baseName = extractPerkBaseName(value);
+          if (!labelText || labelText === "-" || !baseName) {
+            return createPerkBadge(value);
+          }
+
+          const pill = document.createElement("span");
+          pill.className = "detail-pill";
+          pill.tabIndex = 0;
+          pill.setAttribute("aria-label", `${labelText} perk details`);
+
+          const labelSpan = document.createElement("span");
+          labelSpan.textContent = labelText;
+          const color = getPerkTierColor(value);
+          if (color) labelSpan.style.color = color;
+          pill.appendChild(labelSpan);
+
+          const tooltip = document.createElement("span");
+          tooltip.className = "detail-tooltip perk-tooltip";
+          tooltip.role = "tooltip";
+
+          const entry = perkIndexByName.get(baseName.toLowerCase());
+          const detailsLines = Array.isArray(entry?.details)
+            ? entry.details.map((line) => String(line || "").trim()).filter(Boolean)
+            : [];
+
+          const title = document.createElement("div");
+          title.className = "perk-tooltip-title";
+          title.textContent = labelText;
+          tooltip.appendChild(title);
+
+          if (detailsLines.length) {
+            const divider = document.createElement("div");
+            divider.className = "detail-tooltip-divider";
+            tooltip.appendChild(divider);
+
+            detailsLines.forEach((line) => {
+              const div = document.createElement("div");
+              div.className = "perk-tooltip-line";
+              div.textContent = line;
+              tooltip.appendChild(div);
+            });
+          } else {
+            const line = document.createElement("div");
+            line.className = "perk-tooltip-line";
+            line.textContent = "Perk info unavailable.";
+            tooltip.appendChild(line);
+          }
+
+          pill.appendChild(tooltip);
+          return pill;
+        };
+
+        let pinnedTooltip = null;
+        let pinDocumentListenerAttached = false;
+
+        function unpinTooltip(tooltip) {
+          if (!tooltip) return;
+          tooltip.classList.remove("is-pinned");
+          if (pinnedTooltip === tooltip) pinnedTooltip = null;
+        }
+
+        function attachTooltipPinning(root) {
+          const scope = root || document;
+          const tooltips = scope.querySelectorAll(".detail-pill .detail-tooltip");
+          tooltips.forEach((tooltip) => {
+            if (!tooltip || tooltip.dataset.pinWired === "1") return;
+            const pill = tooltip.closest(".detail-pill");
+            if (!pill) return;
+
+            const toggle = (event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              if (pinnedTooltip && pinnedTooltip !== tooltip) {
+                unpinTooltip(pinnedTooltip);
+              }
+              if (tooltip.classList.contains("is-pinned")) {
+                unpinTooltip(tooltip);
+              } else {
+                tooltip.classList.add("is-pinned");
+                pinnedTooltip = tooltip;
+              }
+            };
+
+            pill.addEventListener("click", toggle);
+            pill.addEventListener("keydown", (event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                toggle(event);
+              }
+            });
+            tooltip.addEventListener("click", (event) => event.stopPropagation());
+            tooltip.dataset.pinWired = "1";
+          });
+
+          if (!pinDocumentListenerAttached) {
+            pinDocumentListenerAttached = true;
+            document.addEventListener("click", (event) => {
+              if (!pinnedTooltip) return;
+              const pill = pinnedTooltip.closest(".detail-pill");
+              if (pill && pill.contains(event.target)) return;
+              unpinTooltip(pinnedTooltip);
+            });
+            document.addEventListener("keydown", (event) => {
+              if (event.key !== "Escape") return;
+              if (!pinnedTooltip) return;
+              unpinTooltip(pinnedTooltip);
+            });
+          }
+        }
+
         const setDetails = (item) => {
           if (!item) return;
           detailFields.name.textContent = item.name || "Unknown";
           ensureImage(detailFields.image, detailFields.imageFallback, item, "armors");
+          if (pinnedTooltip) unpinTooltip(pinnedTooltip);
 
           const container = detailFields.properties;
           container.innerHTML = "";
@@ -907,8 +1118,8 @@
           addRow(
             container,
             [
-              ["Innate Perk", createPerkBadge(item.perk)],
-              ["Corrupted Perk", createPerkBadge(item.corruptedPerk)],
+              ["Innate Perk", createPerkDetailPill(item.perk)],
+              ["Corrupted Perk", createPerkDetailPill(item.corruptedPerk)],
             ],
             2
           );
@@ -944,12 +1155,14 @@
             2
           );
 
+          attachTooltipPinning(details);
           details.classList.add("show");
           details.scrollIntoView({ behavior: "smooth", block: "start" });
         };
 
         const clearDetails = () => {
           details.classList.remove("show");
+          if (pinnedTooltip) unpinTooltip(pinnedTooltip);
         };
 
         const renderTable = (rows) => {
@@ -1063,8 +1276,15 @@
         };
 
         const init = () => {
-          fetchJsonCached(dataUrl.toString())
-            .then((data) => {
+          Promise.all([fetchJsonCached(dataUrl.toString()), fetchJsonCached(perksUrl)])
+            .then(([data, perksData]) => {
+              const perks = Array.isArray(perksData?.perks) ? perksData.perks : [];
+              perkIndexByName = new Map();
+              perks.forEach((entry) => {
+                const name = entry && typeof entry.name === "string" ? entry.name.trim() : "";
+                if (!name) return;
+                perkIndexByName.set(name.toLowerCase(), entry);
+              });
               items = (Array.isArray(data) ? data : [])
                 .map((row) => normalizeArmor(row))
                 .filter((row) => !HIDDEN_NAMES.has((row.name || "").toLowerCase()));

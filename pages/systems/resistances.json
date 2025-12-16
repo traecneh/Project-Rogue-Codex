@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "typeResistances": {
+    "humanoid": [
+      { "element": "Poison", "value": 1.25 },
+      { "element": "Disease", "value": 1.25 },
+      { "element": "Acid", "value": 1.15 },
+      { "element": "Fire", "value": 1.0 },
+      { "element": "Electric", "value": 1.0 },
+      { "element": "Cold", "value": 0.9 }
+    ],
+    "giant": [
+      { "element": "Electric", "value": 1.25 },
+      { "element": "Cold", "value": 1.15 },
+      { "element": "Disease", "value": 1.0 },
+      { "element": "Fire", "value": 0.8 },
+      { "element": "Acid", "value": 0.8 },
+      { "element": "Poison", "value": 0.8 }
+    ],
+    "animal": [
+      { "element": "Poison", "value": 1.25 },
+      { "element": "Disease", "value": 1.25 },
+      { "element": "Fire", "value": 1.1 },
+      { "element": "Cold", "value": 1.0 },
+      { "element": "Electric", "value": 1.0 },
+      { "element": "Acid", "value": 1.0 }
+    ],
+    "beast": [
+      { "element": "Cold", "value": 1.1 },
+      { "element": "Acid", "value": 1.1 },
+      { "element": "Disease", "value": 1.1 },
+      { "element": "Poison", "value": 1.0 },
+      { "element": "Fire", "value": 0.9 },
+      { "element": "Electric", "value": 0.8 }
+    ],
+    "undead": [
+      { "element": "Fire", "value": 1.25 },
+      { "element": "Electric", "value": 1.15 },
+      { "element": "Cold", "value": 1.0 },
+      { "element": "Disease", "value": 1.0 },
+      { "element": "Acid", "value": 0.8 },
+      { "element": "Poison", "value": 0.8 }
+    ],
+    "demon": [
+      { "element": "Cold", "value": 1.3 },
+      { "element": "Electric", "value": 1.15 },
+      { "element": "Acid", "value": 1.0 },
+      { "element": "Poison", "value": 1.0 },
+      { "element": "Disease", "value": 1.0 },
+      { "element": "Fire", "value": 0.7 }
+    ],
+    "fire beast": [
+      { "element": "Cold", "value": 1.3 },
+      { "element": "Electric", "value": 1.0 },
+      { "element": "Acid", "value": 1.0 },
+      { "element": "Poison", "value": 1.0 },
+      { "element": "Disease", "value": 1.0 },
+      { "element": "Fire", "value": 0.7 }
+    ],
+    "ice beast": [
+      { "element": "Fire", "value": 1.3 },
+      { "element": "Acid", "value": 1.2 },
+      { "element": "Electric", "value": 1.0 },
+      { "element": "Poison", "value": 1.0 },
+      { "element": "Disease", "value": 1.0 },
+      { "element": "Cold", "value": 0.7 }
+    ],
+    "electric beast": [
+      { "element": "Acid", "value": 1.3 },
+      { "element": "Cold", "value": 1.15 },
+      { "element": "Fire", "value": 1.0 },
+      { "element": "Poison", "value": 1.0 },
+      { "element": "Disease", "value": 1.0 },
+      { "element": "Electric", "value": 0.7 }
+    ],
+    "poison beast": [
+      { "element": "Acid", "value": 1.25 },
+      { "element": "Fire", "value": 1.2 },
+      { "element": "Cold", "value": 1.0 },
+      { "element": "Electric", "value": 1.0 },
+      { "element": "Disease", "value": 1.0 },
+      { "element": "Poison", "value": 0.8 }
+    ],
+    "disease beast": [
+      { "element": "Fire", "value": 1.25 },
+      { "element": "Electric", "value": 1.1 },
+      { "element": "Cold", "value": 1.0 },
+      { "element": "Acid", "value": 1.0 },
+      { "element": "Poison", "value": 1.0 },
+      { "element": "Disease", "value": 0.8 }
+    ]
+  }
+}

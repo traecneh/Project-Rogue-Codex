@@ -1026,7 +1026,20 @@
           return Array.from(new Set(candidates.filter(Boolean)));
         };
 
-        const TYPE_RESISTANCES = {
+        const RESISTANCES_SCHEMA_VERSION = 1;
+        const resistancesUrl = (() => {
+          try {
+            const resolved = new URL("../systems/resistances.json", window.location.href);
+            if (resolved.protocol === "http:" || resolved.protocol === "https:") {
+              resolved.searchParams.set("v", String(RESISTANCES_SCHEMA_VERSION));
+            }
+            return resolved.toString();
+          } catch (error) {
+            return "../systems/resistances.json";
+          }
+        })();
+
+        let TYPE_RESISTANCES = {
           humanoid: [
             { element: "Poison", value: 1.25 },
             { element: "Disease", value: 1.25 },
@@ -2427,8 +2440,14 @@
             fetchJsonCached(dataUrl.toString()),
             fetchJsonCached(weaponsUrl.toString()),
             fetchJsonCached(new URL("../items/armors_data06.json", window.location.href).toString()),
+            fetchJsonCached(resistancesUrl),
           ])
-            .then(([monsterData, weaponData, armorData]) => {
+            .then(([monsterData, weaponData, armorData, resistancesData]) => {
+              const map =
+                resistancesData && typeof resistancesData === "object" ? resistancesData.typeResistances : null;
+              if (map && typeof map === "object") {
+                TYPE_RESISTANCES = map;
+              }
               monsters = normalizeMonsters(Array.isArray(monsterData) ? monsterData : []);
               weapons = Array.isArray(weaponData)
                 ? weaponData
