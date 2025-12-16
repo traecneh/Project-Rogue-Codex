@@ -82,6 +82,8 @@ body {
     radial-gradient(circle at top left, #20293a 0, transparent 55%),
     radial-gradient(circle at bottom right, #111827 0, transparent 60%),
     var(--bg-main);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
   color: var(--text-main);
   cursor: url("../images/cursor-safe.png") 0 0, auto;
 }
