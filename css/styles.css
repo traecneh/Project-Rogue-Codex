@@ -218,7 +218,7 @@ body {
   box-shadow: 0 0 0 1px var(--shadow-edge), 0 8px 18px rgba(0, 0, 0, 0.6);
   text-decoration: none;
   color: inherit;
-  transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
 }
 
 .site-logo:hover,
@@ -226,12 +226,10 @@ body {
   background: linear-gradient(135deg, #2a313e, #1b202a);
   box-shadow: 0 0 0 1px #151a22, 0 10px 20px rgba(0, 0, 0, 0.75);
   outline: none;
-  transform: translateY(-1px);
 }
 
 .site-logo:active {
   background: linear-gradient(135deg, #161b22, #0d1118);
-  transform: translateY(0);
 }
 
 .site-logo-image {
@@ -667,120 +665,195 @@ body {
   color: rgba(255, 214, 90, 0.95);
 }
 
-.countdown-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.75rem;
+.countdown-flip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
 }
 
-.countdown-block {
-  --countdown-block-accent: var(--accent-blue);
-  --countdown-block-accent-soft: rgba(90, 176, 255, 0.12);
-  --countdown-block-accent-glow: rgba(90, 176, 255, 0.18);
-  --countdown-block-accent-border: rgba(90, 176, 255, 0.28);
-  position: relative;
-  overflow: hidden;
-  text-align: center;
-  padding: 0.85rem 0.75rem;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--countdown-block-accent-border);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(0, 0, 0, 0) 60%),
-    radial-gradient(circle at top left, #2a303c, #151a24);
-  box-shadow: inset 0 0 0 1px rgba(11, 15, 22, 0.7);
-  transition: transform 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+.flip-clock {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
 }
 
-.countdown-block::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, var(--countdown-block-accent-soft), rgba(0, 0, 0, 0) 60%);
-  opacity: 0.95;
-  pointer-events: none;
-}
-
-.countdown-block::after {
-  content: "";
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-  background: var(--countdown-block-accent);
-  opacity: 0.65;
-  box-shadow: 0 0 12px var(--countdown-block-accent-glow);
-  pointer-events: none;
-}
-
-.countdown-block > * {
-  position: relative;
-  z-index: 1;
-}
-
-.countdown-block[data-countdown-unit="days"] {
-  --countdown-block-accent: var(--accent-blue);
-  --countdown-block-accent-soft: rgba(90, 176, 255, 0.12);
-  --countdown-block-accent-glow: rgba(90, 176, 255, 0.18);
-  --countdown-block-accent-border: rgba(90, 176, 255, 0.28);
-}
-
-.countdown-block[data-countdown-unit="hours"] {
-  --countdown-block-accent: #b86bff;
-  --countdown-block-accent-soft: rgba(184, 107, 255, 0.12);
-  --countdown-block-accent-glow: rgba(184, 107, 255, 0.18);
-  --countdown-block-accent-border: rgba(184, 107, 255, 0.28);
-}
-
-.countdown-block[data-countdown-unit="minutes"] {
-  --countdown-block-accent: #ff9c42;
-  --countdown-block-accent-soft: rgba(255, 156, 66, 0.12);
-  --countdown-block-accent-glow: rgba(255, 156, 66, 0.18);
-  --countdown-block-accent-border: rgba(255, 156, 66, 0.28);
-}
-
-.countdown-block[data-countdown-unit="seconds"] {
-  --countdown-block-accent: var(--accent);
-  --countdown-block-accent-soft: rgba(75, 255, 75, 0.12);
-  --countdown-block-accent-glow: rgba(75, 255, 75, 0.18);
-  --countdown-block-accent-border: rgba(75, 255, 75, 0.28);
-}
-
-.countdown-block:hover {
-  transform: translateY(-1px);
-  border-color: var(--countdown-block-accent);
-  box-shadow:
-    inset 0 0 0 1px rgba(11, 15, 22, 0.75),
-    0 10px 18px rgba(0, 0, 0, 0.5),
-    0 0 14px var(--countdown-block-accent-glow);
-}
-
-.countdown-block:hover::after {
-  opacity: 0.9;
-  box-shadow: 0 0 18px var(--countdown-block-accent-glow);
-}
-
-.countdown-value {
-  font-size: 1.9rem;
+.flip-separator {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 1.6rem;
   font-weight: 900;
-  letter-spacing: 0.02em;
-  line-height: 1.05;
-  color: var(--accent);
-  text-shadow: 0 0 10px rgba(75, 255, 75, 0.18);
+  color: rgba(255, 255, 255, 0.26);
+  margin: 0 0.1rem;
 }
 
-.countdown-label {
-  margin-top: 0.25rem;
-  font-size: 0.72rem;
+.flip-unit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.32rem;
+}
+
+.flip-digits {
+  display: flex;
+  gap: 0.25rem;
+  perspective: 700px;
+}
+
+.flip-unit-label {
+  font-size: 0.66rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--text-muted);
 }
 
-.countdown-panel.is-complete .countdown-value {
+.flip-digit {
+  --flip-digit-height: 56px;
+  --flip-duration: 0.36s;
+  position: relative;
+  width: 44px;
+  height: var(--flip-digit-height);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(120, 128, 140, 0.28);
+  background:
+    radial-gradient(circle at top left, rgba(90, 176, 255, 0.12), rgba(90, 176, 255, 0) 60%),
+    radial-gradient(circle at top left, #2a303c, #151a24);
+  box-shadow:
+    inset 0 0 0 1px rgba(11, 15, 22, 0.75),
+    0 10px 18px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+  transform-style: preserve-3d;
+}
+
+.flip-digit-wide {
+  width: 96px;
+}
+
+.flip-digit::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.7);
+}
+
+.flip-digit-top,
+.flip-digit-bottom,
+.flip-digit-top-flip,
+.flip-digit-bottom-flip {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 50%;
+  display: flex;
+  overflow: hidden;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+}
+
+.flip-digit-value {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: var(--flip-digit-height);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 2.1rem;
+  font-weight: 900;
+  line-height: 1;
+  color: #ffffff;
+  text-shadow: 0 0 10px rgba(0, 0, 0, 0.35);
+}
+
+.flip-digit-top {
+  top: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(0, 0, 0, 0));
+}
+
+.flip-digit-top .flip-digit-value,
+.flip-digit-top-flip .flip-digit-value {
+  top: 0;
+}
+
+.flip-digit-bottom {
+  bottom: 0;
+  background: linear-gradient(0deg, rgba(255, 255, 255, 0.04), rgba(0, 0, 0, 0));
+}
+
+.flip-digit-bottom .flip-digit-value,
+.flip-digit-bottom-flip .flip-digit-value {
+  bottom: 0;
+}
+
+.flip-digit-top-flip {
+  top: 0;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.35)),
+    radial-gradient(circle at top left, #2a303c, #151a24);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.6);
+  transform-origin: bottom;
+  animation: countdownFlipTop var(--flip-duration) cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+  backface-visibility: hidden;
+  will-change: transform;
+  z-index: 3;
+}
+
+.flip-digit-bottom-flip {
+  bottom: 0;
+  background:
+    linear-gradient(0deg, rgba(255, 255, 255, 0.06), rgba(0, 0, 0, 0.38)),
+    radial-gradient(circle at bottom left, #2a303c, #151a24);
+  box-shadow:
+    inset 0 -1px 0 rgba(255, 255, 255, 0.04),
+    inset 0 1px 0 rgba(0, 0, 0, 0.72);
+  transform-origin: top;
+  transform: rotateX(-90deg);
+  animation: countdownFlipBottom var(--flip-duration) cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+  backface-visibility: hidden;
+  will-change: transform;
+  z-index: 2;
+}
+
+@keyframes countdownFlipTop {
+  from {
+    transform: rotateX(0deg);
+  }
+  to {
+    transform: rotateX(90deg);
+  }
+}
+
+@keyframes countdownFlipBottom {
+  from {
+    transform: rotateX(-90deg);
+  }
+  to {
+    transform: rotateX(0deg);
+  }
+}
+
+.flip-unit-days .flip-digit-value {
   color: var(--accent-blue);
-  text-shadow: 0 0 12px rgba(90, 176, 255, 0.22);
+  text-shadow: 0 0 12px rgba(90, 176, 255, 0.14);
+}
+
+.countdown-panel.is-complete .flip-digit {
+  border-color: rgba(90, 176, 255, 0.38);
+}
+
+.countdown-panel.is-complete .flip-digit-value {
+  color: var(--accent-blue);
+  text-shadow: 0 0 12px rgba(90, 176, 255, 0.18);
 }
 
 .timeline-media {
@@ -938,8 +1011,17 @@ body {
     padding-left: 1.6rem;
   }
 
-  .countdown-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .flip-digit {
+    --flip-digit-height: 50px;
+    width: 38px;
+  }
+
+  .flip-digit-wide {
+    width: 88px;
+  }
+
+  .flip-digit-value {
+    font-size: 1.85rem;
   }
 
   .timeline::before {
@@ -1676,13 +1758,13 @@ a {
   .sidebar,
   .sidebar-collapse-toggle,
   .nav-link,
-  .countdown-block,
   .timeline-marker {
     transition: none !important;
   }
 
-  .countdown-block:hover {
-    transform: none;
+  .flip-digit-top-flip,
+  .flip-digit-bottom-flip {
+    animation: none !important;
   }
 
   .timeline-item:hover .timeline-marker {
