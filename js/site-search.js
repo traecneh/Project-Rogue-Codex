@@ -144,6 +144,13 @@ const SITE_SEARCH_INDEX = [
     keywords: ["anti zerg", "group", "balance", "debuff"],
   },
   {
+    title: "Monster Damage Reduction",
+    url: "pages/systems/monster-damage-reduction.html",
+    category: "Systems",
+    description: "How monster damage reduction scales and affects combat.",
+    keywords: ["monster", "damage reduction", "mitigation", "combat", "scaling"],
+  },
+  {
     title: "Crafting",
     url: "pages/systems/crafting.html",
     category: "Systems",
@@ -246,6 +253,7 @@ const NORMALIZED_SEARCH_INDEX = SITE_SEARCH_INDEX.map(normalizeSearchEntry);
 const FULL_TEXT_CACHE = new Map();
 const FULL_TEXT_PROMISES = new Map();
 const INTERNAL_SEARCH_PAGES = NORMALIZED_SEARCH_INDEX.filter((entry) => entry.url && !/^https?:\/\//i.test(entry.url));
+let FULL_TEXT_WARMED = false;
 let MONSTER_SEARCH_INDEX = [];
 let MONSTER_INDEX_PROMISE = null;
 let WEAPON_SEARCH_INDEX = [];
@@ -424,8 +432,10 @@ const normalizeNavWeapon = (weapon) => {
   const type = fields.subtype_label || fields.subtype || weapon.type;
   const elementRaw = fields.element_label || fields.element || weapon.elementalDamageType || weapon.element;
   const element = elementRaw === 0 ? "None" : elementRaw;
-  const specialty = fields.specialty ? fields.specialty_label || String(fields.specialty) : null;
-  const perk = fields.perk ? fields.perk_label || fields.perk : null;
+  const specialty = fields.specialty
+    ? fields.specialty_label || String(fields.specialty)
+    : weapon.specialty || weapon.specialty_label || null;
+  const perk = fields.perk ? fields.perk_label || fields.perk : weapon.perk || weapon.perk_label || null;
 
   return {
     id: weapon.id ?? weapon.ID ?? slug,
@@ -560,6 +570,16 @@ function fetchAndCachePageText(url) {
   return promise;
 }
 
+function warmFullTextCache() {
+  if (FULL_TEXT_WARMED) return;
+  FULL_TEXT_WARMED = true;
+  INTERNAL_SEARCH_PAGES.forEach((entry) => {
+    if (!entry.url) return;
+    if (FULL_TEXT_CACHE.has(entry.url) || FULL_TEXT_PROMISES.has(entry.url)) return;
+    fetchAndCachePageText(entry.url);
+  });
+}
+
 function buildMonsterSearchEntry(monster) {
   const normalized = normalizeNavMonster(monster);
   if (!normalized) return null;
@@ -576,7 +596,7 @@ function buildMonsterSearchEntry(monster) {
     title: name || slug,
     url: `pages/enemies/monsters.html?monster=${encodeURIComponent(slug)}`,
     category: "Monsters",
-    description: parts.join(" • ") || "Monster stats, damage, and loot.",
+    description: parts.join(" | ") || "Monster stats, damage, and loot.",
     keywords,
     isMonster: true,
     monsterId: slug,
@@ -603,7 +623,7 @@ function loadMonsterSearchIndex() {
 }
 
 function buildWeaponSearchEntry(weapon) {
-  const normalized = normalizeNavWeapon(weapon);
+  const normalized = weapon && weapon.slug && !weapon.fields ? weapon : normalizeNavWeapon(weapon);
   if (!normalized) return null;
   const { slug, name, element, type, level, dps, specialty, perk } = normalized;
   const parts = [];
@@ -618,7 +638,7 @@ function buildWeaponSearchEntry(weapon) {
     title: name || slug,
     url: `pages/items/weapons.html?weapon=${encodeURIComponent(slug)}`,
     category: "Weapons",
-    description: parts.join(" • ") || "Weapon stats, DPS, speed, and perks.",
+    description: parts.join(" | ") || "Weapon stats, DPS, speed, and perks.",
     keywords,
     isWeapon: true,
     weaponId: slug,
@@ -661,7 +681,7 @@ function buildArmorSearchEntry(armor) {
     title: name || slug,
     url: `pages/items/armors.html?armor=${encodeURIComponent(name || slug)}`,
     category: "Armors",
-    description: parts.join(" • ") || "Armor stats, resistances, slots, and perks.",
+    description: parts.join(" | ") || "Armor stats, resistances, slots, and perks.",
     keywords,
     isArmor: true,
     armorId: slug,
@@ -758,12 +778,16 @@ function scoreFullText(fullText, terms) {
 }
 
 function runSiteSearch(query) {
-  const terms = toSearchTerms(query);
+  const trimmedQuery = String(query || "").trim();
+  const terms = toSearchTerms(trimmedQuery);
   loadMonsterSearchIndex();
   loadWeaponSearchIndex();
   loadArmorSearchIndex();
   if (!terms.length) {
     return [];
+  }
+  if (trimmedQuery.length >= 3) {
+    warmFullTextCache();
   }
 
   const matches = [];
