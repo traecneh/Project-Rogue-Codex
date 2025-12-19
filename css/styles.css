@@ -238,8 +238,8 @@ body {
   max-width: 180px;
   height: auto;
   margin: 0 auto;
-  image-rendering: pixelated;
   image-rendering: crisp-edges;
+  image-rendering: pixelated;
   filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.5));
 }
 
@@ -1223,7 +1223,7 @@ a {
 .calc-chip h4 {
   margin: 0;
   font-size: 0.95rem;
-  color: #050709;
+  color: var(--text-main);
   transition: color 0.2s ease;
 }
 
@@ -1295,8 +1295,8 @@ a {
   height: 48px;
   display: block;
   margin: 0 auto;
-  image-rendering: pixelated;
   image-rendering: crisp-edges;
+  image-rendering: pixelated;
   border: 1px solid rgba(255, 255, 255, 0.25);
   border-radius: 4px;
   background: rgba(0, 0, 0, 0.3);
@@ -1399,8 +1399,8 @@ a {
   border-radius: 4px;
   display: block;
   margin: 0 auto;
-  image-rendering: pixelated;
   image-rendering: crisp-edges;
+  image-rendering: pixelated;
 }
 
 .race-portrait figcaption {
@@ -1557,8 +1557,8 @@ a {
   width: 32px;
   height: 32px;
   transform: translate(-50%, -50%);
-  image-rendering: pixelated;
   image-rendering: crisp-edges;
+  image-rendering: pixelated;
   filter: drop-shadow(0 0 6px rgba(0, 0, 0, 0.65));
   pointer-events: none;
   z-index: 2;
@@ -1573,8 +1573,8 @@ a {
   width: 32px;
   height: 32px;
   transform: translate(-50%, -50%);
-  image-rendering: pixelated;
   image-rendering: crisp-edges;
+  image-rendering: pixelated;
   pointer-events: none;
   z-index: 3;
   opacity: 0;
@@ -1716,8 +1716,8 @@ a {
 .resistance-icon {
   display: block;
   margin: 0.4rem auto 0.6rem;
-  image-rendering: pixelated;
   image-rendering: crisp-edges;
+  image-rendering: pixelated;
 }
 
 .elite-icon-wrapper {
@@ -1735,8 +1735,8 @@ a {
   left: 0;
   width: 32px;
   height: 32px;
-  image-rendering: pixelated;
   image-rendering: crisp-edges;
+  image-rendering: pixelated;
 }
 
 .elite-random {

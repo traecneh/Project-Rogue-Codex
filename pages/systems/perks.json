@@ -11,7 +11,7 @@
       "name": "Antitoxin",
       "slug": "perk-antitoxin",
       "isUnique": false,
-      "details": ["[20/25/30]% chance to avoid poison, additive."]
+      "details": ["[20/25/30]% chance to avoid poison, additive. PvE bonus: +10% (30/35/40%)."]
     },
     {
       "name": "Beastslayer",
@@ -119,7 +119,7 @@
       "name": "Immunization",
       "slug": "perk-immunization",
       "isUnique": false,
-      "details": ["[20/25/30]% chance to avoid disease, additive."]
+      "details": ["[20/25/30]% chance to avoid disease, additive. PvE bonus: +10% (30/35/40%)."]
     },
     {
       "name": "Impenetrable",
