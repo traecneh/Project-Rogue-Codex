@@ -238,6 +238,7 @@ const SITE_SEARCH_INDEX = [
 ];
 
 const MAX_SEARCH_RESULTS = 8;
+const WEAPONS_SCHEMA_VERSION = 5;
 
 function normalizeSearchEntry(entry) {
   return {
@@ -725,7 +726,17 @@ function loadWeaponSearchIndex() {
 function loadWeaponData() {
   if (WEAPON_DATA_PROMISE) return WEAPON_DATA_PROMISE;
   const absoluteUrl = getAbsoluteUrl("pages/items/weapons_data05.json");
-  WEAPON_DATA_PROMISE = fetchJsonMaybeCached(absoluteUrl, "Failed to fetch weapons_data05.json")
+  let requestUrl = absoluteUrl;
+  try {
+    const resolved = new URL(absoluteUrl, window.location.href);
+    if (resolved.protocol === "http:" || resolved.protocol === "https:") {
+      resolved.searchParams.set("v", String(WEAPONS_SCHEMA_VERSION));
+    }
+    requestUrl = resolved.toString();
+  } catch (error) {
+    requestUrl = absoluteUrl;
+  }
+  WEAPON_DATA_PROMISE = fetchJsonMaybeCached(requestUrl, "Failed to fetch weapons_data05.json")
     .then((data) => {
       const list = Array.isArray(data) ? data : [];
       const filtered = list.filter(

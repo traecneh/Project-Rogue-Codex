@@ -530,7 +530,14 @@
           dataFile: "weapons_data05.json",
         };
 
-        const dataUrl = new URL(PAGE.dataFile, window.location.href);
+        const WEAPONS_SCHEMA_VERSION = 5;
+        const dataUrl = (() => {
+          const resolved = new URL(PAGE.dataFile, window.location.href);
+          if (resolved.protocol === "http:" || resolved.protocol === "https:") {
+            resolved.searchParams.set("v", String(WEAPONS_SCHEMA_VERSION));
+          }
+          return resolved;
+        })();
         const searchInput = document.getElementById("item-search");
         const typeFilter = document.getElementById("filter-type");
         const elementFilter = document.getElementById("filter-element");
