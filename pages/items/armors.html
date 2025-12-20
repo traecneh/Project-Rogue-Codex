@@ -617,8 +617,10 @@
             .replace(/\b\w/g, (c) => c.toUpperCase());
 
         const renderEmpty = (message) => {
-          tableHeadRow.innerHTML = "";
-          tableBody.innerHTML = `<tr><td class="table-empty" colspan="1">${message}</td></tr>`;
+          if (!tableHeadRow.children.length) {
+            buildHead();
+          }
+          tableBody.innerHTML = `<tr><td class="table-empty" colspan="${COLUMNS.length || 1}">${message}</td></tr>`;
           if (countLabel) {
             countLabel.textContent = "0 results";
           }

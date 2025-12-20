@@ -690,7 +690,9 @@
         let pendingWeaponName = rawWeaponQuery.toLowerCase();
 
         const renderEmpty = (message) => {
-          tableHeadRow.innerHTML = "";
+          if (!tableHeadRow.children.length) {
+            buildHead();
+          }
           tableBody.innerHTML = `<tr><td class="table-empty" colspan="${COLUMNS.length || 1}">${message}</td></tr>`;
           if (countLabel) {
             countLabel.textContent = "0 results";
