@@ -1427,13 +1427,18 @@
           return 1;
         };
 
+        const isSlotZero = (slotValue) =>
+          slotValue === 0 || (typeof slotValue === "string" && slotValue.trim() === "0");
+
         const toArmor = (raw) => {
           const fields = (raw && raw.fields) || {};
           const electric = fields.electric_resistance ?? fields.lightning_resistance;
+          const slotRaw = fields.slot_label ?? fields.slot;
+          if (isSlotZero(slotRaw)) return null;
           return {
             kind: "armor",
             name: raw.name || raw.Name,
-            slot: fields.slot_label || fields.slot || "",
+            slot: slotRaw || "",
             image: raw.image || raw.icon || raw.thumbnail || "",
             maxRarityLabel: fields.max_rarity_label || fields.max_rarity,
             armor: toNumber(fields.armor),
@@ -1944,7 +1949,7 @@
           ])
             .then(([weapons, armors, perksIndex]) => {
               dataset.weapons = Array.isArray(weapons) ? weapons.map((w) => toWeapon(w)) : [];
-              dataset.armors = Array.isArray(armors) ? armors.map((a) => toArmor(a)) : [];
+              dataset.armors = Array.isArray(armors) ? armors.map((a) => toArmor(a)).filter(Boolean) : [];
               const perks = Array.isArray(perksIndex?.perks) ? perksIndex.perks : [];
               const seen = new Set();
               perkOptions = perks

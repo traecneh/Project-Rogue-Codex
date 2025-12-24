@@ -1597,11 +1597,16 @@
           };
         };
 
+        const isSlotZero = (slotValue) =>
+          slotValue === 0 || (typeof slotValue === "string" && slotValue.trim() === "0");
+
         const normalizeArmor = (raw) => {
           if (!raw || typeof raw !== "object") return null;
           const fields = raw.fields || {};
           const value = toNumber(fields.value);
-          const slot = fields.slot_label || fields.slot || "";
+          const slotRaw = fields.slot_label ?? fields.slot;
+          if (isSlotZero(slotRaw)) return null;
+          const slot = slotRaw || "";
           const normalizeSlot = (s) => (s || "").toString().trim().toLowerCase();
           return {
             id: raw.id || raw.name || "",
@@ -1614,6 +1619,7 @@
             maxRarity: fields.max_rarity_label || fields.max_rarity,
             value,
             sellValue: value !== null ? value / 2 : null,
+            deconstruction: toNumber(fields.deconstruction),
             perk: fields.perk_label || fields.perk || "None",
             resistances: {
               fire: toNumber(fields.fire_resistance),
@@ -1809,134 +1815,206 @@
             : element.includes("disease") ? "disease"
             : null;
 
+          const level = Number(monster.level);
+          if (!Number.isFinite(level)) {
+            const pill = document.createElement("span");
+            pill.className = "detail-pill";
+            pill.textContent = "No level data";
+            container.appendChild(pill);
+            return;
+          }
+
           const REQUIRED_SLOTS = ["helmet", "chest", "gauntlets", "leggings", "shield"];
           const slotLabel = (slot) => slot.charAt(0).toUpperCase() + slot.slice(1);
 
-          const bySlot = new Map();
-          armors
-            .filter((a) => a && a.slotNorm && REQUIRED_SLOTS.includes(a.slotNorm) && !/cosmetic/i.test(a.slot || ""))
-            .forEach((armor) => {
-              const list = bySlot.get(armor.slotNorm) || [];
-              list.push(armor);
-              bySlot.set(armor.slotNorm, list);
-            });
+          const eligibleArmors = armors.filter(
+            (a) => a && a.slotNorm && REQUIRED_SLOTS.includes(a.slotNorm) && !/cosmetic/i.test(a.slot || "")
+          );
 
-          if (REQUIRED_SLOTS.some((slot) => !bySlot.get(slot) || !bySlot.get(slot).length)) {
-            const pill = document.createElement("span");
-            pill.className = "detail-pill";
-            pill.textContent = "Not enough armor pieces for a full set";
-            container.appendChild(pill);
-            return;
-          }
-
-          const topBySlot = {};
-          const TOP_COUNT = 5;
-          REQUIRED_SLOTS.forEach((slot) => {
-            const list = bySlot.get(slot) || [];
-            const sorted = list
-              .map((a) => {
-                const resist = elementKey ? Number(a.resistances[elementKey]) || 0 : 0;
-                const armorVal = Number(a.armor) || 0;
-                return { armor: a, resist, armorVal };
-              })
-              .sort((a, b) => b.resist - a.resist || b.armorVal - a.armorVal || (b.armor.level || 0) - (a.armor.level || 0))
-              .slice(0, TOP_COUNT);
-            topBySlot[slot] = sorted;
+          const slotGroups = new Map();
+          eligibleArmors.forEach((armor) => {
+            const list = slotGroups.get(armor.slotNorm) || [];
+            list.push(armor);
+            slotGroups.set(armor.slotNorm, list);
           });
 
-          if (REQUIRED_SLOTS.some((slot) => !topBySlot[slot].length)) {
-            const pill = document.createElement("span");
-            pill.className = "detail-pill";
-            pill.textContent = "Not enough armor pieces for a full set";
-            container.appendChild(pill);
-            return;
-          }
-
-          const combos = [];
-          const slotsArrays = REQUIRED_SLOTS.map((slot) => topBySlot[slot]);
-          const recurse = (idx, current) => {
-            if (idx === slotsArrays.length) {
-              const totalResist = current.reduce((sum, entry) => sum + (entry.resist || 0), 0);
-              const cappedResist = Math.min(totalResist, 60);
-              const totalArmor = current.reduce((sum, entry) => sum + (entry.armorVal || 0), 0);
-              combos.push({ set: current.map((e) => e.armor), totalResist, cappedResist, totalArmor });
+          const effectiveLevelByArmor = new Map();
+          eligibleArmors.forEach((armor) => {
+            const armorLevel = Number(armor.level);
+            if (Number.isFinite(armorLevel) && armorLevel > 0) {
+              effectiveLevelByArmor.set(armor, armorLevel);
               return;
             }
-            slotsArrays[idx].forEach((entry) => recurse(idx + 1, current.concat(entry)));
+            const deconstruction = Number(armor.deconstruction);
+            if (!Number.isFinite(deconstruction)) {
+              effectiveLevelByArmor.set(armor, 0);
+              return;
+            }
+            const sameSlot = slotGroups.get(armor.slotNorm) || [];
+            let bestDiff = Infinity;
+            let bestLevel = Infinity;
+            sameSlot.forEach((candidate) => {
+              if (candidate === armor) return;
+              const candidateLevel = Number(candidate.level);
+              if (!Number.isFinite(candidateLevel) || candidateLevel <= 0) return;
+              const candidateDeconstruction = Number(candidate.deconstruction);
+              if (!Number.isFinite(candidateDeconstruction)) return;
+              const diff = Math.abs(candidateDeconstruction - deconstruction);
+              if (diff < bestDiff || (diff === bestDiff && candidateLevel < bestLevel)) {
+                bestDiff = diff;
+                bestLevel = candidateLevel;
+              }
+            });
+            const effectiveLevel = Number.isFinite(bestLevel) && bestLevel !== Infinity ? bestLevel : 0;
+            effectiveLevelByArmor.set(armor, effectiveLevel);
+          });
+
+          const getBestSet = (sourceArmors) => {
+            const bySlot = new Map();
+            sourceArmors
+              .filter((a) => a && a.slotNorm && REQUIRED_SLOTS.includes(a.slotNorm) && !/cosmetic/i.test(a.slot || ""))
+              .forEach((armor) => {
+                const list = bySlot.get(armor.slotNorm) || [];
+                list.push(armor);
+                bySlot.set(armor.slotNorm, list);
+              });
+
+            if (REQUIRED_SLOTS.some((slot) => !bySlot.get(slot) || !bySlot.get(slot).length)) {
+              return null;
+            }
+
+            const topBySlot = {};
+            const TOP_COUNT = 5;
+            REQUIRED_SLOTS.forEach((slot) => {
+              const list = bySlot.get(slot) || [];
+              const sorted = list
+                .map((a) => {
+                  const resist = elementKey ? Number(a.resistances[elementKey]) || 0 : 0;
+                  const armorVal = Number(a.armor) || 0;
+                  return { armor: a, resist, armorVal };
+                })
+                .sort(
+                  (a, b) =>
+                    b.resist - a.resist || b.armorVal - a.armorVal || (b.armor.level || 0) - (a.armor.level || 0)
+                )
+                .slice(0, TOP_COUNT);
+              topBySlot[slot] = sorted;
+            });
+
+            if (REQUIRED_SLOTS.some((slot) => !topBySlot[slot].length)) {
+              return null;
+            }
+
+            const combos = [];
+            const slotsArrays = REQUIRED_SLOTS.map((slot) => topBySlot[slot]);
+            const recurse = (idx, current) => {
+              if (idx === slotsArrays.length) {
+                const totalResist = current.reduce((sum, entry) => sum + (entry.resist || 0), 0);
+                const cappedResist = Math.min(totalResist, 60);
+                const totalArmor = current.reduce((sum, entry) => sum + (entry.armorVal || 0), 0);
+                combos.push({ set: current.map((e) => e.armor), totalResist, cappedResist, totalArmor });
+                return;
+              }
+              slotsArrays[idx].forEach((entry) => recurse(idx + 1, current.concat(entry)));
+            };
+            recurse(0, []);
+
+            combos.sort((a, b) => {
+              if (a.cappedResist !== b.cappedResist) return b.cappedResist - a.cappedResist;
+              return b.totalArmor - a.totalArmor;
+            });
+            return combos[0] || null;
           };
-          recurse(0, []);
 
-          combos.sort((a, b) => {
-            if (a.cappedResist !== b.cappedResist) return b.cappedResist - a.cappedResist;
-            return b.totalArmor - a.totalArmor;
-          });
-          const bestSet = combos[0];
+          const appendArmorPill = (label, sourceArmors) => {
+            const pill = document.createElement("span");
+            pill.className = "detail-pill";
+            pill.textContent = label;
 
-          const pill = document.createElement("span");
-          pill.className = "detail-pill";
-          pill.textContent = "Endgame";
+            const tooltip = document.createElement("span");
+            tooltip.className = "detail-tooltip";
+            tooltip.role = "tooltip";
 
-          const tooltip = document.createElement("span");
-          tooltip.className = "detail-tooltip";
-          tooltip.role = "tooltip";
+            const bestSet = getBestSet(sourceArmors);
+            if (!bestSet) {
+              tooltip.textContent = "Not enough armor pieces for a full set";
+            } else {
+              const headerRow = document.createElement("div");
+              headerRow.className = "detail-tooltip-row";
+              const headerLabel = document.createElement("span");
+              headerLabel.className = "detail-tooltip-label";
+              headerLabel.textContent = elementKey
+                ? `Best set vs. ${elementKey.charAt(0).toUpperCase() + elementKey.slice(1)}`
+                : "Best armor set";
+              headerRow.appendChild(headerLabel);
+              tooltip.appendChild(headerRow);
 
-          const headerRow = document.createElement("div");
-          headerRow.className = "detail-tooltip-row";
-          const headerLabel = document.createElement("span");
-          headerLabel.className = "detail-tooltip-label";
-          headerLabel.textContent = elementKey
-            ? `Best set vs. ${elementKey.charAt(0).toUpperCase() + elementKey.slice(1)}`
-            : "Best armor set";
-          headerRow.appendChild(headerLabel);
-          tooltip.appendChild(headerRow);
+              const headerDivider = document.createElement("div");
+              headerDivider.className = "detail-tooltip-divider";
+              tooltip.appendChild(headerDivider);
 
-          const headerDivider = document.createElement("div");
-          headerDivider.className = "detail-tooltip-divider";
-          tooltip.appendChild(headerDivider);
+              const totalRow = document.createElement("div");
+              totalRow.className = "detail-tooltip-row";
+              const totalLabel = document.createElement("span");
+              totalLabel.className = "detail-tooltip-label";
+              totalLabel.textContent = "Total Resist";
+              const totalVal = document.createElement("span");
+              totalVal.textContent = elementKey
+                ? `${formatNumber(bestSet.cappedResist)} / 60 ${elementKey}`
+                : `${formatNumber(bestSet.cappedResist)} / 60`;
+              totalRow.appendChild(totalLabel);
+              totalRow.appendChild(totalVal);
+              tooltip.appendChild(totalRow);
 
-          const totalRow = document.createElement("div");
-          totalRow.className = "detail-tooltip-row";
-          const totalLabel = document.createElement("span");
-          totalLabel.className = "detail-tooltip-label";
-          totalLabel.textContent = "Total Resist";
-          const totalVal = document.createElement("span");
-          totalVal.textContent = elementKey
-            ? `${formatNumber(bestSet.cappedResist)} / 60 ${elementKey}`
-            : `${formatNumber(bestSet.cappedResist)} / 60`;
-          totalRow.appendChild(totalLabel);
-          totalRow.appendChild(totalVal);
-          tooltip.appendChild(totalRow);
+              const armorRow = document.createElement("div");
+              armorRow.className = "detail-tooltip-row";
+              const armorLabel = document.createElement("span");
+              armorLabel.className = "detail-tooltip-label";
+              armorLabel.textContent = "Total Armor";
+              const armorVal = document.createElement("span");
+              armorVal.textContent = formatNumber(bestSet.totalArmor);
+              armorRow.appendChild(armorLabel);
+              armorRow.appendChild(armorVal);
+              tooltip.appendChild(armorRow);
 
-          const armorRow = document.createElement("div");
-          armorRow.className = "detail-tooltip-row";
-          const armorLabel = document.createElement("span");
-          armorLabel.className = "detail-tooltip-label";
-          armorLabel.textContent = "Total Armor";
-          const armorVal = document.createElement("span");
-          armorVal.textContent = formatNumber(bestSet.totalArmor);
-          armorRow.appendChild(armorLabel);
-          armorRow.appendChild(armorVal);
-          tooltip.appendChild(armorRow);
+              const divider = document.createElement("div");
+              divider.className = "detail-tooltip-divider";
+              tooltip.appendChild(divider);
 
-          const divider = document.createElement("div");
-          divider.className = "detail-tooltip-divider";
-          tooltip.appendChild(divider);
+              bestSet.set.forEach((armor) => {
+                const row = document.createElement("div");
+                row.className = "detail-tooltip-row";
+                const labelSpan = document.createElement("span");
+                labelSpan.className = "detail-tooltip-label";
+                labelSpan.textContent = slotLabel(armor.slotNorm);
+                const val = document.createElement("span");
+                val.textContent = `${armor.name}`;
+                row.appendChild(labelSpan);
+                row.appendChild(val);
+                tooltip.appendChild(row);
+              });
+            }
 
-          bestSet.set.forEach((armor) => {
-            const row = document.createElement("div");
-            row.className = "detail-tooltip-row";
-            const label = document.createElement("span");
-            label.className = "detail-tooltip-label";
-            label.textContent = slotLabel(armor.slotNorm);
-            const val = document.createElement("span");
-            val.textContent = `${armor.name}`;
-            row.appendChild(label);
-            row.appendChild(val);
-            tooltip.appendChild(row);
-          });
+            pill.appendChild(tooltip);
+            container.appendChild(pill);
+          };
 
-          pill.appendChild(tooltip);
-          container.appendChild(pill);
+          const maxLevels =
+            level >= 105 ? [90, 105, 125] : [-25, -10, 5].map((offset) => level + offset);
+          maxLevels
+            .map((maxValue) => Math.max(0, maxValue))
+            .filter((maxValue) => maxValue > 0)
+            .forEach((maxValue) => {
+              const sourceArmors = eligibleArmors.filter((armor) => {
+                const effectiveLevel = effectiveLevelByArmor.get(armor);
+                return Number.isFinite(effectiveLevel) && effectiveLevel > 0 && effectiveLevel <= maxValue;
+              });
+              appendArmorPill(`<= ${formatNumber(maxValue)}`, sourceArmors);
+            });
+
+          if (level >= 85) {
+            appendArmorPill("Endgame", eligibleArmors);
+          }
         };
 
         const buildTatteredImbuementsPill = (monster) => {

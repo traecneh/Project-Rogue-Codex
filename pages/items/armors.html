@@ -947,6 +947,9 @@
           });
         };
 
+        const isSlotZero = (slotValue) =>
+          slotValue === 0 || (typeof slotValue === "string" && slotValue.trim() === "0");
+
         const normalizeArmor = (raw) => {
           const fields = (raw && raw.fields) || {};
           const valueNum = toNumber(fields.value);
@@ -1655,7 +1658,9 @@
                 monsters = normalizeMonsters(Array.isArray(monstersData) ? monstersData : []);
                 items = (Array.isArray(data) ? data : [])
                   .map((row) => normalizeArmor(row))
-                  .filter((row) => !HIDDEN_NAMES.has((row.name || "").toLowerCase()));
+                  .filter(
+                    (row) => row && !HIDDEN_NAMES.has((row.name || "").toLowerCase()) && !isSlotZero(row.slot)
+                  );
               if (!items.length) {
                 renderEmpty("Add armors_data06.json beside this page to see armors.");
                 return;
