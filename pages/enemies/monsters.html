@@ -1691,31 +1691,26 @@
           const level = Number(monster.level);
           let ranges = [];
           if (Number.isFinite(level)) {
-            if (level >= 105) {
-              ranges = [{ label: "Endgame", min: 100, max: Infinity, limit: 10 }];
-            } else {
-              const half = 10;
-              const step = 25; // non-overlapping 20-wide bands with a 5-level gap
-              const centers = new Set();
-              centers.add(level);
-              const prevCenter = level - step;
-              if (prevCenter >= 0) centers.add(prevCenter);
-              for (let c = level + step; c - half < 100; c += step) {
-                centers.add(c);
-              }
-
-              ranges = Array.from(centers)
-                .map((c) => {
-                  const min = Math.max(0, c - half);
-                  const max = c + half;
-                  return { min, max, limit: 5 };
-                })
-                .filter((r) => r.max > r.min)
-                .sort((a, b) => a.min - b.min);
+            const maxLevels =
+              level >= 105 ? [90, 105, 125] : [-25, -10, 5].map((offset) => level + offset);
+            ranges = maxLevels
+              .map((maxValue) => Math.max(0, maxValue))
+              .filter((maxValue) => maxValue > 0)
+              .map((maxValue) => ({
+                label: `<= ${formatNumber(maxValue)}`,
+                min: 0,
+                max: maxValue,
+                limit: 5,
+              }));
+            if (level >= 85) {
               ranges.push({ label: "Endgame", min: 100, max: Infinity, limit: 10 });
             }
           } else {
-            ranges = [{ label: "Endgame", min: 100, max: Infinity, limit: 10 }];
+            const pill = document.createElement("span");
+            pill.className = "detail-pill";
+            pill.textContent = "No level data";
+            container.appendChild(pill);
+            return;
           }
 
           const buildList = (range) => {
@@ -1724,9 +1719,13 @@
                 const dps = Number(w.dps);
                 const wLevel = Number(w.level);
                 if (!Number.isFinite(dps)) return null;
-                if (!Number.isFinite(wLevel)) return null;
-                if (wLevel < range.min) return null;
-                if (range.max !== Infinity && wLevel > range.max) return null;
+                const isUnique = !Number.isFinite(wLevel) || wLevel <= 0;
+                const effectiveLevel = isUnique
+                  ? Math.max(0, Math.round((dps - 10) / 5) * 5)
+                  : wLevel;
+                if (!Number.isFinite(effectiveLevel)) return null;
+                if (effectiveLevel < range.min) return null;
+                if (range.max !== Infinity && effectiveLevel > range.max) return null;
                 const multiplier = getElementMultiplier(monster.monsterType, w.elementalDamageType);
                 return {
                   name: w.name || "Unknown Weapon",
@@ -2239,6 +2238,7 @@
             icebeast: "ice beast",
             poisonbeast: "poison beast",
             diseasebeast: "disease beast",
+            human: "humanoid",
           };
           return aliasMap[normalized] || normalized;
         };
