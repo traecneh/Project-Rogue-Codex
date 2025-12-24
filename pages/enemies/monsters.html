@@ -1400,6 +1400,7 @@
             "bone staff",
             "staff of might",
             "cursed staff",
+            "chilled staff",
             "vengeance sword",
             "staff of partiality",
           ].map((n) => n.toLowerCase())
@@ -1700,7 +1701,7 @@
                 label: `<= ${formatNumber(maxValue)}`,
                 min: 0,
                 max: maxValue,
-                limit: 5,
+                limit: 10,
               }));
             if (level >= 85) {
               ranges.push({ label: "Endgame", min: 100, max: Infinity, limit: 10 });
