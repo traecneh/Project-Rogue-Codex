@@ -998,32 +998,163 @@
           };
         };
 
-        const HIDDEN_MONSTER_NAMES = new Set(
+        const ALLOWED_MONSTER_NAMES = new Set(
           [
-            "Fire Wisp",
-            "Fire Bat",
-            "Lava Bat",
-            "Shade",
-            "Dretch Brigand",
-            "Dretch Thug",
-            "Dretch Executioner",
-            "Dretch Warrior",
-            "Dretch Rogue",
-            "Dretch Occulist",
-            "Abyssal Disciple",
-            "Durg",
-            "Frigit",
-            "Bramble",
+            "Abishai",
+            "Anubis",
+            "Balron",
+            "Banished Knight",
+            "Banished Soldier",
+            "Banished Spirit",
+            "Banished Warden",
+            "Bat",
+            "Beholder",
+            "Black Dragon",
+            "Blightscale",
+            "Blue Dragon",
+            "Blue Wisp",
+            "Brown Triddle",
+            "Centaur",
+            "Centaur Warrior",
+            "Cinderdrake",
+            "Crawling Defiler",
+            "Cryoblade Revenant",
+            "Cyclops",
+            "Dark Druid",
+            "Dark Mage",
+            "Dark Monk",
+            "Death",
+            "Death Skull",
+            "Death Tyrant",
+            "Demon",
+            "Demon Lord",
+            "Demon Spire",
+            "Dirt Demon",
+            "Dretch",
+            "Dretch Lord",
+            "Drowned Skull",
+            "Dune Lord",
+            "Dusk Mage",
+            "Duskwyrm",
+            "Ettin",
+            "Evil Eye",
+            "Fighter",
+            "Flaming Death",
+            "Floating Horror",
+            "Frost Giant",
+            "Frost Troll",
+            "Funguilla",
+            "Gas Spore",
+            "Ghost",
+            "Glutton",
+            "Glutton Shaman",
+            "Glutton Slave",
+            "Golem",
+            "Greater Oglah",
+            "Greater Troll",
+            "Greater Yeti",
+            "Green Dragon",
+            "Green Slime",
+            "Green Triddle",
+            "Grimbark",
+            "Harpy",
+            "Headless",
+            "Hell Hound",
+            "Hell Spawn",
+            "Hellbinder",
+            "Hellfiend",
+            "Hells Warden",
+            "Hivemind",
+            "Hobgoblin",
+            "Horned Devil",
+            "Hydra",
+            "Ice Devil",
+            "Ice Dragon",
+            "Ice Golem",
+            "Icehand",
+            "Ilithid",
+            "Imp",
+            "Infernal",
+            "Juggernaut",
+            "Kobold",
+            "Kobold Mage",
+            "Large Slime",
+            "Lava Beast",
+            "Lesser Lich",
+            "Lich",
+            "Lizardman",
+            "Master of Frost",
+            "Master Orc",
+            "Medusa",
+            "Minion",
+            "Minotaur",
+            "Mossy Golem",
+            "Nelm",
+            "Night Hag",
+            "Nightmare",
+            "Nycadaemon",
+            "Oglah",
+            "Oglah Soldier",
+            "Orc",
+            "Orc General",
+            "Orc Shaman",
+            "Orc Warrior",
+            "Orc Wizard",
+            "Orcling",
+            "Orcus",
+            "Phantom",
+            "Phoenix",
+            "Pirate",
+            "Pirate Captain",
+            "Purple Wisp",
+            "Red Dragon",
+            "Red Druid",
+            "Red Wisp",
+            "Risen Dead",
+            "Risen Frost",
+            "Rock Troll",
+            "Rune Warrior",
+            "Scorpotaur",
+            "Shriek",
+            "Skeleton",
+            "Skeleton Warrior",
+            "Skeleton Wolf",
+            "Snake",
+            "Snow Terror",
+            "Sparkscale",
+            "Specter",
+            "Spider",
+            "Stone Giant",
+            "Stone Golem",
+            "Stone Goliath",
+            "Storm Giant",
+            "Swashbuckler",
+            "Thief",
+            "Toxic Bat",
+            "Toxic Skull",
+            "Toxincoil",
+            "Triddle",
+            "Undead Knight",
+            "Undead Priest",
+            "Undead Warrior",
+            "Vampire Bat",
+            "Venomdrake",
+            "Voltling",
+            "Werewolf",
+            "Wraith",
+            "Wyrmling",
+            "Yeti",
+            "Zombie",
           ].map((name) => name.toLowerCase())
         );
 
         const normalizeMonsters = (list) => {
           if (!Array.isArray(list)) return [];
-          return list
-            .map((entry) => normalizeMonster(entry))
-            .filter(Boolean)
-            .filter((monster) => !HIDDEN_MONSTER_NAMES.has((monster.name || "").toLowerCase()));
-        };
+            return list
+              .map((entry) => normalizeMonster(entry))
+              .filter(Boolean)
+              .filter((monster) => ALLOWED_MONSTER_NAMES.has((monster.name || "").toLowerCase()));
+          };
 
         let pendingMonsterId = getInitialMonsterId();
 
@@ -1300,6 +1431,21 @@
             "sand cloth robe",
           ].map((n) => n.toLowerCase())
         );
+
+        const UNIQUE_WEAPON_DROPS = {
+          "rune-warrior": ["Rune Sword"],
+          "balron": ["Rune Sword"],
+          "demon-lord": ["Rune Sword"],
+          "banished-knight": ["Vengeance Hammer"],
+          "banished-warden": ["Vengeance Hammer"],
+        };
+
+        const UNIQUE_ARMOR_DROPS = {
+          "dark-monk": ["Mystic Robe"],
+          "banished-spirit": ["Banished Gauntlets", "Banished Shield"],
+          "banished-knight": ["Banished Platemail", "Banished Helmet"],
+          "banished-soldier": ["Banished Leggings", "Banished Shield"],
+        };
 
       const renderEmpty = (message) => {
         tableBody.innerHTML = `<tr><td class="table-empty" colspan="8">${message}</td></tr>`;
@@ -1857,9 +2003,8 @@
             return;
           }
 
-          const isEndgame = level >= 105;
-          const minLevel = isEndgame ? 105 : Math.max(0, level - 5);
-          const maxLevel = isEndgame ? Infinity : level + 5;
+            const minLevel = Math.max(0, level - 5);
+            const maxLevel = level + 5;
 
           const list = weapons
             .map((w) => {
@@ -1882,15 +2027,69 @@
           pill.className = "detail-pill";
           pill.textContent = "Weapons";
 
-          const tooltip = document.createElement("span");
-          tooltip.className = "detail-tooltip";
-          tooltip.role = "tooltip";
+            const tooltip = document.createElement("span");
+            tooltip.className = "detail-tooltip";
+            tooltip.role = "tooltip";
 
-          const rangeRow = document.createElement("div");
-          rangeRow.className = "detail-tooltip-row";
-          const rangeLabel = document.createElement("span");
-          rangeLabel.className = "detail-tooltip-label";
-          rangeLabel.textContent = "Levels";
+            const monsterKey = normalizeMonsterId(monster.name || monster.id);
+            const uniqueDropNames = Array.isArray(UNIQUE_WEAPON_DROPS[monsterKey])
+              ? UNIQUE_WEAPON_DROPS[monsterKey]
+              : [];
+            const uniqueDropList = Array.from(
+              new Set(uniqueDropNames.map((name) => String(name || "").trim()).filter(Boolean))
+            )
+              .map((name) => {
+                const match = weapons.find((w) => (w.name || "").toLowerCase() === name.toLowerCase());
+                if (!match) {
+                  return {
+                    name,
+                    element: "-",
+                    meta: "-",
+                    type: "-",
+                  };
+                }
+                return {
+                  name: match.name || name,
+                  element: match.elementalDamageType || "-",
+                  meta: `${formatDps(Number(match.dps) || 0)} DPS`,
+                  type: match.type || "-",
+                };
+              })
+              .filter(Boolean);
+
+            if (uniqueDropList.length) {
+              const uniqueHeader = document.createElement("div");
+              uniqueHeader.className = "detail-tooltip-row weapon-row";
+              const uniqueLabel = document.createElement("span");
+              uniqueLabel.className = "detail-tooltip-label";
+              uniqueLabel.textContent = "Unique Drops";
+              const uniqueMeta = document.createElement("span");
+              uniqueMeta.className = "weapon-col-meta";
+              const uniqueType = document.createElement("span");
+              uniqueType.className = "weapon-col-type";
+              uniqueHeader.appendChild(uniqueLabel);
+              uniqueHeader.appendChild(uniqueMeta);
+              uniqueHeader.appendChild(uniqueType);
+              tooltip.appendChild(uniqueHeader);
+
+              const uniqueHeaderDivider = document.createElement("div");
+              uniqueHeaderDivider.className = "detail-tooltip-divider";
+              tooltip.appendChild(uniqueHeaderDivider);
+
+              uniqueDropList.forEach((entry) => {
+                tooltip.appendChild(buildWeaponLinkRow(entry));
+              });
+
+              const uniqueDivider = document.createElement("div");
+              uniqueDivider.className = "detail-tooltip-divider";
+              tooltip.appendChild(uniqueDivider);
+            }
+
+            const rangeRow = document.createElement("div");
+            rangeRow.className = "detail-tooltip-row";
+            const rangeLabel = document.createElement("span");
+            rangeLabel.className = "detail-tooltip-label";
+            rangeLabel.textContent = "Levels";
           const rangeVal = document.createElement("span");
           rangeVal.textContent = `${formatNumber(minLevel)} - ${formatNumber(maxLevel)}`;
           rangeRow.appendChild(rangeLabel);
@@ -1934,19 +2133,71 @@
             .sort((a, b) => b.level - a.level)
             .slice(0, 10);
 
-          const armorPill = document.createElement("span");
-          armorPill.className = "detail-pill";
-          armorPill.textContent = "Armors";
+            const armorPill = document.createElement("span");
+            armorPill.className = "detail-pill";
+            armorPill.textContent = "Armors";
 
-          const armorTooltip = document.createElement("span");
-          armorTooltip.className = "detail-tooltip";
-          armorTooltip.role = "tooltip";
+            const armorTooltip = document.createElement("span");
+            armorTooltip.className = "detail-tooltip";
+            armorTooltip.role = "tooltip";
 
-          const armorRangeRow = document.createElement("div");
-          armorRangeRow.className = "detail-tooltip-row";
-          const armorRangeLabel = document.createElement("span");
-          armorRangeLabel.className = "detail-tooltip-label";
-          armorRangeLabel.textContent = "Levels";
+            const armorMonsterKey = normalizeMonsterId(monster.name || monster.id);
+            const uniqueArmorNames = Array.isArray(UNIQUE_ARMOR_DROPS[armorMonsterKey])
+              ? UNIQUE_ARMOR_DROPS[armorMonsterKey]
+              : [];
+            const uniqueArmorList = Array.from(
+              new Set(uniqueArmorNames.map((name) => String(name || "").trim()).filter(Boolean))
+            )
+              .map((name) => {
+                const match = armors.find((a) => (a.name || "").toLowerCase() === name.toLowerCase());
+                if (!match) {
+                  return {
+                    name,
+                    slot: "-",
+                    meta: "-",
+                  };
+                }
+                return {
+                  name: match.name || name,
+                  slot: match.slot || match.slotNorm || "-",
+                  meta: `Armor ${formatNumber(match.armor)}`,
+                };
+              })
+              .filter(Boolean);
+
+            if (uniqueArmorList.length) {
+              const uniqueArmorHeader = document.createElement("div");
+              uniqueArmorHeader.className = "detail-tooltip-row weapon-row";
+              const uniqueArmorLabel = document.createElement("span");
+              uniqueArmorLabel.className = "detail-tooltip-label";
+              uniqueArmorLabel.textContent = "Unique Drops";
+              const uniqueArmorMeta = document.createElement("span");
+              uniqueArmorMeta.className = "weapon-col-meta";
+              const uniqueArmorType = document.createElement("span");
+              uniqueArmorType.className = "weapon-col-type";
+              uniqueArmorHeader.appendChild(uniqueArmorLabel);
+              uniqueArmorHeader.appendChild(uniqueArmorMeta);
+              uniqueArmorHeader.appendChild(uniqueArmorType);
+              armorTooltip.appendChild(uniqueArmorHeader);
+
+              const uniqueArmorHeaderDivider = document.createElement("div");
+              uniqueArmorHeaderDivider.className = "detail-tooltip-divider";
+              armorTooltip.appendChild(uniqueArmorHeaderDivider);
+
+              uniqueArmorList.forEach((entry) => {
+                armorTooltip.appendChild(buildArmorLinkRow(entry));
+              });
+
+              const uniqueArmorDivider = document.createElement("div");
+              uniqueArmorDivider.className = "detail-tooltip-divider";
+              armorTooltip.appendChild(uniqueArmorDivider);
+            }
+
+            const armorRangeRow = document.createElement("div");
+            armorRangeRow.className = "detail-tooltip-row";
+            const armorRangeLabel = document.createElement("span");
+            armorRangeLabel.className = "detail-tooltip-label";
+            armorRangeLabel.textContent = "Levels";
           const armorRangeVal = document.createElement("span");
           armorRangeVal.textContent = `${formatNumber(minLevel)} - ${formatNumber(maxLevel)}`;
           armorRangeRow.appendChild(armorRangeLabel);

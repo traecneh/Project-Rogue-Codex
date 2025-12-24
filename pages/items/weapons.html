@@ -683,22 +683,158 @@
           ].map((name) => name.toLowerCase())
         );
 
-        const HIDDEN_MONSTER_NAMES = new Set(
+        const UNIQUE_WEAPON_DROP_SOURCES = {
+          "rune sword": ["rune-warrior", "balron", "demon-lord"],
+          "vengeance hammer": ["banished-knight", "banished-warden"],
+        };
+
+        const ALLOWED_MONSTER_NAMES = new Set(
           [
-            "Fire Wisp",
-            "Fire Bat",
-            "Lava Bat",
-            "Shade",
-            "Dretch Brigand",
-            "Dretch Thug",
-            "Dretch Executioner",
-            "Dretch Warrior",
-            "Dretch Rogue",
-            "Dretch Occulist",
-            "Abyssal Disciple",
-            "Durg",
-            "Frigit",
-            "Bramble",
+            "Abishai",
+            "Anubis",
+            "Balron",
+            "Banished Knight",
+            "Banished Soldier",
+            "Banished Spirit",
+            "Banished Warden",
+            "Bat",
+            "Beholder",
+            "Black Dragon",
+            "Blightscale",
+            "Blue Dragon",
+            "Blue Wisp",
+            "Brown Triddle",
+            "Centaur",
+            "Centaur Warrior",
+            "Cinderdrake",
+            "Crawling Defiler",
+            "Cryoblade Revenant",
+            "Cyclops",
+            "Dark Druid",
+            "Dark Mage",
+            "Dark Monk",
+            "Death",
+            "Death Skull",
+            "Death Tyrant",
+            "Demon",
+            "Demon Lord",
+            "Demon Spire",
+            "Dirt Demon",
+            "Dretch",
+            "Dretch Lord",
+            "Drowned Skull",
+            "Dune Lord",
+            "Dusk Mage",
+            "Duskwyrm",
+            "Ettin",
+            "Evil Eye",
+            "Fighter",
+            "Flaming Death",
+            "Floating Horror",
+            "Frost Giant",
+            "Frost Troll",
+            "Funguilla",
+            "Gas Spore",
+            "Ghost",
+            "Glutton",
+            "Glutton Shaman",
+            "Glutton Slave",
+            "Golem",
+            "Greater Oglah",
+            "Greater Troll",
+            "Greater Yeti",
+            "Green Dragon",
+            "Green Slime",
+            "Green Triddle",
+            "Grimbark",
+            "Harpy",
+            "Headless",
+            "Hell Hound",
+            "Hell Spawn",
+            "Hellbinder",
+            "Hellfiend",
+            "Hells Warden",
+            "Hivemind",
+            "Hobgoblin",
+            "Horned Devil",
+            "Hydra",
+            "Ice Devil",
+            "Ice Dragon",
+            "Ice Golem",
+            "Icehand",
+            "Ilithid",
+            "Imp",
+            "Infernal",
+            "Juggernaut",
+            "Kobold",
+            "Kobold Mage",
+            "Large Slime",
+            "Lava Beast",
+            "Lesser Lich",
+            "Lich",
+            "Lizardman",
+            "Master of Frost",
+            "Master Orc",
+            "Medusa",
+            "Minion",
+            "Minotaur",
+            "Mossy Golem",
+            "Nelm",
+            "Night Hag",
+            "Nightmare",
+            "Nycadaemon",
+            "Oglah",
+            "Oglah Soldier",
+            "Orc",
+            "Orc General",
+            "Orc Shaman",
+            "Orc Warrior",
+            "Orc Wizard",
+            "Orcling",
+            "Orcus",
+            "Phantom",
+            "Phoenix",
+            "Pirate",
+            "Pirate Captain",
+            "Purple Wisp",
+            "Red Dragon",
+            "Red Druid",
+            "Red Wisp",
+            "Risen Dead",
+            "Risen Frost",
+            "Rock Troll",
+            "Rune Warrior",
+            "Scorpotaur",
+            "Shriek",
+            "Skeleton",
+            "Skeleton Warrior",
+            "Skeleton Wolf",
+            "Snake",
+            "Snow Terror",
+            "Sparkscale",
+            "Specter",
+            "Spider",
+            "Stone Giant",
+            "Stone Golem",
+            "Stone Goliath",
+            "Storm Giant",
+            "Swashbuckler",
+            "Thief",
+            "Toxic Bat",
+            "Toxic Skull",
+            "Toxincoil",
+            "Triddle",
+            "Undead Knight",
+            "Undead Priest",
+            "Undead Warrior",
+            "Vampire Bat",
+            "Venomdrake",
+            "Voltling",
+            "Werewolf",
+            "Wraith",
+            "Wyrmling",
+            "Yeti",
+            "Zombie",
           ].map((name) => name.toLowerCase())
         );
 
@@ -993,11 +1129,10 @@
         const getMonsterDropRange = (monsterLevel) => {
           const level = Number(monsterLevel);
           if (!Number.isFinite(level)) return null;
-          const isEndgame = level >= 105;
           return {
             level,
-            min: isEndgame ? 105 : Math.max(0, level - 5),
-            max: isEndgame ? Infinity : level + 5,
+            min: Math.max(0, level - 5),
+            max: level + 5,
           };
         };
 
@@ -1012,31 +1147,42 @@
           tooltip.className = "detail-tooltip";
           tooltip.role = "tooltip";
 
-          if (!Array.isArray(monsters) || !monsters.length) {
-            tooltip.textContent = "No monster data loaded";
-          } else {
-            const itemLevel = Number(item?.level);
-              if (!Number.isFinite(itemLevel)) {
+            if (!Array.isArray(monsters) || !monsters.length) {
+              tooltip.textContent = "No monster data loaded";
+            } else {
+              const itemLevel = Number(item?.level);
+              const uniqueMonsterIds = UNIQUE_WEAPON_DROP_SOURCES[normalizeFilterValue(item?.name)] || null;
+              const useUnique = Array.isArray(uniqueMonsterIds) && uniqueMonsterIds.length > 0;
+              if (!useUnique && !Number.isFinite(itemLevel)) {
                 tooltip.textContent = "No level data";
               } else {
+                const uniqueSet = useUnique ? new Set(uniqueMonsterIds.map((id) => normalizeMonsterId(id))) : null;
                 const list = monsters
                   .map((monster) => {
-                    const range = getMonsterDropRange(monster.level);
-                    if (!range) return null;
-                    if (itemLevel < range.min || itemLevel > range.max) return null;
+                    const monsterId = normalizeMonsterId(monster.name || monster.id);
+                    if (useUnique) {
+                      if (!uniqueSet.has(monsterId)) return null;
+                    } else {
+                      const range = getMonsterDropRange(monster.level);
+                      if (!range) return null;
+                      if (itemLevel < range.min || itemLevel > range.max) return null;
+                    }
                     const typeRaw = monster.monsterType || "";
+                    const levelValue = Number(monster.level);
                     return {
-                      id: monster.id || normalizeMonsterId(monster.name),
+                      id: monsterId,
                       name: monster.name || "Unknown Monster",
                       type: typeRaw,
                       typeKey: normalizeFilterValue(typeRaw) || "unknown",
-                      level: range.level,
+                      level: Number.isFinite(levelValue) ? levelValue : null,
                     };
                   })
                   .filter(Boolean)
                   .sort((a, b) => {
                     if (a.typeKey !== b.typeKey) return a.typeKey.localeCompare(b.typeKey);
-                    if (b.level !== a.level) return b.level - a.level;
+                    const levelA = Number.isFinite(a.level) ? a.level : -Infinity;
+                    const levelB = Number.isFinite(b.level) ? b.level : -Infinity;
+                    if (levelB !== levelA) return levelB - levelA;
                     return a.name.localeCompare(b.name);
                   });
 
@@ -1352,7 +1498,7 @@
           return list
             .map((entry) => normalizeMonster(entry))
             .filter(Boolean)
-            .filter((monster) => !HIDDEN_MONSTER_NAMES.has((monster.name || "").toLowerCase()));
+            .filter((monster) => ALLOWED_MONSTER_NAMES.has((monster.name || "").toLowerCase()));
         };
 
         const getWeaponId = (item) => normalizeWeaponId(item && (item.id || item.name));
