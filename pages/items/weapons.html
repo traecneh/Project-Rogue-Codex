@@ -1717,8 +1717,8 @@
           addRow(
             [
               ["Max Rarity", formatValue(item.maxRarityLabel || item.rarity)],
-              ["Promotion", formatNumber(item.shardPromotionAmount)],
               ["Deconstruction", formatNumber(item.shardDecompositionAmount)],
+              ["Promotion", formatNumber(item.shardPromotionAmount)],
             ],
             3
           );
@@ -1735,8 +1735,8 @@
 
           addRow(
             [
-              ["Value", formatNumber(item.value)],
               ["Sell Value", formatNumber(item.sellValue, { maximumFractionDigits: 2 })],
+              ["Buy Value", formatNumber(item.value)],
             ],
             2
           );
