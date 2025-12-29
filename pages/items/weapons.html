@@ -518,6 +518,15 @@
               <label class="filter-label" for="filter-element">Element</label>
               <select id="filter-element" class="filter-select" multiple aria-label="Filter by element"></select>
             </div>
+            <div class="item-filter">
+              <label class="filter-label" for="filter-attack-speed">Attack Speed (ms)</label>
+              <select
+                id="filter-attack-speed"
+                class="filter-select"
+                multiple
+                aria-label="Filter by attack speed"
+              ></select>
+            </div>
           </div>
 
           <div class="items-table-wrapper">
@@ -551,6 +560,7 @@
         const searchInput = document.getElementById("item-search");
         const typeFilter = document.getElementById("filter-type");
         const elementFilter = document.getElementById("filter-element");
+        const attackSpeedFilter = document.getElementById("filter-attack-speed");
         const tableHeadRow = document.getElementById("items-head-row");
         const tableBody = document.getElementById("items-body");
         const countLabel = document.getElementById("item-count");
@@ -853,6 +863,7 @@
         let monsters = [];
         let selectedTypes = new Set();
         let selectedElements = new Set();
+        let selectedAttackSpeeds = new Set();
         let sortKey = "dps";
         let sortDir = "desc";
         let searchTerm = "";
@@ -1380,6 +1391,7 @@
         const populateFilters = (data) => {
           const typeOptions = new Map();
           const elementOptions = new Set();
+          const attackSpeedOptions = new Map();
 
           data.forEach((w) => {
             const typeValue = normalizeFilterValue(w.type);
@@ -1392,6 +1404,12 @@
             if (elementValue && elementValue !== "none" && elementValue !== "magic") {
               elementOptions.add(String(w.element));
             }
+            if (w.attackSpeed !== null && w.attackSpeed !== undefined && w.attackSpeed !== "") {
+              const speedValue = normalizeFilterValue(w.attackSpeed);
+              if (speedValue && !attackSpeedOptions.has(speedValue)) {
+                attackSpeedOptions.set(speedValue, w.attackSpeed);
+              }
+            }
           });
 
           const typeList = Array.from(typeOptions.entries())
@@ -1400,9 +1418,22 @@
           const elementList = Array.from(elementOptions)
             .sort((a, b) => a.localeCompare(b))
             .map((value) => ({ value: normalizeFilterValue(value), label: value }));
+          const attackSpeedList = Array.from(attackSpeedOptions.entries())
+            .sort((a, b) => {
+              const aNum = Number(a[1]);
+              const bNum = Number(b[1]);
+              if (Number.isNaN(aNum) && Number.isNaN(bNum)) {
+                return String(a[1]).localeCompare(String(b[1]));
+              }
+              if (Number.isNaN(aNum)) return 1;
+              if (Number.isNaN(bNum)) return -1;
+              return aNum - bNum;
+            })
+            .map(([value, label]) => ({ value, label: `${formatNumber(label)} ms` }));
 
           setOptions(typeFilter, typeList);
           setOptions(elementFilter, elementList);
+          setOptions(attackSpeedFilter, attackSpeedList);
           if (elementFilter) {
             Array.from(elementFilter.options).forEach((opt) => {
               const color = getElementColor(opt.value);
@@ -1661,10 +1692,9 @@
                   : `${formatNumber(item.procChance, { maximumFractionDigits: 2 })}%`,
               ],
               ["Damage", formatRange(item.minDamage, item.maxDamage)],
-              ["Specialty", formatValue(item.specialty)],
-              ["Specialty Amount", formatNumber(item.specialtyAmount)],
+              ["Attack Speed (ms)", formatNumber(item.attackSpeed)],
             ],
-            5
+            4
           );
 
           addDivider();
@@ -1801,7 +1831,10 @@
             const matchesType = selectedTypes.size === 0 || selectedTypes.has(normalizeFilterValue(item.type));
             const matchesElement =
               selectedElements.size === 0 || selectedElements.has(normalizeFilterValue(item.element));
-            if (!matchesType || !matchesElement) return false;
+            const matchesAttackSpeed =
+              selectedAttackSpeeds.size === 0 ||
+              selectedAttackSpeeds.has(normalizeFilterValue(item.attackSpeed));
+            if (!matchesType || !matchesElement || !matchesAttackSpeed) return false;
             if (!searchTerm) return true;
             const text = searchableColumns
               .map((col) => formatValue(item[col]))
@@ -1865,6 +1898,7 @@
               sortDir = "desc";
               selectedTypes = new Set();
               selectedElements = new Set();
+              selectedAttackSpeeds = new Set();
               buildHead();
               populateFilters(items);
               if (initialWeaponSearchTerm) {
@@ -1897,6 +1931,14 @@
           enableToggleSelect(elementFilter);
           elementFilter.addEventListener("change", () => {
             selectedElements = new Set(Array.from(elementFilter.selectedOptions).map((o) => o.value));
+            applyFilterAndSort();
+          });
+        }
+
+        if (attackSpeedFilter) {
+          enableToggleSelect(attackSpeedFilter);
+          attackSpeedFilter.addEventListener("change", () => {
+            selectedAttackSpeeds = new Set(Array.from(attackSpeedFilter.selectedOptions).map((o) => o.value));
             applyFilterAndSort();
           });
         }
