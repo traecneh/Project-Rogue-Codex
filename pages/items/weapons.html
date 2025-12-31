@@ -619,6 +619,41 @@
           constitution: "Constitution",
         };
 
+        const RARITY_MULTIPLIERS = [
+          { key: "normal", label: "Normal", multiplier: 1 },
+          { key: "uncommon", label: "Uncommon", multiplier: 2 },
+          { key: "rare", label: "Rare", multiplier: 4 },
+          { key: "epic", label: "Epic", multiplier: 6 },
+          { key: "legendary", label: "Legendary", multiplier: 8 },
+          { key: "mythical", label: "Mythical", multiplier: 10 },
+          { key: "ascendant", label: "Ascendant", multiplier: 12 },
+        ];
+        const RARITY_KEY_INDEX = new Map(
+          RARITY_MULTIPLIERS.map((rarity, index) => [rarity.key, index])
+        );
+
+        const getMaxRarityIndex = (maxRarity) => {
+          if (maxRarity === null || maxRarity === undefined || maxRarity === "") return null;
+          const numeric = Number(maxRarity);
+          if (Number.isFinite(numeric)) {
+            if (numeric < 0) return null;
+            return Math.min(Math.floor(numeric), RARITY_MULTIPLIERS.length - 1);
+          }
+          let label = normalizeFilterValue(maxRarity);
+          if (!label) return null;
+          if (label.includes("regular")) {
+            const parts = label.split("-").map((part) => part.trim());
+            label = parts.length > 1 ? parts[1] : label.replace("regular", "").trim();
+          }
+          const labelNumber = Number(label);
+          if (Number.isFinite(labelNumber)) {
+            if (labelNumber < 0) return null;
+            return Math.min(Math.floor(labelNumber), RARITY_MULTIPLIERS.length - 1);
+          }
+          if (label === "common") label = "normal";
+          return RARITY_KEY_INDEX.has(label) ? RARITY_KEY_INDEX.get(label) : null;
+        };
+
         const RESISTANCES_SCHEMA_VERSION = 1;
         const MONSTER_TYPE_ORDER = [
           "humanoid",
@@ -1133,6 +1168,61 @@
               }
             });
           }
+
+            pill.appendChild(tooltip);
+            return pill;
+          };
+
+        const createRarityValuePill = (baseValue, labelText, maxRarity) => {
+          const numericBase = Number(baseValue);
+          const formattedBase = formatNumber(baseValue);
+          if (formattedBase === "-" || !Number.isFinite(numericBase)) {
+            return formattedBase;
+          }
+
+          const pill = document.createElement("span");
+          pill.className = "detail-pill";
+          pill.tabIndex = 0;
+          pill.setAttribute("aria-label", `${labelText} values by rarity`);
+
+          const labelSpan = document.createElement("span");
+          labelSpan.textContent = formattedBase;
+          pill.appendChild(labelSpan);
+
+          const tooltip = document.createElement("span");
+          tooltip.className = "detail-tooltip";
+          tooltip.role = "tooltip";
+
+          const headerRow = document.createElement("div");
+          headerRow.className = "detail-tooltip-row";
+          const headerLeft = document.createElement("span");
+          headerLeft.className = "detail-tooltip-label";
+          headerLeft.textContent = "Rarity";
+          const headerRight = document.createElement("span");
+          headerRight.className = "detail-tooltip-label";
+          headerRight.textContent = labelText;
+          headerRow.appendChild(headerLeft);
+          headerRow.appendChild(headerRight);
+          tooltip.appendChild(headerRow);
+
+          const divider = document.createElement("div");
+          divider.className = "detail-tooltip-divider";
+          tooltip.appendChild(divider);
+
+          const maxIndex = getMaxRarityIndex(maxRarity);
+          const list =
+            maxIndex === null ? RARITY_MULTIPLIERS : RARITY_MULTIPLIERS.slice(0, maxIndex + 1);
+          list.forEach((rarity) => {
+            const row = document.createElement("div");
+            row.className = "detail-tooltip-row";
+            const raritySpan = document.createElement("span");
+            raritySpan.textContent = rarity.label;
+            const valueSpan = document.createElement("span");
+            valueSpan.textContent = formatNumber(numericBase * rarity.multiplier);
+            row.appendChild(raritySpan);
+            row.appendChild(valueSpan);
+            tooltip.appendChild(row);
+          });
 
           pill.appendChild(tooltip);
           return pill;
@@ -1747,8 +1837,22 @@
           addRow(
             [
               ["Max Rarity", formatValue(item.maxRarityLabel || item.rarity)],
-              ["Deconstruction", formatNumber(item.shardDecompositionAmount)],
-              ["Promotion", formatNumber(item.shardPromotionAmount)],
+              [
+                "Deconstruction",
+                createRarityValuePill(
+                  item.shardDecompositionAmount,
+                  "Deconstruction",
+                  item.maxRarityLabel || item.rarity
+                ),
+              ],
+              [
+                "Promotion",
+                createRarityValuePill(
+                  item.shardPromotionAmount,
+                  "Promotion",
+                  item.maxRarityLabel || item.rarity
+                ),
+              ],
             ],
             3
           );
