@@ -239,6 +239,8 @@ const SITE_SEARCH_INDEX = [
 
 const MAX_SEARCH_RESULTS = 8;
 const WEAPONS_SCHEMA_VERSION = 5;
+const PERKS_PAGE_URL = "pages/systems/perks.html";
+const PERKS_INDEX_URL = "pages/systems/perks.json";
 
 function normalizeSearchEntry(entry) {
   return {
@@ -262,6 +264,8 @@ let WEAPON_INDEX_PROMISE = null;
 let WEAPON_DATA_PROMISE = null;
 let ARMOR_SEARCH_INDEX = [];
 let ARMOR_INDEX_PROMISE = null;
+let PERK_INDEX_PROMISE = null;
+let PERK_SLUG_INDEX = new Map();
 
 function fetchJsonMaybeCached(absoluteUrl, errorMessage) {
   const cachedFetch =
@@ -296,6 +300,22 @@ function normalizeSlug(value) {
     .toLowerCase()
     .replace(/[^a-z0-9_-]+/g, "-")
     .replace(/^-+|-+$/g, "");
+}
+
+function normalizePerkName(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function getPerkSlug(name) {
+  if (!name) return "";
+  const slug = String(name)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return slug ? `perk-${slug}` : "";
 }
 
 const HIDDEN_MONSTER_NAMES = new Set(
@@ -708,6 +728,31 @@ function loadArmorSearchIndex() {
   return ARMOR_INDEX_PROMISE;
 }
 
+function loadPerkSlugIndex() {
+  if (PERK_SLUG_INDEX.size) return Promise.resolve(PERK_SLUG_INDEX);
+  if (PERK_INDEX_PROMISE) return PERK_INDEX_PROMISE;
+  const absoluteUrl = getAbsoluteUrl(PERKS_INDEX_URL);
+  PERK_INDEX_PROMISE = fetchJsonMaybeCached(absoluteUrl, "Failed to fetch perks.json")
+    .then((data) => {
+      const list = Array.isArray(data?.perks) ? data.perks : [];
+      const map = new Map();
+      list.forEach((entry) => {
+        const name = entry && typeof entry.name === "string" ? entry.name.trim() : "";
+        if (!name) return;
+        const slug = entry.slug || getPerkSlug(name);
+        if (!slug) return;
+        map.set(normalizePerkName(name), slug.replace(/^#/, ""));
+      });
+      PERK_SLUG_INDEX = map;
+      return map;
+    })
+    .catch(() => {
+      PERK_SLUG_INDEX = new Map();
+      return PERK_SLUG_INDEX;
+    });
+  return PERK_INDEX_PROMISE;
+}
+
 function loadWeaponSearchIndex() {
   if (WEAPON_INDEX_PROMISE) return WEAPON_INDEX_PROMISE;
   WEAPON_INDEX_PROMISE = loadWeaponData()
@@ -786,6 +831,22 @@ function scoreFullText(fullText, terms) {
   });
   if (!hits) return 0;
   return hits * 2;
+}
+
+function getPerkSlugForQuery(query) {
+  const normalized = normalizePerkName(query);
+  if (!normalized || !PERK_SLUG_INDEX.size) return "";
+  return PERK_SLUG_INDEX.get(normalized) || "";
+}
+
+function applyPerkHashToResults(results, query) {
+  const perkSlug = getPerkSlugForQuery(query);
+  if (!perkSlug) return results;
+  return results.map((entry) => {
+    if (!entry || entry.url !== PERKS_PAGE_URL) return entry;
+    const baseUrl = String(entry.url).split("#")[0];
+    return { ...entry, url: `${baseUrl}#${perkSlug}` };
+  });
 }
 
 function runSiteSearch(query) {
@@ -939,7 +1000,8 @@ function initializeSiteSearch() {
       setOpen(false);
       return;
     }
-    currentResults = runSiteSearch(query);
+    loadPerkSlugIndex();
+    currentResults = applyPerkHashToResults(runSiteSearch(query), query);
     activeIndex = -1;
     renderResults(currentResults, terms);
     const shouldOpen = Boolean(query || (autoOpen && currentResults.length));
@@ -955,10 +1017,13 @@ function initializeSiteSearch() {
     if (ARMOR_INDEX_PROMISE) {
       pendingFetches.push(ARMOR_INDEX_PROMISE);
     }
+    if (PERK_INDEX_PROMISE) {
+      pendingFetches.push(PERK_INDEX_PROMISE);
+    }
     if (pendingFetches.length && query) {
       Promise.allSettled(pendingFetches).then(() => {
         if (input.value.trim() !== query) return;
-        currentResults = runSiteSearch(query);
+        currentResults = applyPerkHashToResults(runSiteSearch(query), query);
         activeIndex = -1;
         renderResults(currentResults, terms);
         const openAfterFetch = Boolean(query || (autoOpen && currentResults.length));
