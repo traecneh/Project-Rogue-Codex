@@ -274,10 +274,34 @@
       "details": ["(15/20/25/30)% chance to inflict a DoT dealing [50-100 / 100-200 / 200-300] damage per tick."]
     },
     {
+      "name": "Flame Strike",
+      "slug": "perk-flame-strike",
+      "isUnique": true,
+      "details": ["Transforms weapon damage to Fire."]
+    },
+    {
+      "name": "Iceburst",
+      "slug": "perk-iceburst",
+      "isUnique": true,
+      "details": ["Transforms weapon damage to Cold."]
+    },
+    {
+      "name": "Lightning Javelin",
+      "slug": "perk-lightning-javelin",
+      "isUnique": true,
+      "details": ["Transforms weapon damage to Electric."]
+    },
+    {
       "name": "Lycan",
       "slug": "perk-lycan",
       "isUnique": true,
       "details": ["Allows diseases regardless of weapon element.", "+[5/10/15]% disease chance, additive."]
+    },
+    {
+      "name": "Plague",
+      "slug": "perk-plague",
+      "isUnique": true,
+      "details": ["Transforms weapon damage to Disease."]
     },
     {
       "name": "Plague Eater",
@@ -292,6 +316,18 @@
       "slug": "perk-runic",
       "isUnique": true,
       "details": ["Steals [10/12.5/15]% of your damage in PvE or [20/25/30]% of your damage in PvP."]
+    },
+    {
+      "name": "Sulfuric",
+      "slug": "perk-sulfuric",
+      "isUnique": true,
+      "details": ["Transforms weapon damage to Acid."]
+    },
+    {
+      "name": "Toxicity",
+      "slug": "perk-toxicity",
+      "isUnique": true,
+      "details": ["Transforms weapon damage to Poison."]
     },
     {
       "name": "Vengeance",
