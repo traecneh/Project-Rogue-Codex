@@ -241,6 +241,8 @@ const MAX_SEARCH_RESULTS = 8;
 const WEAPONS_SCHEMA_VERSION = 5;
 const PERKS_PAGE_URL = "pages/systems/perks.html";
 const PERKS_INDEX_URL = "pages/systems/perks.json";
+const MAX_PERK_RESULTS = 4;
+const MIN_PERK_TERM_LENGTH = 2;
 
 function normalizeSearchEntry(entry) {
   return {
@@ -265,7 +267,7 @@ let WEAPON_DATA_PROMISE = null;
 let ARMOR_SEARCH_INDEX = [];
 let ARMOR_INDEX_PROMISE = null;
 let PERK_INDEX_PROMISE = null;
-let PERK_SLUG_INDEX = new Map();
+let PERK_NAME_INDEX = new Map();
 
 function fetchJsonMaybeCached(absoluteUrl, errorMessage) {
   const cachedFetch =
@@ -728,8 +730,8 @@ function loadArmorSearchIndex() {
   return ARMOR_INDEX_PROMISE;
 }
 
-function loadPerkSlugIndex() {
-  if (PERK_SLUG_INDEX.size) return Promise.resolve(PERK_SLUG_INDEX);
+function loadPerkIndex() {
+  if (PERK_NAME_INDEX.size) return Promise.resolve(PERK_NAME_INDEX);
   if (PERK_INDEX_PROMISE) return PERK_INDEX_PROMISE;
   const absoluteUrl = getAbsoluteUrl(PERKS_INDEX_URL);
   PERK_INDEX_PROMISE = fetchJsonMaybeCached(absoluteUrl, "Failed to fetch perks.json")
@@ -741,14 +743,19 @@ function loadPerkSlugIndex() {
         if (!name) return;
         const slug = entry.slug || getPerkSlug(name);
         if (!slug) return;
-        map.set(normalizePerkName(name), slug.replace(/^#/, ""));
+        map.set(normalizePerkName(name), {
+          name,
+          slug: String(slug).replace(/^#/, ""),
+          isUnique: Boolean(entry.isUnique),
+          details: Array.isArray(entry.details) ? entry.details : [],
+        });
       });
-      PERK_SLUG_INDEX = map;
+      PERK_NAME_INDEX = map;
       return map;
     })
     .catch(() => {
-      PERK_SLUG_INDEX = new Map();
-      return PERK_SLUG_INDEX;
+      PERK_NAME_INDEX = new Map();
+      return PERK_NAME_INDEX;
     });
   return PERK_INDEX_PROMISE;
 }
@@ -833,20 +840,51 @@ function scoreFullText(fullText, terms) {
   return hits * 2;
 }
 
-function getPerkSlugForQuery(query) {
-  const normalized = normalizePerkName(query);
-  if (!normalized || !PERK_SLUG_INDEX.size) return "";
-  return PERK_SLUG_INDEX.get(normalized) || "";
+function buildPerkSearchEntry(entry) {
+  if (!entry || !entry.slug || !entry.name) return null;
+  const details = Array.isArray(entry.details) ? entry.details : [];
+  const firstDetail = details.length ? String(details[0]).trim() : "";
+  const description = firstDetail || "Jump to perk details.";
+  const category = entry.isUnique ? "Unique Perks" : "Perks";
+  return normalizeSearchEntry({
+    title: `Perk: ${entry.name}`,
+    url: `${PERKS_PAGE_URL}#${entry.slug}`,
+    category,
+    description,
+    keywords: [entry.name, "perk"],
+    isPerk: true,
+    perkName: entry.name,
+  });
 }
 
-function applyPerkHashToResults(results, query) {
-  const perkSlug = getPerkSlugForQuery(query);
-  if (!perkSlug) return results;
-  return results.map((entry) => {
-    if (!entry || entry.url !== PERKS_PAGE_URL) return entry;
-    const baseUrl = String(entry.url).split("#")[0];
-    return { ...entry, url: `${baseUrl}#${perkSlug}` };
+function getPerkEntriesForQuery(query) {
+  const normalizedQuery = normalizePerkName(query);
+  if (!normalizedQuery || !PERK_NAME_INDEX.size) return [];
+  const terms = toSearchTerms(normalizedQuery).filter((term) => term.length >= MIN_PERK_TERM_LENGTH);
+  if (!terms.length) return [];
+  const matches = [];
+  PERK_NAME_INDEX.forEach((entry, nameKey) => {
+    if (!terms.every((term) => nameKey.includes(term))) return;
+    let score = 0;
+    if (nameKey === normalizedQuery) score += 3;
+    if (nameKey.startsWith(normalizedQuery)) score += 2;
+    matches.push({ entry, score });
   });
+  matches.sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score;
+    return a.entry.name.localeCompare(b.entry.name);
+  });
+  return matches.map((match) => match.entry);
+}
+
+function injectPerkResults(results, query) {
+  const perkEntries = getPerkEntriesForQuery(query).slice(0, MAX_PERK_RESULTS);
+  if (!perkEntries.length) return results;
+  const perkResults = perkEntries.map((entry) => buildPerkSearchEntry(entry)).filter(Boolean);
+  if (!perkResults.length) return results;
+  const perkUrls = new Set(perkResults.map((entry) => entry.url));
+  const filtered = results.filter((entry) => entry && !perkUrls.has(entry.url));
+  return perkResults.concat(filtered).slice(0, MAX_SEARCH_RESULTS);
 }
 
 function runSiteSearch(query) {
@@ -1000,8 +1038,8 @@ function initializeSiteSearch() {
       setOpen(false);
       return;
     }
-    loadPerkSlugIndex();
-    currentResults = applyPerkHashToResults(runSiteSearch(query), query);
+    loadPerkIndex();
+    currentResults = injectPerkResults(runSiteSearch(query), query);
     activeIndex = -1;
     renderResults(currentResults, terms);
     const shouldOpen = Boolean(query || (autoOpen && currentResults.length));
@@ -1023,7 +1061,7 @@ function initializeSiteSearch() {
     if (pendingFetches.length && query) {
       Promise.allSettled(pendingFetches).then(() => {
         if (input.value.trim() !== query) return;
-        currentResults = applyPerkHashToResults(runSiteSearch(query), query);
+        currentResults = injectPerkResults(runSiteSearch(query), query);
         activeIndex = -1;
         renderResults(currentResults, terms);
         const openAfterFetch = Boolean(query || (autoOpen && currentResults.length));
