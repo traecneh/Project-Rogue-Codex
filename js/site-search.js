@@ -241,8 +241,10 @@ const MAX_SEARCH_RESULTS = 8;
 const WEAPONS_SCHEMA_VERSION = 5;
 const PERKS_PAGE_URL = "pages/systems/perks.html";
 const PERKS_INDEX_URL = "pages/systems/perks.json";
+const MONSTERS_PAGE_URL = "pages/enemies/monsters.html";
 const MAX_PERK_RESULTS = 4;
 const MIN_PERK_TERM_LENGTH = 2;
+const MAX_TATTER_MONSTER_RESULTS = 4;
 
 function normalizeSearchEntry(entry) {
   return {
@@ -268,6 +270,7 @@ let ARMOR_SEARCH_INDEX = [];
 let ARMOR_INDEX_PROMISE = null;
 let PERK_INDEX_PROMISE = null;
 let PERK_NAME_INDEX = new Map();
+let MONSTER_TATTER_INDEX = new Map();
 
 function fetchJsonMaybeCached(absoluteUrl, errorMessage) {
   const cachedFetch =
@@ -422,6 +425,9 @@ const normalizeNavMonster = (monster) => {
   const attackSpeed = toNumberOrNull(fields.attack_speed ?? monster.attack_speed ?? monster.attackSpeed);
   const hpMax = toNumberOrNull(fields.health ?? monster.hp ?? monster.hpMax ?? monster.health);
   const movingSpeed = toNumberOrNull(fields.movement_speed ?? monster.moving_speed ?? monster.movingSpeed);
+  const uncommonTatter =
+    fields.uncommon_tatter_label ?? monster.uncommon_tatter_label ?? monster.uncommonTatter ?? null;
+  const rareTatter = fields.rare_tatter_label ?? monster.rare_tatter_label ?? monster.rareTatter ?? null;
 
   return {
     name: name || slug,
@@ -435,6 +441,8 @@ const normalizeNavMonster = (monster) => {
     dps: computeDps(minDamage, maxDamage, attackSpeed),
     hpMax,
     movingSpeed,
+    uncommonTatter,
+    rareTatter,
   };
 };
 
@@ -635,11 +643,30 @@ function loadMonsterSearchIndex() {
       const filtered = list.filter(
         (monster) => !HIDDEN_MONSTER_NAMES.has(String(monster.name || monster.Name || "").toLowerCase())
       );
-      MONSTER_SEARCH_INDEX = filtered.map((monster) => buildMonsterSearchEntry(monster)).filter(Boolean);
+      const normalized = filtered.map((monster) => normalizeNavMonster(monster)).filter(Boolean);
+      MONSTER_SEARCH_INDEX = normalized.map((monster) => buildMonsterSearchEntry(monster)).filter(Boolean);
+
+      const tatterIndex = new Map();
+      const addTatterEntry = (monster, label, type) => {
+        const name = String(label || "").trim();
+        if (!name || name.toLowerCase() === "none") return;
+        const key = normalizePerkName(name);
+        if (!key) return;
+        const list = tatterIndex.get(key) || [];
+        list.push({ monster, tatterName: name, tatterType: type });
+        tatterIndex.set(key, list);
+      };
+
+      normalized.forEach((monster) => {
+        addTatterEntry(monster, monster.uncommonTatter, "Uncommon");
+        addTatterEntry(monster, monster.rareTatter, "Rare");
+      });
+      MONSTER_TATTER_INDEX = tatterIndex;
       return MONSTER_SEARCH_INDEX;
     })
     .catch(() => {
       MONSTER_SEARCH_INDEX = [];
+      MONSTER_TATTER_INDEX = new Map();
       return MONSTER_SEARCH_INDEX;
     });
   return MONSTER_INDEX_PROMISE;
@@ -877,14 +904,78 @@ function getPerkEntriesForQuery(query) {
   return matches.map((match) => match.entry);
 }
 
+function buildTatterMonsterSearchEntry(monsterEntry, perkName) {
+  if (!monsterEntry || !monsterEntry.monster) return null;
+  const monster = monsterEntry.monster;
+  const tatterName = monsterEntry.tatterName || perkName || "";
+  const typeLabel = monsterEntry.tatterType ? `${monsterEntry.tatterType} Tatter` : "Tattered Imbuement";
+  const description = tatterName ? `${typeLabel}: ${tatterName}` : "Tattered Imbuement source.";
+  const searchValue = perkName || tatterName || "";
+  const monsterId = monster.slug || normalizeSlug(monster.name || "");
+  if (!monsterId) return null;
+  const params = new URLSearchParams();
+  params.set("monster", monsterId);
+  if (searchValue) {
+    params.set("search", searchValue);
+  }
+
+  return normalizeSearchEntry({
+    title: `Monster: ${monster.name || monsterId}`,
+    url: `${MONSTERS_PAGE_URL}?${params.toString()}`,
+    category: "Monsters",
+    description,
+    keywords: [monster.name, tatterName, "tatter", "tattered"].filter(Boolean),
+    isMonster: true,
+    isTatterMonster: true,
+    monsterId,
+  });
+}
+
+function buildTatterMonsterResults(perkEntries) {
+  if (!perkEntries.length || !MONSTER_TATTER_INDEX.size) return [];
+  const buckets = perkEntries
+    .map((perk) => {
+      const key = normalizePerkName(perk.name);
+      const entries = MONSTER_TATTER_INDEX.get(key) || [];
+      const sorted = entries.slice().sort((a, b) => {
+        const nameA = a.monster?.name || "";
+        const nameB = b.monster?.name || "";
+        return nameA.localeCompare(nameB);
+      });
+      return { perkName: perk.name, monsters: sorted };
+    })
+    .filter((bucket) => bucket.monsters.length);
+  if (!buckets.length) return [];
+
+  const results = [];
+  const usedUrls = new Set();
+  let added = true;
+  while (results.length < MAX_TATTER_MONSTER_RESULTS && added) {
+    added = false;
+    for (const bucket of buckets) {
+      if (results.length >= MAX_TATTER_MONSTER_RESULTS) break;
+      const next = bucket.monsters.shift();
+      if (!next) continue;
+      const entry = buildTatterMonsterSearchEntry(next, bucket.perkName);
+      if (!entry || usedUrls.has(entry.url)) continue;
+      usedUrls.add(entry.url);
+      results.push(entry);
+      added = true;
+    }
+  }
+  return results;
+}
+
 function injectPerkResults(results, query) {
   const perkEntries = getPerkEntriesForQuery(query).slice(0, MAX_PERK_RESULTS);
   if (!perkEntries.length) return results;
   const perkResults = perkEntries.map((entry) => buildPerkSearchEntry(entry)).filter(Boolean);
-  if (!perkResults.length) return results;
-  const perkUrls = new Set(perkResults.map((entry) => entry.url));
-  const filtered = results.filter((entry) => entry && !perkUrls.has(entry.url));
-  return perkResults.concat(filtered).slice(0, MAX_SEARCH_RESULTS);
+  const tatterResults = buildTatterMonsterResults(perkEntries);
+  const promotedResults = perkResults.concat(tatterResults);
+  if (!promotedResults.length) return results;
+  const promotedUrls = new Set(promotedResults.map((entry) => entry.url));
+  const filtered = results.filter((entry) => entry && !promotedUrls.has(entry.url));
+  return promotedResults.concat(filtered).slice(0, MAX_SEARCH_RESULTS);
 }
 
 function runSiteSearch(query) {

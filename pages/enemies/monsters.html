@@ -853,6 +853,12 @@
           return "";
         };
 
+        const getInitialSearchTerm = () => {
+          const params = new URLSearchParams(window.location.search || "");
+          const fromQuery = params.get("search") || params.get("q") || params.get("perk") || "";
+          return String(fromQuery || "").trim();
+        };
+
         const FLAG_DETAILS = {
           flying: {
             label: "Flying",
@@ -1376,12 +1382,16 @@
         let monsters = [];
         let sortKey = "dps";
         let sortDir = "desc";
-        let searchTerm = "";
+        let searchTerm = getInitialSearchTerm();
         let selectedTypes = new Set();
         let selectedElements = new Set();
         let selectedFlags = new Set();
         let weapons = [];
         let armors = [];
+
+        if (searchInput && searchTerm) {
+          searchInput.value = searchTerm;
+        }
 
         const HIDDEN_WEAPON_NAMES = new Set(
           [
