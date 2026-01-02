@@ -298,6 +298,17 @@
         width: 100%;
       }
 
+      .stat-warning {
+        display: none;
+        grid-column: 1 / -1;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid #8c3b3b;
+        border-radius: 8px;
+        background: rgba(140, 59, 59, 0.15);
+        color: #ffb3b3;
+        font-size: 0.9rem;
+      }
+
       .select-input {
         background: var(--bg-panel-dark);
         color: var(--text-main);
@@ -838,21 +849,21 @@
                 <span>Base Strength</span>
                 <span class="slider-value" id="val-str">5</span>
               </div>
-              <input type="range" id="char-str" class="slider-input" min="5" max="500" value="5" />
+              <input type="range" id="char-str" class="slider-input" min="5" max="200" value="5" />
             </div>
             <div class="slider-row">
               <div class="slider-label">
                 <span>Base Dexterity</span>
                 <span class="slider-value" id="val-dex">5</span>
               </div>
-              <input type="range" id="char-dex" class="slider-input" min="5" max="500" value="5" />
+              <input type="range" id="char-dex" class="slider-input" min="5" max="200" value="5" />
             </div>
             <div class="slider-row">
               <div class="slider-label">
                 <span>Base Constitution</span>
                 <span class="slider-value" id="val-con">5</span>
               </div>
-              <input type="range" id="char-con" class="slider-input" min="5" max="500" value="5" />
+              <input type="range" id="char-con" class="slider-input" min="5" max="200" value="5" />
             </div>
             <div class="slider-row">
               <div class="slider-label">
@@ -861,6 +872,8 @@
               </div>
               <input type="range" id="char-skill" class="slider-input" min="0" max="120" value="0" />
             </div>
+            <div class="stat-warning" id="base-stat-warning" role="status" aria-live="polite"></div>
+            <div class="stat-warning" id="base-stat-unallocated" role="status" aria-live="polite"></div>
           </div>
         </article>
 
@@ -1069,6 +1082,16 @@
 
         const selectedBySlot = {};
         const STATE_PARAM = "build";
+        const BASE_STAT_MIN = 5;
+        const BASE_STAT_MAX = 200;
+        const BASE_STAT_IDS = new Set(["char-str", "char-dex", "char-con"]);
+        const BASE_STAT_START = BASE_STAT_MIN * BASE_STAT_IDS.size;
+        const getBaseStatLimit = (level) => toNumber(level) * 2 + 8;
+        const clampBaseStatValue = (value) => {
+          const num = Number(value);
+          if (!Number.isFinite(num)) return BASE_STAT_MIN;
+          return Math.min(BASE_STAT_MAX, Math.max(BASE_STAT_MIN, Math.trunc(num)));
+        };
         let perkOptions = [];
         let raceOptions = [];
         const raceSelect = document.getElementById("char-race");
@@ -1321,7 +1344,12 @@
           if (state.char) {
             const setVal = (id, val) => {
               const el = document.getElementById(id);
-              if (el) el.value = val;
+              if (!el) return;
+              if (BASE_STAT_IDS.has(id)) {
+                el.value = clampBaseStatValue(val);
+                return;
+              }
+              el.value = val;
             };
             setVal("char-level", state.char.level);
             setVal("char-str", state.char.str);
@@ -1347,6 +1375,9 @@
             const valueEl = document.getElementById(label);
             if (!input || !valueEl) return;
             const update = (shouldPersist = false) => {
+              if (BASE_STAT_IDS.has(id)) {
+                input.value = clampBaseStatValue(input.value);
+              }
               valueEl.textContent = input.value;
               updateTotals();
               if (shouldPersist) schedulePersistState();
@@ -1416,7 +1447,11 @@
 
         const getCharStat = (id) => {
           const el = document.getElementById(id);
-          return el ? toNumber(el.value) : 0;
+          const value = el ? toNumber(el.value) : 0;
+          if (BASE_STAT_IDS.has(id)) {
+            return clampBaseStatValue(value);
+          }
+          return value;
         };
 
         const getRaceData = (value) => RACES.find((r) => r.value === value) || RACES[0];
@@ -1679,6 +1714,9 @@
           const totalDex = baseDexWithChar + bonusDex;
           const totalDps = weapon ? toNumber(weapon.dps) : 0;
           const element = weapon && weapon.element ? weapon.element : "None";
+          const baseStatTotal = charStr + charDex + charCon;
+          const baseStatLimit = getBaseStatLimit(charLevel);
+          const baseStatSpent = Math.max(0, baseStatTotal - BASE_STAT_START);
 
           const resistTotals = ["fire", "cold", "electric", "acid", "poison", "disease"].reduce((acc, key) => {
             acc[key] =
@@ -1725,6 +1763,28 @@
           if (totals.dex) {
             totals.dex.textContent = totalDex;
             totals.dex.title = `Base: ${baseDexWithChar} (items ${baseDex} + character ${charDex})\nRarity bonus: ${bonusDex}`;
+          }
+
+          const baseStatWarningEl = document.getElementById("base-stat-warning");
+          const baseStatUnallocatedEl = document.getElementById("base-stat-unallocated");
+          const baseStatRemaining = baseStatLimit - baseStatSpent;
+          if (baseStatWarningEl) {
+            if (baseStatRemaining < 0) {
+              baseStatWarningEl.textContent = `Base stat points over cap (${baseStatSpent} / ${baseStatLimit}).`;
+              baseStatWarningEl.style.display = "block";
+            } else {
+              baseStatWarningEl.textContent = "";
+              baseStatWarningEl.style.display = "none";
+            }
+          }
+          if (baseStatUnallocatedEl) {
+            if (baseStatRemaining > 0) {
+              baseStatUnallocatedEl.textContent = `Unallocated base stat points: ${baseStatRemaining}.`;
+              baseStatUnallocatedEl.style.display = "block";
+            } else {
+              baseStatUnallocatedEl.textContent = "";
+              baseStatUnallocatedEl.style.display = "none";
+            }
           }
 
           if (totals.resists) {
