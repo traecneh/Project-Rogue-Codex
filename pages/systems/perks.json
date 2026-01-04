@@ -59,7 +59,7 @@
       "slug": "perk-critical-aegis",
       "isUnique": false,
       "details": [
-        "Grants an Overshield for [15/22.5/30]% of Critical Damage dealt.",
+        "Grants an Overshield for [10/17.5/25]% of Critical Damage dealt.",
         "Doubles in PvP as damage is mitigatable."
       ]
     },
@@ -152,7 +152,7 @@
       "name": "Overpower",
       "slug": "perk-overpower",
       "isUnique": false,
-      "details": ["Increases Crit Damage by [5/6/7]%.", "Increases Crit Chance by [3/4/5]%."]
+      "details": ["Increases Critical Damage dealt by [3/4/5]%.", "Increases Crit Chance by [3/4/5]%."]
     },
     {
       "name": "Parry",
@@ -230,7 +230,7 @@
       "name": "Toxic Shell",
       "slug": "perk-toxic-shell",
       "isUnique": false,
-      "details": ["Grants an Overshield for [30/40/50]% of Poison Damage dealt.", "Doubles in PvP as damage is mitigatable."]
+      "details": ["Grants an Overshield for [25/35/45]% of Poison Damage dealt.", "Doubles in PvP as damage is mitigatable."]
     },
     {
       "name": "Vampirism",

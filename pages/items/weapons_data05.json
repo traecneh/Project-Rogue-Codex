@@ -92,6 +92,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 400,
       "subtype_label": "Sword"
     }
@@ -189,6 +190,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 400,
       "subtype_label": "Sword"
     }
@@ -286,6 +288,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 400,
       "subtype_label": "Sword"
     }
@@ -383,6 +386,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 1000,
       "subtype_label": "Sword"
     }
@@ -480,6 +484,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 1000,
       "subtype_label": "Sword"
     }
@@ -577,6 +582,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 1000,
       "subtype_label": "Sword"
     }
@@ -674,6 +680,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 5000,
       "subtype_label": "Sword"
     }
@@ -771,6 +778,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 5000,
       "subtype_label": "Sword"
     }
@@ -868,6 +876,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 5000,
       "subtype_label": "Sword"
     }
@@ -965,6 +974,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 5000,
       "subtype_label": "Sword"
     }
@@ -1062,6 +1072,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 5000,
       "subtype_label": "Sword"
     }
@@ -1159,6 +1170,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 5000,
       "subtype_label": "Sword"
     }
@@ -1256,6 +1268,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 10000,
       "subtype_label": "Sword",
       "max_rarity_label": "Uncommon"
@@ -1354,6 +1367,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 10000,
       "subtype_label": "Sword",
       "max_rarity_label": "Uncommon"
@@ -1452,6 +1466,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 10000,
       "subtype_label": "Sword",
       "max_rarity_label": "Uncommon"
@@ -1550,6 +1565,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 12500,
       "subtype_label": "Sword",
       "max_rarity_label": "Uncommon"
@@ -1648,6 +1664,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 15000,
       "subtype_label": "Sword",
       "max_rarity_label": "Uncommon"
@@ -1746,6 +1763,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 15000,
       "subtype_label": "Sword",
       "element_label": "Poison",
@@ -1845,6 +1863,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 17500,
       "subtype_label": "Sword",
       "max_rarity_label": "Uncommon"
@@ -1943,6 +1962,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 17500,
       "subtype_label": "Sword",
       "max_rarity_label": "Uncommon"
@@ -2041,6 +2061,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 30000,
       "subtype_label": "Sword",
       "max_rarity_label": "Rare"
@@ -2139,6 +2160,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 1,
+      "corrupted_perk": 0,
       "value": 50000,
       "subtype_label": "Sword",
       "element_label": "Fire",
@@ -2238,6 +2260,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 1,
+      "corrupted_perk": 0,
       "value": 60000,
       "subtype_label": "Sword",
       "element_label": "Electric",
@@ -2337,6 +2360,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 30000,
       "subtype_label": "Sword",
       "element_label": "Magic",
@@ -2436,6 +2460,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 1,
+      "corrupted_perk": 0,
       "value": 125000,
       "subtype_label": "Sword",
       "element_label": "Disease",
@@ -2535,12 +2560,14 @@
       "to_hit": 0,
       "unknown_97": 70,
       "unknown_98": 1,
+      "corrupted_perk": 304,
       "value": 3000000,
       "subtype_label": "Sword",
       "specialty_label": "Constitution",
       "element_label": "Cold",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Juggernaut (Tier 2)"
+      "perk_label": "Juggernaut (Tier 2)",
+      "corrupted_perk_label": "Bloodlust (Tier 2)"
     }
   },
   {
@@ -2636,6 +2663,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 75000,
       "subtype_label": "Sword",
       "element_label": "Cold",
@@ -2735,6 +2763,7 @@
       "to_hit": 0,
       "unknown_97": 57,
       "unknown_98": 1,
+      "corrupted_perk": 0,
       "value": 500000,
       "subtype_label": "Sword",
       "element_label": "Disease",
@@ -2835,6 +2864,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 1,
+      "corrupted_perk": 0,
       "value": 150000,
       "subtype_label": "Sword",
       "max_rarity_label": "Ascendant"
@@ -2933,11 +2963,13 @@
       "to_hit": 10,
       "unknown_97": 0,
       "unknown_98": 1,
+      "corrupted_perk": 105,
       "value": 5000000,
       "subtype_label": "Sword",
       "element_label": "Disease",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Epidemic (Tier 3)"
+      "perk_label": "Epidemic (Tier 3)",
+      "corrupted_perk_label": "Crimson Feast (Tier 1)"
     }
   },
   {
@@ -3033,6 +3065,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 40000,
       "subtype_label": "Sword",
       "element_label": "Acid",
@@ -3132,6 +3165,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 1,
+      "corrupted_perk": 0,
       "value": 150000,
       "subtype_label": "Sword",
       "element_label": "Electric",
@@ -3231,6 +3265,7 @@
       "to_hit": 10,
       "unknown_97": 0,
       "unknown_98": 1,
+      "corrupted_perk": 0,
       "value": 5000000,
       "subtype_label": "Sword",
       "specialty_label": "Dexterity",
@@ -3332,12 +3367,14 @@
       "to_hit": 0,
       "unknown_97": 72,
       "unknown_98": 1,
+      "corrupted_perk": 286,
       "value": 3000000,
       "subtype_label": "Sword",
       "specialty_label": "Strength",
       "element_label": "Poison",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Toxic Shell (Tier 2)"
+      "perk_label": "Toxic Shell (Tier 2)",
+      "corrupted_perk_label": "Garrote (Tier 2)"
     }
   },
   {
@@ -3433,6 +3470,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 200,
       "subtype_label": "Dagger"
     }
@@ -3530,6 +3568,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 1000,
       "subtype_label": "Dagger"
     }
@@ -3627,6 +3666,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 1000,
       "subtype_label": "Dagger"
     }
@@ -3724,6 +3764,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 1000,
       "subtype_label": "Dagger"
     }
@@ -3821,6 +3862,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 1000,
       "subtype_label": "Dagger"
     }
@@ -3918,6 +3960,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 1000,
       "subtype_label": "Dagger"
     }
@@ -4015,6 +4058,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 1000,
       "subtype_label": "Dagger"
     }
@@ -4112,6 +4156,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 1000,
       "subtype_label": "Dagger"
     }
@@ -4209,6 +4254,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 5000,
       "subtype_label": "Dagger"
     }
@@ -4306,6 +4352,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 1000,
       "subtype_label": "Dagger"
     }
@@ -4403,6 +4450,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 1000,
       "subtype_label": "Dagger"
     }
@@ -4500,6 +4548,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 5000,
       "subtype_label": "Dagger"
     }
@@ -4597,6 +4646,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 5000,
       "subtype_label": "Dagger"
     }
@@ -4694,6 +4744,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 10000,
       "subtype_label": "Dagger",
       "max_rarity_label": "Uncommon"
@@ -4792,6 +4843,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 5000,
       "subtype_label": "Dagger"
     }
@@ -4889,6 +4941,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 5000,
       "subtype_label": "Dagger"
     }
@@ -4986,6 +5039,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 10000,
       "subtype_label": "Dagger",
       "max_rarity_label": "Uncommon"
@@ -5084,6 +5138,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 10000,
       "subtype_label": "Dagger",
       "max_rarity_label": "Uncommon"
@@ -5182,6 +5237,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 15000,
       "subtype_label": "Dagger",
       "max_rarity_label": "Uncommon"
@@ -5280,6 +5336,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 17500,
       "subtype_label": "Dagger",
       "max_rarity_label": "Uncommon"
@@ -5378,6 +5435,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 30000,
       "subtype_label": "Dagger",
       "max_rarity_label": "Rare"
@@ -5476,6 +5534,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 10000,
       "subtype_label": "Dagger",
       "max_rarity_label": "Uncommon"
@@ -5574,6 +5633,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 15000,
       "subtype_label": "Dagger",
       "max_rarity_label": "Uncommon"
@@ -5672,6 +5732,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 30000,
       "subtype_label": "Dagger",
       "max_rarity_label": "Rare"
@@ -5770,6 +5831,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 30000,
       "subtype_label": "Dagger",
       "element_label": "Poison",
@@ -5869,6 +5931,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 1,
+      "corrupted_perk": 0,
       "value": 35000,
       "subtype_label": "Dagger",
       "element_label": "Fire",
@@ -5968,6 +6031,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 35000,
       "subtype_label": "Dagger",
       "max_rarity_label": "Epic"
@@ -6066,6 +6130,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 1,
+      "corrupted_perk": 0,
       "value": 125000,
       "subtype_label": "Dagger",
       "element_label": "Electric",
@@ -6165,6 +6230,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 1,
+      "corrupted_perk": 0,
       "value": 60000,
       "subtype_label": "Dagger",
       "element_label": "Disease",
@@ -6264,6 +6330,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 60000,
       "subtype_label": "Dagger",
       "element_label": "Acid",
@@ -6363,6 +6430,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 75000,
       "subtype_label": "Dagger",
       "max_rarity_label": "Ascendant",
@@ -6462,6 +6530,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 0,
       "subtype_label": "Sword"
     }
@@ -6559,12 +6628,14 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 1,
+      "corrupted_perk": 563,
       "value": 5000000,
       "subtype_label": "Sword",
       "specialty_label": "Strength",
       "element_label": "Acid",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Vitality (Tier 3)"
+      "perk_label": "Vitality (Tier 3)",
+      "corrupted_perk_label": "Bloodlust (Tier 2)"
     }
   },
   {
@@ -6660,11 +6731,13 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 1,
+      "corrupted_perk": 3,
       "value": 300000,
       "subtype_label": "Dagger",
       "element_label": "Fire",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Juggernaut (Tier 1)"
+      "perk_label": "Juggernaut (Tier 1)",
+      "corrupted_perk_label": "Rejuvenation (Tier 1)"
     }
   },
   {
@@ -6760,6 +6833,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 1,
+      "corrupted_perk": 0,
       "value": 150000,
       "subtype_label": "Dagger",
       "element_label": "Cold",
@@ -6860,6 +6934,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 1,
+      "corrupted_perk": 0,
       "value": 50000,
       "subtype_label": "Sword",
       "element_label": "Fire",
@@ -6959,6 +7034,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 1,
+      "corrupted_perk": 0,
       "value": 50000,
       "subtype_label": "Sword",
       "element_label": "Fire",
@@ -7058,6 +7134,7 @@
       "to_hit": 0,
       "unknown_97": 60,
       "unknown_98": 1,
+      "corrupted_perk": 0,
       "value": 150000,
       "subtype_label": "Sword",
       "max_rarity_label": "Ascendant",
@@ -7157,6 +7234,7 @@
       "to_hit": 0,
       "unknown_97": 72,
       "unknown_98": 1,
+      "corrupted_perk": 0,
       "value": 5000000,
       "subtype_label": "Sword",
       "element_label": "Electric",
@@ -7257,6 +7335,7 @@
       "to_hit": 0,
       "unknown_97": 61,
       "unknown_98": 1,
+      "corrupted_perk": 0,
       "value": 3000000,
       "subtype_label": "Sword",
       "element_label": "Electric",
@@ -7357,11 +7436,13 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 1,
+      "corrupted_perk": 265,
       "value": 500000,
       "subtype_label": "Sword",
       "element_label": "Acid",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Hawkeye (Tier 1)"
+      "perk_label": "Hawkeye (Tier 1)",
+      "corrupted_perk_label": "Magic Shield (Tier 2)"
     }
   },
   {
@@ -7457,11 +7538,13 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 1,
+      "corrupted_perk": 513,
       "value": 5000000,
       "subtype_label": "Dagger",
       "element_label": "Electric",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Bloodlust (Tier 2)"
+      "perk_label": "Bloodlust (Tier 2)",
+      "corrupted_perk_label": "Lifesteal (Tier 3)"
     }
   },
   {
@@ -7557,6 +7640,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 1,
+      "corrupted_perk": 0,
       "value": 75000,
       "subtype_label": "Dagger",
       "element_label": "Cold",
@@ -7656,11 +7740,13 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 1,
+      "corrupted_perk": 258,
       "value": 500000,
       "subtype_label": "Dagger",
       "element_label": "Acid",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Vampirism (Tier 2)"
+      "perk_label": "Vampirism (Tier 2)",
+      "corrupted_perk_label": "Vampirisim (Tier 1)"
     }
   },
   {
@@ -7756,6 +7842,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 1,
+      "corrupted_perk": 0,
       "value": 150000,
       "subtype_label": "Dagger",
       "element_label": "Poison",
@@ -7855,11 +7942,13 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 1,
+      "corrupted_perk": 36,
       "value": 300000,
       "subtype_label": "Sword",
       "element_label": "Poison",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Parry (Tier 1)"
+      "perk_label": "Parry (Tier 1)",
+      "corrupted_perk_label": "Lethal Toxins (Tier 1)"
     }
   },
   {
@@ -7936,7 +8025,7 @@
       "shard_promotion_amount": 600,
       "unknown_78": 0,
       "unknown_79": 0,
-      "perk": 52,
+      "perk": 308,
       "unknown_81": 0,
       "fire_resistance": 0,
       "cold_resistance": 0,
@@ -7955,11 +8044,13 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 1,
+      "corrupted_perk": 292,
       "value": 300000,
       "subtype_label": "Dagger",
       "element_label": "Poison",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Lethal Toxins (Tier 2)"
+      "perk_label": "Toxic Shell (Tier 2)",
+      "corrupted_perk_label": "Lethal Toxins (Tier 2)"
     }
   },
   {
@@ -8054,12 +8145,14 @@
       "unknown_95": 0,
       "to_hit": 0,
       "unknown_97": 0,
-      "unknown_98": 1,
+      "unknown_98": 0,
+      "corrupted_perk": 266,
       "value": 3000000,
       "subtype_label": "Dagger",
       "element_label": "Disease",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Epidemic (Tier 2)"
+      "perk_label": "Epidemic (Tier 2)",
+      "corrupted_perk_label": "Juggernaut (Tier 2)"
     }
   },
   {
@@ -8155,6 +8248,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 1,
+      "corrupted_perk": 0,
       "value": 0,
       "subtype_label": "Sword",
       "max_rarity_label": "Ascendant"
@@ -8253,11 +8347,13 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 1,
+      "corrupted_perk": 107,
       "value": 3000000,
       "subtype_label": "Dagger",
       "element_label": "Cold",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Bloodlust (Tier 3)"
+      "perk_label": "Bloodlust (Tier 3)",
+      "corrupted_perk_label": "Blood Siphon (Tier 1)"
     }
   },
   {
@@ -8353,6 +8449,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 400,
       "subtype_label": "Axe"
     }
@@ -8450,6 +8547,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 400,
       "subtype_label": "Axe"
     }
@@ -8547,6 +8645,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 200,
       "subtype_label": "Axe"
     }
@@ -8644,6 +8743,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 400,
       "subtype_label": "Axe"
     }
@@ -8741,6 +8841,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 5000,
       "subtype_label": "Axe"
     }
@@ -8838,6 +8939,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 1000,
       "subtype_label": "Axe"
     }
@@ -8935,6 +9037,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 5000,
       "subtype_label": "Axe"
     }
@@ -9032,6 +9135,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 1000,
       "subtype_label": "Axe"
     }
@@ -9129,6 +9233,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 1000,
       "subtype_label": "Axe"
     }
@@ -9226,6 +9331,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 5000,
       "subtype_label": "Axe"
     }
@@ -9323,6 +9429,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 5000,
       "subtype_label": "Axe"
     }
@@ -9420,6 +9527,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 10000,
       "subtype_label": "Axe",
       "max_rarity_label": "Uncommon"
@@ -9518,6 +9626,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 5000,
       "subtype_label": "Axe"
     }
@@ -9615,6 +9724,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 10000,
       "subtype_label": "Axe",
       "max_rarity_label": "Uncommon"
@@ -9713,6 +9823,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 15000,
       "subtype_label": "Axe",
       "max_rarity_label": "Uncommon"
@@ -9811,6 +9922,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 17500,
       "subtype_label": "Axe",
       "max_rarity_label": "Uncommon"
@@ -9909,6 +10021,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 15000,
       "subtype_label": "Axe",
       "max_rarity_label": "Uncommon"
@@ -10007,6 +10120,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 30000,
       "subtype_label": "Axe",
       "max_rarity_label": "Rare"
@@ -10105,6 +10219,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 30000,
       "subtype_label": "Axe",
       "element_label": "Magic",
@@ -10204,6 +10319,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 30000,
       "subtype_label": "Axe",
       "max_rarity_label": "Epic"
@@ -10302,6 +10418,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 45000,
       "subtype_label": "Axe",
       "element_label": "Cold",
@@ -10401,6 +10518,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 60000,
       "subtype_label": "Axe",
       "element_label": "Acid",
@@ -10500,6 +10618,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 60000,
       "subtype_label": "Axe",
       "element_label": "Electric",
@@ -10599,6 +10718,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 1,
+      "corrupted_perk": 0,
       "value": 125000,
       "subtype_label": "Axe",
       "element_label": "Fire",
@@ -10698,6 +10818,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 1,
+      "corrupted_perk": 0,
       "value": 150000,
       "subtype_label": "Axe",
       "element_label": "Acid",
@@ -10797,6 +10918,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 40000,
       "subtype_label": "Axe",
       "element_label": "Poison",
@@ -10896,12 +11018,14 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 1,
+      "corrupted_perk": 291,
       "value": 300000,
       "subtype_label": "Axe",
       "specialty_label": "Constitution",
       "element_label": "Disease",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Vampirism (Tier 2)"
+      "perk_label": "Vampirism (Tier 2)",
+      "corrupted_perk_label": "Epidemic (Tier 2)"
     }
   },
   {
@@ -10997,6 +11121,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 50000,
       "subtype_label": "Axe",
       "element_label": "Acid",
@@ -11096,6 +11221,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 0,
       "subtype_label": "Axe"
     }
@@ -11193,11 +11319,13 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 1,
+      "corrupted_perk": 257,
       "value": 300000,
       "subtype_label": "Axe",
       "element_label": "Acid",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Destruction (Tier 2)"
+      "perk_label": "Destruction (Tier 2)",
+      "corrupted_perk_label": "Lifesteal (Tier 2)"
     }
   },
   {
@@ -11293,6 +11421,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 1,
+      "corrupted_perk": 0,
       "value": 200000,
       "subtype_label": "Axe",
       "element_label": "Fire",
@@ -11392,6 +11521,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 1,
+      "corrupted_perk": 0,
       "value": 150000,
       "subtype_label": "Axe",
       "element_label": "Electric",
@@ -11491,11 +11621,13 @@
       "to_hit": 10,
       "unknown_97": 0,
       "unknown_98": 1,
+      "corrupted_perk": 564,
       "value": 3000000,
       "subtype_label": "Axe",
       "element_label": "Poison",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Lethal Toxins (Tier 3)"
+      "perk_label": "Lethal Toxins (Tier 3)",
+      "corrupted_perk_label": "Lethal Toxins (Tier 3)"
     }
   },
   {
@@ -11591,6 +11723,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 1,
+      "corrupted_perk": 0,
       "value": 300000,
       "subtype_label": "Axe",
       "element_label": "Cold",
@@ -11691,11 +11824,13 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 1,
+      "corrupted_perk": 288,
       "value": 3000000,
       "subtype_label": "Axe",
       "element_label": "Electric",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Lifesteal (Tier 2)"
+      "perk_label": "Lifesteal (Tier 2)",
+      "corrupted_perk_label": "Tenacity (Tier 2)"
     }
   },
   {
@@ -11791,6 +11926,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 1,
+      "corrupted_perk": 0,
       "value": 3000000,
       "subtype_label": "Axe",
       "element_label": "Fire",
@@ -11891,6 +12027,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 200,
       "subtype_label": "Blunt"
     }
@@ -11988,6 +12125,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 400,
       "subtype_label": "Blunt"
     }
@@ -12085,6 +12223,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 1000,
       "subtype_label": "Blunt"
     }
@@ -12182,6 +12321,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 1000,
       "subtype_label": "Blunt"
     }
@@ -12279,6 +12419,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 1000,
       "subtype_label": "Blunt"
     }
@@ -12376,6 +12517,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 500,
       "subtype_label": "Blunt"
     }
@@ -12473,6 +12615,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 1000,
       "subtype_label": "Blunt"
     }
@@ -12570,6 +12713,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 1000,
       "subtype_label": "Blunt"
     }
@@ -12667,6 +12811,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 1000,
       "subtype_label": "Blunt"
     }
@@ -12764,6 +12909,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 1000,
       "subtype_label": "Blunt"
     }
@@ -12861,6 +13007,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 1000,
       "subtype_label": "Blunt"
     }
@@ -12958,6 +13105,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 1000,
       "subtype_label": "Blunt"
     }
@@ -13055,6 +13203,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 5000,
       "subtype_label": "Blunt"
     }
@@ -13152,6 +13301,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 5000,
       "subtype_label": "Blunt"
     }
@@ -13249,6 +13399,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 5000,
       "subtype_label": "Blunt"
     }
@@ -13346,6 +13497,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 10000,
       "subtype_label": "Blunt",
       "max_rarity_label": "Uncommon"
@@ -13444,6 +13596,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 12500,
       "subtype_label": "Blunt",
       "max_rarity_label": "Uncommon"
@@ -13542,6 +13695,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 15000,
       "subtype_label": "Blunt",
       "max_rarity_label": "Uncommon"
@@ -13640,6 +13794,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 17500,
       "subtype_label": "Blunt",
       "max_rarity_label": "Uncommon"
@@ -13738,6 +13893,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 30000,
       "subtype_label": "Blunt",
       "max_rarity_label": "Rare"
@@ -13836,6 +13992,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 15000,
       "subtype_label": "Blunt",
       "max_rarity_label": "Uncommon"
@@ -13934,6 +14091,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 15000,
       "subtype_label": "Blunt",
       "max_rarity_label": "Uncommon"
@@ -14032,6 +14190,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 30000,
       "subtype_label": "Blunt",
       "element_label": "Poison",
@@ -14131,6 +14290,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 35000,
       "subtype_label": "Blunt",
       "element_label": "Poison",
@@ -14230,6 +14390,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 30000,
       "subtype_label": "Blunt",
       "max_rarity_label": "Epic"
@@ -14328,6 +14489,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 60000,
       "subtype_label": "Blunt",
       "element_label": "Cold",
@@ -14427,6 +14589,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 40000,
       "subtype_label": "Blunt",
       "element_label": "Poison",
@@ -14526,6 +14689,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 50000,
       "subtype_label": "Blunt",
       "element_label": "Cold",
@@ -14625,6 +14789,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 1,
+      "corrupted_perk": 0,
       "value": 50000,
       "subtype_label": "Blunt",
       "element_label": "Fire",
@@ -14724,6 +14889,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 1,
+      "corrupted_perk": 0,
       "value": 75000,
       "subtype_label": "Blunt",
       "element_label": "Fire",
@@ -14823,11 +14989,13 @@
       "to_hit": 0,
       "unknown_97": 62,
       "unknown_98": 1,
+      "corrupted_perk": 514,
       "value": 5000000,
       "subtype_label": "Blunt",
       "element_label": "Fire",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Vengeance (Tier 3)"
+      "perk_label": "Vengeance (Tier 3)",
+      "corrupted_perk_label": "Vengeance (Tier 3)"
     }
   },
   {
@@ -14923,6 +15091,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 1,
+      "corrupted_perk": 0,
       "value": 150000,
       "subtype_label": "Blunt",
       "element_label": "Electric",
@@ -15022,6 +15191,7 @@
       "to_hit": 0,
       "unknown_97": 61,
       "unknown_98": 1,
+      "corrupted_perk": 0,
       "value": 450000,
       "subtype_label": "Blunt",
       "specialty_label": "Constitution",
@@ -15123,6 +15293,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 0,
       "subtype_label": "Blunt"
     }
@@ -15220,11 +15391,13 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 1,
+      "corrupted_perk": 265,
       "value": 500000,
       "subtype_label": "Blunt",
       "element_label": "Acid",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Juggernaut (Tier 2)"
+      "perk_label": "Juggernaut (Tier 2)",
+      "corrupted_perk_label": "Magic Shield (Tier 2)"
     }
   },
   {
@@ -15320,11 +15493,13 @@
       "to_hit": 10,
       "unknown_97": 0,
       "unknown_98": 1,
+      "corrupted_perk": 266,
       "value": 3000000,
       "subtype_label": "Blunt",
       "element_label": "Cold",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Vampirisim (Tier 1)"
+      "perk_label": "Vampirisim (Tier 1)",
+      "corrupted_perk_label": "Juggernaut (Tier 2)"
     }
   },
   {
@@ -15420,11 +15595,13 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 1,
+      "corrupted_perk": 36,
       "value": 300000,
       "subtype_label": "Blunt",
       "element_label": "Poison",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Overpower (Tier 2)"
+      "perk_label": "Overpower (Tier 2)",
+      "corrupted_perk_label": "Lethal Toxins (Tier 1)"
     }
   },
   {
@@ -15520,6 +15697,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 60000,
       "subtype_label": "Blunt",
       "max_rarity_label": "Mythical"
@@ -15618,6 +15796,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 1,
+      "corrupted_perk": 0,
       "value": 200000,
       "subtype_label": "Blunt",
       "element_label": "Disease",
@@ -15717,6 +15896,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 125000,
       "subtype_label": "Blunt",
       "element_label": "Acid",
@@ -15816,11 +15996,13 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 1,
+      "corrupted_perk": 262,
       "value": 3000000,
       "subtype_label": "Blunt",
       "element_label": "Electric",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Critical Aegis (Tier 2)"
+      "perk_label": "Critical Aegis (Tier 2)",
+      "corrupted_perk_label": "Vitality (Tier 2)"
     }
   },
   {
@@ -15916,6 +16098,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 200,
       "subtype_label": "Polearm"
     }
@@ -16013,6 +16196,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 200,
       "subtype_label": "Polearm"
     }
@@ -16110,6 +16294,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 1000,
       "subtype_label": "Polearm"
     }
@@ -16207,6 +16392,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 1000,
       "subtype_label": "Polearm"
     }
@@ -16304,6 +16490,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 200,
       "subtype_label": "Polearm"
     }
@@ -16401,6 +16588,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 1000,
       "subtype_label": "Polearm"
     }
@@ -16498,6 +16686,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 5000,
       "subtype_label": "Polearm"
     }
@@ -16595,6 +16784,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 5000,
       "subtype_label": "Polearm"
     }
@@ -16692,6 +16882,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 5000,
       "subtype_label": "Polearm"
     }
@@ -16789,6 +16980,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 5000,
       "subtype_label": "Polearm"
     }
@@ -16886,6 +17078,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 10000,
       "subtype_label": "Polearm",
       "max_rarity_label": "Uncommon"
@@ -16984,6 +17177,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 10000,
       "subtype_label": "Polearm",
       "max_rarity_label": "Uncommon"
@@ -17082,6 +17276,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 15000,
       "subtype_label": "Polearm",
       "max_rarity_label": "Uncommon"
@@ -17180,6 +17375,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 17500,
       "subtype_label": "Polearm",
       "max_rarity_label": "Uncommon"
@@ -17278,6 +17474,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 30000,
       "subtype_label": "Polearm",
       "max_rarity_label": "Rare"
@@ -17376,6 +17573,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 5000,
       "subtype_label": "Polearm"
     }
@@ -17473,6 +17671,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 5000,
       "subtype_label": "Polearm",
       "max_rarity_label": "Uncommon"
@@ -17571,6 +17770,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 10000,
       "subtype_label": "Polearm",
       "max_rarity_label": "Uncommon"
@@ -17669,6 +17869,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 30000,
       "subtype_label": "Polearm",
       "element_label": "Poison",
@@ -17768,6 +17969,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 12500,
       "subtype_label": "Polearm",
       "max_rarity_label": "Uncommon"
@@ -17866,6 +18068,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 12500,
       "subtype_label": "Polearm",
       "max_rarity_label": "Uncommon"
@@ -17964,6 +18167,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 15000,
       "subtype_label": "Polearm",
       "max_rarity_label": "Uncommon"
@@ -18062,6 +18266,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 10000,
       "subtype_label": "Polearm",
       "max_rarity_label": "Uncommon"
@@ -18160,6 +18365,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 17500,
       "subtype_label": "Polearm",
       "max_rarity_label": "Rare"
@@ -18258,6 +18464,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 1,
+      "corrupted_perk": 0,
       "value": 35000,
       "subtype_label": "Polearm",
       "element_label": "Disease",
@@ -18357,6 +18564,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 40000,
       "subtype_label": "Polearm",
       "element_label": "Electric",
@@ -18456,6 +18664,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 35000,
       "subtype_label": "Polearm",
       "max_rarity_label": "Uncommon"
@@ -18554,6 +18763,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 1,
+      "corrupted_perk": 0,
       "value": 125000,
       "subtype_label": "Polearm",
       "element_label": "Disease",
@@ -18653,6 +18863,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 125000,
       "subtype_label": "Polearm",
       "element_label": "Cold",
@@ -18752,6 +18963,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 75000,
       "subtype_label": "Polearm",
       "element_label": "Cold",
@@ -18851,6 +19063,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 50000,
       "subtype_label": "Polearm",
       "max_rarity_label": "Legendary"
@@ -18949,6 +19162,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 1,
+      "corrupted_perk": 0,
       "value": 200000,
       "subtype_label": "Polearm",
       "element_label": "Acid",
@@ -19048,6 +19262,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 1,
+      "corrupted_perk": 0,
       "value": 500000,
       "subtype_label": "Polearm",
       "element_label": "Disease",
@@ -19148,6 +19363,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 150000,
       "subtype_label": "Polearm",
       "element_label": "Poison",
@@ -19247,6 +19463,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 60000,
       "subtype_label": "Polearm",
       "element_label": "Acid",
@@ -19346,6 +19563,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 1,
+      "corrupted_perk": 0,
       "value": 75000,
       "subtype_label": "Polearm",
       "element_label": "Fire",
@@ -19445,6 +19663,7 @@
       "to_hit": 40,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 150000,
       "subtype_label": "Polearm",
       "element_label": "Cold",
@@ -19544,12 +19763,14 @@
       "to_hit": 20,
       "unknown_97": 0,
       "unknown_98": 1,
+      "corrupted_perk": 11,
       "value": 500000,
       "subtype_label": "Polearm",
       "specialty_label": "Dexterity",
       "element_label": "Electric",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Lifesteal (Tier 2)"
+      "perk_label": "Lifesteal (Tier 2)",
+      "corrupted_perk_label": "Parry (Tier 1)"
     }
   },
   {
@@ -19645,11 +19866,13 @@
       "to_hit": 15,
       "unknown_97": 77,
       "unknown_98": 1,
+      "corrupted_perk": 296,
       "value": 3000000,
       "subtype_label": "Polearm",
       "element_label": "Acid",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Garrote (Tier 2)"
+      "perk_label": "Garrote (Tier 2)",
+      "corrupted_perk_label": "Overpower (Tier 2)"
     }
   },
   {
@@ -19745,6 +19968,7 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 0,
       "subtype_label": "Polearm"
     }
@@ -19842,6 +20066,7 @@
       "to_hit": 25,
       "unknown_97": 0,
       "unknown_98": 0,
+      "corrupted_perk": 0,
       "value": 150000,
       "subtype_label": "Polearm",
       "element_label": "Cold",
@@ -19941,11 +20166,13 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 1,
+      "corrupted_perk": 44,
       "value": 500000,
       "subtype_label": "Polearm",
       "element_label": "Fire",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Ice Shatter (Tier 2)"
+      "perk_label": "Ice Shatter (Tier 2)",
+      "corrupted_perk_label": "Consecration (Tier 1)"
     }
   },
   {
@@ -20022,7 +20249,7 @@
       "shard_promotion_amount": 600,
       "unknown_78": 0,
       "unknown_79": 0,
-      "perk": 30,
+      "perk": 286,
       "unknown_81": 0,
       "fire_resistance": 0,
       "cold_resistance": 0,
@@ -20041,11 +20268,13 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 1,
+      "corrupted_perk": 292,
       "value": 300000,
       "subtype_label": "Polearm",
       "element_label": "Poison",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Garrote (Tier 1)"
+      "perk_label": "Garrote (Tier 2)",
+      "corrupted_perk_label": "Lethal Toxins (Tier 2)"
     }
   },
   {
@@ -20141,11 +20370,13 @@
       "to_hit": 10,
       "unknown_97": 0,
       "unknown_98": 1,
+      "corrupted_perk": 542,
       "value": 5000000,
       "subtype_label": "Polearm",
       "element_label": "Electric",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Parry (Tier 3)"
+      "perk_label": "Parry (Tier 3)",
+      "corrupted_perk_label": "Parry (Tier 3)"
     }
   },
   {
@@ -20241,11 +20472,13 @@
       "to_hit": 0,
       "unknown_97": 0,
       "unknown_98": 1,
+      "corrupted_perk": 285,
       "value": 3000000,
       "subtype_label": "Polearm",
       "element_label": "Cold",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Blood Siphon (Tier 1)"
+      "perk_label": "Blood Siphon (Tier 1)",
+      "corrupted_perk_label": "Vampirism (Tier 2)"
     }
   }
 ]

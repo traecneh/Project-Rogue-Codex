@@ -1014,6 +1014,12 @@
             .trim();
         };
 
+        const isPerkValueSet = (value) => {
+          const text = (value ?? "").toString().trim();
+          if (!text || text === "-" || text.toLowerCase() === "none") return false;
+          return true;
+        };
+
         const createPerkDetailPill = (value) => {
           const labelText = formatValue(value);
           const baseName = extractPerkBaseName(value);
@@ -1570,6 +1576,7 @@
             dps: computeDps(fields.min_damage, fields.max_damage, fields.attack_speed),
             type: fields.subtype_label || fields.subtype,
             perk: fields.perk ? fields.perk_label || fields.perk : "None",
+            corruptedPerk: fields.corrupted_perk ? fields.corrupted_perk_label || fields.corrupted_perk : "None",
             element: fields.element_label || (fields.element ? fields.element : "None"),
             procChance: fields.proc_chance,
             skillRequirement: fields.skill_requirement,
@@ -1830,7 +1837,17 @@
 
           addDivider();
 
-          addRow([["Innate Perk", createPerkDetailPill(item.perk)]], 1);
+          if (isPerkValueSet(item.corruptedPerk)) {
+            addRow(
+              [
+                ["Innate Perk", createPerkDetailPill(item.perk)],
+                ["Corrupted Perk", createPerkDetailPill(item.corruptedPerk)],
+              ],
+              2
+            );
+          } else {
+            addRow([["Innate Perk", createPerkDetailPill(item.perk)]], 1);
+          }
 
           addDivider();
 
