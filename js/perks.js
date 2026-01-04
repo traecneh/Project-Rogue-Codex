@@ -6,6 +6,10 @@ const STAT_MATCHERS = [
   { name: "constitution", regex: /\bconstitution\b/i },
 ];
 
+const PERKS_INDEX_SCHEMA_VERSION = 3;
+const PERK_DETAIL_EMPHASIS_REGEX = /(\[[^\]]+\]|\([^)]+\)|\{[^}]+\})/g;
+const PVP_PREFIX_REGEX = /^(PvP:|PvE:)/i;
+
 function detectPerkStats(card) {
   if (!card || !card.textContent) return [];
   const text = card.textContent;
@@ -16,6 +20,118 @@ function detectPerkStats(card) {
     }
   });
   return results;
+}
+
+function getPerksIndexUrl() {
+  try {
+    const base = document.baseURI || window.location.href;
+    const resolved = new URL("pages/systems/perks.json", base);
+    if (resolved.protocol === "http:" || resolved.protocol === "https:") {
+      resolved.searchParams.set("v", String(PERKS_INDEX_SCHEMA_VERSION));
+    }
+    return resolved.toString();
+  } catch (error) {
+    return "pages/systems/perks.json";
+  }
+}
+
+function fetchPerksIndex() {
+  const url = getPerksIndexUrl();
+  return fetch(url, { cache: "no-store" })
+    .then((response) => {
+      if (!response.ok) throw new Error("Failed to load perks.json");
+      return response.json();
+    })
+    .catch((error) => {
+      console.warn(error.message || error);
+      return null;
+    });
+}
+
+function appendFormattedText(target, value) {
+  const raw = (value ?? "").toString();
+  if (!raw) return;
+
+  const prefixMatch = raw.match(PVP_PREFIX_REGEX);
+  let remaining = raw;
+  if (prefixMatch) {
+    const prefix = document.createElement("strong");
+    prefix.textContent = prefixMatch[0];
+    target.appendChild(prefix);
+    remaining = raw.slice(prefixMatch[0].length);
+  }
+
+  let lastIndex = 0;
+  for (const match of remaining.matchAll(PERK_DETAIL_EMPHASIS_REGEX)) {
+    const index = match.index ?? 0;
+    if (index > lastIndex) {
+      target.appendChild(document.createTextNode(remaining.slice(lastIndex, index)));
+    }
+    const strong = document.createElement("strong");
+    strong.textContent = match[0];
+    target.appendChild(strong);
+    lastIndex = index + match[0].length;
+  }
+  if (lastIndex < remaining.length) {
+    target.appendChild(document.createTextNode(remaining.slice(lastIndex)));
+  }
+}
+
+function appendPerkParagraph(card, line) {
+  const paragraph = document.createElement("p");
+  appendFormattedText(paragraph, line);
+  card.appendChild(paragraph);
+}
+
+function appendPerkList(card, lines) {
+  const list = document.createElement("ul");
+  lines.forEach((line) => {
+    const item = document.createElement("li");
+    appendFormattedText(item, line);
+    list.appendChild(item);
+  });
+  card.appendChild(list);
+}
+
+function buildPerkCard(entry) {
+  const card = document.createElement("section");
+  card.className = "stat-card";
+
+  const name = entry && typeof entry.name === "string" ? entry.name.trim() : "";
+  const heading = document.createElement("h3");
+  heading.textContent = name || "Unknown";
+  card.appendChild(heading);
+
+  const details = Array.isArray(entry?.details)
+    ? entry.details.map((line) => (line ?? "").toString().trim()).filter(Boolean)
+    : [];
+  if (!details.length) {
+    appendPerkParagraph(card, "Perk info unavailable.");
+    return card;
+  }
+
+  const leadLine = details[0];
+  const hasLeadParagraph =
+    details.length > 1 &&
+    (leadLine.trim().endsWith(":") || leadLine.toLowerCase().startsWith("this perk only works"));
+  const useList = details.length >= 3 || details.some((line) => PVP_PREFIX_REGEX.test(line)) || hasLeadParagraph;
+
+  let lines = details;
+  if (hasLeadParagraph) {
+    appendPerkParagraph(card, leadLine);
+    lines = details.slice(1);
+  }
+
+  if (useList && lines.length > 1) {
+    appendPerkList(card, lines);
+  } else {
+    lines.forEach((line) => appendPerkParagraph(card, line));
+  }
+
+  const slug = entry?.slug || getPerkSlug(name);
+  if (slug) card.id = slug;
+  if (name) card.setAttribute("data-perk-name", name);
+  return card;
 }
 
 function initializePerkAnchors() {
@@ -98,26 +214,20 @@ function initializePerkEmbeds() {
 function loadPerkCardData() {
   if (perkCardCachePromise) return perkCardCachePromise;
 
-  perkCardCachePromise = fetch("pages/systems/perks.html")
-    .then((response) => {
-      if (!response.ok) throw new Error("Failed to load perks reference");
-      return response.text();
-    })
-    .then((html) => {
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, "text/html");
-      const cards = Array.from(doc.querySelectorAll("#perk-list .stat-card, #unique-effects .stat-card"));
+  perkCardCachePromise = fetchPerksIndex()
+    .then((index) => {
+      const perks = Array.isArray(index?.perks) ? index.perks : [];
+      if (!perks.length) {
+        throw new Error("Perks index unavailable");
+      }
       const map = new Map();
-      cards.forEach((card) => {
-        const heading = card.querySelector("h3");
-        if (!heading) return;
-        const name = heading.textContent.trim();
+      perks.forEach((entry) => {
+        const name = entry && typeof entry.name === "string" ? entry.name.trim() : "";
         if (!name) return;
-        const slug = getPerkSlug(name);
+        const card = buildPerkCard(entry);
+        const slug = entry?.slug || getPerkSlug(name);
         if (!slug) return;
-        card.id = slug;
-        card.setAttribute("data-perk-name", name);
-        const isUnique = Boolean(card.closest("#unique-effects"));
+        const isUnique = entry?.isUnique === true;
         const stats = detectPerkStats(card);
         map.set(name.toLowerCase(), { card, slug, stats, isUnique });
       });
@@ -157,3 +267,7 @@ function getPerkSlug(name) {
   return slug ? `perk-${slug}` : "";
 }
 
+window.RogueCodexPerks = Object.assign(window.RogueCodexPerks || {}, {
+  fetchPerksIndex,
+  buildPerkCard,
+});
