@@ -11627,7 +11627,7 @@
       "element_label": "Poison",
       "max_rarity_label": "Ascendant",
       "perk_label": "Lethal Toxins (Tier 3)",
-      "corrupted_perk_label": "Lethal Toxins (Tier 3)"
+      "corrupted_perk_label": "Toxic Shell (Tier 3)"
     }
   },
   {
@@ -20376,7 +20376,7 @@
       "element_label": "Electric",
       "max_rarity_label": "Ascendant",
       "perk_label": "Parry (Tier 3)",
-      "corrupted_perk_label": "Parry (Tier 3)"
+      "corrupted_perk_label": "Garrote (Tier 3)"
     }
   },
   {
