@@ -1086,6 +1086,30 @@
         const SHORT_STATE_PARAM = "b";
         const LEGACY_STATE_PARAM = "build";
         const BUILD_STATE_VERSION = 1;
+        const getBuildParamFromSearch = (search) => {
+          const params = new URLSearchParams(search || "");
+          return params.get(SHORT_STATE_PARAM) || params.get(LEGACY_STATE_PARAM) || "";
+        };
+        const hashBuildParam = (value) => {
+          const str = String(value || "");
+          let hash = 2166136261;
+          for (let i = 0; i < str.length; i += 1) {
+            hash ^= str.charCodeAt(i);
+            hash = Math.imul(hash, 16777619);
+          }
+          return ("00000000" + (hash >>> 0).toString(16)).slice(-8);
+        };
+        const trackBuildEvent = (eventName, buildParam) => {
+          if (typeof window.gtag !== "function") return;
+          const raw = String(buildParam || "");
+          if (!raw) return;
+          window.gtag("event", eventName, {
+            build_id: hashBuildParam(raw),
+            build_len: raw.length,
+            build_version: BUILD_STATE_VERSION,
+          });
+        };
+        const initialBuildParam = getBuildParamFromSearch(window.location.search);
         const BASE_STAT_MIN = 5;
         const BASE_STAT_MAX = 200;
         const BASE_STAT_IDS = new Set(["char-str", "char-dex", "char-con"]);
@@ -2162,6 +2186,7 @@
         const copyShareLink = async () => {
           try {
             persistStateNow();
+            trackBuildEvent("build_share", getBuildParamFromSearch(window.location.search));
             await navigator.clipboard.writeText(window.location.href);
             const btn = document.getElementById("share-build");
             if (btn) {
@@ -2262,6 +2287,7 @@
         loadData().then(() => {
           populateRaceOptions();
           applySavedState();
+          trackBuildEvent("build_view", initialBuildParam);
           persistStateNow();
           slotEls.forEach((_, slot) => updateSlotRarityUI(slot));
           updateTotals();

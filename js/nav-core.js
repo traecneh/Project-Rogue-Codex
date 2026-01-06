@@ -1,3 +1,30 @@
+const GA_MEASUREMENT_ID = "G-NJ0JVQZ64C";
+
+function initializeGoogleAnalytics() {
+  const id = String(GA_MEASUREMENT_ID || "").trim();
+  if (!id || id === "G-XXXXXXXXXX") return;
+
+  window.dataLayer = window.dataLayer || [];
+  if (typeof window.gtag !== "function") {
+    window.gtag = function () {
+      window.dataLayer.push(arguments);
+    };
+  }
+
+  if (!document.querySelector(`script[data-gtag-id="${id}"]`)) {
+    const script = document.createElement("script");
+    script.async = true;
+    script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(id)}`;
+    script.dataset.gtagId = id;
+    document.head.appendChild(script);
+  }
+
+  window.gtag("js", new Date());
+  window.gtag("config", id);
+}
+
+initializeGoogleAnalytics();
+
 function setRandomLogo() {
   const logo = document.querySelector(".site-logo-image");
   if (!logo) return;
