@@ -43,6 +43,46 @@
         outline-offset: 2px;
       }
 
+      .perk-groups {
+        display: flex;
+        flex-direction: column;
+        gap: 1.4rem;
+      }
+
+      .perk-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+      }
+
+      .perk-group-header {
+        margin: 0;
+        padding-bottom: 0.4rem;
+        border-bottom: 1px solid var(--border-soft);
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        font-size: 0.85rem;
+        color: var(--text-muted);
+      }
+
+      .perk-group .stat-grid {
+        margin: 0;
+      }
+
+      .perk-abbrev {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.15rem 0.45rem;
+        margin: 0.2rem 0 0.35rem;
+        border-radius: 999px;
+        border: 1px solid rgba(139, 148, 167, 0.85);
+        background: #151923;
+        color: var(--text-muted);
+        font-size: 0.7rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
       .stat-card.perk-jump-target {
         border-color: var(--accent);
         outline: 2px solid rgba(75, 255, 75, 0.45);
@@ -137,11 +177,11 @@
               <option value="">Loading perks…</option>
             </select>
           </div>
-          <div class="stat-grid perk-grid" id="perk-list-cards"></div>
+          <div class="perk-groups" id="perk-list-cards"></div>
         </article>
 
         <article class="content-section" id="unique-effects">
-          <h2>Unique Perks (Typically Item-Only)</h2>
+          <h2 class="perk-group-header">Unique Perks (Typically Item-Only)</h2>
           <div class="stat-grid perk-grid" id="unique-perk-cards"></div>
         </article>
       </main>
@@ -153,6 +193,21 @@
         const perkList = document.getElementById("perk-list-cards");
         const uniquePerkList = document.getElementById("unique-perk-cards");
         let highlightedCard = null;
+
+        const PERK_GROUP_ORDER = [
+          "Slayer & Bane",
+          "Ailment Offense",
+          "General Offense",
+          "Proc Buffs",
+          "Sustain & Healing",
+          "Mitigation & Shields",
+          "Resistances",
+          "Ailment Avoidance",
+          "Utility & Economy",
+        ];
+        const perkGroupOrderMap = new Map(
+          PERK_GROUP_ORDER.map((label, index) => [label.toLowerCase(), index])
+        );
 
         const getPerkApi = () => window.RogueCodexPerks || {};
 
@@ -171,6 +226,78 @@
             .replace(/[^a-z0-9]+/g, "-")
             .replace(/^-+|-+$/g, "");
           return slug ? `perk-${slug}` : "";
+        };
+
+        const getPerkName = (entry) => (entry && typeof entry.name === "string" ? entry.name.trim() : "");
+
+        const normalizeGroupLabel = (value) => String(value || "").trim();
+
+        const sortGroupLabels = (left, right) => {
+          const leftKey = String(left || "");
+          const rightKey = String(right || "");
+          const leftIndex = perkGroupOrderMap.has(leftKey.toLowerCase())
+            ? perkGroupOrderMap.get(leftKey.toLowerCase())
+            : Number.MAX_SAFE_INTEGER;
+          const rightIndex = perkGroupOrderMap.has(rightKey.toLowerCase())
+            ? perkGroupOrderMap.get(rightKey.toLowerCase())
+            : Number.MAX_SAFE_INTEGER;
+          if (leftIndex !== rightIndex) return leftIndex - rightIndex;
+          return leftKey.localeCompare(rightKey);
+        };
+
+        const sortByName = (left, right) => getPerkName(left).localeCompare(getPerkName(right));
+
+        const buildPerkGroups = (list) => {
+          const grouped = new Map();
+          const ungrouped = [];
+
+          list.forEach((entry) => {
+            const name = getPerkName(entry);
+            if (!name) return;
+            const group = normalizeGroupLabel(entry.group);
+            if (group) {
+              const items = grouped.get(group) || [];
+              items.push(entry);
+              grouped.set(group, items);
+            } else {
+              ungrouped.push(entry);
+            }
+          });
+
+          grouped.forEach((items) => items.sort(sortByName));
+          ungrouped.sort(sortByName);
+
+          const groupLabels = Array.from(grouped.keys()).sort(sortGroupLabels);
+          return { grouped, groupLabels, ungrouped };
+        };
+
+        const createGroupSection = (label) => {
+          const section = document.createElement("section");
+          section.className = "perk-group";
+          const header = document.createElement("h3");
+          header.className = "perk-group-header";
+          header.textContent = label;
+          section.appendChild(header);
+          const grid = document.createElement("div");
+          grid.className = "stat-grid perk-grid";
+          section.appendChild(grid);
+          return { section, grid };
+        };
+
+        const addPerkAbbreviation = (card, entry) => {
+          if (!card) return;
+          const abbrev = entry && entry.abbreviation ? String(entry.abbreviation).trim() : "";
+          if (!abbrev) return;
+          if (card.querySelector(".perk-abbrev")) return;
+          const badge = document.createElement("span");
+          badge.className = "perk-abbrev";
+          badge.textContent = abbrev;
+          const heading = card.querySelector("h3");
+          if (heading) {
+            heading.insertAdjacentElement("afterend", badge);
+          } else {
+            card.appendChild(badge);
+          }
         };
 
         const fetchPerksIndex = async () => {
@@ -260,21 +387,40 @@
           const normal = validPerks.filter((entry) => entry.isUnique !== true);
           const unique = validPerks.filter((entry) => entry.isUnique === true);
 
-          const appendCards = (container, list, emptyLabel) => {
-            if (!list.length) {
-              const empty = document.createElement("p");
-              empty.textContent = emptyLabel;
-              container.appendChild(empty);
-              return;
-            }
-            list.forEach((entry) => {
-              const card = buildPerkCard(entry);
-              if (card) container.appendChild(card);
-            });
+          const appendCard = (container, entry) => {
+            const card = buildPerkCard(entry);
+            if (!card) return;
+            addPerkAbbreviation(card, entry);
+            container.appendChild(card);
           };
 
-          appendCards(perkList, normal, "Perks unavailable.");
-          appendCards(uniquePerkList, unique, "Unique perks unavailable.");
+          const appendGroup = (label, items) => {
+            if (!items.length) return;
+            const { section, grid } = createGroupSection(label);
+            items.forEach((entry) => appendCard(grid, entry));
+            perkList.appendChild(section);
+          };
+
+          if (!normal.length) {
+            const empty = document.createElement("p");
+            empty.textContent = "Perks unavailable.";
+            perkList.appendChild(empty);
+          } else {
+            const { grouped, groupLabels, ungrouped } = buildPerkGroups(normal);
+            if (ungrouped.length) {
+              appendGroup("Perks", ungrouped);
+            }
+            groupLabels.forEach((label) => appendGroup(label, grouped.get(label) || []));
+          }
+
+          if (!unique.length) {
+            const empty = document.createElement("p");
+            empty.textContent = "Unique perks unavailable.";
+            uniquePerkList.appendChild(empty);
+          } else {
+            unique.sort(sortByName);
+            unique.forEach((entry) => appendCard(uniquePerkList, entry));
+          }
         };
 
         const bindCardIds = (perks) => {
@@ -316,19 +462,8 @@
             .map((entry) => ({ name: entry.name.trim(), slug: entry.slug || getPerkSlug(entry.name) }))
             .filter((entry) => entry.name && entry.slug);
 
-          const grouped = new Map();
-          const ungrouped = [];
-          normal.forEach((entry) => {
-            if (entry.group) {
-              const items = grouped.get(entry.group) || [];
-              items.push(entry);
-              grouped.set(entry.group, items);
-              return;
-            }
-            ungrouped.push(entry);
-          });
-          ungrouped.sort((a, b) => a.name.localeCompare(b.name));
-          unique.sort((a, b) => a.name.localeCompare(b.name));
+          const { grouped, groupLabels, ungrouped } = buildPerkGroups(normal);
+          unique.sort(sortByName);
 
           perkJump.innerHTML = "";
           const placeholder = document.createElement("option");
@@ -349,8 +484,10 @@
             perkJump.appendChild(group);
           };
 
-          appendGroup("Perks", ungrouped);
-          grouped.forEach((items, label) => appendGroup(label, items));
+          if (ungrouped.length) {
+            appendGroup("Perks", ungrouped);
+          }
+          groupLabels.forEach((label) => appendGroup(label, grouped.get(label) || []));
           appendGroup("Unique Perks", unique);
 
           perkJump.addEventListener("change", () => {
