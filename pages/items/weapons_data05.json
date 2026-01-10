@@ -6635,7 +6635,7 @@
       "element_label": "Acid",
       "max_rarity_label": "Ascendant",
       "perk_label": "Vitality (Tier 3)",
-      "corrupted_perk_label": "Bloodlust (Tier 2)"
+      "corrupted_perk_label": "Critical Aegis (Tier 3)"
     }
   },
   {
@@ -7543,7 +7543,7 @@
       "subtype_label": "Dagger",
       "element_label": "Electric",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Bloodlust (Tier 2)",
+      "perk_label": "Critical Aegis (Tier 3)",
       "corrupted_perk_label": "Lifesteal (Tier 3)"
     }
   },
