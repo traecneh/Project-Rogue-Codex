@@ -644,6 +644,20 @@ body {
   color: var(--text-muted);
 }
 
+.countdown-panel.is-live .countdown-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: #eafff1;
+  background: linear-gradient(135deg, rgba(75, 255, 75, 0.28), rgba(36, 120, 68, 0.35));
+  border: 1px solid rgba(75, 255, 75, 0.55);
+  box-shadow: 0 0 12px rgba(75, 255, 75, 0.25);
+}
+
 .countdown-title {
   margin: 0;
   font-size: 1.1rem;

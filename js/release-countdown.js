@@ -101,7 +101,8 @@
 
   function updateCountdown(container, targetMs, { animate, reducedMotion }) {
     const now = Date.now();
-    let remaining = clampNonNegative(targetMs - now);
+    const isLive = now >= targetMs;
+    let remaining = clampNonNegative(isLive ? now - targetMs : targetMs - now);
 
     const days = Math.floor(remaining / MS_PER_DAY);
     remaining -= days * MS_PER_DAY;
@@ -131,7 +132,40 @@
     setFlipDigit(container.querySelector('[data-flip-digit="seconds-tens"]'), secondsStr[0], { animate, reducedMotion });
     setFlipDigit(container.querySelector('[data-flip-digit="seconds-ones"]'), secondsStr[1], { animate, reducedMotion });
 
-    container.classList.toggle("is-complete", targetMs - now <= 0);
+    container.classList.toggle("is-complete", isLive);
+    container.classList.toggle("is-live", isLive);
+  }
+
+  function getCopyValue(container, attr, fallback) {
+    const value = container.getAttribute(attr);
+    return value !== null && value !== undefined && value !== "" ? value : fallback;
+  }
+
+  function buildLiveCopy(container) {
+    const kicker = container.querySelector("[data-countdown-kicker]") || container.querySelector(".countdown-kicker");
+    const subtitle =
+      container.querySelector("[data-countdown-subtitle]") || container.querySelector(".countdown-subtitle");
+    const prefix = container.querySelector("[data-countdown-prefix]");
+    const flip = container.querySelector(".countdown-flip");
+
+    return {
+      kicker,
+      subtitle,
+      prefix,
+      flip,
+      liveKicker: getCopyValue(container, "data-live-kicker", ""),
+      liveSubtitle: getCopyValue(container, "data-live-subtitle", ""),
+      livePrefix: getCopyValue(container, "data-live-prefix", "Live for:"),
+      liveAriaLabel: getCopyValue(container, "data-live-aria-label", "Time since release"),
+      isLive: null,
+    };
+  }
+
+  function applyLiveCopy(copy) {
+    if (copy.kicker && copy.liveKicker) setText(copy.kicker, copy.liveKicker);
+    if (copy.subtitle && copy.liveSubtitle) setText(copy.subtitle, copy.liveSubtitle);
+    if (copy.prefix && copy.livePrefix) setText(copy.prefix, copy.livePrefix);
+    if (copy.flip && copy.liveAriaLabel) copy.flip.setAttribute("aria-label", copy.liveAriaLabel);
   }
 
   function startCountdown(container) {
@@ -140,10 +174,22 @@
     if (!Number.isFinite(targetMs)) return;
 
     const reducedMotion = prefersReducedMotion();
+    const copy = buildLiveCopy(container);
 
     updateCountdown(container, targetMs, { animate: false, reducedMotion });
+    if (Date.now() >= targetMs && copy.isLive !== true) {
+      copy.isLive = true;
+      applyLiveCopy(copy);
+    }
 
-    const tick = () => updateCountdown(container, targetMs, { animate: true, reducedMotion });
+    const tick = () => {
+      const isLive = Date.now() >= targetMs;
+      updateCountdown(container, targetMs, { animate: true, reducedMotion });
+      if (copy.isLive !== isLive) {
+        copy.isLive = isLive;
+        if (isLive) applyLiveCopy(copy);
+      }
+    };
     const schedule = () => {
       const now = Date.now();
       const delay = MS_PER_SECOND - (now % MS_PER_SECOND) + 10;
