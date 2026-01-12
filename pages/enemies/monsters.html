@@ -1320,6 +1320,7 @@
           const typeOptions = new Map();
           const elementOptions = new Set();
           const flagOptions = new Set();
+          const statusEffectOptions = new Map();
 
           data.forEach((m) => {
             const normalizedType = normalizeType(m.monsterType);
@@ -1337,6 +1338,15 @@
             (Array.isArray(m.flags) ? m.flags : []).forEach((flag) => {
               if (flag) flagOptions.add(flag);
             });
+
+            const effectValue = m.statusEffect;
+            const effectLabel = (m.statusEffectLabel || "").toString().trim();
+            if (effectLabel && effectValue !== null && effectValue !== undefined && Number(effectValue) !== 0) {
+              const key = effectLabel.toLowerCase();
+              if (!statusEffectOptions.has(key)) {
+                statusEffectOptions.set(key, effectLabel);
+              }
+            }
           });
 
           if (typeFilter) {
@@ -1371,13 +1381,21 @@
 
           if (flagFilter) {
             flagFilter.innerHTML = "";
-            Array.from(flagOptions)
-              .sort((a, b) => formatFlagLabel(a).localeCompare(formatFlagLabel(b)))
-              .forEach((value) => {
+            const options = [];
+            Array.from(flagOptions).forEach((value) => {
+              const label = formatFlagLabel(value);
+              options.push({ value, label });
+            });
+            Array.from(statusEffectOptions.entries()).forEach(([value, label]) => {
+              options.push({ value: `status:${value}`, label });
+            });
+            options
+              .sort((a, b) => a.label.localeCompare(b.label))
+              .forEach((entry) => {
                 const opt = document.createElement("option");
-                opt.value = value;
-                opt.textContent = formatFlagLabel(value);
-                opt.selected = selectedFlags.has(value);
+                opt.value = entry.value;
+                opt.textContent = entry.label;
+                opt.selected = selectedFlags.has(entry.value);
                 flagFilter.appendChild(opt);
               });
           }
@@ -2420,7 +2438,19 @@
           if (selectedFlags.size) {
             list = list.filter((m) => {
               const flags = Array.isArray(m.flags) ? m.flags : [];
-              return flags.some((flag) => selectedFlags.has(flag));
+              const effectValue = m.statusEffect;
+              const label = (m.statusEffectLabel || "").toString().trim().toLowerCase();
+              const hasStatus = effectValue !== null && effectValue !== undefined && Number(effectValue) !== 0;
+
+              for (const selected of selectedFlags) {
+                if (selected.startsWith("status:")) {
+                  const statusKey = selected.slice("status:".length);
+                  if (!hasStatus || !label || label !== statusKey) return false;
+                  continue;
+                }
+                if (!flags.includes(selected)) return false;
+              }
+              return true;
             });
           }
 
