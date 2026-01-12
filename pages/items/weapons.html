@@ -708,183 +708,33 @@
           }
         })();
 
-        const HIDDEN_NAMES = new Set(
-          [
-            "Super Super Blunt",
-            "Super Duper Pole",
-            "Super Duper",
-            "Super Duper Blunt",
-            "Super Duper Axe",
-            "GM Deathbringer",
-            "Ghostblade",
-            "Wand of the Winds",
-            "Wand of the Flames",
-            "Tooth Staff",
-            "Krythan Staff",
-            "Bone Staff",
-            "Staff of Might",
-            "Cursed Staff",
-            "Chilled Staff",
-            "Vengeance Sword",
-          ].map((name) => name.toLowerCase())
-        );
+        const buildNameSet =
+          utils.buildNameSet ||
+          ((list) =>
+            new Set(
+              (Array.isArray(list) ? list : [])
+                .map((value) => (value === null || value === undefined ? "" : String(value)).trim().toLowerCase())
+                .filter(Boolean)
+            ));
+        const loadAllowlists =
+          typeof utils.loadAllowlists === "function" ? () => utils.loadAllowlists() : () => Promise.resolve(null);
+        let hiddenWeaponNames = new Set();
+        let allowedMonsterNames = new Set();
+
+        const applyAllowlists = (allowlists) => {
+          hiddenWeaponNames = buildNameSet(allowlists?.weapons?.block);
+          allowedMonsterNames = buildNameSet(allowlists?.monsters?.allow);
+        };
+
+        const isMonsterAllowed = (monster) => {
+          if (!allowedMonsterNames.size) return true;
+          return allowedMonsterNames.has((monster.name || "").toLowerCase());
+        };
 
         const UNIQUE_WEAPON_DROP_SOURCES = {
           "rune sword": ["rune-warrior", "balron", "demon-lord"],
           "vengeance hammer": ["banished-knight", "banished-warden"],
         };
-
-        const ALLOWED_MONSTER_NAMES = new Set(
-          [
-            "Abishai",
-            "Anubis",
-            "Balron",
-            "Banished Knight",
-            "Banished Soldier",
-            "Banished Spirit",
-            "Banished Warden",
-            "Bat",
-            "Beholder",
-            "Black Dragon",
-            "Blightscale",
-            "Blue Dragon",
-            "Blue Wisp",
-            "Brown Triddle",
-            "Centaur",
-            "Centaur Warrior",
-            "Cinderdrake",
-            "Crawling Defiler",
-            "Cryoblade Revenant",
-            "Cyclops",
-            "Dark Druid",
-            "Dark Mage",
-            "Dark Monk",
-            "Death",
-            "Death Skull",
-            "Death Tyrant",
-            "Demon",
-            "Demon Lord",
-            "Demon Spire",
-            "Dirt Demon",
-            "Dretch",
-            "Dretch Lord",
-            "Drowned Skull",
-            "Dune Lord",
-            "Dusk Mage",
-            "Duskwyrm",
-            "Ettin",
-            "Evil Eye",
-            "Fighter",
-            "Flaming Death",
-            "Floating Horror",
-            "Frost Giant",
-            "Frost Troll",
-            "Funguilla",
-            "Gas Spore",
-            "Gen Kelvor",
-            "Ghost",
-            "Glutton",
-            "Glutton Shaman",
-            "Glutton Slave",
-            "Golem",
-            "Greater Oglah",
-            "Greater Troll",
-            "Greater Yeti",
-            "Green Dragon",
-            "Green Slime",
-            "Green Triddle",
-            "Grimbark",
-            "Harpy",
-            "Headless",
-            "Hell Hound",
-            "Hell Spawn",
-            "Hellbinder",
-            "Hellfiend",
-            "Hells Warden",
-            "Hivemind",
-            "Hobgoblin",
-            "Horned Devil",
-            "Hydra",
-            "Ice Devil",
-            "Ice Dragon",
-            "Ice Golem",
-            "Icehand",
-            "Ilithid",
-            "Imp",
-            "Infernal",
-            "Juggernaut",
-            "Kobold",
-            "Kobold Mage",
-            "Large Slime",
-            "Lava Beast",
-            "Lesser Lich",
-            "Lich",
-            "Lizardman",
-            "Master of Frost",
-            "Master Orc",
-            "Medusa",
-            "Minion",
-            "Minotaur",
-            "Mossy Golem",
-            "Nelm",
-            "Night Hag",
-            "Nightmare",
-            "Nycadaemon",
-            "Obsidian Leviathan",
-            "Oglah",
-            "Oglah Soldier",
-            "Orc",
-            "Orc General",
-            "Orc Shaman",
-            "Orc Warrior",
-            "Orc Wizard",
-            "Orcling",
-            "Orcus",
-            "Phantom",
-            "Phoenix",
-            "Pirate",
-            "Pirate Captain",
-            "Purple Wisp",
-            "Red Dragon",
-            "Red Druid",
-            "Red Wisp",
-            "Risen Dead",
-            "Risen Frost",
-            "Rock Troll",
-            "Rune Warrior",
-            "Scorpotaur",
-            "Shriek",
-            "Skeleton",
-            "Skeleton Warrior",
-            "Skeleton Wolf",
-            "Snake",
-            "Snow Terror",
-            "Sparkscale",
-            "Specter",
-            "Spider",
-            "Stone Giant",
-            "Stone Golem",
-            "Stone Goliath",
-            "Storm Giant",
-            "Swashbuckler",
-            "Thief",
-            "Toxic Bat",
-            "Toxic Skull",
-            "Toxincoil",
-            "Triddle",
-            "Undead Knight",
-            "Undead Priest",
-            "Undead Warrior",
-            "Vampire Bat",
-            "Venomdrake",
-            "Voltling",
-            "Werewolf",
-            "Wraith",
-            "Wyrmling",
-            "Yeti",
-            "Zombie",
-          ].map((name) => name.toLowerCase())
-        );
 
         const COLUMNS = [
           { key: "image", label: "Image", render: (_, item) => createImageThumb(item), sortable: false },
@@ -1629,7 +1479,7 @@
           return list
             .map((entry) => normalizeMonster(entry))
             .filter(Boolean)
-            .filter((monster) => ALLOWED_MONSTER_NAMES.has((monster.name || "").toLowerCase()));
+            .filter((monster) => isMonsterAllowed(monster));
         };
 
         const getWeaponId = (item) => normalizeWeaponId(item && (item.id || item.name));
@@ -1991,12 +1841,14 @@
             fetchJsonCached(resistancesUrl),
             fetchJsonCached(perksUrl),
             fetchJsonCached(monstersUrl),
+            loadAllowlists(),
           ])
-            .then(([data, resistancesData, perksData, monstersData]) => {
+            .then(([data, resistancesData, perksData, monstersData, allowlists]) => {
               const map = resistancesData && typeof resistancesData === "object" ? resistancesData.typeResistances : null;
               if (map && typeof map === "object") {
                 typeResistances = map;
               }
+              applyAllowlists(allowlists);
               const perks = Array.isArray(perksData?.perks) ? perksData.perks : [];
               perkIndexByName = new Map();
               perks.forEach((entry) => {
@@ -2011,7 +1863,7 @@
                   const nameLower = (weapon.name || "").toLowerCase();
                   const levelNum = Number(weapon.level);
                   if (nameLower === "flaming sword" && levelNum === 0) return false;
-                  return !HIDDEN_NAMES.has(nameLower);
+                  return !hiddenWeaponNames.has(nameLower);
                 });
               if (!items.length) {
                 renderEmpty("Add weapons_data05.json beside this page to see weapons.");

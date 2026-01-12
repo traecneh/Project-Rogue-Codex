@@ -1,9 +1,13 @@
 (() => {
   const DEFAULT_JSON_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
   const PERKS_INDEX_SCHEMA_VERSION = 3;
+  const ALLOWLISTS_SCHEMA_VERSION = 1;
+  const FORCE_JSON_REFRESH = true;
   const jsonMemoryCache = new Map();
   let perkIndexPromise = null;
   let perkIndexMap = null;
+  let allowlistsPromise = null;
+  let allowlistsCache = null;
 
   function getAbsoluteUrl(url) {
     if (!url) return "";
@@ -25,6 +29,19 @@
       return resolved.toString();
     } catch (error) {
       return "pages/systems/perks.json";
+    }
+  }
+
+  function getAllowlistsUrl() {
+    try {
+      const base = typeof document !== "undefined" && document.baseURI ? document.baseURI : window.location.href;
+      const resolved = new URL("data/allowlists.json", base);
+      if (resolved.protocol === "http:" || resolved.protocol === "https:") {
+        resolved.searchParams.set("v", String(ALLOWLISTS_SCHEMA_VERSION));
+      }
+      return resolved.toString();
+    } catch (error) {
+      return "data/allowlists.json";
     }
   }
 
@@ -67,6 +84,31 @@
     const storageKey = options.storageKey || `json-cache:${cacheKey}`;
     const ttlMs = Number.isFinite(options.ttlMs) ? options.ttlMs : DEFAULT_JSON_TTL_MS;
     const now = Date.now();
+    const forceFresh = options.forceFresh || FORCE_JSON_REFRESH;
+
+    const withCacheBust = (targetUrl) => {
+      try {
+        const resolved = new URL(targetUrl);
+        resolved.searchParams.set("_", String(Date.now()));
+        return resolved.toString();
+      } catch (error) {
+        const separator = targetUrl.includes("?") ? "&" : "?";
+        return `${targetUrl}${separator}_=${Date.now()}`;
+      }
+    };
+
+    if (forceFresh) {
+      const requestUrl = withCacheBust(absoluteUrl);
+      return fetch(requestUrl, { cache: "no-store" })
+        .then((response) => {
+          if (!response.ok) throw new Error(`Failed to fetch ${absoluteUrl}`);
+          return response.json();
+        })
+        .catch((error) => {
+          console.warn(error.message || error);
+          return null;
+        });
+    }
 
     const existing = jsonMemoryCache.get(cacheKey);
     if (existing) {
@@ -106,13 +148,64 @@
       })
       .finally(() => {
         const current = jsonMemoryCache.get(cacheKey);
-        if (current && current.promise) {
-          current.promise = null;
-        }
-      });
+      if (current && current.promise) {
+        current.promise = null;
+      }
+    });
 
     jsonMemoryCache.set(cacheKey, { data: null, expiresAt: 0, promise });
     return promise;
+  }
+
+  function normalizeNameList(list) {
+    if (!Array.isArray(list)) return [];
+    return list
+      .map((value) => (value === null || value === undefined ? "" : String(value)).trim())
+      .filter(Boolean);
+  }
+
+  function buildNameSet(list) {
+    return new Set(normalizeNameList(list).map((value) => value.toLowerCase()));
+  }
+
+  function loadAllowlists() {
+    if (allowlistsCache) return Promise.resolve(allowlistsCache);
+    if (allowlistsPromise) return allowlistsPromise;
+
+    const url = getAllowlistsUrl();
+    allowlistsPromise = fetchJsonCached(url, {
+      cacheKey: `allowlists-v${ALLOWLISTS_SCHEMA_VERSION}`,
+      ttlMs: DEFAULT_JSON_TTL_MS,
+    })
+      .then((data) => {
+        const safe = data && typeof data === "object" ? data : {};
+        allowlistsCache = {
+          monsters: {
+            allow: normalizeNameList(safe.monsters?.allow),
+            block: normalizeNameList(safe.monsters?.block),
+          },
+          weapons: {
+            block: normalizeNameList(safe.weapons?.block),
+          },
+          armors: {
+            block: normalizeNameList(safe.armors?.block),
+          },
+        };
+        return allowlistsCache;
+      })
+      .catch(() => {
+        allowlistsCache = {
+          monsters: { allow: [], block: [] },
+          weapons: { block: [] },
+          armors: { block: [] },
+        };
+        return allowlistsCache;
+      })
+      .finally(() => {
+        allowlistsPromise = null;
+      });
+
+    return allowlistsPromise;
   }
 
   function loadPerkIndexMap() {
@@ -254,12 +347,17 @@
 
   window.RogueCodexUtils = Object.assign(window.RogueCodexUtils || {}, {
     DEFAULT_JSON_TTL_MS,
+    ALLOWLISTS_SCHEMA_VERSION,
+    FORCE_JSON_REFRESH,
     getAbsoluteUrl,
     fetchJsonCached,
     ELEMENT_COLORS,
     RESIST_COLORS,
     PERK_TIER_COLORS,
     normalizeFilterValue,
+    normalizeNameList,
+    buildNameSet,
+    loadAllowlists,
     toNumber,
     titleCaseWords,
     getElementColor,

@@ -323,242 +323,64 @@ function getPerkSlug(name) {
   return slug ? `perk-${slug}` : "";
 }
 
-const HIDDEN_MONSTER_NAMES = new Set(
-  [
-    "Fire Wisp",
-    "Fire Bat",
-    "Lava Bat",
-    "Shade",
-    "Dretch Brigand",
-    "Dretch Thug",
-    "Dretch Executioner",
-    "Dretch Warrior",
-    "Dretch Rogue",
-    "Dretch Occulist",
-    "Abyssal Disciple",
-    "Durg",
-    "Frigit",
-    "Bramble",
-  ].map((name) => name.toLowerCase())
-);
+const EMPTY_ALLOWLISTS = {
+  monsters: { allow: [], block: [] },
+  weapons: { block: [] },
+  armors: { block: [] },
+};
+const buildNameSet = (list) => {
+  const utils = window.RogueCodexUtils;
+  if (utils && typeof utils.buildNameSet === "function") {
+    return utils.buildNameSet(list);
+  }
+  return new Set(
+    (Array.isArray(list) ? list : [])
+      .map((value) => (value === null || value === undefined ? "" : String(value)).trim().toLowerCase())
+      .filter(Boolean)
+  );
+};
+let allowlistsPromise = null;
+let allowedMonsterNames = new Set();
+let blockedMonsterNames = new Set();
+let hiddenWeaponNames = new Set();
+let hiddenArmorNames = new Set();
 
-// Keep in sync with pages/enemies/monsters.html allowlist.
-const ALLOWED_MONSTER_NAMES = new Set(
-  [
-    "Abishai",
-    "Anubis",
-    "Balron",
-    "Banished Knight",
-    "Banished Soldier",
-    "Banished Spirit",
-    "Banished Warden",
-    "Bat",
-    "Beholder",
-    "Black Dragon",
-    "Blightscale",
-    "Blue Dragon",
-    "Blue Wisp",
-    "Brown Triddle",
-    "Centaur",
-    "Centaur Warrior",
-    "Cinderdrake",
-    "Crawling Defiler",
-    "Cryoblade Revenant",
-    "Cyclops",
-    "Dark Druid",
-    "Dark Mage",
-    "Dark Monk",
-    "Death",
-    "Death Skull",
-    "Death Tyrant",
-    "Demon",
-    "Demon Lord",
-    "Demon Spire",
-    "Dirt Demon",
-    "Dretch",
-    "Dretch Lord",
-    "Drowned Skull",
-    "Dune Lord",
-    "Dusk Mage",
-    "Duskwyrm",
-    "Ettin",
-    "Evil Eye",
-    "Fighter",
-    "Flaming Death",
-    "Floating Horror",
-    "Frost Giant",
-    "Frost Troll",
-    "Funguilla",
-    "Gas Spore",
-    "Gen Kelvor",
-    "Ghost",
-    "Glutton",
-    "Glutton Shaman",
-    "Glutton Slave",
-    "Golem",
-    "Greater Oglah",
-    "Greater Troll",
-    "Greater Yeti",
-    "Green Dragon",
-    "Green Slime",
-    "Green Triddle",
-    "Grimbark",
-    "Harpy",
-    "Headless",
-    "Hell Hound",
-    "Hell Spawn",
-    "Hellbinder",
-    "Hellfiend",
-    "Hells Warden",
-    "Hivemind",
-    "Hobgoblin",
-    "Horned Devil",
-    "Hydra",
-    "Ice Devil",
-    "Ice Dragon",
-    "Ice Golem",
-    "Icehand",
-    "Ilithid",
-    "Imp",
-    "Infernal",
-    "Juggernaut",
-    "Kobold",
-    "Kobold Mage",
-    "Large Slime",
-    "Lava Beast",
-    "Lesser Lich",
-    "Lich",
-    "Lizardman",
-    "Master of Frost",
-    "Master Orc",
-    "Medusa",
-    "Minion",
-    "Minotaur",
-    "Mossy Golem",
-    "Nelm",
-    "Night Hag",
-    "Nightmare",
-    "Nycadaemon",
-    "Obsidian Leviathan",
-    "Oglah",
-    "Oglah Soldier",
-    "Orc",
-    "Orc General",
-    "Orc Shaman",
-    "Orc Warrior",
-    "Orc Wizard",
-    "Orcling",
-    "Orcus",
-    "Phantom",
-    "Phoenix",
-    "Pirate",
-    "Pirate Captain",
-    "Purple Wisp",
-    "Red Dragon",
-    "Red Druid",
-    "Red Wisp",
-    "Risen Dead",
-    "Risen Frost",
-    "Rock Troll",
-    "Rune Warrior",
-    "Scorpotaur",
-    "Shriek",
-    "Skeleton",
-    "Skeleton Warrior",
-    "Skeleton Wolf",
-    "Snake",
-    "Snow Terror",
-    "Sparkscale",
-    "Specter",
-    "Spider",
-    "Stone Giant",
-    "Stone Golem",
-    "Stone Goliath",
-    "Storm Giant",
-    "Swashbuckler",
-    "Thief",
-    "Toxic Bat",
-    "Toxic Skull",
-    "Toxincoil",
-    "Triddle",
-    "Undead Knight",
-    "Undead Priest",
-    "Undead Warrior",
-    "Vampire Bat",
-    "Venomdrake",
-    "Voltling",
-    "Werewolf",
-    "Wraith",
-    "Wyrmling",
-    "Yeti",
-    "Zombie",
-  ].map((name) => name.toLowerCase())
-);
+const applyAllowlists = (allowlists) => {
+  const safe = allowlists && typeof allowlists === "object" ? allowlists : EMPTY_ALLOWLISTS;
+  allowedMonsterNames = buildNameSet(safe.monsters?.allow);
+  blockedMonsterNames = buildNameSet(safe.monsters?.block);
+  hiddenWeaponNames = buildNameSet(safe.weapons?.block);
+  hiddenArmorNames = buildNameSet(safe.armors?.block);
+};
+
+const loadAllowlists = () => {
+  if (allowlistsPromise) return allowlistsPromise;
+  const utils = window.RogueCodexUtils;
+  if (utils && typeof utils.loadAllowlists === "function") {
+    allowlistsPromise = utils.loadAllowlists().then((data) => {
+      applyAllowlists(data || EMPTY_ALLOWLISTS);
+      return data;
+    });
+    return allowlistsPromise;
+  }
+  applyAllowlists(EMPTY_ALLOWLISTS);
+  allowlistsPromise = Promise.resolve(EMPTY_ALLOWLISTS);
+  return allowlistsPromise;
+};
 
 const normalizeMonsterName = (monster) => normalizePerkName(monster && (monster.name || monster.Name));
 
 const isMonsterAllowed = (monster) => {
   const name = normalizeMonsterName(monster);
   if (!name) return false;
-  if (ALLOWED_MONSTER_NAMES.size) {
-    return ALLOWED_MONSTER_NAMES.has(name);
+  if (allowedMonsterNames.size) {
+    return allowedMonsterNames.has(name);
   }
-  return !HIDDEN_MONSTER_NAMES.has(name);
+  if (blockedMonsterNames.size) {
+    return !blockedMonsterNames.has(name);
+  }
+  return true;
 };
-
-const HIDDEN_WEAPON_NAMES = new Set(
-  [
-    "Super Super Blunt",
-    "Super Duper Pole",
-    "Super Duper",
-    "Super Duper Blunt",
-    "Super Duper Axe",
-    "GM Deathbringer",
-    "Ghostblade",
-    "Wand of the Winds",
-    "Wand of the Flames",
-    "Tooth Staff",
-    "Krythan Staff",
-    "Bone Staff",
-    "Staff of Might",
-    "Cursed Staff",
-    "Vengeance Sword",
-    "Staff of Partiality",
-  ].map((name) => name.toLowerCase())
-);
-
-const HIDDEN_ARMOR_NAMES = new Set(
-  [
-    "stone of jordan",
-    "abyssal core",
-    "book of the dead",
-    "celestial sceptre",
-    "magus robe",
-    "book of curses",
-    "mystic greaves",
-    "holy robe",
-    "sages leggings",
-    "firestone amulet",
-    "sages robe",
-    "lich robe",
-    "conjurers robe",
-    "apprentice leggings",
-    "ring of intellect",
-    "necklace of intellect",
-    "scholars book",
-    "sand cloth boots",
-    "shield of sands",
-    "sand bracelets",
-    "truesight frames",
-    "sand cloth robe",
-    "elder dragon shield",
-    "shield of the gods",
-    "serpent shield",
-    "serpent leggings",
-    "serpent helm",
-    "serpent plate",
-  ].map((name) => name.toLowerCase())
-);
 
 const computeDps = (minDamage, maxDamage, attackSpeed) => {
   const min = Number(minDamage);
@@ -801,8 +623,11 @@ function buildMonsterSearchEntry(monster) {
 function loadMonsterSearchIndex() {
   if (MONSTER_INDEX_PROMISE) return MONSTER_INDEX_PROMISE;
   const absoluteUrl = getAbsoluteUrl("pages/enemies/monsters_data03.json");
-  MONSTER_INDEX_PROMISE = fetchJsonMaybeCached(absoluteUrl, "Failed to fetch monsters_data03.json")
-    .then((data) => {
+  MONSTER_INDEX_PROMISE = Promise.all([
+    loadAllowlists(),
+    fetchJsonMaybeCached(absoluteUrl, "Failed to fetch monsters_data03.json"),
+  ])
+    .then(([, data]) => {
       const list = Array.isArray(data) ? data : [];
       const filtered = list.filter((monster) => isMonsterAllowed(monster));
       const normalized = filtered.map((monster) => normalizeNavMonster(monster)).filter(Boolean);
@@ -903,11 +728,14 @@ function buildArmorSearchEntry(armor) {
 function loadArmorSearchIndex() {
   if (ARMOR_INDEX_PROMISE) return ARMOR_INDEX_PROMISE;
   const absoluteUrl = getAbsoluteUrl("pages/items/armors_data06.json");
-  ARMOR_INDEX_PROMISE = fetchJsonMaybeCached(absoluteUrl, "Failed to fetch armors_data06.json")
-    .then((data) => {
+  ARMOR_INDEX_PROMISE = Promise.all([
+    loadAllowlists(),
+    fetchJsonMaybeCached(absoluteUrl, "Failed to fetch armors_data06.json"),
+  ])
+    .then(([, data]) => {
       const list = Array.isArray(data) ? data : [];
       const filtered = list.filter(
-        (armor) => !HIDDEN_ARMOR_NAMES.has(String(armor.name || armor.Name || "").toLowerCase())
+        (armor) => !hiddenArmorNames.has(String(armor.name || armor.Name || "").toLowerCase())
       );
       ARMOR_SEARCH_INDEX = filtered.map((armor) => buildArmorSearchEntry(armor)).filter(Boolean);
       return ARMOR_SEARCH_INDEX;
@@ -977,11 +805,12 @@ function loadWeaponData() {
   } catch (error) {
     requestUrl = absoluteUrl;
   }
-  WEAPON_DATA_PROMISE = fetchJsonMaybeCached(requestUrl, "Failed to fetch weapons_data05.json")
+  WEAPON_DATA_PROMISE = loadAllowlists()
+    .then(() => fetchJsonMaybeCached(requestUrl, "Failed to fetch weapons_data05.json"))
     .then((data) => {
       const list = Array.isArray(data) ? data : [];
       const filtered = list.filter(
-        (weapon) => !HIDDEN_WEAPON_NAMES.has(String(weapon.name || weapon.Name || "").toLowerCase())
+        (weapon) => !hiddenWeaponNames.has(String(weapon.name || weapon.Name || "").toLowerCase())
       );
       return filtered.map((weapon) => normalizeNavWeapon(weapon)).filter(Boolean);
     })

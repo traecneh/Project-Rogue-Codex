@@ -2147,6 +2147,25 @@
           suggestionsEl.style.display = "block";
         };
 
+        const utils = window.RogueCodexUtils || {};
+        const buildNameSet =
+          utils.buildNameSet ||
+          ((list) =>
+            new Set(
+              (Array.isArray(list) ? list : [])
+                .map((value) => (value === null || value === undefined ? "" : String(value)).trim().toLowerCase())
+                .filter(Boolean)
+            ));
+        const loadAllowlists =
+          typeof utils.loadAllowlists === "function" ? () => utils.loadAllowlists() : () => Promise.resolve(null);
+        let hiddenWeaponNames = new Set();
+        let hiddenArmorNames = new Set();
+
+        const applyAllowlists = (allowlists) => {
+          hiddenWeaponNames = buildNameSet(allowlists?.weapons?.block);
+          hiddenArmorNames = buildNameSet(allowlists?.armors?.block);
+        };
+
         const loadData = () => {
           const fetchJsonCached =
             window.RogueCodexUtils?.fetchJsonCached ||
@@ -2158,10 +2177,20 @@
             fetchJsonCached(new URL("../items/weapons_data05.json", window.location.href).toString()),
             fetchJsonCached(new URL("../items/armors_data06.json", window.location.href).toString()),
             fetchJsonCached(new URL("../systems/perks.json", window.location.href).toString()),
+            loadAllowlists(),
           ])
-            .then(([weapons, armors, perksIndex]) => {
-              dataset.weapons = Array.isArray(weapons) ? weapons.map((w) => toWeapon(w)) : [];
-              dataset.armors = Array.isArray(armors) ? armors.map((a) => toArmor(a)).filter(Boolean) : [];
+            .then(([weapons, armors, perksIndex, allowlists]) => {
+              applyAllowlists(allowlists);
+              dataset.weapons = Array.isArray(weapons)
+                ? weapons
+                    .map((w) => toWeapon(w))
+                    .filter((weapon) => weapon && !hiddenWeaponNames.has((weapon.name || "").toLowerCase()))
+                : [];
+              dataset.armors = Array.isArray(armors)
+                ? armors
+                    .map((a) => toArmor(a))
+                    .filter((armor) => armor && !hiddenArmorNames.has((armor.name || "").toLowerCase()))
+                : [];
               const perks = Array.isArray(perksIndex?.perks) ? perksIndex.perks : [];
               const seen = new Set();
               perkOptions = perks

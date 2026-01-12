@@ -648,6 +648,10 @@
                 <div class="detail-label">Target When Flags</div>
                 <div class="flag-pills" id="details-target-flags"></div>
               </div>
+              <div class="flag-block">
+                <div class="detail-label">Status Effect</div>
+                <div class="detail-value" id="details-status-effect">None</div>
+              </div>
               <div class="detail-divider" aria-hidden="true"></div>
               <div class="detail-span">
                 <div class="detail-label">Elites</div>
@@ -806,7 +810,18 @@
 
     <script>
       (() => {
-        const dataUrl = new URL("monsters_data03.json", window.location.href);
+        const MONSTERS_SCHEMA_VERSION = 1;
+        const dataUrl = (() => {
+          try {
+            const resolved = new URL("monsters_data03.json", window.location.href);
+            if (resolved.protocol === "http:" || resolved.protocol === "https:") {
+              resolved.searchParams.set("v", String(MONSTERS_SCHEMA_VERSION));
+            }
+            return resolved.toString();
+          } catch (error) {
+            return "monsters_data03.json";
+          }
+        })();
         const weaponsUrl = new URL("../items/weapons_data05.json", window.location.href);
         const searchInput = document.getElementById("monster-search");
         const typeFilter = document.getElementById("filter-type");
@@ -973,6 +988,14 @@
               : elementalAttackRaw === null || elementalAttackRaw === undefined
                  ? ""
                  : elementalAttackRaw.toString();
+          const statusEffectRaw = fields.status_effect ?? raw.status_effect ?? raw.statusEffect ?? null;
+          const statusEffect = toNumber(statusEffectRaw);
+          const statusEffectLabelRaw =
+            fields.status_effect_label ?? raw.status_effect_label ?? raw.statusEffectLabel ?? "";
+          const statusEffectLabel =
+            statusEffectLabelRaw === null || statusEffectLabelRaw === undefined
+              ? ""
+              : statusEffectLabelRaw.toString();
           const monsterTypeRaw = fields.type_label ?? raw.monsterType ?? fields.type ?? "";
           const monsterType =
             monsterTypeRaw === null || monsterTypeRaw === undefined ? "" : monsterTypeRaw.toString();
@@ -995,6 +1018,8 @@
             dps,
             level,
             elementalAttack,
+            statusEffect,
+            statusEffectLabel,
             monsterType,
             hpMax,
             uncommonTatter,
@@ -1003,165 +1028,38 @@
           };
         };
 
-        const ALLOWED_MONSTER_NAMES = new Set(
-          [
-            "Abishai",
-            "Anubis",
-            "Balron",
-            "Banished Knight",
-            "Banished Soldier",
-            "Banished Spirit",
-            "Banished Warden",
-            "Bat",
-            "Beholder",
-            "Black Dragon",
-            "Blightscale",
-            "Blue Dragon",
-            "Blue Wisp",
-            "Brown Triddle",
-            "Centaur",
-            "Centaur Warrior",
-            "Cinderdrake",
-            "Crawling Defiler",
-            "Cryoblade Revenant",
-            "Cyclops",
-            "Dark Druid",
-            "Dark Mage",
-            "Dark Monk",
-            "Death",
-            "Death Skull",
-            "Death Tyrant",
-            "Demon",
-            "Demon Lord",
-            "Demon Spire",
-            "Dirt Demon",
-            "Dretch",
-            "Dretch Lord",
-            "Drowned Skull",
-            "Dune Lord",
-            "Dusk Mage",
-            "Duskwyrm",
-            "Ettin",
-            "Evil Eye",
-            "Fighter",
-            "Flaming Death",
-            "Floating Horror",
-            "Frost Giant",
-            "Frost Troll",
-            "Funguilla",
-            "Gas Spore",
-            "Gen Kelvor",
-            "Ghost",
-            "Glutton",
-            "Glutton Shaman",
-            "Glutton Slave",
-            "Golem",
-            "Greater Oglah",
-            "Greater Troll",
-            "Greater Yeti",
-            "Green Dragon",
-            "Green Slime",
-            "Green Triddle",
-            "Grimbark",
-            "Harpy",
-            "Headless",
-            "Hell Hound",
-            "Hell Spawn",
-            "Hellbinder",
-            "Hellfiend",
-            "Hells Warden",
-            "Hivemind",
-            "Hobgoblin",
-            "Horned Devil",
-            "Hydra",
-            "Ice Devil",
-            "Ice Dragon",
-            "Ice Golem",
-            "Icehand",
-            "Ilithid",
-            "Imp",
-            "Infernal",
-            "Juggernaut",
-            "Kobold",
-            "Kobold Mage",
-            "Large Slime",
-            "Lava Beast",
-            "Lesser Lich",
-            "Lich",
-            "Lizardman",
-            "Master of Frost",
-            "Master Orc",
-            "Medusa",
-            "Minion",
-            "Minotaur",
-            "Mossy Golem",
-            "Nelm",
-            "Night Hag",
-            "Nightmare",
-            "Nycadaemon",
-            "Obsidian Leviathan",
-            "Oglah",
-            "Oglah Soldier",
-            "Orc",
-            "Orc General",
-            "Orc Shaman",
-            "Orc Warrior",
-            "Orc Wizard",
-            "Orcling",
-            "Orcus",
-            "Phantom",
-            "Phoenix",
-            "Pirate",
-            "Pirate Captain",
-            "Purple Wisp",
-            "Red Dragon",
-            "Red Druid",
-            "Red Wisp",
-            "Risen Dead",
-            "Risen Frost",
-            "Rock Troll",
-            "Rune Warrior",
-            "Scorpotaur",
-            "Shriek",
-            "Skeleton",
-            "Skeleton Warrior",
-            "Skeleton Wolf",
-            "Snake",
-            "Snow Terror",
-            "Sparkscale",
-            "Specter",
-            "Spider",
-            "Stone Giant",
-            "Stone Golem",
-            "Stone Goliath",
-            "Storm Giant",
-            "Swashbuckler",
-            "Thief",
-            "Toxic Bat",
-            "Toxic Skull",
-            "Toxincoil",
-            "Triddle",
-            "Undead Knight",
-            "Undead Priest",
-            "Undead Warrior",
-            "Vampire Bat",
-            "Venomdrake",
-            "Voltling",
-            "Werewolf",
-            "Wraith",
-            "Wyrmling",
-            "Yeti",
-            "Zombie",
-          ].map((name) => name.toLowerCase())
-        );
+        const buildNameSet =
+          utils.buildNameSet ||
+          ((list) =>
+            new Set(
+              (Array.isArray(list) ? list : [])
+                .map((value) => (value === null || value === undefined ? "" : String(value)).trim().toLowerCase())
+                .filter(Boolean)
+            ));
+        const loadAllowlists =
+          typeof utils.loadAllowlists === "function" ? () => utils.loadAllowlists() : () => Promise.resolve(null);
+        let allowedMonsterNames = new Set();
+        let hiddenWeaponNames = new Set();
+        let hiddenArmorNames = new Set();
+
+        const applyAllowlists = (allowlists) => {
+          allowedMonsterNames = buildNameSet(allowlists?.monsters?.allow);
+          hiddenWeaponNames = buildNameSet(allowlists?.weapons?.block);
+          hiddenArmorNames = buildNameSet(allowlists?.armors?.block);
+        };
+
+        const isMonsterAllowed = (monster) => {
+          if (!allowedMonsterNames.size) return true;
+          return allowedMonsterNames.has((monster.name || "").toLowerCase());
+        };
 
         const normalizeMonsters = (list) => {
           if (!Array.isArray(list)) return [];
-            return list
-              .map((entry) => normalizeMonster(entry))
-              .filter(Boolean)
-              .filter((monster) => ALLOWED_MONSTER_NAMES.has((monster.name || "").toLowerCase()));
-          };
+          return list
+            .map((entry) => normalizeMonster(entry))
+            .filter(Boolean)
+            .filter((monster) => isMonsterAllowed(monster));
+        };
 
         let pendingMonsterId = getInitialMonsterId();
 
@@ -1356,6 +1254,7 @@
           imageFallback: document.getElementById("details-image-fallback"),
           flags: document.getElementById("details-flags"),
           targetFlags: document.getElementById("details-target-flags"),
+          statusEffect: document.getElementById("details-status-effect"),
           lootTable: document.getElementById("loot-table"),
           recommendedWeapons: document.getElementById("recommended-weapons"),
           recommendedArmors: document.getElementById("recommended-armors"),
@@ -1394,55 +1293,6 @@
         if (searchInput && searchTerm) {
           searchInput.value = searchTerm;
         }
-
-        const HIDDEN_WEAPON_NAMES = new Set(
-          [
-            "super super blunt",
-            "super duper pole",
-            "super duper",
-            "super duper blunt",
-            "super duper axe",
-            "gm deathbringer",
-            "ghostblade",
-            "wand of the winds",
-            "wand of the flames",
-            "tooth staff",
-            "krythan staff",
-            "bone staff",
-            "staff of might",
-            "cursed staff",
-            "chilled staff",
-            "vengeance sword",
-            "staff of partiality",
-          ].map((n) => n.toLowerCase())
-        );
-
-        const HIDDEN_ARMOR_NAMES = new Set(
-          [
-            "stone of jordan",
-            "abyssal core",
-            "book of the dead",
-            "celestial sceptre",
-            "magus robe",
-            "book of curses",
-            "mystic greaves",
-            "holy robe",
-            "sages leggings",
-            "firestone amulet",
-            "sages robe",
-            "lich robe",
-            "conjurers robe",
-            "apprentice leggings",
-            "ring of intellect",
-            "necklace of intellect",
-            "scholars book",
-            "sand cloth boots",
-            "shield of sands",
-            "sand bracelets",
-            "truesight frames",
-            "sand cloth robe",
-          ].map((n) => n.toLowerCase())
-        );
 
         const UNIQUE_WEAPON_DROPS = {
           "rune-warrior": ["Rune Sword"],
@@ -2515,6 +2365,19 @@
           }
         };
 
+        const renderStatusEffect = (monster) => {
+          const container = detailFields.statusEffect;
+          if (!container) return;
+          const effectValue = monster ? monster.statusEffect : null;
+          const hasEffect = effectValue !== null && effectValue !== undefined && Number(effectValue) !== 0;
+          if (!hasEffect) {
+            container.textContent = "None";
+            return;
+          }
+          const label = (monster?.statusEffectLabel || "").toString().trim();
+          container.textContent = label || "Unknown";
+        };
+
         const maybeSelectPendingMonster = (list) => {
           if (!pendingMonsterId) return;
           const normalized = pendingMonsterId;
@@ -2711,6 +2574,15 @@
         const setDetails = (monster) => {
           if (!monster) return;
           if (pinnedTooltip) unpinTooltip(pinnedTooltip);
+          if (typeof window !== "undefined") {
+            window.RogueCodexDebug = window.RogueCodexDebug || {};
+            window.RogueCodexDebug.selectedMonster = monster;
+            window.RogueCodexDebug.statusEffect = {
+              name: monster.name || "",
+              value: monster.statusEffect,
+              label: monster.statusEffectLabel,
+            };
+          }
           detailFields.name.textContent = monster.name || "Unknown Monster";
           if (detailFields.mapLink) {
             const searchName = monster.name || "";
@@ -2790,6 +2662,7 @@
           renderTypeTooltip(monster.monsterType);
           applyElementColor(monster.elementalAttack, detailFields.element);
           renderFlags(monster);
+          renderStatusEffect(monster);
           renderLootTable(monster);
           renderRecommendedWeapons(monster);
           renderRecommendedArmors(monster);
@@ -2821,27 +2694,29 @@
 
         const init = () => {
           Promise.all([
-            fetchJsonCached(dataUrl.toString()),
+            fetchJsonCached(dataUrl, { cacheKey: `monsters-data-v${MONSTERS_SCHEMA_VERSION}:${dataUrl}` }),
             fetchJsonCached(weaponsUrl.toString()),
             fetchJsonCached(new URL("../items/armors_data06.json", window.location.href).toString()),
             fetchJsonCached(resistancesUrl),
+            loadAllowlists(),
           ])
-            .then(([monsterData, weaponData, armorData, resistancesData]) => {
+            .then(([monsterData, weaponData, armorData, resistancesData, allowlists]) => {
               const map =
                 resistancesData && typeof resistancesData === "object" ? resistancesData.typeResistances : null;
               if (map && typeof map === "object") {
                 TYPE_RESISTANCES = map;
               }
+              applyAllowlists(allowlists);
               monsters = normalizeMonsters(Array.isArray(monsterData) ? monsterData : []);
               weapons = Array.isArray(weaponData)
                 ? weaponData
                     .map((w) => normalizeWeapon(w))
-                    .filter((w) => w && !HIDDEN_WEAPON_NAMES.has((w.name || "").toLowerCase()))
+                    .filter((w) => w && !hiddenWeaponNames.has((w.name || "").toLowerCase()))
                 : [];
               armors = Array.isArray(armorData)
                 ? armorData
                     .map((a) => normalizeArmor(a))
-                    .filter((a) => a && !HIDDEN_ARMOR_NAMES.has((a.name || "").toLowerCase()))
+                    .filter((a) => a && !hiddenArmorNames.has((a.name || "").toLowerCase()))
                 : [];
               if (!monsters.length) {
                 renderEmpty("No monsters found in monsters_data03.json.");
