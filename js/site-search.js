@@ -30,14 +30,6 @@ const SITE_SEARCH_INDEX = [
     keywords: ["planner", "builds", "stats", "theorycraft"],
   },
   {
-    title: "Trading Post",
-    url: "pages/General/trading-post.html",
-    category: "General",
-    description: "Trading guidance, price info, and marketplace notes.",
-    keywords: ["trade", "market", "prices", "economy"],
-    featured: true,
-  },
-  {
     title: "Weapons",
     url: "pages/items/weapons.html",
     category: "Items",
