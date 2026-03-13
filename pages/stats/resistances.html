@@ -48,6 +48,24 @@
     display: none !important;
   }
 
+  #monster-resistances .resist-group-header {
+    display: block;
+    margin: 0.45rem 0 0.1rem;
+    padding-top: 0.3rem;
+    border-top: 1px solid var(--border-soft);
+    color: var(--text-muted);
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  #monster-resistances .resist-group-header:first-child {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+  }
+
   #monster-resistances .resist-divider {
     width: 100%;
     margin: 0.25rem 0;
@@ -371,7 +389,6 @@
       acid: "#b38b00",
       disease: "#ff9c42",
     };
-
     document.addEventListener("DOMContentLoaded", () => {
       document.querySelectorAll(".resist-value").forEach((node) => {
         const raw = node.getAttribute("data-resist-value") || node.textContent;
@@ -417,7 +434,7 @@
         neutralRows.forEach((li) => {
           li.hidden = !showNeutral;
         });
-        resistanceLists.forEach(updateResistanceDividers);
+        resistanceLists.forEach(updateResistanceGrouping);
         if (neutralToggle) {
           neutralToggle.textContent = showNeutral ? "Hide Neutral Matchups" : "Show Neutral Matchups";
           neutralToggle.setAttribute("aria-pressed", String(showNeutral));
@@ -469,32 +486,44 @@
       return "neutral";
     }
 
-    function updateResistanceDividers(list) {
+    function updateResistanceGrouping(list) {
       if (!list) return;
+      list.querySelectorAll(".resist-group-header").forEach((header) => header.remove());
       list.querySelectorAll(".resist-divider").forEach((divider) => {
         divider.hidden = true;
       });
 
       let previousState = "";
+      const stateCounts = Array.from(list.children).reduce((counts, child) => {
+        if (child.tagName !== "LI" || child.hidden) return counts;
+        const state = child.dataset.resistanceState || "";
+        if (state) {
+          counts[state] = (counts[state] || 0) + 1;
+        }
+        return counts;
+      }, {});
+
       Array.from(list.children).forEach((child) => {
         if (child.tagName !== "LI" || child.hidden) return;
         const state = child.dataset.resistanceState || "";
-        if (previousState && state && state !== previousState) {
-          const divider = findDividerBefore(child);
-          if (divider) divider.hidden = false;
+        if (state && state !== previousState) {
+          const header = document.createElement("li");
+          header.className = "resist-group-header";
+          header.textContent = getResistanceStateLabel(state, stateCounts[state] || 0);
+          list.insertBefore(header, child);
         }
         previousState = state || previousState;
       });
     }
 
-    function findDividerBefore(listItem) {
-      let current = listItem.previousElementSibling;
-      while (current) {
-        if (current.classList.contains("resist-divider")) return current;
-        if (current.tagName === "LI") return null;
-        current = current.previousElementSibling;
+    function getResistanceStateLabel(state, count) {
+      if (state === "weakness") {
+        return "Weak to";
       }
-      return null;
+      if (state === "resistance") {
+        return "Resistant to";
+      }
+      return "Neutral";
     }
 
     (function hydrateResistanceIcons() {
