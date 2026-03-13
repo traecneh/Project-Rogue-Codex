@@ -30,6 +30,13 @@ const SITE_SEARCH_INDEX = [
     keywords: ["planner", "builds", "stats", "theorycraft"],
   },
   {
+    title: "Endless Hunt",
+    url: "pages/General/endless-hunt.html",
+    category: "General",
+    description: "Idler prototype that auto-fights monsters using real gear and XP tables.",
+    keywords: ["idler", "endless", "hunt", "prototype", "simulation", "xp"],
+  },
+  {
     title: "Weapons",
     url: "pages/items/weapons.html",
     category: "Items",

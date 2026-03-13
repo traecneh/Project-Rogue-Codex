@@ -43,6 +43,11 @@
     column-gap: 0.5rem;
   }
 
+  #monster-resistances li[hidden],
+  #monster-resistances .resist-divider[hidden] {
+    display: none !important;
+  }
+
   #monster-resistances .resist-divider {
     width: 100%;
     margin: 0.25rem 0;
@@ -57,6 +62,51 @@
     justify-content: center;
     align-items: center;
     margin: 0.3rem 0 0.6rem;
+  }
+
+  .resistance-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin: 1rem 0 1.1rem;
+  }
+
+  .neutral-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--border-soft);
+    background: linear-gradient(135deg, rgba(50, 60, 75, 0.9), rgba(20, 24, 32, 0.9));
+    color: var(--text-main);
+    cursor: pointer;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease, background 0.2s ease;
+  }
+
+  .neutral-toggle:hover,
+  .neutral-toggle:focus-visible {
+    border-color: var(--accent);
+    box-shadow: 0 0 12px rgba(75, 255, 75, 0.2);
+    outline: none;
+    transform: translateY(-1px);
+  }
+
+  .neutral-toggle[data-show-neutral="true"] {
+    border-color: var(--accent);
+    background: rgba(75, 255, 75, 0.12);
+    box-shadow:
+      inset 0 0 0 1px rgba(75, 255, 75, 0.4),
+      0 0 12px rgba(75, 255, 75, 0.12);
+  }
+
+  .neutral-toggle-note {
+    color: var(--text-muted);
+    font-size: 0.95rem;
   }
 </style>
 </head>
@@ -95,6 +145,10 @@
 <article class="content-section" id="monster-resistances">
 <h2>Monster Resistances</h2>
 <p>Values above <strong class="resist-value" data-resist-value="1.00">1.00x</strong> mean increased damage taken; below means reduced.</p>
+<div class="resistance-controls">
+<button type="button" class="neutral-toggle" id="neutral-toggle" aria-pressed="false" data-show-neutral="false">Show Neutral Matchups</button>
+<span class="neutral-toggle-note">Neutral matchups (<strong class="resist-value" data-resist-value="1.00">1.00x</strong>) are hidden by default.</span>
+</div>
 <div class="stat-grid">
             <section class="stat-card">
               <div class="stat-label">Humanoid</div>
@@ -328,9 +382,14 @@
       });
 
       const listItems = document.querySelectorAll("#monster-resistances li");
+      const resistanceLists = document.querySelectorAll("#monster-resistances ul");
+      const neutralRows = [];
       listItems.forEach((li) => {
         const strong = li.querySelector("strong");
         if (!strong) return;
+        const rawValue = strong.getAttribute("data-resist-value") || strong.textContent;
+        const value = parseFloat(rawValue);
+        if (Number.isNaN(value)) return;
         const rawText = (li.textContent || "").split(":")[0] || "";
         const elementName = rawText.trim();
         if (!elementName) return;
@@ -340,11 +399,40 @@
         label.textContent = elementName;
         const color = ELEMENT_COLORS[elementName.toLowerCase()];
         if (color) label.style.color = color;
+        const state = getResistanceState(value);
+        li.dataset.resistanceState = state;
+        if (state === "neutral") {
+          neutralRows.push(li);
+        }
 
         li.innerHTML = "";
         li.appendChild(label);
         li.appendChild(valueClone);
       });
+
+      const neutralToggle = document.getElementById("neutral-toggle");
+      let showNeutral = false;
+
+      const syncNeutralVisibility = () => {
+        neutralRows.forEach((li) => {
+          li.hidden = !showNeutral;
+        });
+        resistanceLists.forEach(updateResistanceDividers);
+        if (neutralToggle) {
+          neutralToggle.textContent = showNeutral ? "Hide Neutral Matchups" : "Show Neutral Matchups";
+          neutralToggle.setAttribute("aria-pressed", String(showNeutral));
+          neutralToggle.dataset.showNeutral = String(showNeutral);
+        }
+      };
+
+      if (neutralToggle) {
+        neutralToggle.addEventListener("click", () => {
+          showNeutral = !showNeutral;
+          syncNeutralVisibility();
+        });
+      }
+
+      syncNeutralVisibility();
     });
 
     function getResistanceColor(value) {
@@ -373,6 +461,40 @@
       text = text.replace(/(\.\d*?)0+$/, "$1"); // trim trailing zeros
       if (text.endsWith(".")) text = text.slice(0, -1);
       return `${text}x`;
+    }
+
+    function getResistanceState(value) {
+      if (value > 1) return "weakness";
+      if (value < 1) return "resistance";
+      return "neutral";
+    }
+
+    function updateResistanceDividers(list) {
+      if (!list) return;
+      list.querySelectorAll(".resist-divider").forEach((divider) => {
+        divider.hidden = true;
+      });
+
+      let previousState = "";
+      Array.from(list.children).forEach((child) => {
+        if (child.tagName !== "LI" || child.hidden) return;
+        const state = child.dataset.resistanceState || "";
+        if (previousState && state && state !== previousState) {
+          const divider = findDividerBefore(child);
+          if (divider) divider.hidden = false;
+        }
+        previousState = state || previousState;
+      });
+    }
+
+    function findDividerBefore(listItem) {
+      let current = listItem.previousElementSibling;
+      while (current) {
+        if (current.classList.contains("resist-divider")) return current;
+        if (current.tagName === "LI") return null;
+        current = current.previousElementSibling;
+      }
+      return null;
     }
 
     (function hydrateResistanceIcons() {

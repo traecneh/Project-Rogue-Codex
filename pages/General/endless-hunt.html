@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Endless Hunt &mdash; Project Rogue Codex</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <base href="../../" />
+    <link rel="icon" type="image/x-icon" href="images/project-rogue-favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="images/project-rogue-favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="64x64" href="images/project-rogue-favicon-64.png" />
+    <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
+    <link rel="stylesheet" href="css/styles.css" />
+    <script src="js/utils.js"></script>
+    <script src="js/site-search.js" defer></script>
+    <script src="js/weapon-specialty.js" defer></script>
+    <script src="js/stat-widgets.js" defer></script>
+    <script src="js/keyword-links.js" defer></script>
+    <script src="js/cursor-toggle.js" defer></script>
+    <script src="js/perks.js" defer></script>
+    <script src="js/rarity-roller.js" defer></script>
+    <script src="js/endless-hunt-idler.js" defer></script>
+    <script src="js/nav-core.js" defer></script>
+    <style>
+      .idler-controls {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 0.75rem;
+      }
+
+      .idler-control-card {
+        border: 1px solid var(--border-soft);
+        border-radius: 10px;
+        background: var(--bg-panel-dark);
+        padding: 0.75rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.55rem;
+        min-height: 0;
+      }
+
+      .idler-control-card label {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+      }
+
+      .idler-actions {
+        display: flex;
+        gap: 0.45rem;
+        flex-wrap: wrap;
+      }
+
+      .idler-actions button,
+      .idler-control-card select {
+        border: 1px solid var(--border-soft);
+        border-radius: 6px;
+        background: var(--bg-panel);
+        color: var(--text-main);
+        padding: 0.45rem 0.65rem;
+        cursor: pointer;
+      }
+
+      .idler-actions button:disabled,
+      .idler-control-card select:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+
+      .idler-zone-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 0.45rem;
+      }
+
+      .idler-zone-wrap input[type="range"] {
+        width: 100%;
+      }
+
+      .idler-zone-readout {
+        font-size: 0.82rem;
+        color: var(--text-muted);
+      }
+
+      .idler-toggle-group {
+        display: flex;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+      }
+
+      .idler-toggle {
+        border: 1px solid var(--border-soft);
+        border-radius: 999px;
+        padding: 0.35rem 0.7rem;
+        background: var(--bg-panel);
+        color: var(--text-main);
+        cursor: pointer;
+        font-size: 0.82rem;
+      }
+
+      .idler-toggle[aria-pressed="true"] {
+        border-color: rgba(75, 255, 75, 0.45);
+        background: rgba(75, 255, 75, 0.18);
+        box-shadow: inset 0 0 0 1px rgba(75, 255, 75, 0.25);
+      }
+
+      .idler-control-heading {
+        margin: 0;
+        font-size: 0.8rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+      }
+
+      .idler-control-row {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+      }
+
+      .idler-skill-button[data-queued="true"] {
+        border-color: rgba(255, 215, 110, 0.45);
+        background: rgba(255, 215, 110, 0.18);
+        box-shadow: inset 0 0 0 1px rgba(255, 215, 110, 0.24);
+      }
+
+      .idler-combat-note {
+        margin: 0;
+        color: var(--text-muted);
+        font-size: 0.8rem;
+        line-height: 1.35;
+      }
+
+      .idler-waypoint-section[hidden] {
+        display: none;
+      }
+
+      .idler-choice-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 0.75rem;
+      }
+
+      .idler-choice-card {
+        border: 1px solid var(--border-soft);
+        border-radius: 12px;
+        background: linear-gradient(180deg, rgba(26, 34, 45, 0.96), rgba(18, 24, 33, 0.96));
+        color: var(--text-main);
+        text-align: left;
+        padding: 0.9rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.45rem;
+        cursor: pointer;
+      }
+
+      .idler-choice-card strong {
+        font-size: 0.95rem;
+      }
+
+      .idler-choice-card span {
+        color: var(--text-muted);
+        line-height: 1.4;
+        font-size: 0.84rem;
+      }
+
+      .idler-choice-card:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+
+      .idler-progress {
+        height: 10px;
+        border-radius: 999px;
+        overflow: hidden;
+        border: 1px solid var(--border-soft);
+        background: #10151e;
+      }
+
+      .idler-progress-fill {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, #2fca2f, #89ff89);
+        transition: width 0.2s ease;
+      }
+
+      .idler-meter-fill {
+        background: linear-gradient(90deg, #3f8efc, #8dc3ff);
+      }
+
+      .idler-inline {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.75rem;
+        align-items: center;
+        font-size: 0.85rem;
+      }
+
+      .idler-inline strong {
+        color: var(--text-main);
+      }
+
+      .idler-subtle {
+        color: var(--text-muted);
+        font-size: 0.82rem;
+      }
+
+      .idler-loadout-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 0.75rem;
+      }
+
+      .idler-loadout-card {
+        border: 1px solid var(--border-soft);
+        border-radius: 10px;
+        background: var(--bg-panel-dark);
+        padding: 0.7rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.45rem;
+      }
+
+      .idler-loadout-title {
+        margin: 0;
+        font-size: 0.8rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+      }
+
+      .idler-loadout-name {
+        margin: 0;
+        font-size: 1rem;
+        color: var(--text-main);
+      }
+
+      .idler-loadout-meta {
+        margin: 0;
+        font-size: 0.82rem;
+        color: var(--text-muted);
+      }
+
+      .idler-feed-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 0.75rem;
+      }
+
+      .idler-feed-card {
+        border: 1px solid var(--border-soft);
+        border-radius: 10px;
+        background: var(--bg-panel-dark);
+        padding: 0.75rem;
+      }
+
+      .idler-feed-card h3 {
+        margin: 0 0 0.45rem;
+        font-size: 0.92rem;
+        color: var(--text-main);
+      }
+
+      .idler-feed-card p {
+        margin: 0.18rem 0;
+        color: var(--text-muted);
+      }
+
+      .idler-status {
+        margin: 0;
+        color: var(--text-muted);
+      }
+
+      .idler-log {
+        margin-top: 0.75rem;
+        border: 1px solid var(--border-soft);
+        border-radius: 8px;
+        background: #121821;
+        padding: 0.55rem;
+        max-height: 300px;
+        overflow: auto;
+        font-size: 0.86rem;
+      }
+
+      .idler-log-line {
+        padding: 0.25rem 0.15rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        color: var(--text-muted);
+        line-height: 1.35;
+      }
+
+      .idler-log-line:last-child {
+        border-bottom: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="layout">
+      <div id="sidebar-root"></div>
+      <main class="main-content" id="endless-hunt-idler">
+        <header class="content-header">
+          <h1 class="content-title">Endless Hunt</h1>
+          <p class="content-tagline">
+            Idler prototype using real monster, weapon, armor, and XP table data.
+          </p>
+        </header>
+
+        <article class="content-section">
+          <h2>Run Controls</h2>
+          <div class="idler-controls">
+            <section class="idler-control-card">
+              <div class="idler-actions">
+                <button type="button" id="idler-start" disabled>Start Run</button>
+                <button type="button" id="idler-step" disabled>Single Fight</button>
+                <button type="button" id="idler-reset" disabled>Reset</button>
+              </div>
+              <label for="idler-speed">Simulation speed</label>
+              <select id="idler-speed" disabled>
+                <option value="1">1x (1 fight / tick)</option>
+                <option value="5">5x (5 fights / tick)</option>
+                <option value="20">20x (20 fights / tick)</option>
+              </select>
+              <label>
+                <input type="checkbox" id="idler-auto-push" checked disabled />
+                Auto-adjust target zone
+              </label>
+            </section>
+
+            <section class="idler-control-card">
+              <label for="idler-zone-slider">Target monster level bracket</label>
+              <div class="idler-zone-wrap">
+                <input type="range" id="idler-zone-slider" min="1" max="150" value="1" disabled />
+                <div class="idler-zone-readout">Zone Target: <strong id="idler-zone-value">1</strong></div>
+              </div>
+              <p class="idler-combat-note" id="idler-zone-unlock-note">Unlocked through Zone 10. Defeat the Zone 10 boss to push farther.</p>
+            </section>
+
+            <section class="idler-control-card">
+              <p class="idler-control-heading">Combat Plan</p>
+              <div class="idler-control-row">
+                <label>Stance</label>
+                <div class="idler-toggle-group" role="group" aria-label="Combat stance">
+                  <button class="idler-toggle" type="button" data-idler-stance="balanced" aria-pressed="true" disabled>
+                    Balanced
+                  </button>
+                  <button class="idler-toggle" type="button" data-idler-stance="aggressive" aria-pressed="false" disabled>
+                    Aggressive
+                  </button>
+                  <button class="idler-toggle" type="button" data-idler-stance="guarded" aria-pressed="false" disabled>
+                    Guarded
+                  </button>
+                  <button class="idler-toggle" type="button" data-idler-stance="greedy" aria-pressed="false" disabled>
+                    Greedy
+                  </button>
+                  <button class="idler-toggle" type="button" data-idler-stance="executioner" aria-pressed="false" disabled>
+                    Executioner
+                  </button>
+                </div>
+              </div>
+              <div class="idler-control-row">
+                <label for="idler-skill-mode">Hunter's Burst autocast</label>
+                <select id="idler-skill-mode" disabled>
+                  <option value="smart">Danger / Elite</option>
+                  <option value="manual">Manual Only</option>
+                  <option value="elite">Elite+ Only</option>
+                  <option value="danger">When Losing</option>
+                  <option value="always">Always When Ready</option>
+                </select>
+              </div>
+              <div class="idler-actions">
+                <button type="button" id="idler-skill-trigger" class="idler-skill-button" data-queued="false" disabled>
+                  Queue Hunter's Burst
+                </button>
+              </div>
+              <p class="idler-combat-note" id="idler-skill-status">Hunter's Burst: Ready.</p>
+            </section>
+          </div>
+          <p class="idler-status" id="idler-status" role="status" aria-live="polite" aria-atomic="true">Loading data...</p>
+        </article>
+
+        <article class="content-section idler-waypoint-section" id="idler-waypoint-section" hidden>
+          <h2>Waypoint Choice</h2>
+          <p class="content-tagline" id="idler-waypoint-title">Zone 3 reached.</p>
+          <p class="idler-combat-note" id="idler-waypoint-description">Pick one small route boon before continuing.</p>
+          <div class="idler-choice-grid">
+            <button type="button" class="idler-choice-card" data-idler-waypoint-choice="camp" disabled>
+              <strong>Set Camp</strong>
+              <span>Refresh Hunter's Burst and reduce incoming damage for the next 6 fights.</span>
+            </button>
+            <button type="button" class="idler-choice-card" data-idler-waypoint-choice="cache" disabled>
+              <strong>Raid Cache</strong>
+              <span>Gain gold now, then improve tatters and gear upgrade odds for the next 6 fights.</span>
+            </button>
+            <button type="button" class="idler-choice-card" data-idler-waypoint-choice="contract" disabled>
+              <strong>Take Contract</strong>
+              <span>Face a harder trail with more elite pressure, but earn better gold and damage output for the next 6 fights.</span>
+            </button>
+          </div>
+        </article>
+
+        <article class="content-section">
+          <h2>Run Snapshot</h2>
+          <div class="stat-grid">
+            <section class="stat-card">
+              <p class="stat-label">Character</p>
+              <h3>Level <span id="idler-level">1</span></h3>
+              <div class="idler-inline">
+                <span>Total XP</span>
+                <strong id="idler-xp-total">0</strong>
+              </div>
+              <div class="idler-inline">
+                <span>Next level</span>
+                <strong id="idler-xp-next">-</strong>
+              </div>
+              <div
+                class="idler-progress"
+                id="idler-xp-progress"
+                role="progressbar"
+                aria-label="Progress to next level"
+                aria-valuemin="0"
+                aria-valuemax="100"
+                aria-valuenow="0"
+                aria-valuetext="0% to next level"
+              >
+                <div class="idler-progress-fill" id="idler-xp-fill"></div>
+              </div>
+            </section>
+
+            <section class="stat-card">
+              <p class="stat-label">Targeting</p>
+              <h3>Zone <span id="idler-zone-label">1</span></h3>
+              <div class="idler-inline">
+                <span>Recent win rate</span>
+                <strong id="idler-win-rate">0%</strong>
+              </div>
+              <div class="idler-inline">
+                <span>Boss gate</span>
+                <strong id="idler-zone-lock">Locked at Zone 10</strong>
+              </div>
+              <div
+                class="idler-progress"
+                id="idler-win-rate-progress"
+                role="progressbar"
+                aria-label="Recent win rate"
+                aria-valuemin="0"
+                aria-valuemax="100"
+                aria-valuenow="0"
+                aria-valuetext="0% recent win rate"
+              >
+                <div class="idler-progress-fill idler-meter-fill" id="idler-win-rate-fill"></div>
+              </div>
+            </section>
+
+            <section class="stat-card">
+              <p class="stat-label">Offense / Defense</p>
+              <h3>DPS <span id="idler-player-dps">0</span></h3>
+              <div class="idler-inline">
+                <span>HP</span>
+                <strong id="idler-player-hp">0</strong>
+              </div>
+              <div class="idler-inline">
+                <span>Total armor</span>
+                <strong id="idler-player-armor">0</strong>
+              </div>
+              <div class="idler-inline">
+                <span>Element resist</span>
+                <strong id="idler-player-resist">0</strong>
+              </div>
+            </section>
+
+            <section class="stat-card">
+              <p class="stat-label">Economy</p>
+              <h3>Gold <span id="idler-gold">0</span></h3>
+              <div class="idler-inline">
+                <span>Encounters</span>
+                <strong id="idler-encounters">0</strong>
+              </div>
+              <div class="idler-inline">
+                <span>Tatters found</span>
+                <strong id="idler-tatters">0</strong>
+              </div>
+              <div class="idler-inline">
+                <span>Kills / Deaths</span>
+                <strong><span id="idler-kills">0</span> / <span id="idler-deaths">0</span></strong>
+              </div>
+            </section>
+
+            <section class="stat-card">
+              <p class="stat-label">Combat Plan</p>
+              <h3><span id="idler-stance-label">Balanced</span></h3>
+              <div class="idler-inline">
+                <span>Burst</span>
+                <strong id="idler-skill-ready">Ready</strong>
+              </div>
+              <div class="idler-inline">
+                <span>Autocast</span>
+                <strong id="idler-skill-mode-label">Danger / Elite</strong>
+              </div>
+              <div class="idler-inline">
+                <span>Burst uses</span>
+                <strong id="idler-skill-uses">0</strong>
+              </div>
+              <div class="idler-inline">
+                <span>Manual queue</span>
+                <strong id="idler-skill-queue">No</strong>
+              </div>
+            </section>
+
+            <section class="stat-card">
+              <p class="stat-label">Waypoints</p>
+              <h3><span id="idler-waypoint-active">None</span></h3>
+              <div class="idler-inline">
+                <span>Fights left</span>
+                <strong id="idler-waypoint-remaining">0</strong>
+              </div>
+              <div class="idler-inline">
+                <span>Next choice</span>
+                <strong id="idler-waypoint-next">Zone 3</strong>
+              </div>
+              <div class="idler-inline">
+                <span>Choices made</span>
+                <strong id="idler-waypoint-count">0</strong>
+              </div>
+            </section>
+          </div>
+        </article>
+
+        <article class="content-section">
+          <h2>Current Loadout</h2>
+          <div class="idler-loadout-grid" id="idler-loadout-grid"></div>
+        </article>
+
+        <article class="content-section">
+          <h2>Encounter Feed</h2>
+          <div class="idler-feed-grid">
+            <section class="idler-feed-card">
+              <h3>Last Encounter</h3>
+              <p id="idler-last-monster">-</p>
+              <p id="idler-last-outcome">-</p>
+              <p id="idler-last-gains">-</p>
+            </section>
+            <section class="idler-feed-card">
+              <h3>Latest Upgrades</h3>
+              <p id="idler-last-weapon-upgrade">Weapon: none yet</p>
+              <p id="idler-last-armor-upgrade">Armor: none yet</p>
+              <p id="idler-last-tatter">Tatter: none yet</p>
+            </section>
+            <section class="idler-feed-card">
+              <h3>Performance</h3>
+              <p id="idler-total-damage">Damage dealt: 0</p>
+              <p id="idler-total-taken">Damage taken: 0</p>
+              <p id="idler-kdr">KDR: 0.00</p>
+            </section>
+            <section class="idler-feed-card">
+              <h3>Combat Calls</h3>
+              <p id="idler-last-archetype">Archetype: none yet</p>
+              <p id="idler-last-skill">Skill: none yet</p>
+              <p id="idler-last-counter">Counter: none yet</p>
+            </section>
+          </div>
+
+          <div class="idler-log" id="idler-log" role="log" aria-live="polite" aria-relevant="additions" aria-atomic="false" aria-label="Encounter event log"></div>
+        </article>
+      </main>
+    </div>
+  </body>
+</html>
