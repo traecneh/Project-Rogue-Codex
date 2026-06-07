@@ -39,10 +39,8 @@ try:
         build_fields,
     )
     from tools.codex_pipeline.extractors.item_metadata import (
-        ARMOR_SLOT_LABELS,
         PERK_LABELS,
-        RARITY_LABELS,
-        add_field_label,
+        enrich_armor_fields,
         resolve_corrupted_perk_label,
     )
     from tools.codex_pipeline.extractors.shared import (
@@ -60,10 +58,8 @@ except ModuleNotFoundError:
         build_fields,
     )
     from item_metadata import (
-        ARMOR_SLOT_LABELS,
         PERK_LABELS,
-        RARITY_LABELS,
-        add_field_label,
+        enrich_armor_fields,
         resolve_corrupted_perk_label,
     )
     from shared import (
@@ -105,24 +101,7 @@ def parse_data06(path: Path):
             skipped += 1
             continue
 
-        # Derived gold value (32-bit little-endian from value_low/value_high)
-        if "value_low" in fields and "value_high" in fields:
-            fields["value"] = fields["value_low"] + (fields["value_high"] << 16)
-
-        add_field_label(fields, "slot", "slot_label", ARMOR_SLOT_LABELS)
-        add_field_label(fields, "max_rarity", "max_rarity_label", RARITY_LABELS)
-
-        # Perk labels (shared mapping with weapons)
-        perk_val = fields.get("perk")
-        if perk_val in PERK_LABELS:
-            fields["perk_label"] = PERK_LABELS[perk_val]
-
-        # Corrupted perk labels (unknown_95)
-        corrupted_val = fields.get("corrupted_perk")
-        if corrupted_val:
-            resolved = resolve_corrupted_perk_label(corrupted_val, perk_val)
-            if resolved:
-                fields["corrupted_perk_label"] = resolved
+        enrich_armor_fields(fields)
 
         armor = {
             "id": rec_index,

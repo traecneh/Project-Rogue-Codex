@@ -77,6 +77,8 @@ class ExtractorModuleTests(unittest.TestCase):
             WEAPON_ELEMENT_LABELS,
             WEAPON_SPECIALTY_LABELS,
             WEAPON_SUBTYPE_LABELS,
+            enrich_armor_fields,
+            enrich_weapon_fields,
             resolve_corrupted_perk_label,
         )
 
@@ -87,15 +89,56 @@ class ExtractorModuleTests(unittest.TestCase):
         self.assertEqual("Strength", WEAPON_SPECIALTY_LABELS[1])
         self.assertEqual("Sword", WEAPON_SUBTYPE_LABELS[1])
         self.assertEqual("Helmet", ARMOR_SLOT_LABELS[10])
+        weapon_fields = {
+            "value_low": 500,
+            "value_high": 1,
+            "subtype": 1,
+            "specialty": 1,
+            "element": 4,
+            "max_rarity": 3,
+            "perk": 22,
+            "corrupted_perk": 278,
+        }
+        armor_fields = {
+            "value_low": 300,
+            "value_high": 0,
+            "slot": 10,
+            "max_rarity": 2,
+            "perk": 22,
+            "corrupted_perk": 278,
+        }
+
+        enrich_weapon_fields(weapon_fields)
+        enrich_armor_fields(armor_fields)
+
+        self.assertEqual(66036, weapon_fields["value"])
+        self.assertEqual("Sword", weapon_fields["subtype_label"])
+        self.assertEqual("Strength", weapon_fields["specialty_label"])
+        self.assertEqual("Cold", weapon_fields["element_label"])
+        self.assertEqual("Epic", weapon_fields["max_rarity_label"])
+        self.assertEqual("Frozen Heart (Tier 1)", weapon_fields["perk_label"])
+        self.assertEqual("Frozen Heart (Tier 2)", weapon_fields["corrupted_perk_label"])
+        self.assertEqual(300, armor_fields["value"])
+        self.assertEqual("Helmet", armor_fields["slot_label"])
+        self.assertEqual("Rare", armor_fields["max_rarity_label"])
+        self.assertEqual("Frozen Heart (Tier 1)", armor_fields["perk_label"])
+        self.assertEqual("Frozen Heart (Tier 2)", armor_fields["corrupted_perk_label"])
 
         extractors_dir = Path("tools/codex_pipeline/extractors")
-        for script_name in ("extract_weapons_data05.py", "extract_armors_data06.py"):
-            source = (extractors_dir / script_name).read_text(encoding="utf-8")
+        weapon_source = (extractors_dir / "extract_weapons_data05.py").read_text(encoding="utf-8")
+        armor_source = (extractors_dir / "extract_armors_data06.py").read_text(encoding="utf-8")
+        for source in (weapon_source, armor_source):
             self.assertIn("from tools.codex_pipeline.extractors.item_metadata import", source)
             self.assertNotIn("PERK_LABELS = {", source)
             self.assertNotIn("def resolve_corrupted_perk_label(", source)
             self.assertNotIn("rarity_labels = {", source)
             self.assertNotIn("element_labels = {", source)
+            self.assertNotIn('fields["value"] =', source)
+            self.assertNotIn('fields["perk_label"] =', source)
+            self.assertNotIn('fields["corrupted_perk_label"] =', source)
+            self.assertNotIn("add_field_label(fields", source)
+        self.assertIn("enrich_weapon_fields(fields)", weapon_source)
+        self.assertIn("enrich_armor_fields(fields)", armor_source)
 
     def test_extractors_use_named_field_schemas(self):
         from tools.codex_pipeline.extractors.field_schemas import (

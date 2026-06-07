@@ -40,11 +40,7 @@ try:
     )
     from tools.codex_pipeline.extractors.item_metadata import (
         PERK_LABELS,
-        WEAPON_ELEMENT_LABELS,
-        WEAPON_RARITY_LABELS,
-        WEAPON_SPECIALTY_LABELS,
-        WEAPON_SUBTYPE_LABELS,
-        add_field_label,
+        enrich_weapon_fields,
         resolve_corrupted_perk_label,
     )
     from tools.codex_pipeline.extractors.shared import (
@@ -63,11 +59,7 @@ except ModuleNotFoundError:
     )
     from item_metadata import (
         PERK_LABELS,
-        WEAPON_ELEMENT_LABELS,
-        WEAPON_RARITY_LABELS,
-        WEAPON_SPECIALTY_LABELS,
-        WEAPON_SUBTYPE_LABELS,
-        add_field_label,
+        enrich_weapon_fields,
         resolve_corrupted_perk_label,
     )
     from shared import (
@@ -109,25 +101,7 @@ def parse_data05(path: Path):
             skipped += 1
             continue
 
-        # Derived gold value (32-bit little-endian from value_low/value_high)
-        if "value_low" in fields and "value_high" in fields:
-            fields["value"] = fields["value_low"] + (fields["value_high"] << 16)
-
-        add_field_label(fields, "subtype", "subtype_label", WEAPON_SUBTYPE_LABELS)
-        add_field_label(fields, "specialty", "specialty_label", WEAPON_SPECIALTY_LABELS)
-        add_field_label(fields, "element", "element_label", WEAPON_ELEMENT_LABELS)
-        add_field_label(fields, "max_rarity", "max_rarity_label", WEAPON_RARITY_LABELS)
-
-        # Perk labels (game-specific effects; extend as more are mapped)
-        perk_val = fields.get("perk")
-        if perk_val in PERK_LABELS:
-            fields["perk_label"] = PERK_LABELS[perk_val]
-
-        corrupted_val = fields.get("corrupted_perk")
-        if corrupted_val:
-            resolved = resolve_corrupted_perk_label(corrupted_val, perk_val)
-            if resolved:
-                fields["corrupted_perk_label"] = resolved
+        enrich_weapon_fields(fields)
 
         weapon = {
             "id": rec_index,

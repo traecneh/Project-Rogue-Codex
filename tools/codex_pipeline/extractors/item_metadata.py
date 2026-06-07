@@ -184,3 +184,36 @@ def add_field_label(
     value = fields.get(source_field)
     if value in labels:
         fields[label_field] = labels[value]
+
+
+def add_derived_value(fields: MutableMapping[str, object]) -> None:
+    if "value_low" in fields and "value_high" in fields:
+        fields["value"] = fields["value_low"] + (fields["value_high"] << 16)
+
+
+def add_perk_labels(fields: MutableMapping[str, object]) -> None:
+    perk_val = fields.get("perk")
+    if perk_val in PERK_LABELS:
+        fields["perk_label"] = PERK_LABELS[perk_val]
+
+    corrupted_val = fields.get("corrupted_perk")
+    if corrupted_val:
+        resolved = resolve_corrupted_perk_label(corrupted_val, perk_val)
+        if resolved:
+            fields["corrupted_perk_label"] = resolved
+
+
+def enrich_weapon_fields(fields: MutableMapping[str, object]) -> None:
+    add_derived_value(fields)
+    add_field_label(fields, "subtype", "subtype_label", WEAPON_SUBTYPE_LABELS)
+    add_field_label(fields, "specialty", "specialty_label", WEAPON_SPECIALTY_LABELS)
+    add_field_label(fields, "element", "element_label", WEAPON_ELEMENT_LABELS)
+    add_field_label(fields, "max_rarity", "max_rarity_label", WEAPON_RARITY_LABELS)
+    add_perk_labels(fields)
+
+
+def enrich_armor_fields(fields: MutableMapping[str, object]) -> None:
+    add_derived_value(fields)
+    add_field_label(fields, "slot", "slot_label", ARMOR_SLOT_LABELS)
+    add_field_label(fields, "max_rarity", "max_rarity_label", RARITY_LABELS)
+    add_perk_labels(fields)
