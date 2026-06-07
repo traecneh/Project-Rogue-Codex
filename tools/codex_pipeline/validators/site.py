@@ -74,13 +74,18 @@ def validate_inline_scripts(label: str, html: str) -> list[ValidationIssue]:
         code = match.group(1).strip()
         if not code:
             continue
-        completed = subprocess.run(
-            ["node", "--check", "-"],
-            input=code,
-            text=True,
-            capture_output=True,
-        )
+        try:
+            completed = subprocess.run(
+                ["node", "--check", "-"],
+                input=code,
+                text=True,
+                capture_output=True,
+            )
+        except FileNotFoundError:
+            issues.append(ValidationIssue("error", f"{label} inline script #{index} node executable not found"))
+            continue
         if completed.returncode != 0:
-            detail = (completed.stderr or completed.stdout).strip().splitlines()[0]
+            lines = (completed.stderr or completed.stdout).strip().splitlines()
+            detail = lines[0] if lines else "node --check returned no output"
             issues.append(ValidationIssue("error", f"{label} inline script #{index} failed parse: {detail}"))
     return issues
