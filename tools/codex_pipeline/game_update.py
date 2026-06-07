@@ -11,6 +11,12 @@ from tools.codex_pipeline.config import (
     GENERATED_OUTPUT_DIR,
     PERK_LABEL_OVERRIDES_PATH,
 )
+from tools.codex_pipeline.assets import (
+    AssetChangeReport,
+    AssetTarget,
+    DEFAULT_ASSET_TARGETS,
+    build_asset_change_reports,
+)
 from tools.codex_pipeline.drop_audit import DropSourceAuditReport, build_drop_source_audit_report
 from tools.codex_pipeline.exports import (
     DataDiffReport,
@@ -33,6 +39,7 @@ class GameUpdateReport:
     export_results: list[ExportResult]
     diff_reports: list[DataDiffReport]
     unknown_reports: list[UnknownFieldTargetReport]
+    asset_reports: list[AssetChangeReport]
     drop_report: DropSourceAuditReport | None
     validation_issues: list[ValidationIssue]
     export_errors: list[str]
@@ -40,7 +47,10 @@ class GameUpdateReport:
 
     @property
     def has_changes(self) -> bool:
-        return any(report.has_changes for report in self.diff_reports)
+        return (
+            any(report.has_changes for report in self.diff_reports)
+            or any(report.has_changes for report in self.asset_reports)
+        )
 
     @property
     def has_errors(self) -> bool:
@@ -48,6 +58,11 @@ class GameUpdateReport:
             any(not check.ok for check in self.source_checks)
             or bool(self.export_errors)
             or any(issue.severity == "error" for issue in self.validation_issues)
+            or any(
+                issue.severity == "error"
+                for report in self.asset_reports
+                for issue in report.issues
+            )
             or (
                 self.drop_report is not None
                 and any(issue.severity == "error" for issue in self.drop_report.validation_issues)
@@ -56,7 +71,7 @@ class GameUpdateReport:
 
     @property
     def safe_to_sync(self) -> bool:
-        return not self.has_errors
+        return not self.has_errors and not any(report.has_changes for report in self.asset_reports)
 
 
 def _target_by_name(targets: Iterable[ExportTarget]) -> dict[str, ExportTarget]:
@@ -126,6 +141,7 @@ def build_game_update_report(
     python_executable: str = sys.executable,
     drop_sources_path: Path = DROP_SOURCES_PATH,
     perk_label_overrides_path: Path = PERK_LABEL_OVERRIDES_PATH,
+    asset_targets: Iterable[AssetTarget] = DEFAULT_ASSET_TARGETS,
 ) -> GameUpdateReport:
     target_list = list(targets)
     output_dir = output_dir.expanduser().resolve()
@@ -138,6 +154,7 @@ def build_game_update_report(
             export_results=[],
             diff_reports=[],
             unknown_reports=[],
+            asset_reports=[],
             drop_report=None,
             validation_issues=[],
             export_errors=[],
@@ -152,6 +169,7 @@ def build_game_update_report(
         )
         diff_reports = build_generated_diff_reports(target_list, output_dir=output_dir)
         unknown_reports = build_unknown_field_reports(target_list, source="generated", output_dir=output_dir)
+        asset_reports = build_asset_change_reports(asset_targets)
         drop_report = _build_generated_drop_report(
             target_list,
             output_dir=output_dir,
@@ -172,6 +190,7 @@ def build_game_update_report(
             export_results=[],
             diff_reports=[],
             unknown_reports=[],
+            asset_reports=[],
             drop_report=None,
             validation_issues=[],
             export_errors=[str(exc)],
@@ -184,6 +203,7 @@ def build_game_update_report(
         export_results=export_results,
         diff_reports=diff_reports,
         unknown_reports=unknown_reports,
+        asset_reports=asset_reports,
         drop_report=drop_report,
         validation_issues=validation_issues,
         export_errors=export_errors,

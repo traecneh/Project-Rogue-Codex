@@ -72,8 +72,8 @@ Important commands:
   site destination folders, and extractor syntax.
 - `game-update-report`: runs a review-only game update pass: source checks,
   export to generated output, generated-vs-site diffs, generated unknown-field
-  inventory, generated drop-source validation, and generated corrupted-perk
-  validation.
+  inventory, client-vs-site asset image diffs, generated drop-source
+  validation, and generated corrupted-perk validation.
 - `export-client-data`: runs configured extractors and writes generated JSON to
   `generated-output/codex-data/`.
 - `unknown-fields`: inventories `unknown_*` fields in current site data, or in
@@ -101,6 +101,8 @@ Core package:
 - `tools/codex_pipeline/cli.py`: command dispatch and validation orchestration.
 - `tools/codex_pipeline/config.py`: repository paths, external client paths, site
   data paths, override paths, and image directories.
+- `tools/codex_pipeline/assets.py`: client-vs-site image inventory, hash
+  comparison, and manifest consistency reports.
 - `tools/codex_pipeline/drop_audit.py`: drop-source audit report assembly and
   validation issue collection.
 - `tools/codex_pipeline/exports.py`: export target definitions, extractor
@@ -189,7 +191,7 @@ For data or extractor changes:
 
 1. Run `doctor`.
 2. Run `game-update-report`.
-3. Review generated-vs-site diffs and update warnings.
+3. Review generated-vs-site diffs, asset image diffs, and update warnings.
 4. Sync only intentional generated changes.
 5. Run unit tests and `validate`.
 6. Commit and push.

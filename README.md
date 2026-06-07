@@ -41,7 +41,7 @@ python -m tools.codex_pipeline doctor
 
 `validate-sources` is an alias for the same pre-export check.
 
-After a game update, generate a review-only update report. This exports current client data into `generated-output/codex-data/`, compares it against the site JSON, reports generated unknown fields, validates drop overrides against generated data, and reports whether generated output is safe to review and sync:
+After a game update, generate a review-only update report. This exports current client data into `generated-output/codex-data/`, compares it against the site JSON, compares client images against site images, reports generated unknown fields, validates drop overrides against generated data, and reports whether generated output is safe to review and sync:
 
 ```powershell
 python -m tools.codex_pipeline game-update-report

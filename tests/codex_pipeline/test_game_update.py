@@ -8,6 +8,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from tools.codex_pipeline.exports import ExportTarget
+from tools.codex_pipeline.assets import AssetChangeReport, AssetTarget
 from tools.codex_pipeline.drop_audit import DropSourceAuditReport, DropSourceItemReport
 from tools.codex_pipeline.sources import SourceCheckResult
 from tools.codex_pipeline.unknowns import UnknownFieldReport, UnknownFieldTargetReport
@@ -46,6 +47,16 @@ class GameUpdateReportTests(unittest.TestCase):
             output_dir = root / "generated"
             extractor = root / "extract_json.py"
             write_json_copy_extractor(extractor)
+            client_assets = root / "client-assets" / "Weapons"
+            site_assets = root / "site-assets" / "weapons"
+            client_assets.mkdir(parents=True)
+            site_assets.mkdir(parents=True)
+            (client_assets / "Rune Sword.gif").write_bytes(b"new image")
+            (site_assets / "Rune Sword.gif").write_bytes(b"old image")
+            (site_assets / "manifest.json").write_text(
+                json.dumps(["images/weapons/Rune Sword.gif"]),
+                encoding="utf-8",
+            )
 
             weapon_source = root / "sources" / "weapons.dat"
             armor_source = root / "sources" / "armors.dat"
@@ -100,11 +111,12 @@ class GameUpdateReportTests(unittest.TestCase):
                 python_executable=sys.executable,
                 drop_sources_path=drop_sources,
                 perk_label_overrides_path=perk_labels,
+                asset_targets=[AssetTarget("weapons", client_assets, site_assets)],
             )
 
             self.assertFalse(report.has_errors)
             self.assertTrue(report.has_changes)
-            self.assertTrue(report.safe_to_sync)
+            self.assertFalse(report.safe_to_sync)
             self.assertEqual(["weapons", "armors", "monsters"], [result.target.name for result in report.export_results])
             self.assertTrue((output_dir / "weapons.json").is_file())
 
@@ -119,6 +131,7 @@ class GameUpdateReportTests(unittest.TestCase):
             self.assertEqual([], report.validation_issues)
             self.assertIsNotNone(report.drop_report)
             self.assertEqual(2, report.drop_report.item_override_count)
+            self.assertEqual(["Rune Sword.gif"], report.asset_reports[0].changed)
 
     def test_build_game_update_report_stops_before_export_when_source_checks_fail(self):
         from tools.codex_pipeline.game_update import build_game_update_report
@@ -160,6 +173,20 @@ class GameUpdateReportTests(unittest.TestCase):
                     ],
                 )
             ],
+            asset_reports=[
+                AssetChangeReport(
+                    target_name="weapons",
+                    client_dir=Path("client/Weapons"),
+                    site_dir=Path("images/weapons"),
+                    client_count=2,
+                    site_count=2,
+                    manifest_count=2,
+                    added=[],
+                    removed=[],
+                    changed=["Rune Sword.gif"],
+                    issues=[],
+                )
+            ],
             drop_report=DropSourceAuditReport(
                 drop_sources_path=Path("drop_sources.json"),
                 item_overrides=[DropSourceItemReport("weapons", "Rune Sword", ["Ice Devil"])],
@@ -183,7 +210,8 @@ class GameUpdateReportTests(unittest.TestCase):
         self.assertIn("GAME UPDATE REPORT: generated", printed)
         self.assertIn("SOURCE OK weapons source data: source data found", printed)
         self.assertIn("UNKNOWN SUMMARY weapons: 2 field(s), 1 with nonzero values", printed)
+        self.assertIn("ASSET SUMMARY weapons: +0 -0 ~1, manifest entries=2, issues=0", printed)
         self.assertIn("DROP SUMMARY: 1 item override(s), 0 monster loot view(s), 0 issue(s)", printed)
         self.assertIn("UPDATE ISSUE WARNING: sample warning", printed)
         self.assertIn("SKIPPED: drop report requires generated weapons, armors, and monsters", printed)
-        self.assertIn("SYNC READINESS: OK", printed)
+        self.assertIn("SYNC READINESS: BLOCKED", printed)

@@ -443,6 +443,18 @@ def _print_drop_report_summary(report) -> None:
         print(f"DROP ISSUE {issue.severity.upper()}: {issue.message}")
 
 
+def _print_asset_report_summaries(reports) -> None:
+    for report in reports:
+        print(
+            f"ASSET SUMMARY {report.target_name}: "
+            f"+{len(report.added)} -{len(report.removed)} ~{len(report.changed)}, "
+            f"manifest entries={report.manifest_count}, issues={len(report.issues)} "
+            f"({report.client_dir} -> {report.site_dir})"
+        )
+        for issue in report.issues:
+            print(f"ASSET ISSUE {issue.severity.upper()}: {issue.message}")
+
+
 def _print_game_update_report(report) -> None:
     print(f"GAME UPDATE REPORT: {report.output_dir}")
     for check in report.source_checks:
@@ -458,6 +470,8 @@ def _print_game_update_report(report) -> None:
         _print_diff_reports(report.diff_reports)
     if report.unknown_reports:
         _print_unknown_field_summaries(report.unknown_reports)
+    if report.asset_reports:
+        _print_asset_report_summaries(report.asset_reports)
     if report.drop_report is not None:
         _print_drop_report_summary(report.drop_report)
 
@@ -480,7 +494,7 @@ def run_game_update_report(args: argparse.Namespace) -> int:
         print(f"ERROR: {exc}")
         return 1
     _print_game_update_report(report)
-    return 0 if report.safe_to_sync else 1
+    return 0 if not report.has_errors else 1
 
 
 def main(argv: list[str] | None = None) -> int:

@@ -7,6 +7,10 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 CLIENT_ROOT = Path(r"C:\Users\traec\Desktop\Client")
 CLIENT_DATA_DIR = CLIENT_ROOT / "data"
 CLIENT_GF_JSON_DIR = CLIENT_ROOT / "gf_json"
+CLIENT_IMAGE_DIR = CLIENT_GF_JSON_DIR / "images"
+CLIENT_WEAPON_IMAGES_DIR = CLIENT_IMAGE_DIR / "Weapons"
+CLIENT_ARMOR_IMAGES_DIR = CLIENT_IMAGE_DIR / "Armors"
+CLIENT_MONSTER_IMAGES_DIR = CLIENT_IMAGE_DIR / "Monsters"
 EXTRACTORS_DIR = REPO_ROOT / "tools" / "codex_pipeline" / "extractors"
 
 DROP_SOURCES_PATH = REPO_ROOT / "data" / "codex-overrides" / "drop_sources.json"
