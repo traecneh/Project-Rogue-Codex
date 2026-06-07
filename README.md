@@ -20,6 +20,8 @@ This project has been moved under projects/ and given a baseline layout. The nex
 
 Codex-only validation and export tooling lives in `tools/codex_pipeline/`. Extractor scripts are repo-owned under `tools/codex_pipeline/extractors/`; the configured game client `.dat` files remain external inputs under `C:\Users\traec\Desktop\Client\data`.
 
+For the current source-of-truth flow, module map, safe change pattern, and verification sequence, see `docs/codex-pipeline-architecture.md`.
+
 Run validation before committing data or drop-source changes:
 
 ```powershell
