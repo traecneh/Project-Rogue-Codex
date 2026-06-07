@@ -439,14 +439,14 @@
   function getDropSourceMonsterIdsByItem(dropSources, kind, itemName) {
     const safe = dropSources || createEmptyDropSources();
     const entry = safe[kind]?.[normalizeDropKey(itemName)];
-    return Array.isArray(entry?.monsterIds) ? entry.monsterIds : [];
+    return Array.isArray(entry?.monsterIds) ? entry.monsterIds.slice() : [];
   }
 
   function getDropSourceItemNamesByMonster(dropSources, kind, monsterName) {
     const safe = dropSources || createEmptyDropSources();
     const monsterId = normalizeDropSlug(monsterName);
     const entries = safe.reverse?.[kind]?.[monsterId];
-    return Array.isArray(entries) ? entries : [];
+    return Array.isArray(entries) ? entries.slice() : [];
   }
 
   window.RogueCodexUtils = Object.assign(window.RogueCodexUtils || {}, {
