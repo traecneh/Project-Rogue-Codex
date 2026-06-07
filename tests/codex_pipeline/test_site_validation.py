@@ -1,3 +1,4 @@
+import re
 import tempfile
 import unittest
 from pathlib import Path
@@ -7,6 +8,30 @@ from tools.codex_pipeline.config import DROP_SOURCES_PATH
 
 
 class SiteValidationTests(unittest.TestCase):
+    def test_inline_style_parser_reports_unmatched_closing_brace(self):
+        from tools.codex_pipeline.validators.site import validate_inline_styles
+
+        html = "<html><head><style>.ok { color: red; } } .lost { color: blue; }</style></head></html>"
+        issues = validate_inline_styles("broken-style.html", html)
+
+        self.assertEqual(1, len(issues))
+        self.assertIn("unexpected closing brace", issues[0].message)
+
+    def test_monsters_table_wrapper_keeps_scroll_container_style(self):
+        from tools.codex_pipeline.config import REPO_ROOT
+        from tools.codex_pipeline.validators.site import validate_inline_styles
+
+        html_path = REPO_ROOT / "pages" / "enemies" / "monsters.html"
+        html = html_path.read_text(encoding="utf-8")
+        issues = validate_inline_styles("pages/enemies/monsters.html", html)
+        wrapper_match = re.search(r"\.monsters-table-wrapper\s*\{(?P<body>[^}]*)\}", html)
+
+        self.assertEqual([], issues)
+        self.assertIsNotNone(wrapper_match)
+        wrapper_body = wrapper_match.group("body") if wrapper_match else ""
+        self.assertIn("overflow: auto;", wrapper_body)
+        self.assertIn("max-height: 70vh;", wrapper_body)
+
     def test_manifest_self_reference_is_an_error(self):
         from tools.codex_pipeline.validators.site import validate_manifest_entries
 

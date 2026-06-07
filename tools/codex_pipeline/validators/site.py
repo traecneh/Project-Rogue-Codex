@@ -160,6 +160,79 @@ def validate_javascript_file(label: str, path: Path) -> list[ValidationIssue]:
     return validate_javascript_source(label, code)
 
 
+def _line_col(text: str, offset: int) -> tuple[int, int]:
+    line = text.count("\n", 0, offset) + 1
+    last_newline = text.rfind("\n", 0, offset)
+    column = offset + 1 if last_newline == -1 else offset - last_newline
+    return line, column
+
+
+def validate_css_source(label: str, code: str) -> list[ValidationIssue]:
+    issues: list[ValidationIssue] = []
+    depth = 0
+    in_comment = False
+    in_string: str | None = None
+    escaped = False
+    index = 0
+    while index < len(code):
+        char = code[index]
+        next_char = code[index + 1] if index + 1 < len(code) else ""
+
+        if in_comment:
+            if char == "*" and next_char == "/":
+                in_comment = False
+                index += 2
+                continue
+            index += 1
+            continue
+
+        if in_string:
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == in_string:
+                in_string = None
+            index += 1
+            continue
+
+        if char == "/" and next_char == "*":
+            in_comment = True
+            index += 2
+            continue
+        if char in {'"', "'"}:
+            in_string = char
+        elif char == "{":
+            depth += 1
+        elif char == "}":
+            if depth == 0:
+                line, column = _line_col(code, index)
+                issues.append(
+                    ValidationIssue(
+                        "error",
+                        f"{label} unexpected closing brace in CSS at line {line}, column {column}",
+                    )
+                )
+            else:
+                depth -= 1
+        index += 1
+
+    if depth:
+        issues.append(ValidationIssue("error", f"{label} has {depth} unclosed CSS block(s)"))
+    return issues
+
+
+def validate_inline_styles(label: str, html: str) -> list[ValidationIssue]:
+    issues: list[ValidationIssue] = []
+    style_re = re.compile(r"<style\b[^>]*>([\s\S]*?)</style>", re.IGNORECASE)
+    for index, match in enumerate(style_re.finditer(html), start=1):
+        code = match.group(1).strip()
+        if not code:
+            continue
+        issues.extend(validate_css_source(f"{label} inline style #{index}", code))
+    return issues
+
+
 def validate_inline_scripts(label: str, html: str) -> list[ValidationIssue]:
     issues: list[ValidationIssue] = []
     script_re = re.compile(r"<script\b(?![^>]*\bsrc\s*=)[^>]*>([\s\S]*?)</script>", re.IGNORECASE)
