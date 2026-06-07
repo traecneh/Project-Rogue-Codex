@@ -140,6 +140,63 @@ class ExtractorModuleTests(unittest.TestCase):
         self.assertIn("enrich_weapon_fields(fields)", weapon_source)
         self.assertIn("enrich_armor_fields(fields)", armor_source)
 
+    def test_monster_extractor_uses_shared_metadata_enrichment(self):
+        from tools.codex_pipeline.extractors.monster_metadata import (
+            ELEMENTAL_LABELS,
+            FLAG_BOSS,
+            FLAG_FLYING,
+            FLAG_THORNS,
+            STATUS_EFFECT_LABELS,
+            TATTER_LABELS,
+            TYPE_LABELS,
+            enrich_monster_fields,
+        )
+
+        self.assertEqual("Demon", TYPE_LABELS[3])
+        self.assertEqual("Cold", ELEMENTAL_LABELS[4])
+        self.assertEqual("Freeze", STATUS_EFFECT_LABELS[3856])
+        self.assertEqual("Frozen Heart", TATTER_LABELS[22])
+        fields = {
+            "type": 3,
+            "elemental_attack": 4,
+            "status_effect": 3856,
+            "uncommon_tatter": 22,
+            "rare_tatter": 999,
+            "total_flags": FLAG_FLYING | FLAG_BOSS | FLAG_THORNS | 0x0020,
+        }
+
+        warnings = enrich_monster_fields(fields, "Test Monster")
+
+        self.assertEqual("Demon", fields["type_label"])
+        self.assertEqual("Cold", fields["elemental_attack_label"])
+        self.assertEqual("Freeze", fields["status_effect_label"])
+        self.assertEqual("Frozen Heart", fields["uncommon_tatter_label"])
+        self.assertTrue(fields["is_flying"])
+        self.assertTrue(fields["is_boss"])
+        self.assertTrue(fields["has_thorns"])
+        self.assertFalse(fields["is_ethereal"])
+        self.assertEqual(
+            [
+                "Test Monster: unknown flag bits set in total_flags = 0x4260 "
+                "(extra 0x0020)",
+                "Test Monster: unknown tatter label(s): rare_tatter=999",
+            ],
+            warnings,
+        )
+
+        source = Path("tools/codex_pipeline/extractors/extract_monsters_data03.py").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("from tools.codex_pipeline.extractors.monster_metadata import", source)
+        self.assertIn("enrich_monster_fields(fields, name)", source)
+        self.assertNotIn("TYPE_LABELS = {", source)
+        self.assertNotIn("ELEMENTAL_LABELS = {", source)
+        self.assertNotIn("STATUS_EFFECT_LABELS = {", source)
+        self.assertNotIn("TATTER_LABELS = {", source)
+        self.assertNotIn("unknown_tatters = []", source)
+        self.assertNotIn("unknown_status_effect", source)
+        self.assertNotIn('fields["is_flying"] =', source)
+
     def test_extractors_use_named_field_schemas(self):
         from tools.codex_pipeline.extractors.field_schemas import (
             ARMOR_FIELD_NAMES,

@@ -62,7 +62,18 @@ try:
     from tools.codex_pipeline.extractors.field_schemas import (
         MONSTER_FIELD_NAMES,
         build_fields,
-        field_name,
+    )
+    from tools.codex_pipeline.extractors.monster_metadata import (
+        FLAG_BERSERKER,
+        FLAG_BLOCK,
+        FLAG_BOSS,
+        FLAG_ETHEREAL,
+        FLAG_FLYING,
+        FLAG_IMMOBILE,
+        FLAG_TARGET_HIT_RANGE_TRAP,
+        FLAG_THORNS,
+        KNOWN_FLAG_MASK,
+        enrich_monster_fields,
     )
     from tools.codex_pipeline.extractors.shared import (
         diff_json_records_by_id,
@@ -77,7 +88,18 @@ except ModuleNotFoundError:
     from field_schemas import (
         MONSTER_FIELD_NAMES,
         build_fields,
-        field_name,
+    )
+    from monster_metadata import (
+        FLAG_BERSERKER,
+        FLAG_BLOCK,
+        FLAG_BOSS,
+        FLAG_ETHEREAL,
+        FLAG_FLYING,
+        FLAG_IMMOBILE,
+        FLAG_TARGET_HIT_RANGE_TRAP,
+        FLAG_THORNS,
+        KNOWN_FLAG_MASK,
+        enrich_monster_fields,
     )
     from shared import (
         diff_json_records_by_id,
@@ -91,106 +113,6 @@ except ModuleNotFoundError:
 
 XOR_KEY_WORD = 0xD4D4
 WORDS_PER_RECORD = 270
-FLAG_TARGET_HIT_RANGE_TRAP = 0x8000
-FLAG_FLYING = 0x0200
-FLAG_ETHEREAL = 0x0100
-FLAG_BOSS = 0x0040
-FLAG_BERSERKER = 0x0004
-FLAG_BLOCK = 0x0001
-FLAG_IMMOBILE = 0x0002
-FLAG_THORNS = 0x4000
-KNOWN_FLAG_MASK = (
-    FLAG_TARGET_HIT_RANGE_TRAP
-    | FLAG_FLYING
-    | FLAG_ETHEREAL
-    | FLAG_BOSS
-    | FLAG_BERSERKER
-    | FLAG_BLOCK
-    | FLAG_IMMOBILE
-    | FLAG_THORNS
-)
-
-# Value labels for mapped fields
-TYPE_LABELS = {
-    0: "None",
-    1: "Fire Beast",
-    2: "Electrical Beast",
-    3: "Demon",
-    4: "Animal",
-    5: "Beast",
-    6: "Human",
-    7: "Giant",
-    8: "Undead",
-    9: "Ice Beast",
-    10: "Poison Beast",
-    11: "Disease Beast",
-}
-
-ELEMENTAL_LABELS = {
-    0: "None",
-    1: "Fire",
-    2: "Electric",
-    4: "Cold",
-    6: "Acid",
-    7: "Poison",
-    8: "Disease",
-}
-
-STATUS_EFFECT_LABELS = {
-    1286: "Bleed",
-    2564: "Shock",
-    3841: "Poison",
-    3842: "Disease",
-    3856: "Freeze",
-    5121: "Poison",
-    5122: "Disease",
-    5126: "Bleed",
-}
-
-TATTER_LABELS = {
-    0: "None",
-    1: "Lifesteal",
-    2: "Bloodthirster",
-    3: "Rejuvenation",
-    4: "Antitoxin",
-    5: "Immunization",
-    6: "Vitality",
-    7: "Bolstered Strength",
-    9: "Magic Shield",
-    10: "Juggernaut",
-    11: "Parry",
-    12: "Alchemist",
-    13: "Knowledge",
-    14: "Moneybags",
-    21: "Demon Blood",
-    22: "Frozen Heart",
-    23: "Lightning Field",
-    24: "Tourniquet",
-    25: "Hazmat",
-    26: "Antacid",
-    29: "Vampirism",
-    30: "Garrote",
-    31: "Brutality",
-    32: "Tenacity",
-    33: "Swiftness",
-    35: "Epidemic",
-    36: "Lethal Toxins",
-    37: "Destruction",
-    38: "Impenetrable",
-    39: "Hawkeye",
-    40: "Overpower",
-    41: "Demonsbane",
-    42: "Beastslayer",
-    43: "Executioner",
-    44: "Consecration",
-    45: "Venomshock",
-    46: "Iceshatter",
-    47: "Desperation",
-    48: "Bloodlust",
-    49: "Slayer",
-    51: "Critical Aegis",
-    52: "Toxic Shell",
-}
 
 
 def parse_data03(path: Path):
@@ -210,61 +132,8 @@ def parse_data03(path: Path):
             skipped += 1
             continue
 
-        unknown_tatters = []
-        unknown_status_effect = None
         fields = build_fields(rec_words, varying_indices, MONSTER_FIELD_NAMES)
-        for i in varying_indices:
-            fname = field_name(MONSTER_FIELD_NAMES, i)
-            value = rec_words[i]
-            if i == 15:
-                label = TYPE_LABELS.get(value)
-                if label is not None:
-                    fields[f"{fname}_label"] = label
-            elif i == 28:
-                label = ELEMENTAL_LABELS.get(value)
-                if label is not None:
-                    fields[f"{fname}_label"] = label
-            elif i == 29:
-                if value != 0:
-                    label = STATUS_EFFECT_LABELS.get(value)
-                    if label is not None:
-                        fields[f"{fname}_label"] = label
-                    else:
-                        unknown_status_effect = value
-            elif i in (174, 175):
-                label = TATTER_LABELS.get(value)
-                if label is not None:
-                    fields[f"{fname}_label"] = label
-                else:
-                    unknown_tatters.append(f"{fname}={value}")
-
-        # Derive booleans from the flag word (total_flags).
-        flag_val = fields.get("total_flags", 0)
-        fields["is_target_when_hit_ranged_trapped"] = bool(
-            flag_val & FLAG_TARGET_HIT_RANGE_TRAP
-        )
-        fields["is_flying"] = bool(flag_val & FLAG_FLYING)
-        fields["is_ethereal"] = bool(flag_val & FLAG_ETHEREAL)
-        fields["is_boss"] = bool(flag_val & FLAG_BOSS)
-        fields["is_berserker"] = bool(flag_val & FLAG_BERSERKER)
-        fields["is_target_when_blocked"] = bool(flag_val & FLAG_BLOCK)
-        fields["is_immobile"] = bool(flag_val & FLAG_IMMOBILE)
-        fields["has_thorns"] = bool(flag_val & FLAG_THORNS)
-
-        # Flag any unexpected bits for later warning output.
-        unknown_bits = flag_val & ~KNOWN_FLAG_MASK
-        if unknown_bits:
-            warnings.append(
-                f"{name}: unknown flag bits set in total_flags = 0x{flag_val:04X} "
-                f"(extra 0x{unknown_bits:04X})"
-            )
-
-        if unknown_tatters:
-            warnings.append(f"{name}: unknown tatter label(s): {', '.join(unknown_tatters)}")
-        if unknown_status_effect is not None:
-            warnings.append(
-                f"{name}: unknown status_effect label for value {unknown_status_effect}"
-            )
+        warnings.extend(enrich_monster_fields(fields, name))
 
         monster = {
             "id": idx,
