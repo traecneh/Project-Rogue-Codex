@@ -20,6 +20,7 @@ from tools.codex_pipeline.validators.site import (
     read_json,
     validate_drop_references,
     validate_inline_scripts,
+    validate_javascript_file,
     validate_manifest_entries,
 )
 
@@ -27,6 +28,10 @@ from tools.codex_pipeline.validators.site import (
 VALIDATED_HTML_PATHS = [
     REPO_ROOT / "pages" / "items" / "armors.html",
     REPO_ROOT / "pages" / "enemies" / "monsters.html",
+]
+
+VALIDATED_SCRIPT_PATHS = [
+    REPO_ROOT / "js" / "utils.js",
 ]
 
 
@@ -116,6 +121,13 @@ def collect_validation_issues() -> list[ValidationIssue]:
             issues.append(ValidationIssue("error", f"{path} failed to read HTML: {exc}"))
             continue
         issues.extend(validate_inline_scripts(label, html))
+
+    for path in VALIDATED_SCRIPT_PATHS:
+        try:
+            label = str(path.relative_to(REPO_ROOT))
+        except ValueError:
+            label = str(path)
+        issues.extend(validate_javascript_file(label, path))
     return issues
 
 

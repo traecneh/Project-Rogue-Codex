@@ -146,3 +146,44 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn("manifest must be a list", messages)
         self.assertIn("failed to read manifest", messages)
         self.assertIn("failed to read HTML", messages)
+
+    def test_cli_validates_configured_external_javascript_files(self):
+        from tools.codex_pipeline import cli
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            weapons_data = root / "weapons.json"
+            armors_data = root / "armors.json"
+            monsters_data = root / "monsters.json"
+            drop_sources = root / "drop_sources.json"
+            html = root / "page.html"
+            script = root / "broken.js"
+            weapon_images = root / "weapons"
+            armor_images = root / "armors"
+            monster_images = root / "monsters"
+            for folder in [weapon_images, armor_images, monster_images]:
+                folder.mkdir()
+                (folder / "manifest.json").write_text("[]", encoding="utf-8")
+
+            weapons_data.write_text("[]", encoding="utf-8")
+            armors_data.write_text("[]", encoding="utf-8")
+            monsters_data.write_text("[]", encoding="utf-8")
+            drop_sources.write_text('{"schemaVersion": 1, "armors": {}, "weapons": {}}', encoding="utf-8")
+            html.write_text("<html><body><script>const ok = 1;</script></body></html>", encoding="utf-8")
+            script.write_text("const broken = ;", encoding="utf-8")
+
+            with (
+                patch.object(cli, "DROP_SOURCES_PATH", drop_sources),
+                patch.object(cli, "WEAPONS_DATA_PATH", weapons_data),
+                patch.object(cli, "ARMORS_DATA_PATH", armors_data),
+                patch.object(cli, "MONSTERS_DATA_PATH", monsters_data),
+                patch.object(cli, "WEAPON_IMAGES_DIR", weapon_images),
+                patch.object(cli, "ARMOR_IMAGES_DIR", armor_images),
+                patch.object(cli, "MONSTER_IMAGES_DIR", monster_images),
+                patch.object(cli, "VALIDATED_HTML_PATHS", [html]),
+                patch.object(cli, "VALIDATED_SCRIPT_PATHS", [script]),
+            ):
+                issues = cli.collect_validation_issues()
+
+        messages = "\n".join(issue.message for issue in issues)
+        self.assertIn("broken.js failed parse", messages)

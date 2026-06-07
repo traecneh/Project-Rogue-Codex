@@ -67,6 +67,32 @@ def validate_drop_references(
     return issues
 
 
+def validate_javascript_source(label: str, code: str) -> list[ValidationIssue]:
+    try:
+        completed = subprocess.run(
+            ["node", "--check", "-"],
+            input=code,
+            text=True,
+            capture_output=True,
+        )
+    except FileNotFoundError:
+        return [ValidationIssue("error", f"{label} node executable not found")]
+    if completed.returncode == 0:
+        return []
+
+    lines = (completed.stderr or completed.stdout).strip().splitlines()
+    detail = lines[0] if lines else "node --check returned no output"
+    return [ValidationIssue("error", f"{label} failed parse: {detail}")]
+
+
+def validate_javascript_file(label: str, path: Path) -> list[ValidationIssue]:
+    try:
+        code = path.read_text(encoding="utf-8")
+    except OSError as exc:
+        return [ValidationIssue("error", f"{label} failed to read JavaScript: {exc}")]
+    return validate_javascript_source(label, code)
+
+
 def validate_inline_scripts(label: str, html: str) -> list[ValidationIssue]:
     issues: list[ValidationIssue] = []
     script_re = re.compile(r"<script\b(?![^>]*\bsrc\s*=)[^>]*>([\s\S]*?)</script>", re.IGNORECASE)
@@ -74,18 +100,5 @@ def validate_inline_scripts(label: str, html: str) -> list[ValidationIssue]:
         code = match.group(1).strip()
         if not code:
             continue
-        try:
-            completed = subprocess.run(
-                ["node", "--check", "-"],
-                input=code,
-                text=True,
-                capture_output=True,
-            )
-        except FileNotFoundError:
-            issues.append(ValidationIssue("error", f"{label} inline script #{index} node executable not found"))
-            continue
-        if completed.returncode != 0:
-            lines = (completed.stderr or completed.stdout).strip().splitlines()
-            detail = lines[0] if lines else "node --check returned no output"
-            issues.append(ValidationIssue("error", f"{label} inline script #{index} failed parse: {detail}"))
+        issues.extend(validate_javascript_source(f"{label} inline script #{index}", code))
     return issues
