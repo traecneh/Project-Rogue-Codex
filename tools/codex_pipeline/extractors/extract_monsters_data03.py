@@ -61,6 +61,7 @@ from pathlib import Path
 try:
     from tools.codex_pipeline.extractors.field_schemas import (
         MONSTER_FIELD_NAMES,
+        build_fields,
         field_name,
     )
     from tools.codex_pipeline.extractors.shared import (
@@ -75,6 +76,7 @@ try:
 except ModuleNotFoundError:
     from field_schemas import (
         MONSTER_FIELD_NAMES,
+        build_fields,
         field_name,
     )
     from shared import (
@@ -210,11 +212,10 @@ def parse_data03(path: Path):
 
         unknown_tatters = []
         unknown_status_effect = None
-        fields = {}
+        fields = build_fields(rec_words, varying_indices, MONSTER_FIELD_NAMES)
         for i in varying_indices:
             fname = field_name(MONSTER_FIELD_NAMES, i)
             value = rec_words[i]
-            fields[fname] = value
             if i == 15:
                 label = TYPE_LABELS.get(value)
                 if label is not None:

@@ -36,7 +36,7 @@ from pathlib import Path
 try:
     from tools.codex_pipeline.extractors.field_schemas import (
         WEAPON_FIELD_NAMES,
-        field_name,
+        build_fields,
     )
     from tools.codex_pipeline.extractors.item_metadata import (
         PERK_LABELS,
@@ -59,7 +59,7 @@ try:
 except ModuleNotFoundError:
     from field_schemas import (
         WEAPON_FIELD_NAMES,
-        field_name,
+        build_fields,
     )
     from item_metadata import (
         PERK_LABELS,
@@ -95,10 +95,7 @@ def parse_data05(path: Path):
     skipped = 0
 
     for rec_index, rec_words in enumerate(records):
-        fields = {}
-        for i in varying_indices:
-            fname = field_name(WEAPON_FIELD_NAMES, i)
-            fields[fname] = rec_words[i]
+        fields = build_fields(rec_words, varying_indices, WEAPON_FIELD_NAMES)
 
         # Skip disabled weapon types (bows/crossbows) before name extraction/output.
         if rec_words[22] in (7, 8):

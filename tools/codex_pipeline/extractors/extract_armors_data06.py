@@ -36,7 +36,7 @@ from pathlib import Path
 try:
     from tools.codex_pipeline.extractors.field_schemas import (
         ARMOR_FIELD_NAMES,
-        field_name,
+        build_fields,
     )
     from tools.codex_pipeline.extractors.item_metadata import (
         ARMOR_SLOT_LABELS,
@@ -57,7 +57,7 @@ try:
 except ModuleNotFoundError:
     from field_schemas import (
         ARMOR_FIELD_NAMES,
-        field_name,
+        build_fields,
     )
     from item_metadata import (
         ARMOR_SLOT_LABELS,
@@ -91,10 +91,7 @@ def parse_data06(path: Path):
     skipped = 0
 
     for rec_index, rec_words in enumerate(records):
-        fields = {}
-        for i in varying_indices:
-            fname = field_name(ARMOR_FIELD_NAMES, i)
-            fields[fname] = rec_words[i]
+        fields = build_fields(rec_words, varying_indices, ARMOR_FIELD_NAMES)
 
         # Skip disabled slots (not enabled in game)
         if rec_words[19] in (15, 16):

@@ -102,6 +102,7 @@ class ExtractorModuleTests(unittest.TestCase):
             ARMOR_FIELD_NAMES,
             MONSTER_FIELD_NAMES,
             WEAPON_FIELD_NAMES,
+            build_fields,
             field_name,
         )
 
@@ -112,13 +113,22 @@ class ExtractorModuleTests(unittest.TestCase):
         self.assertEqual("proc_chance", WEAPON_FIELD_NAMES[28])
         self.assertEqual("armor", ARMOR_FIELD_NAMES[13])
         self.assertEqual("player_level_requirement", ARMOR_FIELD_NAMES[17])
+        record_words = [0] * 1000
+        record_words[22] = 7
+        record_words[777] = 99
+        self.assertEqual(
+            {"subtype": 7, "unknown_777": 99},
+            build_fields(record_words, [22, 777], WEAPON_FIELD_NAMES),
+        )
 
         extractors_dir = Path("tools/codex_pipeline/extractors")
         for script_path in extractors_dir.glob("extract_*_data*.py"):
             source = script_path.read_text(encoding="utf-8")
             self.assertIn("from tools.codex_pipeline.extractors.field_schemas import", source)
+            self.assertIn("build_fields(", source)
             self.assertNotIn("known_names = {", source)
             self.assertNotIn("def field_name(", source)
+            self.assertNotIn("fields = {}\n        for i in varying_indices:", source)
 
     def test_extractor_scripts_use_shared_helpers_and_expose_parsers(self):
         from tools.codex_pipeline.extractors import (

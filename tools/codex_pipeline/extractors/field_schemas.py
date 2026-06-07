@@ -100,3 +100,14 @@ ARMOR_FIELD_NAMES = {
 
 def field_name(field_names: Mapping[int, str], index: int) -> str:
     return field_names.get(index, f"unknown_{index}")
+
+
+def build_fields(
+    record_words: list[int],
+    varying_indices: list[int],
+    field_names: Mapping[int, str],
+) -> dict[str, int]:
+    return {
+        field_name(field_names, index): record_words[index]
+        for index in varying_indices
+    }
