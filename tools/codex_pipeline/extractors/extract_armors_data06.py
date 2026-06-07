@@ -318,7 +318,7 @@ def parse_data06(path: Path):
             fields[fname] = rec_words[i]
 
         # Skip disabled slots (not enabled in game)
-        if fields.get("slot") in (15, 16):
+        if rec_words[19] in (15, 16):
             skipped += 1
             continue
 

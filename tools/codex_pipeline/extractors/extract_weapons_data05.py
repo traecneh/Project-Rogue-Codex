@@ -325,7 +325,7 @@ def parse_data05(path: Path):
             fields[fname] = rec_words[i]
 
         # Skip disabled weapon types (bows/crossbows) before name extraction/output.
-        if fields.get("subtype") in (7, 8):
+        if rec_words[22] in (7, 8):
             skipped += 1
             continue
 
