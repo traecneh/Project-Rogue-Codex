@@ -7,6 +7,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 CLIENT_ROOT = Path(r"C:\Users\traec\Desktop\Client")
 CLIENT_DATA_DIR = CLIENT_ROOT / "data"
 CLIENT_GF_JSON_DIR = CLIENT_ROOT / "gf_json"
+EXTRACTORS_DIR = REPO_ROOT / "tools" / "codex_pipeline" / "extractors"
 
 DROP_SOURCES_PATH = REPO_ROOT / "data" / "codex-overrides" / "drop_sources.json"
 PERK_LABEL_OVERRIDES_PATH = REPO_ROOT / "data" / "codex-overrides" / "perk_labels.json"

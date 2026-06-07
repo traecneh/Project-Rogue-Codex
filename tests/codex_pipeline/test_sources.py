@@ -8,6 +8,22 @@ from tools.codex_pipeline.exports import ExportTarget
 
 
 class SourceDoctorTests(unittest.TestCase):
+    def test_default_export_targets_use_repo_owned_extractors_and_client_data(self):
+        from tools.codex_pipeline.config import CLIENT_DATA_DIR, REPO_ROOT
+        from tools.codex_pipeline.exports import DEFAULT_EXPORT_TARGETS
+
+        extractors_dir = REPO_ROOT / "tools" / "codex_pipeline" / "extractors"
+
+        for target in DEFAULT_EXPORT_TARGETS.values():
+            self.assertTrue(
+                target.extractor_script.is_relative_to(extractors_dir),
+                f"{target.name} extractor is not repo-owned: {target.extractor_script}",
+            )
+            self.assertTrue(
+                target.source_data.is_relative_to(CLIENT_DATA_DIR),
+                f"{target.name} source data should remain in client data: {target.source_data}",
+            )
+
     def test_validate_export_sources_reports_ready_target(self):
         from tools.codex_pipeline.sources import validate_export_sources
 

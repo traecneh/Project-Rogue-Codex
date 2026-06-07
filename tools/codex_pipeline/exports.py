@@ -12,6 +12,7 @@ from typing import Any, Iterable, Sequence
 from tools.codex_pipeline.config import (
     ARMORS_DATA_PATH,
     CLIENT_DATA_DIR,
+    EXTRACTORS_DIR,
     GENERATED_OUTPUT_DIR,
     MONSTERS_DATA_PATH,
     PERK_LABEL_OVERRIDES_PATH,
@@ -84,21 +85,21 @@ class DataDiffReport:
 DEFAULT_EXPORT_TARGETS: dict[str, ExportTarget] = {
     "monsters": ExportTarget(
         name="monsters",
-        extractor_script=CLIENT_DATA_DIR / "extract_monsters_data03.py",
+        extractor_script=EXTRACTORS_DIR / "extract_monsters_data03.py",
         source_data=CLIENT_DATA_DIR / "data03.dat",
         output_filename="monsters_data03.json",
         site_path=MONSTERS_DATA_PATH,
     ),
     "weapons": ExportTarget(
         name="weapons",
-        extractor_script=CLIENT_DATA_DIR / "extract_weapons_data05.py",
+        extractor_script=EXTRACTORS_DIR / "extract_weapons_data05.py",
         source_data=CLIENT_DATA_DIR / "data05.dat",
         output_filename="weapons_data05.json",
         site_path=WEAPONS_DATA_PATH,
     ),
     "armors": ExportTarget(
         name="armors",
-        extractor_script=CLIENT_DATA_DIR / "extract_armors_data06.py",
+        extractor_script=EXTRACTORS_DIR / "extract_armors_data06.py",
         source_data=CLIENT_DATA_DIR / "data06.dat",
         output_filename="armors_data06.json",
         site_path=ARMORS_DATA_PATH,
