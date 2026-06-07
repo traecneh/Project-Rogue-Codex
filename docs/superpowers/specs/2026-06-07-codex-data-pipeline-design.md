@@ -122,6 +122,7 @@ The command surface should be small:
 ```powershell
 python -m tools.codex_pipeline validate
 python -m tools.codex_pipeline doctor
+python -m tools.codex_pipeline drop-report
 python -m tools.codex_pipeline export-client-data
 python -m tools.codex_pipeline unknown-fields
 python -m tools.codex_pipeline diff-generated
@@ -133,6 +134,7 @@ Command behavior:
 
 - `validate`: read current site outputs and overrides, then report data, image, manifest, and drop-source issues.
 - `doctor`: check extractor scripts, source `.dat` files, destination folders, and extractor syntax before export.
+- `drop-report`: audit drop-source overrides and the derived monster loot view.
 - `export-client-data`: produce weapon, armor, and monster JSON from source data into an intermediate output folder.
 - `unknown-fields`: inventory `unknown_*` fields in site or generated data for mapping research.
 - `diff-generated`: compare generated output against the current site JSON before copying files.

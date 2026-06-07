@@ -81,6 +81,8 @@ Important commands:
 - `validate`: validates site JSON, overrides, image manifests, inline page
   scripts, configured JavaScript files, drop references, and corrupted perk
   labels.
+- `drop-report`: audits drop-source overrides and prints both the item-centric
+  source view and derived monster-centric loot view.
 - `verify-live`: fetches the deployed GitHub Pages site and confirms live JSON
   matches local site JSON.
 
@@ -94,6 +96,8 @@ Core package:
 - `tools/codex_pipeline/cli.py`: command dispatch and validation orchestration.
 - `tools/codex_pipeline/config.py`: repository paths, external client paths, site
   data paths, override paths, and image directories.
+- `tools/codex_pipeline/drop_audit.py`: drop-source audit report assembly and
+  validation issue collection.
 - `tools/codex_pipeline/exports.py`: export target definitions, extractor
   subprocess execution, generated-output normalization, diff reporting, and site
   sync.

@@ -16,6 +16,7 @@ from tools.codex_pipeline.config import (
     WEAPON_IMAGES_DIR,
     WEAPONS_DATA_PATH,
 )
+from tools.codex_pipeline.drop_audit import build_drop_source_audit_report
 from tools.codex_pipeline.drops import load_drop_sources
 from tools.codex_pipeline.deploy import DEFAULT_LIVE_SITE_URL, verify_live_site
 from tools.codex_pipeline.exports import (
@@ -66,6 +67,7 @@ def build_parser() -> argparse.ArgumentParser:
             "doctor",
             "validate-sources",
             "unknown-fields",
+            "drop-report",
         ],
     )
     parser.add_argument(
@@ -388,6 +390,37 @@ def run_unknown_fields(args: argparse.Namespace) -> int:
     return 0
 
 
+def _print_drop_report(report) -> None:
+    print(
+        f"DROP SOURCES: {report.item_override_count} item override(s), "
+        f"{report.monster_count} monster loot view(s) ({report.drop_sources_path})"
+    )
+    print(f"DROP VALIDATION: {len(report.validation_issues)} issue(s)")
+    for issue in report.validation_issues:
+        print(f"DROP ISSUE {issue.severity.upper()}: {issue.message}")
+
+    for item in report.item_overrides:
+        print(f"ITEM {item.kind} {item.item_name}: {', '.join(item.monster_names)}")
+
+    for monster in report.monster_loot:
+        parts = []
+        if monster.armors:
+            parts.append(f"armors={', '.join(monster.armors)}")
+        if monster.weapons:
+            parts.append(f"weapons={', '.join(monster.weapons)}")
+        print(f"MONSTER {monster.monster_name} [{monster.monster_slug}]: {'; '.join(parts)}")
+
+
+def run_drop_report() -> int:
+    try:
+        report = build_drop_source_audit_report()
+    except ExportError as exc:
+        print(f"ERROR: {exc}")
+        return 1
+    _print_drop_report(report)
+    return 0 if not any(issue.severity == "error" for issue in report.validation_issues) else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -407,5 +440,7 @@ def main(argv: list[str] | None = None) -> int:
         return run_doctor(args)
     if args.command == "unknown-fields":
         return run_unknown_fields(args)
+    if args.command == "drop-report":
+        return run_drop_report()
     parser.error(f"Unsupported command: {args.command}")
     return 2
