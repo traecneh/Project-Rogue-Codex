@@ -1041,6 +1041,12 @@
             ));
         const loadAllowlists =
           typeof utils.loadAllowlists === "function" ? () => utils.loadAllowlists() : () => Promise.resolve(null);
+        const loadDropSources =
+          typeof utils.loadDropSources === "function" ? () => utils.loadDropSources() : () => Promise.resolve(null);
+        let dropSources =
+          typeof utils.createEmptyDropSources === "function"
+            ? utils.createEmptyDropSources()
+            : { armors: {}, weapons: {}, reverse: { armors: {}, weapons: {} } };
         let allowedMonsterNames = new Set();
         let hiddenWeaponNames = new Set();
         let hiddenArmorNames = new Set();
@@ -1296,29 +1302,6 @@
         if (searchInput && searchTerm) {
           searchInput.value = searchTerm;
         }
-
-        const UNIQUE_WEAPON_DROPS = {
-          "rune-warrior": ["Rune Sword"],
-          "balron": ["Rune Sword"],
-          "demon-lord": ["Rune Sword"],
-          "banished-knight": ["Vengeance Hammer"],
-          "banished-warden": ["Vengeance Hammer"],
-        };
-
-        const UNIQUE_ARMOR_DROPS = {
-          "dark-monk": ["Mystic Robe"],
-          "ice-devil": ["Iceburst Amulet"],
-          "greater-yeti": ["Iceburst Amulet"],
-          "balron": ["Rune Armor", "Rune Lord's Robe", "Rune Helmet"],
-          "demon-lord": ["Rune Armor", "Rune Lord's Robe", "Rune Helmet"],
-          "hell-spawn": ["Rune Lord's Robe", "Rune Shield", "Rune Leggings"],
-          "werewolf": ["Rune Shield"],
-          "demon": ["Rune Shield", "Rune Gauntlets"],
-          "infernal": ["Rune Shield", "Rune Gauntlets"],
-          "banished-spirit": ["Banished Gauntlets", "Banished Shield"],
-          "banished-knight": ["Banished Platemail", "Banished Helmet"],
-          "banished-soldier": ["Banished Leggings", "Banished Shield"],
-        };
 
       const renderEmpty = (message) => {
         tableBody.innerHTML = `<tr><td class="table-empty" colspan="8">${message}</td></tr>`;
@@ -1999,10 +1982,10 @@
             tooltip.className = "detail-tooltip";
             tooltip.role = "tooltip";
 
-            const monsterKey = normalizeMonsterId(monster.name || monster.id);
-            const uniqueDropNames = Array.isArray(UNIQUE_WEAPON_DROPS[monsterKey])
-              ? UNIQUE_WEAPON_DROPS[monsterKey]
-              : [];
+            const uniqueDropNames =
+              typeof utils.getDropSourceItemNamesByMonster === "function"
+                ? utils.getDropSourceItemNamesByMonster(dropSources, "weapons", monster.name || monster.id)
+                : [];
             const uniqueDropList = Array.from(
               new Set(uniqueDropNames.map((name) => String(name || "").trim()).filter(Boolean))
             )
@@ -2109,10 +2092,10 @@
             armorTooltip.className = "detail-tooltip";
             armorTooltip.role = "tooltip";
 
-            const armorMonsterKey = normalizeMonsterId(monster.name || monster.id);
-            const uniqueArmorNames = Array.isArray(UNIQUE_ARMOR_DROPS[armorMonsterKey])
-              ? UNIQUE_ARMOR_DROPS[armorMonsterKey]
-              : [];
+            const uniqueArmorNames =
+              typeof utils.getDropSourceItemNamesByMonster === "function"
+                ? utils.getDropSourceItemNamesByMonster(dropSources, "armors", monster.name || monster.id)
+                : [];
             const uniqueArmorList = Array.from(
               new Set(uniqueArmorNames.map((name) => String(name || "").trim()).filter(Boolean))
             )
@@ -2740,14 +2723,20 @@
             fetchJsonCached(new URL("../items/armors_data06.json", window.location.href).toString()),
             fetchJsonCached(resistancesUrl),
             loadAllowlists(),
+            loadDropSources(),
           ])
-            .then(([monsterData, weaponData, armorData, resistancesData, allowlists]) => {
+            .then(([monsterData, weaponData, armorData, resistancesData, allowlists, loadedDropSources]) => {
               const map =
                 resistancesData && typeof resistancesData === "object" ? resistancesData.typeResistances : null;
               if (map && typeof map === "object") {
                 TYPE_RESISTANCES = map;
               }
               applyAllowlists(allowlists);
+              dropSources =
+                loadedDropSources ||
+                (typeof utils.createEmptyDropSources === "function"
+                  ? utils.createEmptyDropSources()
+                  : dropSources);
               monsters = normalizeMonsters(Array.isArray(monsterData) ? monsterData : []);
               weapons = Array.isArray(weaponData)
                 ? weaponData
