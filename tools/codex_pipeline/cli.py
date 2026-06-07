@@ -17,6 +17,7 @@ from tools.codex_pipeline.config import (
     WEAPONS_DATA_PATH,
 )
 from tools.codex_pipeline.drops import load_drop_sources
+from tools.codex_pipeline.deploy import DEFAULT_LIVE_SITE_URL, verify_live_site
 from tools.codex_pipeline.exports import (
     DEFAULT_EXPORT_TARGETS,
     ExportError,
@@ -59,6 +60,7 @@ def build_parser() -> argparse.ArgumentParser:
             "sync-generated",
             "diff-generated",
             "export-sync",
+            "verify-live",
         ],
     )
     parser.add_argument(
@@ -78,6 +80,17 @@ def build_parser() -> argparse.ArgumentParser:
         "--dry-run",
         action="store_true",
         help="For sync-generated/export-sync, report site file changes without copying.",
+    )
+    parser.add_argument(
+        "--site-url",
+        default=DEFAULT_LIVE_SITE_URL,
+        help="Public site URL for verify-live.",
+    )
+    parser.add_argument(
+        "--timeout-seconds",
+        type=float,
+        default=20,
+        help="HTTP timeout for verify-live requests.",
     )
     return parser
 
@@ -297,6 +310,14 @@ def run_export_sync(args: argparse.Namespace) -> int:
     return run_sync_generated(args)
 
 
+def run_verify_live(args: argparse.Namespace) -> int:
+    results = verify_live_site(args.site_url, timeout_seconds=args.timeout_seconds)
+    for result in results:
+        status = "OK" if result.ok else "ERROR"
+        print(f"LIVE {status} {result.label}: {result.message} ({result.url})")
+    return 0 if all(result.ok for result in results) else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -310,5 +331,7 @@ def main(argv: list[str] | None = None) -> int:
         return run_diff_generated(args)
     if args.command == "export-sync":
         return run_export_sync(args)
+    if args.command == "verify-live":
+        return run_verify_live(args)
     parser.error(f"Unsupported command: {args.command}")
     return 2

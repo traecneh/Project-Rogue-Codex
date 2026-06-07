@@ -51,3 +51,17 @@ python -m tools.codex_pipeline export-sync
 ```
 
 Use `--target monsters`, `--target weapons`, or `--target armors` to run a narrower export or sync.
+
+The static site is published from `origin/main` to:
+
+```text
+https://traecneh.github.io/Project-Rogue-Codex/
+```
+
+After pushing `main`, verify the public site and deployed JSON data match the local site data:
+
+```powershell
+python -m tools.codex_pipeline verify-live
+```
+
+Use `--site-url` if the deployment target changes.
