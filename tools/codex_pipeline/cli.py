@@ -47,17 +47,22 @@ from tools.codex_pipeline.validators.site import (
 
 
 VALIDATED_HTML_PATHS = [
+    REPO_ROOT / "pages" / "items" / "weapons.html",
     REPO_ROOT / "pages" / "items" / "armors.html",
     REPO_ROOT / "pages" / "enemies" / "monsters.html",
 ]
 
 VALIDATED_STYLE_PATHS = [
     REPO_ROOT / "css" / "styles.css",
+    REPO_ROOT / "css" / "weapons.css",
+    REPO_ROOT / "css" / "armors.css",
     REPO_ROOT / "css" / "monsters.css",
 ]
 
 VALIDATED_SCRIPT_PATHS = [
     REPO_ROOT / "js" / "utils.js",
+    REPO_ROOT / "js" / "weapons-page.js",
+    REPO_ROOT / "js" / "armors-page.js",
     REPO_ROOT / "js" / "monsters-page.js",
 ]
 

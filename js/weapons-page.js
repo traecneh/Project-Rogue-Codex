@@ -1,0 +1,1500 @@
+(() => {
+  const PAGE = {
+    title: "Weapons",
+    dataFile: "weapons_data05.json",
+  };
+
+  const WEAPONS_SCHEMA_VERSION = 5;
+  const dataUrl = (() => {
+    const resolved = new URL(PAGE.dataFile, window.location.href);
+    if (resolved.protocol === "http:" || resolved.protocol === "https:") {
+      resolved.searchParams.set("v", String(WEAPONS_SCHEMA_VERSION));
+    }
+    return resolved;
+  })();
+  const searchInput = document.getElementById("item-search");
+  const typeFilter = document.getElementById("filter-type");
+  const elementFilter = document.getElementById("filter-element");
+  const attackSpeedFilter = document.getElementById("filter-attack-speed");
+  const tableHeadRow = document.getElementById("items-head-row");
+  const tableBody = document.getElementById("items-body");
+  const countLabel = document.getElementById("item-count");
+  const details = document.getElementById("item-details");
+  const closeBtn = document.getElementById("details-close");
+
+  const detailFields = {
+    name: document.getElementById("details-name"),
+    image: document.getElementById("details-image"),
+    imageFallback: document.getElementById("details-image-fallback"),
+    properties: document.getElementById("details-properties"),
+  };
+
+  const utils = window.RogueCodexUtils || {};
+  const fetchJsonCached =
+    utils.fetchJsonCached ||
+    ((targetUrl) =>
+      fetch(targetUrl)
+        .then((res) => (res.ok ? res.json() : null))
+        .catch(() => null));
+  const normalizeFilterValue =
+    utils.normalizeFilterValue || ((value) => (value || "").toString().trim().toLowerCase());
+  const ELEMENT_COLORS = utils.ELEMENT_COLORS || {};
+  const getElementColor =
+    utils.getElementColor || ((value) => ELEMENT_COLORS[normalizeFilterValue(value)] || "");
+  const createElementBadge =
+    utils.createElementBadge ||
+    ((value) => {
+      const span = document.createElement("span");
+      span.textContent = formatValue(value);
+      const color = getElementColor(value);
+      if (color) span.style.color = color;
+      return span;
+    });
+  const createPerkBadge =
+    utils.createPerkBadge ||
+    ((value) => {
+      const span = document.createElement("span");
+      span.textContent = formatValue(value);
+      return span;
+    });
+  const getPerkTierColor = utils.getPerkTierColor || (() => "");
+
+  const RESISTANCE_LABELS = {
+    fire: "Fire Resistance",
+    cold: "Cold Resistance",
+    electric: "Electric Resistance",
+    acid: "Acid Resistance",
+    poison: "Poison Resistance",
+    disease: "Disease Resistance",
+  };
+
+  const STAT_LABELS = {
+    strength: "Strength",
+    dexterity: "Dexterity",
+    constitution: "Constitution",
+  };
+
+  const RARITY_MULTIPLIERS = [
+    { key: "normal", label: "Normal", multiplier: 1 },
+    { key: "uncommon", label: "Uncommon", multiplier: 2 },
+    { key: "rare", label: "Rare", multiplier: 4 },
+    { key: "epic", label: "Epic", multiplier: 6 },
+    { key: "legendary", label: "Legendary", multiplier: 8 },
+    { key: "mythical", label: "Mythical", multiplier: 10 },
+    { key: "ascendant", label: "Ascendant", multiplier: 12 },
+  ];
+  const RARITY_KEY_INDEX = new Map(
+    RARITY_MULTIPLIERS.map((rarity, index) => [rarity.key, index])
+  );
+
+  const getMaxRarityIndex = (maxRarity) => {
+    if (maxRarity === null || maxRarity === undefined || maxRarity === "") return null;
+    const numeric = Number(maxRarity);
+    if (Number.isFinite(numeric)) {
+      if (numeric < 0) return null;
+      return Math.min(Math.floor(numeric), RARITY_MULTIPLIERS.length - 1);
+    }
+    let label = normalizeFilterValue(maxRarity);
+    if (!label) return null;
+    if (label.includes("regular")) {
+      const parts = label.split("-").map((part) => part.trim());
+      label = parts.length > 1 ? parts[1] : label.replace("regular", "").trim();
+    }
+    const labelNumber = Number(label);
+    if (Number.isFinite(labelNumber)) {
+      if (labelNumber < 0) return null;
+      return Math.min(Math.floor(labelNumber), RARITY_MULTIPLIERS.length - 1);
+    }
+    if (label === "common") label = "normal";
+    return RARITY_KEY_INDEX.has(label) ? RARITY_KEY_INDEX.get(label) : null;
+  };
+
+  const RESISTANCES_SCHEMA_VERSION = 1;
+  const MONSTER_TYPE_ORDER = [
+    "humanoid",
+    "giant",
+    "animal",
+    "beast",
+    "undead",
+    "demon",
+    "fire beast",
+    "ice beast",
+    "electric beast",
+    "poison beast",
+    "disease beast",
+  ];
+  let typeResistances = {};
+  const resistancesUrl = (() => {
+    try {
+      const resolved = new URL("../systems/resistances.json", window.location.href);
+      if (resolved.protocol === "http:" || resolved.protocol === "https:") {
+        resolved.searchParams.set("v", String(RESISTANCES_SCHEMA_VERSION));
+      }
+      return resolved.toString();
+    } catch (error) {
+      return "../systems/resistances.json";
+    }
+  })();
+
+  const PERKS_SCHEMA_VERSION = 3;
+  let perkIndexByName = new Map();
+  const perksUrl = (() => {
+    try {
+      const resolved = new URL("../systems/perks.json", window.location.href);
+      if (resolved.protocol === "http:" || resolved.protocol === "https:") {
+        resolved.searchParams.set("v", String(PERKS_SCHEMA_VERSION));
+      }
+      return resolved.toString();
+    } catch (error) {
+      return "../systems/perks.json";
+    }
+  })();
+
+  const MONSTERS_SCHEMA_VERSION = 3;
+  const monstersUrl = (() => {
+    try {
+      const resolved = new URL("../enemies/monsters_data03.json", window.location.href);
+      if (resolved.protocol === "http:" || resolved.protocol === "https:") {
+        resolved.searchParams.set("v", String(MONSTERS_SCHEMA_VERSION));
+      }
+      return resolved.toString();
+    } catch (error) {
+      return "../enemies/monsters_data03.json";
+    }
+  })();
+
+  const buildNameSet =
+    utils.buildNameSet ||
+    ((list) =>
+      new Set(
+        (Array.isArray(list) ? list : [])
+          .map((value) => (value === null || value === undefined ? "" : String(value)).trim().toLowerCase())
+          .filter(Boolean)
+      ));
+  const loadAllowlists =
+    typeof utils.loadAllowlists === "function" ? () => utils.loadAllowlists() : () => Promise.resolve(null);
+  const loadDropSources =
+    typeof utils.loadDropSources === "function" ? () => utils.loadDropSources() : () => Promise.resolve(null);
+  const buildMonsterDetailUrl =
+    typeof utils.buildMonsterDetailUrl === "function"
+      ? (monster) => utils.buildMonsterDetailUrl(monster)
+      : (monster) => {
+          const slug = normalizeMonsterId(monster);
+          return slug
+            ? `pages/enemies/monsters.html?monster=${encodeURIComponent(slug)}`
+            : "pages/enemies/monsters.html";
+        };
+  let hiddenWeaponNames = new Set();
+  let allowedMonsterNames = new Set();
+  let dropSources =
+    typeof utils.createEmptyDropSources === "function"
+      ? utils.createEmptyDropSources()
+      : { armors: {}, weapons: {}, reverse: { armors: {}, weapons: {} } };
+
+  const applyAllowlists = (allowlists) => {
+    hiddenWeaponNames = buildNameSet(allowlists?.weapons?.block);
+    allowedMonsterNames = buildNameSet(allowlists?.monsters?.allow);
+  };
+
+  const isMonsterAllowed = (monster) => {
+    if (!allowedMonsterNames.size) return true;
+    return allowedMonsterNames.has((monster.name || "").toLowerCase());
+  };
+
+  const COLUMNS = [
+    { key: "image", label: "Image", render: (_, item) => createImageThumb(item), sortable: false },
+    { key: "name", label: "Name" },
+    { key: "type", label: "Type" },
+    { key: "level", label: "Level", format: (value) => formatNumber(value) },
+    { key: "dps", label: "DPS", format: (value) => formatNumber(value, { maximumFractionDigits: 2 }) },
+    { key: "perk", label: "Perk", render: (value) => createPerkBadge(value) },
+    { key: "element", label: "Element", render: (value) => createElementBadge(value) },
+  ];
+
+  let items = [];
+  let monsters = [];
+  let selectedTypes = new Set();
+  let selectedElements = new Set();
+  let selectedAttackSpeeds = new Set();
+  let sortKey = "dps";
+  let sortDir = "desc";
+  let searchTerm = "";
+  const urlParams = new URLSearchParams(window.location.search);
+  const normalizeWeaponId = (value) =>
+    (value || "")
+      .toString()
+      .toLowerCase()
+      .replace(/[^a-z0-9_-]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+  const normalizeMonsterId = (value) =>
+    (value || "")
+      .toString()
+      .toLowerCase()
+      .replace(/[^a-z0-9_-]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+  const rawWeaponQuery = (urlParams.get("weapon") || urlParams.get("weaponName") || "").trim();
+  const initialWeaponId = normalizeWeaponId(rawWeaponQuery);
+  const initialWeaponSearchTerm = rawWeaponQuery.replace(/-/g, " ").trim();
+  let pendingWeaponId = initialWeaponId;
+  let pendingWeaponName = rawWeaponQuery.toLowerCase();
+
+  const renderEmpty = (message) => {
+    if (!tableHeadRow.children.length) {
+      buildHead();
+    }
+    tableBody.innerHTML = `<tr><td class="table-empty" colspan="${COLUMNS.length || 1}">${message}</td></tr>`;
+    if (countLabel) {
+      countLabel.textContent = "0 results";
+    }
+  };
+
+  const normalizeSortValue = (value) => {
+    if (value === null || value === undefined) return "";
+    if (typeof value === "number") return value;
+    if (typeof value === "boolean") return value ? 1 : 0;
+    if (Array.isArray(value)) return value.join(", ");
+    if (typeof value === "object") return JSON.stringify(value);
+    return String(value).toLowerCase();
+  };
+
+  const formatValue = (value) => {
+    if (value === null || value === undefined || value === "") return "-";
+    if (Array.isArray(value)) return value.join(", ");
+    if (typeof value === "object") return JSON.stringify(value);
+    return value;
+  };
+
+  const formatNumber = (value, options = {}) => {
+    if (value === null || value === undefined || value === "") return "-";
+    const num = Number(value);
+    if (Number.isNaN(num)) return value;
+    return num.toLocaleString("en-US", { maximumFractionDigits: 0, ...options });
+  };
+
+  const formatRange = (min, max) => {
+    const hasMin = min !== null && min !== undefined && min !== "";
+    const hasMax = max !== null && max !== undefined && max !== "";
+    if (hasMin && hasMax) return `${formatNumber(min)} - ${formatNumber(max)}`;
+    if (hasMin) return `${formatNumber(min)}`;
+    if (hasMax) return `${formatNumber(max)}`;
+    return "-";
+  };
+
+  const ELEMENT_KEYS_WITH_MULTIPLIERS = new Set(["fire", "cold", "electric", "poison", "disease", "acid"]);
+
+  const formatMonsterTypeLabel = (value) => {
+    if (!value) return "-";
+    return String(value)
+      .replace(/([a-z])([A-Z])/g, "$1 $2")
+      .replace(/[_]+/g, " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+  };
+
+  const formatMultiplierValue = (value) => {
+    if (typeof value !== "number" || Number.isNaN(value)) return "-";
+    if (Number.isInteger(value)) return `${value}x`;
+    let text = value.toString();
+    if (text.startsWith("0.")) {
+      text = text.replace(/^0+/, "");
+    } else if (text.startsWith("-0.")) {
+      text = text.replace(/^-0+/, "-.");
+    }
+    text = text.replace(/(\.\d*?)0+$/, "$1");
+    if (text.endsWith(".")) text = text.slice(0, -1);
+    return `${text}x`;
+  };
+
+  const getMultiplierColor = (value) => {
+    if (typeof value !== "number" || Number.isNaN(value)) return "";
+    if (value > 1) {
+      const ratio = Math.min((value - 1) / 0.3, 1);
+      const lightness = 50 + 20 * ratio;
+      const saturation = 65 + 15 * ratio;
+      return `hsl(120, ${saturation}%, ${lightness}%)`;
+    }
+    if (value < 1) {
+      const ratio = Math.min((1 - value) / 0.3, 1);
+      const lightness = 55 + 25 * ratio;
+      return `hsl(0, 80%, ${lightness}%)`;
+    }
+    return "#bbbbbb";
+  };
+
+  const extractPerkBaseName = (value) => {
+    const raw = (value || "").toString().trim();
+    if (!raw || raw === "-" || raw.toLowerCase() === "none") return "";
+    return raw
+      .replace(/\s*\(\s*tier\s*\d+\s*\)\s*$/i, "")
+      .replace(/\s*\(\s*t\s*\d+\s*\)\s*$/i, "")
+      .replace(/\s*tier\s*\d+\s*$/i, "")
+      .replace(/\s*t\s*\d+\s*$/i, "")
+      .trim();
+  };
+
+  const isPerkValueSet = (value) => {
+    const text = (value ?? "").toString().trim();
+    if (!text || text === "-" || text.toLowerCase() === "none") return false;
+    return true;
+  };
+
+  const createPerkDetailPill = (value) => {
+    const labelText = formatValue(value);
+    const baseName = extractPerkBaseName(value);
+    if (!labelText || labelText === "-" || !baseName) {
+      return createPerkBadge(value);
+    }
+
+    const pill = document.createElement("span");
+    pill.className = "detail-pill";
+    pill.tabIndex = 0;
+    pill.setAttribute("aria-label", `${labelText} perk details`);
+
+    const labelSpan = document.createElement("span");
+    labelSpan.textContent = labelText;
+    const color = getPerkTierColor(value);
+    if (color) labelSpan.style.color = color;
+    pill.appendChild(labelSpan);
+
+    const tooltip = document.createElement("span");
+    tooltip.className = "detail-tooltip perk-tooltip";
+    tooltip.role = "tooltip";
+
+    const entry = perkIndexByName.get(baseName.toLowerCase());
+    const detailsLines = Array.isArray(entry?.details)
+      ? entry.details.map((line) => String(line || "").trim()).filter(Boolean)
+      : [];
+
+    const title = document.createElement("div");
+    title.className = "perk-tooltip-title";
+    title.textContent = labelText;
+    tooltip.appendChild(title);
+
+    if (detailsLines.length) {
+      const divider = document.createElement("div");
+      divider.className = "detail-tooltip-divider";
+      tooltip.appendChild(divider);
+
+      detailsLines.forEach((line) => {
+        const div = document.createElement("div");
+        div.className = "perk-tooltip-line";
+        div.textContent = line;
+        tooltip.appendChild(div);
+      });
+    } else {
+      const line = document.createElement("div");
+      line.className = "perk-tooltip-line";
+      line.textContent = "Perk info unavailable.";
+      tooltip.appendChild(line);
+    }
+
+    pill.appendChild(tooltip);
+    return pill;
+  };
+
+  const getElementMultiplierForType = (monsterTypeKey, elementKey) => {
+    const list = typeResistances && typeof typeResistances === "object" ? typeResistances[monsterTypeKey] : null;
+    if (!Array.isArray(list) || !list.length) return 1;
+    const match = list.find((entry) => normalizeFilterValue(entry?.element) === elementKey);
+    return typeof match?.value === "number" ? match.value : 1;
+  };
+
+  const createElementEffectivenessPill = (value) => {
+    const labelText = formatValue(value);
+    const elementKey = normalizeFilterValue(value);
+    if (!labelText || labelText === "-" || elementKey === "none" || elementKey === "magic") {
+      return createElementBadge(value);
+    }
+    if (!ELEMENT_KEYS_WITH_MULTIPLIERS.has(elementKey)) {
+      return createElementBadge(value);
+    }
+
+    const pill = document.createElement("span");
+    pill.className = "detail-pill";
+    pill.tabIndex = 0;
+    pill.setAttribute("aria-label", `${labelText} effectiveness by monster type`);
+
+    const labelSpan = document.createElement("span");
+    labelSpan.textContent = labelText;
+    const color = getElementColor(value);
+    if (color) labelSpan.style.color = color;
+    pill.appendChild(labelSpan);
+
+    const tooltip = document.createElement("span");
+    tooltip.className = "detail-tooltip";
+    tooltip.role = "tooltip";
+
+    const hasData =
+      typeResistances && typeof typeResistances === "object" && Object.keys(typeResistances).length > 0;
+    if (!hasData) {
+      tooltip.textContent = "No modifier data";
+    } else {
+      const headerRow = document.createElement("div");
+      headerRow.className = "detail-tooltip-row";
+      const headerLeft = document.createElement("span");
+      headerLeft.className = "detail-tooltip-label";
+      headerLeft.textContent = "Monster Type";
+      const headerRight = document.createElement("span");
+      headerRight.className = "detail-tooltip-label";
+      headerRight.textContent = "Damage";
+      headerRow.appendChild(headerLeft);
+      headerRow.appendChild(headerRight);
+      tooltip.appendChild(headerRow);
+
+      const divider = document.createElement("div");
+      divider.className = "detail-tooltip-divider";
+      tooltip.appendChild(divider);
+
+      const rows = MONSTER_TYPE_ORDER.map((monsterTypeKey, idx) => ({
+        monsterTypeKey,
+        multiplier: getElementMultiplierForType(monsterTypeKey, elementKey),
+        idx,
+      })).sort((a, b) => {
+        if (b.multiplier !== a.multiplier) return b.multiplier - a.multiplier;
+        return a.idx - b.idx;
+      });
+
+      const firstNeutral = rows.findIndex((row) => row.multiplier === 1 || row.multiplier === 1.0);
+      const lastNeutral = (() => {
+        let idx = -1;
+        rows.forEach((row, i) => {
+          if (row.multiplier === 1 || row.multiplier === 1.0) idx = i;
+        });
+        return idx;
+      })();
+
+      rows.forEach(({ monsterTypeKey, multiplier }, index) => {
+        if (index === firstNeutral && index !== 0) {
+          const groupDivider = document.createElement("div");
+          groupDivider.className = "detail-tooltip-divider";
+          tooltip.appendChild(groupDivider);
+        }
+
+        const row = document.createElement("div");
+        row.className = "detail-tooltip-row";
+        const typeLabel = document.createElement("span");
+        typeLabel.className = "detail-tooltip-type";
+        typeLabel.textContent = formatMonsterTypeLabel(monsterTypeKey);
+        const valueSpan = document.createElement("span");
+        valueSpan.textContent = formatMultiplierValue(multiplier);
+        if (typeof multiplier === "number") {
+          const valColor = getMultiplierColor(multiplier);
+          if (valColor) valueSpan.style.color = valColor;
+        }
+        row.appendChild(typeLabel);
+        row.appendChild(valueSpan);
+        tooltip.appendChild(row);
+
+        if (index === lastNeutral && index !== rows.length - 1) {
+          const groupDivider = document.createElement("div");
+          groupDivider.className = "detail-tooltip-divider";
+          tooltip.appendChild(groupDivider);
+        }
+      });
+    }
+
+      pill.appendChild(tooltip);
+      return pill;
+    };
+
+  const createRarityValuePill = (baseValue, labelText, maxRarity) => {
+    const numericBase = Number(baseValue);
+    const formattedBase = formatNumber(baseValue);
+    if (formattedBase === "-" || !Number.isFinite(numericBase)) {
+      return formattedBase;
+    }
+
+    const pill = document.createElement("span");
+    pill.className = "detail-pill";
+    pill.tabIndex = 0;
+    pill.setAttribute("aria-label", `${labelText} values by rarity`);
+
+    const labelSpan = document.createElement("span");
+    labelSpan.textContent = formattedBase;
+    pill.appendChild(labelSpan);
+
+    const tooltip = document.createElement("span");
+    tooltip.className = "detail-tooltip";
+    tooltip.role = "tooltip";
+
+    const headerRow = document.createElement("div");
+    headerRow.className = "detail-tooltip-row";
+    const headerLeft = document.createElement("span");
+    headerLeft.className = "detail-tooltip-label";
+    headerLeft.textContent = "Rarity";
+    const headerRight = document.createElement("span");
+    headerRight.className = "detail-tooltip-label";
+    headerRight.textContent = labelText;
+    headerRow.appendChild(headerLeft);
+    headerRow.appendChild(headerRight);
+    tooltip.appendChild(headerRow);
+
+    const divider = document.createElement("div");
+    divider.className = "detail-tooltip-divider";
+    tooltip.appendChild(divider);
+
+    const maxIndex = getMaxRarityIndex(maxRarity);
+    const list =
+      maxIndex === null ? RARITY_MULTIPLIERS : RARITY_MULTIPLIERS.slice(0, maxIndex + 1);
+    list.forEach((rarity) => {
+      const row = document.createElement("div");
+      row.className = "detail-tooltip-row";
+      const raritySpan = document.createElement("span");
+      raritySpan.textContent = rarity.label;
+      const valueSpan = document.createElement("span");
+      valueSpan.textContent = formatNumber(numericBase * rarity.multiplier);
+      row.appendChild(raritySpan);
+      row.appendChild(valueSpan);
+      tooltip.appendChild(row);
+    });
+
+    pill.appendChild(tooltip);
+    return pill;
+  };
+
+  const getMonsterDropRange = (monsterLevel) => {
+    const level = Number(monsterLevel);
+    if (!Number.isFinite(level)) return null;
+    return {
+      level,
+      min: Math.max(0, level - 5),
+      max: level + 5,
+    };
+  };
+
+  const stopTooltipLinkPropagation = (event) => {
+    event.stopPropagation();
+  };
+
+  const createDropsFromPill = (item) => {
+    const pill = document.createElement("span");
+    pill.className = "detail-pill";
+    pill.textContent = "Monsters";
+    pill.tabIndex = 0;
+    pill.setAttribute("aria-label", "Monsters that drop this item");
+
+    const tooltip = document.createElement("span");
+    tooltip.className = "detail-tooltip";
+    tooltip.role = "tooltip";
+
+      if (!Array.isArray(monsters) || !monsters.length) {
+        tooltip.textContent = "No monster data loaded";
+      } else {
+        const itemLevel = Number(item?.level);
+        const uniqueMonsterIds =
+          typeof utils.getDropSourceMonsterIdsByItem === "function"
+            ? utils.getDropSourceMonsterIdsByItem(dropSources, "weapons", item?.name)
+            : [];
+        const useUnique = Array.isArray(uniqueMonsterIds) && uniqueMonsterIds.length > 0;
+        if (!useUnique && !Number.isFinite(itemLevel)) {
+          tooltip.textContent = "No level data";
+        } else {
+          const uniqueSet = useUnique ? new Set(uniqueMonsterIds.map((id) => normalizeMonsterId(id))) : null;
+          const list = monsters
+            .map((monster) => {
+              const monsterId = normalizeMonsterId(monster.name || monster.id);
+              if (useUnique) {
+                if (!uniqueSet.has(monsterId)) return null;
+              } else {
+                const range = getMonsterDropRange(monster.level);
+                if (!range) return null;
+                if (itemLevel < range.min || itemLevel > range.max) return null;
+              }
+              const typeRaw = monster.monsterType || "";
+              const levelValue = Number(monster.level);
+              return {
+                id: monsterId,
+                name: monster.name || "Unknown Monster",
+                type: typeRaw,
+                typeKey: normalizeFilterValue(typeRaw) || "unknown",
+                level: Number.isFinite(levelValue) ? levelValue : null,
+              };
+            })
+            .filter(Boolean)
+            .sort((a, b) => {
+              if (a.typeKey !== b.typeKey) return a.typeKey.localeCompare(b.typeKey);
+              const levelA = Number.isFinite(a.level) ? a.level : -Infinity;
+              const levelB = Number.isFinite(b.level) ? b.level : -Infinity;
+              if (levelB !== levelA) return levelB - levelA;
+              return a.name.localeCompare(b.name);
+            });
+
+        const headerRow = document.createElement("div");
+        headerRow.className = "detail-tooltip-row";
+        const nameLabel = document.createElement("span");
+        nameLabel.className = "detail-tooltip-label";
+        nameLabel.textContent = "Name";
+        const typeLabel = document.createElement("span");
+        typeLabel.className = "detail-tooltip-label";
+        typeLabel.textContent = "Type";
+        headerRow.appendChild(nameLabel);
+        headerRow.appendChild(typeLabel);
+        tooltip.appendChild(headerRow);
+
+        const divider = document.createElement("div");
+        divider.className = "detail-tooltip-divider";
+        tooltip.appendChild(divider);
+
+          if (!list.length) {
+            const emptyRow = document.createElement("div");
+            emptyRow.className = "detail-tooltip-row";
+            const emptyLabel = document.createElement("span");
+            emptyLabel.className = "detail-tooltip-label";
+            emptyLabel.textContent = "No monsters in range";
+            emptyRow.appendChild(emptyLabel);
+            tooltip.appendChild(emptyRow);
+          } else {
+            let lastTypeKey = null;
+            list.forEach((entry) => {
+              if (lastTypeKey && entry.typeKey !== lastTypeKey) {
+                const groupDivider = document.createElement("div");
+                groupDivider.className = "detail-tooltip-divider";
+                tooltip.appendChild(groupDivider);
+              }
+              lastTypeKey = entry.typeKey;
+
+              const row = document.createElement("div");
+              row.className = "detail-tooltip-row";
+              const nameLink = document.createElement("a");
+              nameLink.textContent = entry.name;
+              nameLink.href = buildMonsterDetailUrl(entry.id || entry.name);
+              nameLink.addEventListener("click", stopTooltipLinkPropagation);
+              const typeSpan = document.createElement("span");
+              typeSpan.className = "detail-tooltip-type";
+              typeSpan.textContent = formatMonsterTypeLabel(entry.type);
+              row.appendChild(nameLink);
+              row.appendChild(typeSpan);
+              tooltip.appendChild(row);
+            });
+          }
+        }
+      }
+
+    pill.appendChild(tooltip);
+    return pill;
+  };
+
+  const setOptions = (select, options) => {
+    if (!select) return;
+    select.innerHTML = "";
+    options.forEach(({ value, label }) => {
+      const opt = document.createElement("option");
+      opt.value = value;
+      opt.textContent = label;
+      select.appendChild(opt);
+    });
+  };
+
+  const enableToggleSelect = (selectEl) => {
+    if (!selectEl) return;
+    selectEl.addEventListener("mousedown", (event) => {
+      const option = event.target;
+      if (option && option.tagName === "OPTION") {
+        event.preventDefault();
+        option.selected = !option.selected;
+        selectEl.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+    });
+  };
+
+  const imageManifestCache = new Map();
+  const loadImageManifest = (folder) => {
+    if (imageManifestCache.has(folder)) return imageManifestCache.get(folder);
+    const map = new Map();
+    imageManifestCache.set(folder, map);
+    fetch(`images/${folder}/manifest.json`)
+      .then((res) => (res.ok ? res.json() : Promise.reject()))
+      .then((list) => {
+        const entries = Array.isArray(list) ? list : [];
+        entries.forEach((path) => {
+          const file = String(path || "").split("/").pop() || "";
+          const base = file.replace(/\.[^.]+$/, "").toLowerCase();
+          if (base) map.set(base, path);
+        });
+      })
+      .catch(() => {});
+    return map;
+  };
+
+  loadImageManifest("weapons");
+
+  const deriveImageCandidates = (item, folder = "weapons") => {
+    const candidates = [];
+    const direct = typeof item === "string" ? item : item && item.image;
+    if (direct) candidates.push(direct);
+    const name = (item && (item.name || item.Name || item.id)) || "";
+    const trimmed = String(name).trim();
+    const lower = trimmed.toLowerCase();
+    const manifest = imageManifestCache.get(folder);
+    if (manifest && lower && manifest.has(lower)) {
+      candidates.push(manifest.get(lower));
+    }
+    if (trimmed) {
+      const encoded = encodeURIComponent(trimmed);
+      candidates.push(`images/${folder}/${encoded}.gif`, `images/${folder}/${encoded}.png`);
+    }
+    return Array.from(new Set(candidates.filter(Boolean)));
+  };
+
+  const ensureImage = (img, fallback, item, folder = "weapons") => {
+    if (!img || !fallback) return;
+    fallback.style.display = "none";
+    const sources = deriveImageCandidates(item, folder);
+    if (!sources.length) {
+      img.style.display = "none";
+      fallback.style.display = "flex";
+      return;
+    }
+    let index = 0;
+    const trySet = () => {
+      img.onload = () => {
+        img.style.display = "block";
+        fallback.style.display = "none";
+      };
+      img.onerror = () => {
+        index += 1;
+        if (index < sources.length) {
+          trySet();
+        } else {
+          img.style.display = "none";
+          fallback.style.display = "flex";
+        }
+      };
+      img.src = sources[index];
+    };
+    trySet();
+  };
+
+  const createCell = (labelContent, valueContent) => {
+    const cell = document.createElement("div");
+    cell.className = "detail-cell";
+    const label = document.createElement("span");
+    label.className = "detail-label";
+    if (labelContent instanceof Node) {
+      label.appendChild(labelContent);
+    } else {
+      label.textContent = labelContent;
+    }
+    const value = document.createElement("div");
+    value.className = "detail-value";
+    if (valueContent instanceof Node) {
+      value.appendChild(valueContent);
+    } else {
+      value.textContent = valueContent;
+    }
+    cell.appendChild(label);
+    cell.appendChild(value);
+    return cell;
+  };
+
+  const createPill = (items) => {
+    const pill = document.createElement("span");
+    pill.className = "flag-pill";
+    pill.textContent = items.length ? items.join(", ") : "None";
+    return pill;
+  };
+
+  const createImageThumb = (item) => {
+    const wrapper = document.createElement("div");
+    wrapper.style.display = "inline-flex";
+    wrapper.style.alignItems = "center";
+    const img = document.createElement("img");
+    img.className = "item-thumb";
+    img.alt = `${item.name || "Item"} image`;
+    const fallback = document.createElement("span");
+    fallback.className = "no-image";
+    fallback.textContent = "No Image";
+    ensureImage(img, fallback, item);
+    wrapper.appendChild(img);
+    wrapper.appendChild(fallback);
+    return wrapper;
+  };
+
+  const populateFilters = (data) => {
+    const typeOptions = new Map();
+    const elementOptions = new Set();
+    const attackSpeedOptions = new Map();
+
+    data.forEach((w) => {
+      const typeValue = normalizeFilterValue(w.type);
+      if (typeValue) {
+        if (!typeOptions.has(typeValue)) {
+          typeOptions.set(typeValue, String(w.type));
+        }
+      }
+      const elementValue = normalizeFilterValue(w.element);
+      if (elementValue && elementValue !== "none" && elementValue !== "magic") {
+        elementOptions.add(String(w.element));
+      }
+      if (w.attackSpeed !== null && w.attackSpeed !== undefined && w.attackSpeed !== "") {
+        const speedValue = normalizeFilterValue(w.attackSpeed);
+        if (speedValue && !attackSpeedOptions.has(speedValue)) {
+          attackSpeedOptions.set(speedValue, w.attackSpeed);
+        }
+      }
+    });
+
+    const typeList = Array.from(typeOptions.entries())
+      .sort((a, b) => a[1].localeCompare(b[1]))
+      .map(([value, label]) => ({ value, label }));
+    const elementList = Array.from(elementOptions)
+      .sort((a, b) => a.localeCompare(b))
+      .map((value) => ({ value: normalizeFilterValue(value), label: value }));
+    const attackSpeedList = Array.from(attackSpeedOptions.entries())
+      .sort((a, b) => {
+        const aNum = Number(a[1]);
+        const bNum = Number(b[1]);
+        if (Number.isNaN(aNum) && Number.isNaN(bNum)) {
+          return String(a[1]).localeCompare(String(b[1]));
+        }
+        if (Number.isNaN(aNum)) return 1;
+        if (Number.isNaN(bNum)) return -1;
+        return aNum - bNum;
+      })
+      .map(([value, label]) => ({ value, label: `${formatNumber(label)} ms` }));
+
+    setOptions(typeFilter, typeList);
+    setOptions(elementFilter, elementList);
+    setOptions(attackSpeedFilter, attackSpeedList);
+    if (elementFilter) {
+      Array.from(elementFilter.options).forEach((opt) => {
+        const color = getElementColor(opt.value);
+        if (color) {
+          opt.style.color = color;
+        }
+      });
+    }
+  };
+
+  const computeDps = (minDamage, maxDamage, attackSpeed) => {
+    const min = Number(minDamage);
+    const max = Number(maxDamage);
+    const speed = Number(attackSpeed);
+    if (Number.isNaN(min) || Number.isNaN(max) || Number.isNaN(speed) || speed === 0) return null;
+    const avgDamage = (min + max) / 2;
+    return Number((avgDamage * (1000 / speed)).toFixed(2));
+  };
+
+  const buildRarity = (fields) => {
+    const max = fields.max_rarity_label || fields.max_rarity;
+    const maxLabel = max === null || max === undefined || max === "" ? "-" : max;
+    return `Regular - ${maxLabel}`;
+  };
+
+  const normalizeWeapon = (raw) => {
+    const fields = (raw && typeof raw.fields === "object" && raw.fields) || {};
+    const value = fields.value;
+    const sellValue =
+      value === null || value === undefined || value === ""
+        ? null
+        : Number.isNaN(Number(value))
+          ? null
+          : Number(value) / 2;
+
+    return {
+      id: raw && (raw.id ?? raw.ID) ? raw.id ?? raw.ID : normalizeWeaponId(raw && (raw.name || raw.Name)),
+      name: (raw && (raw.name || raw.Name)) || "Unknown",
+      image: raw && (raw.image || raw.icon || raw.thumbnail) ? raw.image || raw.icon || raw.thumbnail : "",
+      level: fields.level_requirement,
+      minDamage: fields.min_damage,
+      maxDamage: fields.max_damage,
+      attackSpeed: fields.attack_speed,
+      dps: computeDps(fields.min_damage, fields.max_damage, fields.attack_speed),
+      type: fields.subtype_label || fields.subtype,
+      perk: fields.perk ? fields.perk_label || fields.perk : "None",
+      corruptedPerk: fields.corrupted_perk ? fields.corrupted_perk_label || fields.corrupted_perk : "None",
+      element: fields.element_label || (fields.element ? fields.element : "None"),
+      procChance: fields.proc_chance,
+      skillRequirement: fields.skill_requirement,
+      weight: fields.weight,
+      specialty: fields.specialty ? fields.specialty_label || fields.specialty : "None",
+      specialtyAmount: fields.specialty_amount,
+      rarity: buildRarity(fields),
+      maxRarityLabel: fields.max_rarity_label || fields.max_rarity,
+      toHit: fields.to_hit,
+      value,
+      sellValue,
+      shardDecompositionAmount: fields.shard_decomposition_amount,
+      shardPromotionAmount: fields.shard_promotion_amount,
+      resistances: {
+        fire: fields.fire_resistance,
+        cold: fields.cold_resistance,
+        electric: fields.electric_resistance,
+        acid: fields.acid_resistance,
+        poison: fields.poison_resistance,
+        disease: fields.disease_resistance,
+      },
+      stats: {
+        strength: fields.strength,
+        dexterity: fields.dexterity,
+        constitution: fields.constitution,
+        },
+      };
+  };
+
+  const normalizeMonster = (raw) => {
+    if (!raw || typeof raw !== "object") return null;
+    const fields = (raw && typeof raw.fields === "object" && raw.fields) || {};
+    const nameRaw = raw.name || raw.Name || fields.name_label || "Unknown Monster";
+    const monsterTypeRaw = fields.type_label || raw.monsterType || raw.type || raw.type_label || "";
+    const level = Number(fields.level ?? raw.level ?? raw.Level);
+    const idRaw = raw.id ?? raw.monsterId ?? raw.name ?? raw.Name ?? fields.name_label ?? "";
+    const id = normalizeMonsterId(idRaw || nameRaw);
+    return {
+      id,
+      name: nameRaw ? String(nameRaw) : "Unknown Monster",
+      monsterType: monsterTypeRaw === null || monsterTypeRaw === undefined ? "" : String(monsterTypeRaw),
+      level: Number.isFinite(level) ? level : null,
+    };
+  };
+
+  const normalizeMonsters = (list) => {
+    if (!Array.isArray(list)) return [];
+    return list
+      .map((entry) => normalizeMonster(entry))
+      .filter(Boolean)
+      .filter((monster) => isMonsterAllowed(monster));
+  };
+
+  const getWeaponId = (item) => normalizeWeaponId(item && (item.id || item.name));
+
+  const getWeaponDetailName = (item) => (item && item.name ? item.name.toString().trim() : "");
+
+  const buildWeaponDetailStateUrl = (item) => {
+    const name = getWeaponDetailName(item);
+    if (!name) return "";
+    const path = window.location.pathname || "pages/items/weapons.html";
+    return `${path}?weapon=${encodeURIComponent(name)}`;
+  };
+
+  const buildWeaponListUrl = () => window.location.pathname || "pages/items/weapons.html";
+
+  const updateWeaponDetailUrl = (item, options = {}) => {
+    const weaponId = getWeaponId(item);
+    const targetUrl = buildWeaponDetailStateUrl(item);
+    if (!weaponId || !targetUrl || !window.history || !window.history.pushState) return;
+    const currentUrl = `${window.location.pathname}${window.location.search}`;
+    if (currentUrl === targetUrl) return;
+    try {
+      if (options.replace) {
+        history.replaceState({ weaponId }, "", targetUrl);
+      } else {
+        history.pushState({ weaponId }, "", targetUrl);
+      }
+    } catch (error) {
+      // Ignore history failures on nonstandard local file URLs.
+    }
+  };
+
+  const updateWeaponListUrl = (options = {}) => {
+    const targetUrl = buildWeaponListUrl();
+    if (!targetUrl || !window.history || !window.history.pushState) return;
+    const currentUrl = `${window.location.pathname}${window.location.search}`;
+    if (currentUrl === targetUrl) return;
+    try {
+      if (options.replace) {
+        history.replaceState({}, "", targetUrl);
+      } else {
+        history.pushState({}, "", targetUrl);
+      }
+    } catch (error) {
+      // Ignore history failures on nonstandard local file URLs.
+    }
+  };
+
+  const getWeaponRouteFromLocation = () => {
+    const params = new URLSearchParams(window.location.search);
+    const raw = (params.get("weapon") || params.get("weaponName") || "").trim();
+    return {
+      id: normalizeWeaponId(raw),
+      name: raw.toLowerCase(),
+    };
+  };
+
+  const findWeaponByRoute = (list, routeId, routeName) =>
+    (Array.isArray(list) ? list : []).find((weapon) => {
+      const id = getWeaponId(weapon);
+      const nameId = normalizeWeaponId(weapon && weapon.name);
+      const nameLower = (weapon.name || "").toLowerCase();
+      return (routeId && (id === routeId || nameId === routeId)) || (routeName && nameLower === routeName);
+    });
+
+  const getSelectedWeaponFromLocation = (list = items) => {
+    const route = getWeaponRouteFromLocation();
+    if (!route.id && !route.name) return null;
+    return findWeaponByRoute(list, route.id, route.name);
+  };
+
+  const selectWeapon = (item, options = {}) => {
+    if (!item) return;
+    if (options.updateUrl) updateWeaponDetailUrl(item, { replace: options.replaceUrl });
+    setDetails(item, { scroll: options.scroll });
+  };
+
+  const maybeSelectPendingWeapon = (list) => {
+    if (!pendingWeaponId && !pendingWeaponName) return;
+    const match =
+      findWeaponByRoute(list || items, pendingWeaponId, pendingWeaponName) ||
+      findWeaponByRoute(items, pendingWeaponId, pendingWeaponName);
+    if (!match) return;
+    pendingWeaponId = "";
+    pendingWeaponName = "";
+    selectWeapon(match, { updateUrl: false });
+  };
+
+  const updateSortIndicators = () => {
+    document.querySelectorAll(".items-table th[data-sort-key]").forEach((th) => {
+      const key = th.getAttribute("data-sort-key");
+      const indicator = th.querySelector(".sort-indicator");
+      const isActive = key === sortKey;
+      const ariaSort = isActive ? (sortDir === "asc" ? "ascending" : "descending") : "none";
+      th.setAttribute("aria-sort", ariaSort);
+      if (indicator) {
+        indicator.textContent = isActive ? (sortDir === "asc" ? "\u25B2" : "\u25BC") : "\u2195";
+      }
+    });
+  };
+
+  const buildHead = () => {
+    tableHeadRow.innerHTML = "";
+    COLUMNS.forEach((col) => {
+      const th = document.createElement("th");
+      th.setAttribute("scope", "col");
+
+      const labelSpan = document.createElement("span");
+      labelSpan.textContent = col.label;
+      th.appendChild(labelSpan);
+
+      if (col.sortable !== false) {
+        th.dataset.sortKey = col.key;
+        const indicator = document.createElement("span");
+        indicator.className = "sort-indicator";
+        indicator.setAttribute("aria-hidden", "true");
+        indicator.textContent = "\u2195";
+        th.appendChild(indicator);
+
+        th.addEventListener("click", () => {
+          if (sortKey === col.key) {
+            sortDir = sortDir === "asc" ? "desc" : "asc";
+          } else {
+            sortKey = col.key;
+            sortDir = "asc";
+          }
+          applyFilterAndSort();
+        });
+      } else {
+        th.style.cursor = "default";
+      }
+
+      tableHeadRow.appendChild(th);
+    });
+    updateSortIndicators();
+  };
+
+  let pinnedTooltip = null;
+  let pinDocumentListenerAttached = false;
+
+  function unpinTooltip(tooltip) {
+    if (!tooltip) return;
+    tooltip.classList.remove("is-pinned");
+    if (pinnedTooltip === tooltip) pinnedTooltip = null;
+  }
+
+  function attachTooltipPinning(root) {
+    const scope = root || document;
+    const tooltips = scope.querySelectorAll(".detail-pill .detail-tooltip");
+    tooltips.forEach((tooltip) => {
+      if (!tooltip || tooltip.dataset.pinWired === "1") return;
+      const pill = tooltip.closest(".detail-pill");
+      if (!pill) return;
+
+      const toggle = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        if (pinnedTooltip && pinnedTooltip !== tooltip) {
+          unpinTooltip(pinnedTooltip);
+        }
+        if (tooltip.classList.contains("is-pinned")) {
+          unpinTooltip(tooltip);
+        } else {
+          tooltip.classList.add("is-pinned");
+          pinnedTooltip = tooltip;
+        }
+      };
+
+      pill.addEventListener("click", toggle);
+      pill.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          toggle(event);
+        }
+      });
+      tooltip.addEventListener("click", (event) => event.stopPropagation());
+      tooltip.dataset.pinWired = "1";
+    });
+
+    if (!pinDocumentListenerAttached) {
+      pinDocumentListenerAttached = true;
+      document.addEventListener("click", (event) => {
+        if (!pinnedTooltip) return;
+        const pill = pinnedTooltip.closest(".detail-pill");
+        if (pill && pill.contains(event.target)) return;
+        unpinTooltip(pinnedTooltip);
+      });
+      document.addEventListener("keydown", (event) => {
+        if (event.key !== "Escape") return;
+        if (!pinnedTooltip) return;
+        unpinTooltip(pinnedTooltip);
+      });
+    }
+  }
+
+  const setDetails = (item, options = {}) => {
+    if (!item) return;
+    detailFields.name.textContent = item.name || "Unknown";
+    ensureImage(detailFields.image, detailFields.imageFallback, item);
+    if (pinnedTooltip) unpinTooltip(pinnedTooltip);
+
+    const container = detailFields.properties;
+    container.innerHTML = "";
+
+    const addDivider = () =>
+      container.appendChild(Object.assign(document.createElement("div"), { className: "detail-divider" }));
+    const addRow = (entries, cols) => {
+      const row = document.createElement("div");
+      row.className = `detail-row detail-row-cols-${cols || 2}`;
+      entries.forEach(([label, value]) => row.appendChild(createCell(label, value)));
+      container.appendChild(row);
+    };
+
+    addRow(
+      [
+        ["Type", formatValue(item.type)],
+        ["Level", formatNumber(item.level)],
+        ["DPS", formatNumber(item.dps, { maximumFractionDigits: 2 })],
+        ["Weight", formatNumber(item.weight)],
+        ["To Hit", formatNumber(item.toHit)],
+      ],
+      5
+    );
+    addRow(
+      [
+        ["Element", createElementEffectivenessPill(item.element)],
+        [
+          "Proc",
+          item.procChance === null || item.procChance === undefined || item.procChance === ""
+            ? "-"
+            : `${formatNumber(item.procChance, { maximumFractionDigits: 2 })}%`,
+        ],
+        ["Damage", formatRange(item.minDamage, item.maxDamage)],
+        ["Attack Speed (ms)", formatNumber(item.attackSpeed)],
+      ],
+      4
+    );
+
+    addDivider();
+
+    addRow(
+      [
+        ["Strength", formatNumber((item.stats && item.stats.strength) ?? 0)],
+        ["Constitution", formatNumber((item.stats && item.stats.constitution) ?? 0)],
+        ["Dexterity", formatNumber((item.stats && item.stats.dexterity) ?? 0)],
+      ],
+      3
+    );
+
+    addDivider();
+
+    const res = item.resistances || {};
+    const makeResistEntry = (key, labelText, rawValue) => {
+      const color = ELEMENT_COLORS[key];
+      const labelSpan = document.createElement("span");
+      labelSpan.textContent = labelText;
+      if (color) labelSpan.style.color = color;
+      const valueSpan = document.createElement("span");
+      valueSpan.textContent = formatNumber(rawValue ?? 0);
+      if (color) valueSpan.style.color = color;
+      return [labelSpan, valueSpan];
+    };
+    addRow(
+      [
+        makeResistEntry("fire", "Fire", res.fire),
+        makeResistEntry("poison", "Poison", res.poison),
+        makeResistEntry("cold", "Cold", res.cold),
+      ],
+      3
+    );
+    addRow(
+      [
+        makeResistEntry("disease", "Disease", res.disease),
+        makeResistEntry("acid", "Acid", res.acid),
+        makeResistEntry("electric", "Electric", res.electric),
+      ],
+      3
+    );
+
+    addDivider();
+
+    if (isPerkValueSet(item.corruptedPerk)) {
+      addRow(
+        [
+          ["Innate Perk", createPerkDetailPill(item.perk)],
+          ["Corrupted Perk", createPerkDetailPill(item.corruptedPerk)],
+        ],
+        2
+      );
+    } else {
+      addRow([["Innate Perk", createPerkDetailPill(item.perk)]], 1);
+    }
+
+    addDivider();
+
+    addRow(
+      [
+        ["Max Rarity", formatValue(item.maxRarityLabel || item.rarity)],
+        [
+          "Deconstruction",
+          createRarityValuePill(
+            item.shardDecompositionAmount,
+            "Deconstruction",
+            item.maxRarityLabel || item.rarity
+          ),
+        ],
+        [
+          "Promotion",
+          createRarityValuePill(
+            item.shardPromotionAmount,
+            "Promotion",
+            item.maxRarityLabel || item.rarity
+          ),
+        ],
+      ],
+      3
+    );
+
+    addDivider();
+
+    addRow([["Requirement", `Skill Level ${formatNumber(item.skillRequirement)}`]], 1);
+
+    addDivider();
+
+    addRow([["Drops From", createDropsFromPill(item)]], 1);
+
+    addDivider();
+
+    addRow(
+      [
+        ["Sell Value", formatNumber(item.sellValue, { maximumFractionDigits: 2 })],
+        ["Buy Value", formatNumber(item.value)],
+      ],
+      2
+    );
+
+    attachTooltipPinning(details);
+    details.classList.add("show");
+    if (options.scroll !== false) {
+      details.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
+  const clearDetails = (options = {}) => {
+    details.classList.remove("show");
+    if (pinnedTooltip) unpinTooltip(pinnedTooltip);
+    if (options.updateUrl) updateWeaponListUrl({ replace: options.replaceUrl });
+  };
+
+  window.addEventListener("popstate", () => {
+    const route = getWeaponRouteFromLocation();
+    pendingWeaponId = route.id;
+    pendingWeaponName = route.name;
+    if (!pendingWeaponId && !pendingWeaponName) {
+      clearDetails({ updateUrl: false });
+      return;
+    }
+    if (!items.length) return;
+    const selected = getSelectedWeaponFromLocation(items);
+    pendingWeaponId = "";
+    pendingWeaponName = "";
+    if (selected) {
+      selectWeapon(selected, { updateUrl: false, scroll: false });
+    } else {
+      clearDetails({ updateUrl: false });
+    }
+  });
+
+  const renderTable = (rows) => {
+    if (!rows.length) {
+      renderEmpty("No weapons match your filters.");
+      return;
+    }
+
+    const fragment = document.createDocumentFragment();
+
+    rows.forEach((item) => {
+      const tr = document.createElement("tr");
+      tr.dataset.id = item.id || "";
+
+      COLUMNS.forEach((col) => {
+        const td = document.createElement("td");
+        const value = item[col.key];
+        if (col.render) {
+          const rendered = col.render(value, item);
+          if (rendered instanceof Node) {
+            td.appendChild(rendered);
+          } else {
+            td.textContent = formatValue(rendered);
+          }
+        } else if (col.format) {
+          td.textContent = col.format(value);
+        } else {
+          td.textContent = formatValue(value);
+        }
+        tr.appendChild(td);
+      });
+
+      tr.addEventListener("click", () => {
+        selectWeapon(item, { updateUrl: true });
+      });
+      fragment.appendChild(tr);
+    });
+
+    tableBody.innerHTML = "";
+    tableBody.appendChild(fragment);
+  };
+
+  const applyFilterAndSort = () => {
+    if (!Array.isArray(items) || !items.length) {
+      renderEmpty("No weapons found in weapons_data05.json.");
+      return;
+    }
+
+    const searchableColumns = COLUMNS.map((c) => c.key);
+
+    const filtered = items.filter((item) => {
+      const matchesType = selectedTypes.size === 0 || selectedTypes.has(normalizeFilterValue(item.type));
+      const matchesElement =
+        selectedElements.size === 0 || selectedElements.has(normalizeFilterValue(item.element));
+      const matchesAttackSpeed =
+        selectedAttackSpeeds.size === 0 ||
+        selectedAttackSpeeds.has(normalizeFilterValue(item.attackSpeed));
+      if (!matchesType || !matchesElement || !matchesAttackSpeed) return false;
+      if (!searchTerm) return true;
+      const text = searchableColumns
+        .map((col) => formatValue(item[col]))
+        .join(" ")
+        .toLowerCase();
+      return text.includes(searchTerm.toLowerCase());
+    });
+
+    const sorted = filtered.sort((a, b) => {
+      const av = normalizeSortValue(a[sortKey]);
+      const bv = normalizeSortValue(b[sortKey]);
+      if (av < bv) return sortDir === "asc" ? -1 : 1;
+      if (av > bv) return sortDir === "asc" ? 1 : -1;
+      return 0;
+    });
+
+    updateSortIndicators();
+
+    if (countLabel) {
+      const count = sorted.length;
+      countLabel.textContent = `${count} result${count === 1 ? "" : "s"}`;
+    }
+
+    renderTable(sorted);
+    maybeSelectPendingWeapon(sorted);
+  };
+
+  const init = () => {
+    Promise.all([
+      fetchJsonCached(dataUrl.toString()),
+      fetchJsonCached(resistancesUrl),
+      fetchJsonCached(perksUrl),
+      fetchJsonCached(monstersUrl),
+      loadAllowlists(),
+      loadDropSources(),
+    ])
+      .then(([data, resistancesData, perksData, monstersData, allowlists, loadedDropSources]) => {
+        const map = resistancesData && typeof resistancesData === "object" ? resistancesData.typeResistances : null;
+        if (map && typeof map === "object") {
+          typeResistances = map;
+        }
+        applyAllowlists(allowlists);
+        dropSources =
+          loadedDropSources ||
+          (typeof utils.createEmptyDropSources === "function" ? utils.createEmptyDropSources() : dropSources);
+        const perks = Array.isArray(perksData?.perks) ? perksData.perks : [];
+        perkIndexByName = new Map();
+        perks.forEach((entry) => {
+          const name = entry && typeof entry.name === "string" ? entry.name.trim() : "";
+          if (!name) return;
+          perkIndexByName.set(name.toLowerCase(), entry);
+        });
+        monsters = normalizeMonsters(Array.isArray(monstersData) ? monstersData : []);
+        items = (Array.isArray(data) ? data : [])
+          .map((row) => normalizeWeapon(row))
+          .filter((weapon) => {
+            const nameLower = (weapon.name || "").toLowerCase();
+            const levelNum = Number(weapon.level);
+            if (nameLower === "flaming sword" && levelNum === 0) return false;
+            return !hiddenWeaponNames.has(nameLower);
+          });
+        if (!items.length) {
+          renderEmpty("Add weapons_data05.json beside this page to see weapons.");
+          return;
+        }
+        sortKey = "dps";
+        sortDir = "desc";
+        selectedTypes = new Set();
+        selectedElements = new Set();
+        selectedAttackSpeeds = new Set();
+        buildHead();
+        populateFilters(items);
+        if (initialWeaponSearchTerm) {
+          searchTerm = initialWeaponSearchTerm;
+          if (searchInput) searchInput.value = initialWeaponSearchTerm;
+        }
+        applyFilterAndSort();
+      })
+      .catch(() => {
+        renderEmpty("Unable to load weapons. Add weapons_data05.json beside this page.");
+      });
+  };
+
+  if (searchInput) {
+    searchInput.addEventListener("input", (event) => {
+      searchTerm = event.target.value || "";
+      applyFilterAndSort();
+    });
+  }
+
+  if (typeFilter) {
+    enableToggleSelect(typeFilter);
+    typeFilter.addEventListener("change", () => {
+      selectedTypes = new Set(Array.from(typeFilter.selectedOptions).map((o) => o.value));
+      applyFilterAndSort();
+    });
+  }
+
+  if (elementFilter) {
+    enableToggleSelect(elementFilter);
+    elementFilter.addEventListener("change", () => {
+      selectedElements = new Set(Array.from(elementFilter.selectedOptions).map((o) => o.value));
+      applyFilterAndSort();
+    });
+  }
+
+  if (attackSpeedFilter) {
+    enableToggleSelect(attackSpeedFilter);
+    attackSpeedFilter.addEventListener("change", () => {
+      selectedAttackSpeeds = new Set(Array.from(attackSpeedFilter.selectedOptions).map((o) => o.value));
+      applyFilterAndSort();
+    });
+  }
+
+  if (closeBtn) {
+    closeBtn.addEventListener("click", () => {
+      clearDetails({ updateUrl: true });
+    });
+  }
+
+  init();
+})();
