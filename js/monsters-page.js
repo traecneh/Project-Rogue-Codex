@@ -28,6 +28,27 @@
       fetch(targetUrl)
         .then((res) => (res.ok ? res.json() : []))
         .catch(() => []));
+  const buildWeaponDetailUrl =
+    typeof utils.buildWeaponDetailUrl === "function"
+      ? (weapon) => utils.buildWeaponDetailUrl(weapon)
+      : (weapon) => {
+          const name = (weapon && typeof weapon === "object" ? weapon.name || weapon.id : weapon || "")
+            .toString()
+            .trim();
+          return name ? `pages/items/weapons.html?weapon=${encodeURIComponent(name)}` : "pages/items/weapons.html";
+        };
+  const buildArmorDetailUrl =
+    typeof utils.buildArmorDetailUrl === "function"
+      ? (armor) => utils.buildArmorDetailUrl(armor)
+      : (armor) => {
+          const name = (armor && typeof armor === "object" ? armor.name || armor.id : armor || "")
+            .toString()
+            .trim();
+          return name ? `pages/items/armors.html?armor=${encodeURIComponent(name)}` : "pages/items/armors.html";
+        };
+  const stopTooltipLinkPropagation = (event) => {
+    event.stopPropagation();
+  };
   const ELEMENT_COLORS = utils.ELEMENT_COLORS || {
     fire: "#ff5a5a",
     electric: "#b86bff",
@@ -760,7 +781,8 @@ const renderEmpty = (message) => {
     const label = document.createElement("a");
     label.className = "detail-tooltip-label";
     label.textContent = entry.name;
-    label.href = `pages/items/weapons.html?weapon=${encodeURIComponent(entry.name)}`;
+    label.href = buildWeaponDetailUrl(entry.name);
+    label.addEventListener("click", stopTooltipLinkPropagation);
     label.style.color = "inherit";
     const metaSpan = document.createElement("span");
     metaSpan.textContent = entry.meta || "-";
@@ -782,7 +804,8 @@ const renderEmpty = (message) => {
     const label = document.createElement("a");
     label.className = "detail-tooltip-label";
     label.textContent = entry.name;
-    label.href = `pages/items/armors.html?armor=${encodeURIComponent(entry.name)}`;
+    label.href = buildArmorDetailUrl(entry.name);
+    label.addEventListener("click", stopTooltipLinkPropagation);
     label.style.color = "inherit";
     const armorSpan = document.createElement("span");
     armorSpan.textContent = entry.meta || "-";

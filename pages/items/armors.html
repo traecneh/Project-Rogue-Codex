@@ -674,6 +674,15 @@
           typeof utils.loadAllowlists === "function" ? () => utils.loadAllowlists() : () => Promise.resolve(null);
         const loadDropSources =
           typeof utils.loadDropSources === "function" ? () => utils.loadDropSources() : () => Promise.resolve(null);
+        const buildMonsterDetailUrl =
+          typeof utils.buildMonsterDetailUrl === "function"
+            ? (monster) => utils.buildMonsterDetailUrl(monster)
+            : (monster) => {
+                const slug = normalizeMonsterId(monster);
+                return slug
+                  ? `pages/enemies/monsters.html?monster=${encodeURIComponent(slug)}`
+                  : "pages/enemies/monsters.html";
+              };
         let dropSources =
           typeof utils.createEmptyDropSources === "function"
             ? utils.createEmptyDropSources()
@@ -1180,6 +1189,10 @@
           };
         };
 
+        const stopTooltipLinkPropagation = (event) => {
+          event.stopPropagation();
+        };
+
         const createDropsFromPill = (item) => {
           const pill = document.createElement("span");
           pill.className = "detail-pill";
@@ -1271,7 +1284,8 @@
                     row.className = "detail-tooltip-row";
                     const nameLink = document.createElement("a");
                     nameLink.textContent = entry.name;
-                    nameLink.href = `pages/enemies/monsters.html?monster=${encodeURIComponent(entry.id)}`;
+                    nameLink.href = buildMonsterDetailUrl(entry.id || entry.name);
+                    nameLink.addEventListener("click", stopTooltipLinkPropagation);
                     const typeSpan = document.createElement("span");
                     typeSpan.className = "detail-tooltip-type";
                     typeSpan.textContent = formatMonsterTypeLabel(entry.type);

@@ -375,6 +375,24 @@
       .replace(/^-+|-+$/g, "");
   }
 
+  function buildMonsterDetailUrl(monster) {
+    const raw = monster && typeof monster === "object" ? monster.name || monster.id : monster;
+    const slug = normalizeDropSlug(raw);
+    return slug ? `pages/enemies/monsters.html?monster=${encodeURIComponent(slug)}` : "pages/enemies/monsters.html";
+  }
+
+  function buildWeaponDetailUrl(item) {
+    const raw = item && typeof item === "object" ? item.name || item.id : item;
+    const name = normalizeDropName(raw);
+    return name ? `pages/items/weapons.html?weapon=${encodeURIComponent(name)}` : "pages/items/weapons.html";
+  }
+
+  function buildArmorDetailUrl(item) {
+    const raw = item && typeof item === "object" ? item.name || item.id : item;
+    const name = normalizeDropName(raw);
+    return name ? `pages/items/armors.html?armor=${encodeURIComponent(name)}` : "pages/items/armors.html";
+  }
+
   function createEmptyDropSources() {
     return {
       schemaVersion: DROP_SOURCES_SCHEMA_VERSION,
@@ -464,6 +482,9 @@
     createEmptyDropSources,
     buildNameSet,
     loadAllowlists,
+    buildMonsterDetailUrl,
+    buildWeaponDetailUrl,
+    buildArmorDetailUrl,
     getDropSourceItemNamesByMonster,
     getDropSourceMonsterIdsByItem,
     loadDropSources,

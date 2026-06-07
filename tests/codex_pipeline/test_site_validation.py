@@ -123,6 +123,30 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn("nameLink.href = buildMonsterDetailUrl(monster);", script)
         self.assertIn("selectMonster(monster, { updateUrl: true", script)
 
+    def test_drop_source_views_use_shared_detail_links(self):
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        utils_script = (REPO_ROOT / "js" / "utils.js").read_text(encoding="utf-8")
+        monsters_script = (REPO_ROOT / "js" / "monsters-page.js").read_text(encoding="utf-8")
+        weapons_html = (REPO_ROOT / "pages" / "items" / "weapons.html").read_text(encoding="utf-8")
+        armors_html = (REPO_ROOT / "pages" / "items" / "armors.html").read_text(encoding="utf-8")
+
+        self.assertIn("function buildMonsterDetailUrl", utils_script)
+        self.assertIn("function buildWeaponDetailUrl", utils_script)
+        self.assertIn("function buildArmorDetailUrl", utils_script)
+        self.assertNotIn("UNIQUE_WEAPON_DROP_SOURCES", weapons_html)
+        self.assertIn('utils.getDropSourceMonsterIdsByItem(dropSources, "weapons", item?.name)', weapons_html)
+        self.assertIn("nameLink.href = buildMonsterDetailUrl(entry.id || entry.name);", weapons_html)
+        self.assertIn("nameLink.href = buildMonsterDetailUrl(entry.id || entry.name);", armors_html)
+        self.assertIn("label.href = buildWeaponDetailUrl(entry.name);", monsters_script)
+        self.assertIn("label.href = buildArmorDetailUrl(entry.name);", monsters_script)
+        self.assertIn("const stopTooltipLinkPropagation", weapons_html)
+        self.assertIn("const stopTooltipLinkPropagation", armors_html)
+        self.assertIn("const stopTooltipLinkPropagation", monsters_script)
+        self.assertIn('nameLink.addEventListener("click", stopTooltipLinkPropagation);', weapons_html)
+        self.assertIn('nameLink.addEventListener("click", stopTooltipLinkPropagation);', armors_html)
+        self.assertIn('label.addEventListener("click", stopTooltipLinkPropagation);', monsters_script)
+
     def test_manifest_self_reference_is_an_error(self):
         from tools.codex_pipeline.validators.site import validate_manifest_entries
 
