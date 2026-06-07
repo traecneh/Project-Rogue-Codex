@@ -51,6 +51,7 @@ VALIDATED_HTML_PATHS = [
 
 VALIDATED_SCRIPT_PATHS = [
     REPO_ROOT / "js" / "utils.js",
+    REPO_ROOT / "js" / "monsters-page.js",
 ]
 
 

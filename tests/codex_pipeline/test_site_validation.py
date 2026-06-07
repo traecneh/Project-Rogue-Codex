@@ -32,6 +32,28 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn("overflow: auto;", wrapper_body)
         self.assertIn("max-height: 70vh;", wrapper_body)
 
+    def test_monsters_page_uses_external_page_script(self):
+        from tools.codex_pipeline import cli
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        html_path = REPO_ROOT / "pages" / "enemies" / "monsters.html"
+        script_path = REPO_ROOT / "js" / "monsters-page.js"
+        html = html_path.read_text(encoding="utf-8")
+        inline_scripts = [
+            script.strip()
+            for script in re.findall(
+                r"<script\b(?![^>]*\bsrc\s*=)[^>]*>([\s\S]*?)</script>",
+                html,
+                flags=re.IGNORECASE,
+            )
+            if script.strip()
+        ]
+
+        self.assertIn('<script src="js/monsters-page.js" defer></script>', html)
+        self.assertTrue(script_path.is_file())
+        self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
+        self.assertEqual([], inline_scripts)
+
     def test_manifest_self_reference_is_an_error(self):
         from tools.codex_pipeline.validators.site import validate_manifest_entries
 

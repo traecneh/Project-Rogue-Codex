@@ -1,0 +1,2006 @@
+(() => {
+  const MONSTERS_SCHEMA_VERSION = 1;
+  const dataUrl = (() => {
+    try {
+      const resolved = new URL("monsters_data03.json", window.location.href);
+      if (resolved.protocol === "http:" || resolved.protocol === "https:") {
+        resolved.searchParams.set("v", String(MONSTERS_SCHEMA_VERSION));
+      }
+      return resolved.toString();
+    } catch (error) {
+      return "monsters_data03.json";
+    }
+  })();
+  const weaponsUrl = new URL("../items/weapons_data05.json", window.location.href);
+  const searchInput = document.getElementById("monster-search");
+  const typeFilter = document.getElementById("filter-type");
+  const elementFilter = document.getElementById("filter-element");
+  const flagFilter = document.getElementById("filter-flags");
+  const tableBody = document.getElementById("monsters-body");
+  const countLabel = document.getElementById("monster-count");
+  const details = document.getElementById("monster-details");
+  const closeBtn = document.getElementById("details-close");
+  const MAP_SEARCH_BASE = "https://traecneh.github.io/Project-Rogue-Map/?search=";
+  const utils = window.RogueCodexUtils || {};
+  const fetchJsonCached =
+    utils.fetchJsonCached ||
+    ((targetUrl) =>
+      fetch(targetUrl)
+        .then((res) => (res.ok ? res.json() : []))
+        .catch(() => []));
+  const ELEMENT_COLORS = utils.ELEMENT_COLORS || {
+    fire: "#ff5a5a",
+    electric: "#b86bff",
+    poison: "#2f7a2f",
+    cold: "#7cc9ff",
+    acid: "#b38b00",
+    disease: "#ff9c42",
+  };
+
+  const normalizeMonsterId = (value) => {
+    return (value || "")
+      .toString()
+      .toLowerCase()
+      .replace(/[^a-z0-9_-]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+  };
+
+  const getInitialMonsterId = () => {
+    const params = new URLSearchParams(window.location.search || "");
+    const fromQuery = params.get("monster");
+    if (fromQuery) return normalizeMonsterId(fromQuery);
+    const hash = window.location.hash ? window.location.hash.slice(1) : "";
+    if (hash) {
+      const hashValue = hash.startsWith("monster=") ? hash.slice("monster=".length) : hash;
+      return normalizeMonsterId(hashValue);
+    }
+    return "";
+  };
+
+  const getInitialSearchTerm = () => {
+    const params = new URLSearchParams(window.location.search || "");
+    const fromQuery = params.get("search") || params.get("q") || params.get("perk") || "";
+    return String(fromQuery || "").trim();
+  };
+
+  const FLAG_DETAILS = {
+    flying: {
+      label: "Flying",
+      description: "Able to fly over mountains, water, and other objects.",
+    },
+    ethereal: {
+      label: "Ethereal",
+      description: "Able pass through walls and fly over mountains, water, and other objects.",
+    },
+    boss: {
+      label: "Boss",
+      description:
+        "These are the most powerful enemies you can fight. They can pass through non-Boss monsters and are leashed to their spawn area; pulling them out causes a teleport and full heal.",
+    },
+    berserker: { label: "Berserker", description: "Can attack all players adjacent to them." },
+    target_when_hit_ranged_trapped: {
+      label: "Target when Attacked/Ranged/Trapped",
+      description: "Targets when attacked, ranged, or trapped.",
+    },
+    target_when_blocked: {
+      label: "Target when Blocked",
+      description: "Targets when blocked.",
+    },
+    immobile: { label: "Immobile", description: "Does not move from its spawn point." },
+    thorns: { label: "Thorns", description: "Reflects damage when hit." },
+  };
+
+  const formatFlagLabel = (flag) => {
+    if (!flag) return "";
+    const meta = FLAG_DETAILS[flag];
+    if (meta && meta.label) return meta.label;
+    return flag
+      .toString()
+      .replace(/[_]+/g, " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+  };
+
+  const normalizeFlagKey = (key) => {
+    if (!key) return "";
+    return key
+      .toString()
+      .replace(/^(is_|has_)/, "")
+      .replace(/[^a-z0-9_]+/gi, "_")
+      .replace(/^_+|_+$/g, "")
+      .toLowerCase();
+  };
+
+  const extractFlags = (raw) => {
+    const fields = (raw && raw.fields) || {};
+    const fromKnown = {
+      flying: fields.is_flying ?? raw.flying,
+      ethereal: fields.is_ethereal ?? raw.ethereal,
+      boss: fields.is_boss ?? raw.boss,
+      berserker: fields.is_berserker ?? raw.berserker,
+      target_when_hit_ranged_trapped: fields.is_target_when_hit_ranged_trapped ?? raw.is_target_when_hit_ranged_trapped,
+      target_when_blocked: fields.is_target_when_blocked ?? raw.is_target_when_blocked,
+      immobile: fields.is_immobile ?? raw.is_immobile,
+      thorns: fields.has_thorns ?? raw.has_thorns,
+    };
+
+    const flags = new Set();
+    Object.entries(fromKnown).forEach(([key, value]) => {
+      if (value) flags.add(key);
+    });
+
+    if (Array.isArray(raw.flags)) {
+      raw.flags.forEach((flag) => {
+        const normalized = normalizeFlagKey(flag) || flag;
+        if (normalized) flags.add(normalized);
+      });
+    }
+
+    Object.entries(fields).forEach(([key, value]) => {
+      if ((key.startsWith("is_") || key.startsWith("has_")) && value) {
+        const normalized = normalizeFlagKey(key);
+        if (normalized) flags.add(normalized);
+      }
+    });
+
+    return Array.from(flags);
+  };
+
+  const toNumber = (value) => {
+    const num = Number(value);
+    return Number.isFinite(num) ? num : null;
+  };
+
+  const computeDps = (minDamage, maxDamage, attackSpeed) => {
+    const speed = toNumber(attackSpeed);
+    const damages = [toNumber(minDamage), toNumber(maxDamage)].filter((v) => v !== null);
+    if (!damages.length || speed === null || speed <= 0) return null;
+    const avgDamage = damages.reduce((sum, val) => sum + val, 0) / damages.length;
+    return avgDamage * (1000 / speed);
+  };
+
+  const normalizeMonster = (raw) => {
+    if (!raw || typeof raw !== "object") return null;
+    const fields = raw.fields || {};
+    const minDamage = toNumber(fields.min_damage ?? raw.minDamage);
+    const maxDamage = toNumber(fields.max_damage ?? raw.maxDamage);
+    const attackSpeedRaw = toNumber(fields.attack_speed ?? raw.attackSpeed);
+    const attackSpeed = attackSpeedRaw && attackSpeedRaw > 0 ? attackSpeedRaw : null;
+    const movingSpeed = toNumber(fields.movement_speed ?? raw.movingSpeed);
+    const hpMax = toNumber(fields.health ?? raw.hpMax);
+    const level = toNumber(fields.level ?? raw.level);
+    const dps = toNumber(raw.dps) ?? computeDps(minDamage, maxDamage, attackSpeed);
+    const elementalAttackRaw =
+      fields.elemental_attack_label ?? raw.elementalAttack ?? fields.elemental_attack ?? "";
+    const elementalAttack =
+      elementalAttackRaw === 0
+        ? "0"
+        : elementalAttackRaw === null || elementalAttackRaw === undefined
+           ? ""
+           : elementalAttackRaw.toString();
+    const statusEffectRaw = fields.status_effect ?? raw.status_effect ?? raw.statusEffect ?? null;
+    const statusEffect = toNumber(statusEffectRaw);
+    const statusEffectLabelRaw =
+      fields.status_effect_label ?? raw.status_effect_label ?? raw.statusEffectLabel ?? "";
+    const statusEffectLabel =
+      statusEffectLabelRaw === null || statusEffectLabelRaw === undefined
+        ? ""
+        : statusEffectLabelRaw.toString();
+    const monsterTypeRaw = fields.type_label ?? raw.monsterType ?? fields.type ?? "";
+    const monsterType =
+      monsterTypeRaw === null || monsterTypeRaw === undefined ? "" : monsterTypeRaw.toString();
+    const uncommonTatter = fields.uncommon_tatter_label ?? "None";
+    const rareTatter = fields.rare_tatter_label ?? "None";
+    const flags = extractFlags(raw);
+    const baseId = raw.id ?? raw.monsterId ?? raw.name ?? "";
+    const normalizedId = normalizeMonsterId(baseId);
+
+    return {
+      id: normalizedId || normalizeMonsterId(raw.name || ""),
+      name: raw.name || fields.name_label || "Unknown Monster",
+      minDamage,
+      maxDamage,
+      movingSpeed,
+      flying: flags.includes("flying"),
+      ethereal: flags.includes("ethereal"),
+      boss: flags.includes("boss"),
+      attackSpeed,
+      dps,
+      level,
+      elementalAttack,
+      statusEffect,
+      statusEffectLabel,
+      monsterType,
+      hpMax,
+      uncommonTatter,
+      rareTatter,
+      flags,
+    };
+  };
+
+  const buildNameSet =
+    utils.buildNameSet ||
+    ((list) =>
+      new Set(
+        (Array.isArray(list) ? list : [])
+          .map((value) => (value === null || value === undefined ? "" : String(value)).trim().toLowerCase())
+          .filter(Boolean)
+      ));
+  const loadAllowlists =
+    typeof utils.loadAllowlists === "function" ? () => utils.loadAllowlists() : () => Promise.resolve(null);
+  const loadDropSources =
+    typeof utils.loadDropSources === "function" ? () => utils.loadDropSources() : () => Promise.resolve(null);
+  let dropSources =
+    typeof utils.createEmptyDropSources === "function"
+      ? utils.createEmptyDropSources()
+      : { armors: {}, weapons: {}, reverse: { armors: {}, weapons: {} } };
+  let allowedMonsterNames = new Set();
+  let hiddenWeaponNames = new Set();
+  let hiddenArmorNames = new Set();
+
+  const applyAllowlists = (allowlists) => {
+    allowedMonsterNames = buildNameSet(allowlists?.monsters?.allow);
+    hiddenWeaponNames = buildNameSet(allowlists?.weapons?.block);
+    hiddenArmorNames = buildNameSet(allowlists?.armors?.block);
+  };
+
+  const isMonsterAllowed = (monster) => {
+    if (!allowedMonsterNames.size) return true;
+    return allowedMonsterNames.has((monster.name || "").toLowerCase());
+  };
+
+  const normalizeMonsters = (list) => {
+    if (!Array.isArray(list)) return [];
+    return list
+      .map((entry) => normalizeMonster(entry))
+      .filter(Boolean)
+      .filter((monster) => isMonsterAllowed(monster));
+  };
+
+  let pendingMonsterId = getInitialMonsterId();
+
+  const monsterImageManifest = new Map();
+  const loadMonsterImageManifest = () => {
+    if (monsterImageManifest.size) return;
+    const manifestUrl = new URL("../../images/monsters/manifest.json", window.location.href).toString();
+    fetch(manifestUrl)
+      .then((res) => (res.ok ? res.json() : Promise.reject()))
+      .then((list) => {
+        const entries = Array.isArray(list) ? list : [];
+        entries.forEach((path) => {
+          const file = String(path || "").split("/").pop() || "";
+          const base = file.replace(/\.[^.]+$/, "").toLowerCase();
+          if (base) monsterImageManifest.set(base, path);
+        });
+      })
+      .catch(() => {});
+  };
+
+  loadMonsterImageManifest();
+
+  const deriveImageCandidates = (monster) => {
+    const candidates = [];
+    const rawName = (monster && monster.name ? String(monster.name) : "").trim();
+    const lowerName = rawName.toLowerCase();
+    const pngExceptions = new Set(["demon spire", "dragon spire", "master spire", "winter spire"]);
+
+    if (monster && monster.image) {
+      candidates.push(monster.image);
+    }
+
+    if (lowerName && monsterImageManifest.has(lowerName)) {
+      candidates.push(monsterImageManifest.get(lowerName));
+    }
+
+    if (rawName) {
+      const encodedName = encodeURIComponent(rawName);
+      const ext = pngExceptions.has(lowerName) ? "png" : "gif";
+      candidates.push(`images/monsters/${encodedName}.${ext}`);
+    }
+
+    return Array.from(new Set(candidates.filter(Boolean)));
+  };
+
+  const RESISTANCES_SCHEMA_VERSION = 1;
+  const resistancesUrl = (() => {
+    try {
+      const resolved = new URL("../systems/resistances.json", window.location.href);
+      if (resolved.protocol === "http:" || resolved.protocol === "https:") {
+        resolved.searchParams.set("v", String(RESISTANCES_SCHEMA_VERSION));
+      }
+      return resolved.toString();
+    } catch (error) {
+      return "../systems/resistances.json";
+    }
+  })();
+
+  let TYPE_RESISTANCES = {
+    humanoid: [
+      { element: "Poison", value: 1.25 },
+      { element: "Disease", value: 1.25 },
+      { element: "Acid", value: 1.15 },
+      { element: "Fire", value: 1.0 },
+      { element: "Electric", value: 1.0 },
+      { element: "Cold", value: 0.9 },
+    ],
+    giant: [
+      { element: "Electric", value: 1.25 },
+      { element: "Cold", value: 1.15 },
+      { element: "Disease", value: 1.0 },
+      { element: "Fire", value: 0.8 },
+      { element: "Acid", value: 0.8 },
+      { element: "Poison", value: 0.8 },
+    ],
+    animal: [
+      { element: "Poison", value: 1.25 },
+      { element: "Disease", value: 1.25 },
+      { element: "Fire", value: 1.1 },
+      { element: "Cold", value: 1.0 },
+      { element: "Electric", value: 1.0 },
+      { element: "Acid", value: 1.0 },
+    ],
+    beast: [
+      { element: "Cold", value: 1.1 },
+      { element: "Acid", value: 1.1 },
+      { element: "Disease", value: 1.1 },
+      { element: "Poison", value: 1.0 },
+      { element: "Fire", value: 0.9 },
+      { element: "Electric", value: 0.8 },
+    ],
+    undead: [
+      { element: "Fire", value: 1.25 },
+      { element: "Electric", value: 1.15 },
+      { element: "Cold", value: 1.0 },
+      { element: "Disease", value: 1.0 },
+      { element: "Acid", value: 0.8 },
+      { element: "Poison", value: 0.8 },
+    ],
+    demon: [
+      { element: "Cold", value: 1.3 },
+      { element: "Electric", value: 1.15 },
+      { element: "Acid", value: 1.0 },
+      { element: "Poison", value: 1.0 },
+      { element: "Disease", value: 1.0 },
+      { element: "Fire", value: 0.7 },
+    ],
+    "fire beast": [
+      { element: "Cold", value: 1.3 },
+      { element: "Electric", value: 1.0 },
+      { element: "Acid", value: 1.0 },
+      { element: "Poison", value: 1.0 },
+      { element: "Disease", value: 1.0 },
+      { element: "Fire", value: 0.7 },
+    ],
+    "ice beast": [
+      { element: "Fire", value: 1.3 },
+      { element: "Acid", value: 1.2 },
+      { element: "Electric", value: 1.0 },
+      { element: "Poison", value: 1.0 },
+      { element: "Disease", value: 1.0 },
+      { element: "Cold", value: 0.7 },
+    ],
+    "electric beast": [
+      { element: "Acid", value: 1.3 },
+      { element: "Cold", value: 1.15 },
+      { element: "Fire", value: 1.0 },
+      { element: "Poison", value: 1.0 },
+      { element: "Disease", value: 1.0 },
+      { element: "Electric", value: 0.7 },
+    ],
+    "poison beast": [
+      { element: "Acid", value: 1.25 },
+      { element: "Fire", value: 1.2 },
+      { element: "Cold", value: 1.0 },
+      { element: "Electric", value: 1.0 },
+      { element: "Disease", value: 1.0 },
+      { element: "Poison", value: 0.8 },
+    ],
+    "disease beast": [
+      { element: "Fire", value: 1.25 },
+      { element: "Electric", value: 1.1 },
+      { element: "Cold", value: 1.0 },
+      { element: "Acid", value: 1.0 },
+      { element: "Poison", value: 1.0 },
+      { element: "Disease", value: 0.8 },
+    ],
+  };
+
+  const setImageSource = (imgEl, monster, onFail, onSuccess) => {
+    const sources = deriveImageCandidates(monster);
+    if (!sources.length) {
+      if (onFail) onFail();
+      return;
+    }
+    let index = 0;
+    const trySet = () => {
+      imgEl.onerror = () => {
+        index += 1;
+        if (index < sources.length) {
+          trySet();
+        } else {
+          imgEl.onerror = null;
+          if (onFail) onFail();
+        }
+      };
+      imgEl.onload = () => {
+        imgEl.onload = null;
+        if (onSuccess) onSuccess();
+      };
+      imgEl.src = sources[index];
+    };
+    trySet();
+  };
+
+  const detailFields = {
+    name: document.getElementById("details-name"),
+    image: document.getElementById("details-image"),
+    mapLink: document.getElementById("details-map-link"),
+    level: document.getElementById("details-level"),
+  hp: document.getElementById("details-hp"),
+  dmgRange: document.getElementById("details-dmg-range"),
+  dps: document.getElementById("details-dps"),
+  attackSpeed: document.getElementById("details-attack-speed"),
+  speed: document.getElementById("details-speed"),
+  type: document.getElementById("details-type"),
+  typeTooltip: document.getElementById("details-type-tooltip"),
+  element: document.getElementById("details-element"),
+  eliteSummary: document.getElementById("details-elite-summary"),
+  corruptedSummary: document.getElementById("details-corrupted-summary"),
+    elitePlusSummary: document.getElementById("details-elite-plus-summary"),
+    imageFallback: document.getElementById("details-image-fallback"),
+    flags: document.getElementById("details-flags"),
+    targetFlags: document.getElementById("details-target-flags"),
+    statusEffect: document.getElementById("details-status-effect"),
+    lootTable: document.getElementById("loot-table"),
+    recommendedWeapons: document.getElementById("recommended-weapons"),
+    recommendedArmors: document.getElementById("recommended-armors"),
+  };
+
+const tooltipFields = {
+  elite: {
+    hp: document.getElementById("tooltip-elite-hp"),
+    dmg: document.getElementById("tooltip-elite-dmg"),
+    dps: document.getElementById("tooltip-elite-dps"),
+  },
+  corrupted: {
+    hp: document.getElementById("tooltip-corrupted-hp"),
+    dmg: document.getElementById("tooltip-corrupted-dmg"),
+    dps: document.getElementById("tooltip-corrupted-dps"),
+  },
+  elitePlus: {
+    hp: document.getElementById("tooltip-elite-plus-hp"),
+    dmg: document.getElementById("tooltip-elite-plus-dmg"),
+    dps: document.getElementById("tooltip-elite-plus-dps"),
+  },
+};
+let pinnedTooltip = null;
+let pinDocumentListenerAttached = false;
+
+  let monsters = [];
+  let sortKey = "dps";
+  let sortDir = "desc";
+  let searchTerm = getInitialSearchTerm();
+  let selectedTypes = new Set();
+  let selectedElements = new Set();
+  let selectedFlags = new Set();
+  let weapons = [];
+  let armors = [];
+
+  if (searchInput && searchTerm) {
+    searchInput.value = searchTerm;
+  }
+
+const renderEmpty = (message) => {
+  tableBody.innerHTML = `<tr><td class="table-empty" colspan="8">${message}</td></tr>`;
+  if (countLabel) {
+    countLabel.textContent = "0 results";
+  }
+  };
+
+  const populateFilters = (data) => {
+    const typeOptions = new Map();
+    const elementOptions = new Set();
+    const flagOptions = new Set();
+    const statusEffectOptions = new Map();
+
+    data.forEach((m) => {
+      const normalizedType = normalizeType(m.monsterType);
+      if (normalizedType) {
+        const label = formatTypeLabel(m.monsterType);
+        if (!typeOptions.has(normalizedType)) {
+          typeOptions.set(normalizedType, label);
+        }
+      }
+      const element = (m.elementalAttack || "").trim().toLowerCase();
+      if (element) {
+        elementOptions.add(element);
+      }
+
+      (Array.isArray(m.flags) ? m.flags : []).forEach((flag) => {
+        if (flag) flagOptions.add(flag);
+      });
+
+      const effectValue = m.statusEffect;
+      const effectLabel = (m.statusEffectLabel || "").toString().trim();
+      if (effectLabel && effectValue !== null && effectValue !== undefined && Number(effectValue) !== 0) {
+        const key = effectLabel.toLowerCase();
+        if (!statusEffectOptions.has(key)) {
+          statusEffectOptions.set(key, effectLabel);
+        }
+      }
+    });
+
+    if (typeFilter) {
+      typeFilter.innerHTML = "";
+      Array.from(typeOptions.entries())
+        .sort((a, b) => a[1].localeCompare(b[1]))
+        .forEach(([value, label]) => {
+          const opt = document.createElement("option");
+          opt.value = value;
+          opt.textContent = label;
+          opt.selected = selectedTypes.has(value);
+          typeFilter.appendChild(opt);
+        });
+    }
+
+    if (elementFilter) {
+      elementFilter.innerHTML = "";
+      Array.from(elementOptions)
+        .sort((a, b) => a.localeCompare(b))
+        .forEach((value) => {
+          const opt = document.createElement("option");
+          opt.value = value;
+          opt.textContent = value.charAt(0).toUpperCase() + value.slice(1);
+          opt.selected = selectedElements.has(value);
+          const color = ELEMENT_COLORS[value];
+          if (color && value !== "none") {
+            opt.style.color = color;
+          }
+          elementFilter.appendChild(opt);
+        });
+    }
+
+    if (flagFilter) {
+      flagFilter.innerHTML = "";
+      const options = [];
+      Array.from(flagOptions).forEach((value) => {
+        const label = formatFlagLabel(value);
+        options.push({ value, label });
+      });
+      Array.from(statusEffectOptions.entries()).forEach(([value, label]) => {
+        options.push({ value: `status:${value}`, label });
+      });
+      options
+        .sort((a, b) => a.label.localeCompare(b.label))
+        .forEach((entry) => {
+          const opt = document.createElement("option");
+          opt.value = entry.value;
+          opt.textContent = entry.label;
+          opt.selected = selectedFlags.has(entry.value);
+          flagFilter.appendChild(opt);
+        });
+    }
+  };
+
+  const getSortValue = (monster, key) => {
+    const value = monster[key];
+    return typeof value === "string" ? value.toLowerCase() : value;
+  };
+
+  const formatBool = (value) => (value ? "Yes" : "No");
+
+  const formatNumber = (value) => {
+    if (value === null || value === undefined) return "-";
+    if (typeof value === "number" && !Number.isNaN(value)) return value.toLocaleString("en-US");
+    const num = Number(value);
+    if (!Number.isNaN(num)) return num.toLocaleString("en-US");
+    return value;
+  };
+
+  const formatDps = (value) => {
+    if (value === null || value === undefined) return "-";
+    const num = Number(value);
+    if (Number.isNaN(num)) return "-";
+    const rounded = Math.round(num);
+    return rounded.toLocaleString("en-US");
+  };
+
+  const setVariantValues = (value, mult, el, formatter = formatNumber) => {
+    const isNumber = typeof value === "number" && !Number.isNaN(value);
+    const scaled = isNumber ? value * mult : null;
+    if (el) el.textContent = formatter(scaled);
+  };
+
+  const applyElementColor = (elementValue, target) => {
+    if (!target) return;
+    const text = elementValue || "-";
+    const color = ELEMENT_COLORS[(elementValue || "").toLowerCase()];
+    target.textContent = text;
+    target.style.color = color || "";
+  };
+
+  const formatDamageRange = (min, max) => {
+    const hasMin = typeof min === "number" && !Number.isNaN(min);
+    const hasMax = typeof max === "number" && !Number.isNaN(max);
+    if (hasMin && hasMax) return `${formatNumber(min)} - ${formatNumber(max)}`;
+    if (hasMin) return `${formatNumber(min)}`;
+    if (hasMax) return `${formatNumber(max)}`;
+    return "-";
+  };
+
+  const formatScaledDamageRange = (min, max, mult) => {
+    const hasMin = typeof min === "number" && !Number.isNaN(min);
+    const hasMax = typeof max === "number" && !Number.isNaN(max);
+    const scaledMin = hasMin ? min * mult : null;
+    const scaledMax = hasMax ? max * mult : null;
+    if (scaledMin !== null && scaledMax !== null) return `${formatNumber(scaledMin)} - ${formatNumber(scaledMax)}`;
+    if (scaledMin !== null) return `${formatNumber(scaledMin)}`;
+    if (scaledMax !== null) return `${formatNumber(scaledMax)}`;
+    return "-";
+  };
+
+  const normalizeWeapon = (raw) => {
+    if (!raw || typeof raw !== "object") return null;
+    const fields = raw.fields || {};
+
+    const min = toNumber(fields.min_damage);
+    const max = toNumber(fields.max_damage);
+    const speed = toNumber(fields.attack_speed);
+    const dps = computeDps(min, max, speed);
+
+    return {
+      name: raw.name || fields.name_label || "Unknown Weapon",
+      dps,
+      level: toNumber(fields.level_requirement ?? raw.level),
+      elementalDamageType: fields.element_label || fields.element || raw.elementalDamageType || raw.element,
+      type: fields.subtype_label || fields.subtype || raw.type || raw.Type,
+    };
+  };
+
+  const isSlotZero = (slotValue) =>
+    slotValue === 0 || (typeof slotValue === "string" && slotValue.trim() === "0");
+
+  const normalizeArmor = (raw) => {
+    if (!raw || typeof raw !== "object") return null;
+    const fields = raw.fields || {};
+    const value = toNumber(fields.value);
+    const slotRaw = fields.slot_label ?? fields.slot;
+    if (isSlotZero(slotRaw)) return null;
+    const slot = slotRaw || "";
+    const normalizeSlot = (s) => (s || "").toString().trim().toLowerCase();
+    return {
+      id: raw.id || raw.name || "",
+      name: raw.name || "Unknown Armor",
+      slot,
+      slotNorm: normalizeSlot(slot),
+      level: toNumber(fields.level),
+      armor: toNumber(fields.armor),
+      weight: toNumber(fields.weight),
+      maxRarity: fields.max_rarity_label || fields.max_rarity,
+      value,
+      sellValue: value !== null ? value / 2 : null,
+      deconstruction: toNumber(fields.deconstruction),
+      perk: fields.perk_label || fields.perk || "None",
+      resistances: {
+        fire: toNumber(fields.fire_resistance),
+        cold: toNumber(fields.cold_resistance),
+        poison: toNumber(fields.poison_resistance),
+        disease: toNumber(fields.disease_resistance),
+        acid: toNumber(fields.acid_resistance),
+        electric: toNumber(fields.lightning_resistance),
+      },
+    };
+  };
+
+  const getElementMultiplier = (monsterType, weaponElement) => {
+    const list = TYPE_RESISTANCES[normalizeType(monsterType)];
+    if (!list || !list.length) return 1;
+    const target = (weaponElement || "").toLowerCase();
+    const match = list.find((entry) => (entry.element || "").toLowerCase() === target);
+    return match && typeof match.value === "number" ? match.value : 1;
+  };
+
+  const buildWeaponLinkRow = (entry) => {
+    const row = document.createElement("div");
+    row.className = "detail-tooltip-row weapon-row";
+    const label = document.createElement("a");
+    label.className = "detail-tooltip-label";
+    label.textContent = entry.name;
+    label.href = `pages/items/weapons.html?weapon=${encodeURIComponent(entry.name)}`;
+    label.style.color = "inherit";
+    const metaSpan = document.createElement("span");
+    metaSpan.textContent = entry.meta || "-";
+    metaSpan.className = "weapon-col-meta";
+    const typeSpan = document.createElement("span");
+    typeSpan.textContent = entry.type || "-";
+    typeSpan.className = "weapon-col-type";
+    const color = ELEMENT_COLORS[(entry.element || "").toLowerCase()];
+    if (color) metaSpan.style.color = color;
+    row.appendChild(label);
+    row.appendChild(metaSpan);
+    row.appendChild(typeSpan);
+    return row;
+  };
+
+  const buildArmorLinkRow = (entry) => {
+    const row = document.createElement("div");
+    row.className = "detail-tooltip-row weapon-row";
+    const label = document.createElement("a");
+    label.className = "detail-tooltip-label";
+    label.textContent = entry.name;
+    label.href = `pages/items/armors.html?armor=${encodeURIComponent(entry.name)}`;
+    label.style.color = "inherit";
+    const armorSpan = document.createElement("span");
+    armorSpan.textContent = entry.meta || "-";
+    armorSpan.className = "weapon-col-meta";
+    const slotSpan = document.createElement("span");
+    slotSpan.textContent = entry.slot || "-";
+    slotSpan.className = "weapon-col-type";
+    row.appendChild(label);
+    row.appendChild(armorSpan);
+    row.appendChild(slotSpan);
+    return row;
+  };
+
+  const renderRecommendedWeapons = (monster) => {
+    const container = detailFields.recommendedWeapons;
+    if (!container) return;
+    container.innerHTML = "";
+
+    if (!Array.isArray(weapons) || !weapons.length) {
+      const pill = document.createElement("span");
+      pill.className = "detail-pill";
+      pill.textContent = "No weapons data loaded";
+      container.appendChild(pill);
+      return;
+    }
+
+    const level = Number(monster.level);
+    let ranges = [];
+    if (Number.isFinite(level)) {
+      const maxLevels =
+        level >= 105 ? [90, 105, 125] : [-25, -10, 5].map((offset) => level + offset);
+      ranges = maxLevels
+        .map((maxValue) => Math.max(0, maxValue))
+        .filter((maxValue) => maxValue > 0)
+        .map((maxValue) => ({
+          label: `<= ${formatNumber(maxValue)}`,
+          min: 0,
+          max: maxValue,
+          limit: 10,
+        }));
+      if (level >= 85) {
+        ranges.push({ label: "Endgame", min: 100, max: Infinity, limit: 10 });
+      }
+    } else {
+      const pill = document.createElement("span");
+      pill.className = "detail-pill";
+      pill.textContent = "No level data";
+      container.appendChild(pill);
+      return;
+    }
+
+    const buildList = (range) => {
+      const list = weapons
+        .map((w) => {
+          const dps = Number(w.dps);
+          const wLevel = Number(w.level);
+          if (!Number.isFinite(dps)) return null;
+          const isUnique = !Number.isFinite(wLevel) || wLevel <= 0;
+          const effectiveLevel = isUnique
+            ? Math.max(0, Math.round((dps - 10) / 5) * 5)
+            : wLevel;
+          if (!Number.isFinite(effectiveLevel)) return null;
+          if (effectiveLevel < range.min) return null;
+          if (range.max !== Infinity && effectiveLevel > range.max) return null;
+          const multiplier = getElementMultiplier(monster.monsterType, w.elementalDamageType);
+          return {
+            name: w.name || "Unknown Weapon",
+            element: w.elementalDamageType || "-",
+            type: w.type || "-",
+            effective: dps * multiplier,
+            base: dps,
+            level: wLevel,
+          };
+        })
+        .filter(Boolean)
+        .sort((a, b) => b.effective - a.effective)
+        .slice(0, range.limit || 5);
+      return list;
+    };
+
+    const rangeLabel = (range) => (range.min === range.max ? `${range.max}` : `${range.min}-${range.max}`);
+
+    ranges.forEach((range) => {
+      const pill = document.createElement("span");
+      pill.className = "detail-pill";
+      pill.textContent = range.label || rangeLabel(range);
+
+      const tooltip = document.createElement("span");
+      tooltip.className = "detail-tooltip";
+      tooltip.role = "tooltip";
+
+      const headerRow = document.createElement("div");
+      headerRow.className = "detail-tooltip-row";
+      const headerLabel = document.createElement("span");
+      headerLabel.className = "detail-tooltip-label";
+      headerLabel.textContent = "DPS uses element/type";
+      headerRow.appendChild(headerLabel);
+      tooltip.appendChild(headerRow);
+
+      const headerDivider = document.createElement("div");
+      headerDivider.className = "detail-tooltip-divider";
+      tooltip.appendChild(headerDivider);
+
+      const list = buildList(range);
+      if (!list.length) {
+        tooltip.textContent = "No matching weapons";
+      } else {
+        list.forEach((entry) => {
+          const row = buildWeaponLinkRow({
+            name: entry.name,
+            element: entry.element,
+            type: entry.type,
+            meta: `${formatDps(entry.effective)} DPS`,
+          });
+          tooltip.appendChild(row);
+        });
+      }
+
+      pill.appendChild(tooltip);
+      container.appendChild(pill);
+    });
+  };
+
+  const renderRecommendedArmors = (monster) => {
+    const container = detailFields.recommendedArmors;
+    if (!container) return;
+    container.innerHTML = "";
+
+    if (!Array.isArray(armors) || !armors.length) {
+      const pill = document.createElement("span");
+      pill.className = "detail-pill";
+      pill.textContent = "No armors data";
+      container.appendChild(pill);
+      return;
+    }
+
+    const element = (monster.elementalAttack || "").toLowerCase();
+    const elementKey =
+      element.includes("fire") ? "fire"
+      : element.includes("poison") ? "poison"
+      : element.includes("cold") ? "cold"
+      : element.includes("electric") || element.includes("lightning") ? "electric"
+      : element.includes("acid") ? "acid"
+      : element.includes("disease") ? "disease"
+      : null;
+
+    const level = Number(monster.level);
+    if (!Number.isFinite(level)) {
+      const pill = document.createElement("span");
+      pill.className = "detail-pill";
+      pill.textContent = "No level data";
+      container.appendChild(pill);
+      return;
+    }
+
+    const REQUIRED_SLOTS = ["helmet", "chest", "gauntlets", "leggings", "shield"];
+    const slotLabel = (slot) => slot.charAt(0).toUpperCase() + slot.slice(1);
+
+    const eligibleArmors = armors.filter(
+      (a) => a && a.slotNorm && REQUIRED_SLOTS.includes(a.slotNorm) && !/cosmetic/i.test(a.slot || "")
+    );
+
+    const slotGroups = new Map();
+    eligibleArmors.forEach((armor) => {
+      const list = slotGroups.get(armor.slotNorm) || [];
+      list.push(armor);
+      slotGroups.set(armor.slotNorm, list);
+    });
+
+    const effectiveLevelByArmor = new Map();
+    eligibleArmors.forEach((armor) => {
+      const armorLevel = Number(armor.level);
+      if (Number.isFinite(armorLevel) && armorLevel > 0) {
+        effectiveLevelByArmor.set(armor, armorLevel);
+        return;
+      }
+      const deconstruction = Number(armor.deconstruction);
+      if (!Number.isFinite(deconstruction)) {
+        effectiveLevelByArmor.set(armor, 0);
+        return;
+      }
+      const sameSlot = slotGroups.get(armor.slotNorm) || [];
+      let bestDiff = Infinity;
+      let bestLevel = Infinity;
+      sameSlot.forEach((candidate) => {
+        if (candidate === armor) return;
+        const candidateLevel = Number(candidate.level);
+        if (!Number.isFinite(candidateLevel) || candidateLevel <= 0) return;
+        const candidateDeconstruction = Number(candidate.deconstruction);
+        if (!Number.isFinite(candidateDeconstruction)) return;
+        const diff = Math.abs(candidateDeconstruction - deconstruction);
+        if (diff < bestDiff || (diff === bestDiff && candidateLevel < bestLevel)) {
+          bestDiff = diff;
+          bestLevel = candidateLevel;
+        }
+      });
+      const effectiveLevel = Number.isFinite(bestLevel) && bestLevel !== Infinity ? bestLevel : 0;
+      effectiveLevelByArmor.set(armor, effectiveLevel);
+    });
+
+    const getBestSet = (sourceArmors) => {
+      const bySlot = new Map();
+      sourceArmors
+        .filter((a) => a && a.slotNorm && REQUIRED_SLOTS.includes(a.slotNorm) && !/cosmetic/i.test(a.slot || ""))
+        .forEach((armor) => {
+          const list = bySlot.get(armor.slotNorm) || [];
+          list.push(armor);
+          bySlot.set(armor.slotNorm, list);
+        });
+
+      if (REQUIRED_SLOTS.some((slot) => !bySlot.get(slot) || !bySlot.get(slot).length)) {
+        return null;
+      }
+
+      const topBySlot = {};
+      const TOP_COUNT = 5;
+      REQUIRED_SLOTS.forEach((slot) => {
+        const list = bySlot.get(slot) || [];
+        const sorted = list
+          .map((a) => {
+            const resist = elementKey ? Number(a.resistances[elementKey]) || 0 : 0;
+            const armorVal = Number(a.armor) || 0;
+            return { armor: a, resist, armorVal };
+          })
+          .sort(
+            (a, b) =>
+              b.resist - a.resist || b.armorVal - a.armorVal || (b.armor.level || 0) - (a.armor.level || 0)
+          )
+          .slice(0, TOP_COUNT);
+        topBySlot[slot] = sorted;
+      });
+
+      if (REQUIRED_SLOTS.some((slot) => !topBySlot[slot].length)) {
+        return null;
+      }
+
+      const combos = [];
+      const slotsArrays = REQUIRED_SLOTS.map((slot) => topBySlot[slot]);
+      const recurse = (idx, current) => {
+        if (idx === slotsArrays.length) {
+          const totalResist = current.reduce((sum, entry) => sum + (entry.resist || 0), 0);
+          const cappedResist = Math.min(totalResist, 60);
+          const totalArmor = current.reduce((sum, entry) => sum + (entry.armorVal || 0), 0);
+          combos.push({ set: current.map((e) => e.armor), totalResist, cappedResist, totalArmor });
+          return;
+        }
+        slotsArrays[idx].forEach((entry) => recurse(idx + 1, current.concat(entry)));
+      };
+      recurse(0, []);
+
+      combos.sort((a, b) => {
+        if (a.cappedResist !== b.cappedResist) return b.cappedResist - a.cappedResist;
+        return b.totalArmor - a.totalArmor;
+      });
+      return combos[0] || null;
+    };
+
+    const appendArmorPill = (label, sourceArmors) => {
+      const pill = document.createElement("span");
+      pill.className = "detail-pill";
+      pill.textContent = label;
+
+      const tooltip = document.createElement("span");
+      tooltip.className = "detail-tooltip";
+      tooltip.role = "tooltip";
+
+      const bestSet = getBestSet(sourceArmors);
+      if (!bestSet) {
+        tooltip.textContent = "Not enough armor pieces for a full set";
+      } else {
+        const headerRow = document.createElement("div");
+        headerRow.className = "detail-tooltip-row";
+        const headerLabel = document.createElement("span");
+        headerLabel.className = "detail-tooltip-label";
+        headerLabel.textContent = elementKey
+          ? `Best set vs. ${elementKey.charAt(0).toUpperCase() + elementKey.slice(1)}`
+          : "Best armor set";
+        headerRow.appendChild(headerLabel);
+        tooltip.appendChild(headerRow);
+
+        const headerDivider = document.createElement("div");
+        headerDivider.className = "detail-tooltip-divider";
+        tooltip.appendChild(headerDivider);
+
+        const totalRow = document.createElement("div");
+        totalRow.className = "detail-tooltip-row";
+        const totalLabel = document.createElement("span");
+        totalLabel.className = "detail-tooltip-label";
+        totalLabel.textContent = "Total Resist";
+        const totalVal = document.createElement("span");
+        totalVal.textContent = elementKey
+          ? `${formatNumber(bestSet.cappedResist)} / 60 ${elementKey}`
+          : `${formatNumber(bestSet.cappedResist)} / 60`;
+        totalRow.appendChild(totalLabel);
+        totalRow.appendChild(totalVal);
+        tooltip.appendChild(totalRow);
+
+        const armorRow = document.createElement("div");
+        armorRow.className = "detail-tooltip-row";
+        const armorLabel = document.createElement("span");
+        armorLabel.className = "detail-tooltip-label";
+        armorLabel.textContent = "Total Armor";
+        const armorVal = document.createElement("span");
+        armorVal.textContent = formatNumber(bestSet.totalArmor);
+        armorRow.appendChild(armorLabel);
+        armorRow.appendChild(armorVal);
+        tooltip.appendChild(armorRow);
+
+        const divider = document.createElement("div");
+        divider.className = "detail-tooltip-divider";
+        tooltip.appendChild(divider);
+
+        bestSet.set.forEach((armor) => {
+          const row = document.createElement("div");
+          row.className = "detail-tooltip-row";
+          const labelSpan = document.createElement("span");
+          labelSpan.className = "detail-tooltip-label";
+          labelSpan.textContent = slotLabel(armor.slotNorm);
+          const val = document.createElement("span");
+          val.textContent = `${armor.name}`;
+          row.appendChild(labelSpan);
+          row.appendChild(val);
+          tooltip.appendChild(row);
+        });
+      }
+
+      pill.appendChild(tooltip);
+      container.appendChild(pill);
+    };
+
+    const maxLevels =
+      level >= 105 ? [90, 105, 125] : [-25, -10, 5].map((offset) => level + offset);
+    maxLevels
+      .map((maxValue) => Math.max(0, maxValue))
+      .filter((maxValue) => maxValue > 0)
+      .forEach((maxValue) => {
+        const sourceArmors = eligibleArmors.filter((armor) => {
+          const effectiveLevel = effectiveLevelByArmor.get(armor);
+          return Number.isFinite(effectiveLevel) && effectiveLevel > 0 && effectiveLevel <= maxValue;
+        });
+        appendArmorPill(`<= ${formatNumber(maxValue)}`, sourceArmors);
+      });
+
+    if (level >= 85) {
+      appendArmorPill("Endgame", eligibleArmors);
+    }
+  };
+
+  const buildTatteredImbuementsPill = (monster) => {
+    const normalizeText = (value) => (value === null || value === undefined ? "" : value.toString().trim());
+    const isNone = (value) => {
+      const text = normalizeText(value);
+      return !text || text.toLowerCase() === "none";
+    };
+    const uncommon = monster ? monster.uncommonTatter : "";
+    const rare = monster ? monster.rareTatter : "";
+    if (isNone(uncommon) && isNone(rare)) return null;
+
+    const pill = document.createElement("span");
+    pill.className = "detail-pill";
+    pill.textContent = "Tatters";
+
+    const tooltip = document.createElement("span");
+    tooltip.className = "detail-tooltip";
+    tooltip.role = "tooltip";
+
+    const addRow = (labelText, valueText) => {
+      const row = document.createElement("div");
+      row.className = "detail-tooltip-row";
+      const label = document.createElement("span");
+      label.className = "detail-tooltip-label";
+      label.textContent = labelText;
+      const value = document.createElement("span");
+      value.textContent = normalizeText(valueText) || "-";
+      row.appendChild(label);
+      row.appendChild(value);
+      tooltip.appendChild(row);
+    };
+
+    addRow("Uncommon Tatter", uncommon);
+    addRow("Rare Tatter", rare);
+
+    pill.appendChild(tooltip);
+    return pill;
+  };
+
+  const renderLootTable = (monster) => {
+    const container = detailFields.lootTable;
+    if (!container) return;
+    container.innerHTML = "";
+
+    const tatterPill = buildTatteredImbuementsPill(monster);
+
+    if (!Array.isArray(weapons) || !weapons.length) {
+      const pill = document.createElement("span");
+      pill.className = "detail-pill";
+      pill.textContent = "No weapons data";
+      container.appendChild(pill);
+      if (tatterPill) container.appendChild(tatterPill);
+      return;
+    }
+
+    const level = Number(monster.level);
+    if (!Number.isFinite(level)) {
+      const pill = document.createElement("span");
+      pill.className = "detail-pill";
+      pill.textContent = "No level data";
+      container.appendChild(pill);
+      if (tatterPill) container.appendChild(tatterPill);
+      return;
+    }
+
+      const minLevel = Math.max(0, level - 5);
+      const maxLevel = level + 5;
+
+    const list = weapons
+      .map((w) => {
+        const wLevel = Number(w.level);
+        if (!Number.isFinite(wLevel)) return null;
+        if (wLevel < minLevel || wLevel > maxLevel) return null;
+        return {
+          name: w.name || "Unknown Weapon",
+          element: w.elementalDamageType || "-",
+          meta: `${formatDps(Number(w.dps) || 0)} DPS`,
+          type: w.type || "-",
+          level: wLevel,
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => b.level - a.level)
+      .slice(0, 10);
+
+    const pill = document.createElement("span");
+    pill.className = "detail-pill";
+    pill.textContent = "Weapons";
+
+      const tooltip = document.createElement("span");
+      tooltip.className = "detail-tooltip";
+      tooltip.role = "tooltip";
+
+      const uniqueDropNames =
+        typeof utils.getDropSourceItemNamesByMonster === "function"
+          ? utils.getDropSourceItemNamesByMonster(dropSources, "weapons", monster.name || monster.id)
+          : [];
+      const uniqueDropList = Array.from(
+        new Set(uniqueDropNames.map((name) => String(name || "").trim()).filter(Boolean))
+      )
+        .map((name) => {
+          const match = weapons.find((w) => (w.name || "").toLowerCase() === name.toLowerCase());
+          if (!match) {
+            return {
+              name,
+              element: "-",
+              meta: "-",
+              type: "-",
+            };
+          }
+          return {
+            name: match.name || name,
+            element: match.elementalDamageType || "-",
+            meta: `${formatDps(Number(match.dps) || 0)} DPS`,
+            type: match.type || "-",
+          };
+        })
+        .filter(Boolean);
+
+      if (uniqueDropList.length) {
+        const uniqueHeader = document.createElement("div");
+        uniqueHeader.className = "detail-tooltip-row weapon-row";
+        const uniqueLabel = document.createElement("span");
+        uniqueLabel.className = "detail-tooltip-label";
+        uniqueLabel.textContent = "Unique Drops";
+        const uniqueMeta = document.createElement("span");
+        uniqueMeta.className = "weapon-col-meta";
+        const uniqueType = document.createElement("span");
+        uniqueType.className = "weapon-col-type";
+        uniqueHeader.appendChild(uniqueLabel);
+        uniqueHeader.appendChild(uniqueMeta);
+        uniqueHeader.appendChild(uniqueType);
+        tooltip.appendChild(uniqueHeader);
+
+        const uniqueHeaderDivider = document.createElement("div");
+        uniqueHeaderDivider.className = "detail-tooltip-divider";
+        tooltip.appendChild(uniqueHeaderDivider);
+
+        uniqueDropList.forEach((entry) => {
+          tooltip.appendChild(buildWeaponLinkRow(entry));
+        });
+
+        const uniqueDivider = document.createElement("div");
+        uniqueDivider.className = "detail-tooltip-divider";
+        tooltip.appendChild(uniqueDivider);
+      }
+
+      const rangeRow = document.createElement("div");
+      rangeRow.className = "detail-tooltip-row";
+      const rangeLabel = document.createElement("span");
+      rangeLabel.className = "detail-tooltip-label";
+      rangeLabel.textContent = "Levels";
+    const rangeVal = document.createElement("span");
+    rangeVal.textContent = `${formatNumber(minLevel)} - ${formatNumber(maxLevel)}`;
+    rangeRow.appendChild(rangeLabel);
+    rangeRow.appendChild(rangeVal);
+    tooltip.appendChild(rangeRow);
+
+    const divider = document.createElement("div");
+    divider.className = "detail-tooltip-divider";
+    tooltip.appendChild(divider);
+
+    if (!list.length) {
+      const emptyRow = document.createElement("div");
+      emptyRow.className = "detail-tooltip-row";
+      const emptyLabel = document.createElement("span");
+      emptyLabel.className = "detail-tooltip-label";
+      emptyLabel.textContent = "No weapons in range";
+      emptyRow.appendChild(emptyLabel);
+      tooltip.appendChild(emptyRow);
+    } else {
+      list.forEach((entry) => {
+        tooltip.appendChild(buildWeaponLinkRow(entry));
+      });
+    }
+
+    pill.appendChild(tooltip);
+    container.appendChild(pill);
+
+    const armorList = armors
+      .map((a) => {
+        const aLevel = Number(a.level);
+        if (!Number.isFinite(aLevel)) return null;
+        if (aLevel < minLevel || aLevel > maxLevel) return null;
+        return {
+          name: a.name || "Unknown Armor",
+          slot: a.slot || a.slotNorm || "-",
+          meta: `Armor ${formatNumber(a.armor)}`,
+          level: aLevel,
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => b.level - a.level)
+      .slice(0, 10);
+
+      const armorPill = document.createElement("span");
+      armorPill.className = "detail-pill";
+      armorPill.textContent = "Armors";
+
+      const armorTooltip = document.createElement("span");
+      armorTooltip.className = "detail-tooltip";
+      armorTooltip.role = "tooltip";
+
+      const uniqueArmorNames =
+        typeof utils.getDropSourceItemNamesByMonster === "function"
+          ? utils.getDropSourceItemNamesByMonster(dropSources, "armors", monster.name || monster.id)
+          : [];
+      const uniqueArmorList = Array.from(
+        new Set(uniqueArmorNames.map((name) => String(name || "").trim()).filter(Boolean))
+      )
+        .map((name) => {
+          const match = armors.find((a) => (a.name || "").toLowerCase() === name.toLowerCase());
+          if (!match) {
+            return {
+              name,
+              slot: "-",
+              meta: "-",
+            };
+          }
+          return {
+            name: match.name || name,
+            slot: match.slot || match.slotNorm || "-",
+            meta: `Armor ${formatNumber(match.armor)}`,
+          };
+        })
+        .filter(Boolean);
+
+      if (uniqueArmorList.length) {
+        const uniqueArmorHeader = document.createElement("div");
+        uniqueArmorHeader.className = "detail-tooltip-row weapon-row";
+        const uniqueArmorLabel = document.createElement("span");
+        uniqueArmorLabel.className = "detail-tooltip-label";
+        uniqueArmorLabel.textContent = "Unique Drops";
+        const uniqueArmorMeta = document.createElement("span");
+        uniqueArmorMeta.className = "weapon-col-meta";
+        const uniqueArmorType = document.createElement("span");
+        uniqueArmorType.className = "weapon-col-type";
+        uniqueArmorHeader.appendChild(uniqueArmorLabel);
+        uniqueArmorHeader.appendChild(uniqueArmorMeta);
+        uniqueArmorHeader.appendChild(uniqueArmorType);
+        armorTooltip.appendChild(uniqueArmorHeader);
+
+        const uniqueArmorHeaderDivider = document.createElement("div");
+        uniqueArmorHeaderDivider.className = "detail-tooltip-divider";
+        armorTooltip.appendChild(uniqueArmorHeaderDivider);
+
+        uniqueArmorList.forEach((entry) => {
+          armorTooltip.appendChild(buildArmorLinkRow(entry));
+        });
+
+        const uniqueArmorDivider = document.createElement("div");
+        uniqueArmorDivider.className = "detail-tooltip-divider";
+        armorTooltip.appendChild(uniqueArmorDivider);
+      }
+
+      const armorRangeRow = document.createElement("div");
+      armorRangeRow.className = "detail-tooltip-row";
+      const armorRangeLabel = document.createElement("span");
+      armorRangeLabel.className = "detail-tooltip-label";
+      armorRangeLabel.textContent = "Levels";
+    const armorRangeVal = document.createElement("span");
+    armorRangeVal.textContent = `${formatNumber(minLevel)} - ${formatNumber(maxLevel)}`;
+    armorRangeRow.appendChild(armorRangeLabel);
+    armorRangeRow.appendChild(armorRangeVal);
+    armorTooltip.appendChild(armorRangeRow);
+
+    const armorDivider = document.createElement("div");
+    armorDivider.className = "detail-tooltip-divider";
+    armorTooltip.appendChild(armorDivider);
+
+    if (!armorList.length) {
+      const emptyRow = document.createElement("div");
+      emptyRow.className = "detail-tooltip-row";
+      const emptyLabel = document.createElement("span");
+      emptyLabel.className = "detail-tooltip-label";
+      emptyLabel.textContent = "No armors in range";
+      emptyRow.appendChild(emptyLabel);
+      armorTooltip.appendChild(emptyRow);
+    } else {
+      armorList.forEach((entry) => {
+        armorTooltip.appendChild(buildArmorLinkRow(entry));
+      });
+    }
+
+    armorPill.appendChild(armorTooltip);
+    container.appendChild(armorPill);
+
+    if (tatterPill) container.appendChild(tatterPill);
+  };
+
+  const normalizeType = (value) => {
+    if (!value) return "";
+    const spaced = value.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/[_]+/g, " ");
+    const normalized = spaced.trim().toLowerCase();
+    const aliasMap = {
+      electricalbeast: "electric beast",
+      "electrical beast": "electric beast",
+      firebeast: "fire beast",
+      icebeast: "ice beast",
+      poisonbeast: "poison beast",
+      diseasebeast: "disease beast",
+      human: "humanoid",
+    };
+    return aliasMap[normalized] || normalized;
+  };
+
+  const formatTypeLabel = (value) => {
+    if (!value) return "-";
+    return value
+      .replace(/([a-z])([A-Z])/g, "$1 $2")
+      .replace(/[_]+/g, " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+  };
+
+  const formatResistanceValue = (value) => {
+    if (Number.isInteger(value)) return `${value}x`;
+    let text = value.toString();
+    if (text.startsWith("0.")) {
+      text = text.replace(/^0+/, "");
+    } else if (text.startsWith("-0.")) {
+      text = text.replace(/^-0+/, "-.");
+    }
+    text = text.replace(/(\.\d*?)0+$/, "$1");
+    if (text.endsWith(".")) text = text.slice(0, -1);
+    return `${text}x`;
+  };
+
+  const getResistanceColor = (value) => {
+    if (typeof value !== "number" || Number.isNaN(value)) return "";
+    if (value > 1) {
+      const ratio = Math.min((value - 1) / 0.3, 1);
+      const lightness = 50 + 20 * ratio;
+      const saturation = 65 + 15 * ratio;
+      return `hsl(120, ${saturation}%, ${lightness}%)`;
+    }
+    if (value < 1) {
+      const ratio = Math.min((1 - value) / 0.3, 1);
+      const lightness = 55 + 25 * ratio;
+      return `hsl(0, 80%, ${lightness}%)`;
+    }
+    return "#bbbbbb";
+  };
+
+  const renderTypeTooltip = (typeValue) => {
+    const tooltip = detailFields.typeTooltip;
+    if (!tooltip) return;
+    const key = normalizeType(typeValue);
+    const items = TYPE_RESISTANCES[key];
+    tooltip.innerHTML = "";
+    if (!items || !items.length) {
+      tooltip.textContent = "No resistance data";
+      return;
+    }
+    const firstNeutral = items.findIndex((item) => item.value === 1 || item.value === 1.0);
+    const lastNeutral = (() => {
+      let idx = -1;
+      items.forEach((item, i) => {
+        if (item.value === 1 || item.value === 1.0) idx = i;
+      });
+      return idx;
+    })();
+
+    items.forEach(({ element, value }, index) => {
+      if (index === firstNeutral && index !== 0) {
+        const divider = document.createElement("div");
+        divider.className = "detail-tooltip-divider";
+        tooltip.appendChild(divider);
+      }
+
+      const row = document.createElement("div");
+      row.className = "detail-tooltip-row";
+      const label = document.createElement("span");
+      label.className = "detail-tooltip-label";
+      label.textContent = element;
+      const color = ELEMENT_COLORS[element.toLowerCase()];
+      if (color) label.style.color = color;
+      const val = document.createElement("span");
+      val.textContent = typeof value === "number" ? formatResistanceValue(value) : value;
+      if (typeof value === "number") {
+        const valColor = getResistanceColor(value);
+        if (valColor) val.style.color = valColor;
+      }
+      row.appendChild(label);
+      row.appendChild(val);
+      tooltip.appendChild(row);
+
+      if (index === lastNeutral && index !== items.length - 1) {
+        const divider = document.createElement("div");
+        divider.className = "detail-tooltip-divider";
+        tooltip.appendChild(divider);
+      }
+    });
+  };
+
+  const renderFlags = (monster) => {
+    const container = detailFields.flags;
+    const targetContainer = detailFields.targetFlags;
+    if (container) container.innerHTML = "";
+    if (targetContainer) targetContainer.innerHTML = "";
+    const flags = Array.isArray(monster.flags) ? monster.flags : [];
+
+    const targetLabels = new Set();
+
+    const pushTargetCombo = (label) => {
+      targetLabels.add(label);
+    };
+
+    const renderMainFlag = (flag) => {
+      const pill = document.createElement("span");
+      pill.className = "flag-pill";
+      const dot = document.createElement("span");
+      dot.className = "flag-dot";
+      const label = document.createElement("span");
+      const meta = FLAG_DETAILS[flag] || {};
+      label.textContent = meta.label || formatFlagLabel(flag);
+      const tooltip = document.createElement("span");
+      tooltip.className = "flag-tooltip";
+      if (meta.description) {
+        tooltip.textContent = meta.description;
+      }
+      pill.appendChild(dot);
+      pill.appendChild(label);
+      if (tooltip.textContent) {
+        pill.appendChild(tooltip);
+      }
+      container.appendChild(pill);
+    };
+
+    if (!flags.length) {
+      if (container) {
+        const none = document.createElement("span");
+        none.className = "detail-value";
+        none.textContent = "None";
+        container.appendChild(none);
+      }
+      if (targetContainer) {
+        const none = document.createElement("span");
+        none.className = "detail-value";
+        none.textContent = "None";
+        targetContainer.appendChild(none);
+      }
+      return;
+    }
+
+    flags.forEach((flag) => {
+      const lower = (flag || "").toString().toLowerCase();
+      const normalized = lower.replace(/\s+/g, "_");
+      const isTargetCombo =
+        lower.includes("target when attacked/ranged/trapped") ||
+        lower.includes("target when hit ranged trapped") ||
+        normalized.includes("target_when_hit_ranged_trapped");
+      const isTargetBlocked = lower.includes("target when blocked") || normalized.includes("target_when_blocked");
+
+      if (isTargetCombo) {
+        ["Attacked", "Ranged", "Trapped"].forEach(pushTargetCombo);
+        return;
+      }
+      if (isTargetBlocked) {
+        pushTargetCombo("Blocked");
+        return;
+      }
+      if (container) renderMainFlag(flag);
+    });
+
+    if (container && !container.children.length) {
+      const none = document.createElement("span");
+      none.className = "detail-value";
+      none.textContent = "None";
+      container.appendChild(none);
+    }
+
+    if (targetContainer) {
+      if (!targetLabels.size) {
+        const none = document.createElement("span");
+        none.className = "detail-value";
+        none.textContent = "None";
+        targetContainer.appendChild(none);
+      } else {
+        targetLabels.forEach((labelText) => {
+          const chip = document.createElement("span");
+          chip.className = "target-flag";
+          chip.textContent = labelText;
+          targetContainer.appendChild(chip);
+        });
+      }
+    }
+  };
+
+  const renderStatusEffect = (monster) => {
+    const container = detailFields.statusEffect;
+    if (!container) return;
+    const effectValue = monster ? monster.statusEffect : null;
+    const hasEffect = effectValue !== null && effectValue !== undefined && Number(effectValue) !== 0;
+    if (!hasEffect) {
+      container.textContent = "None";
+      return;
+    }
+    const label = (monster?.statusEffectLabel || "").toString().trim();
+    container.textContent = label || "Unknown";
+  };
+
+  const maybeSelectPendingMonster = (list) => {
+    if (!pendingMonsterId) return;
+    const normalized = pendingMonsterId;
+    const match = (list || monsters).find((m) => {
+      const idNorm = normalizeMonsterId(m.id);
+      const nameNorm = normalizeMonsterId(m.name);
+      return idNorm === normalized || nameNorm === normalized;
+    });
+    if (!match) return;
+    pendingMonsterId = "";
+    setDetails(match);
+  };
+
+  const applyFilterAndSort = () => {
+    const term = searchTerm.trim().toLowerCase();
+    let list = monsters.slice();
+
+    if (term) {
+      list = list.filter((m) => {
+        const uncommonTatter = (m.uncommonTatter || "").toString().trim().toLowerCase();
+        const rareTatter = (m.rareTatter || "").toString().trim().toLowerCase();
+        return (
+          (m.name && m.name.toLowerCase().includes(term)) ||
+          (m.monsterType && m.monsterType.toLowerCase().includes(term)) ||
+          (m.elementalAttack && m.elementalAttack.toLowerCase().includes(term)) ||
+          (uncommonTatter && uncommonTatter !== "none" && uncommonTatter.includes(term)) ||
+          (rareTatter && rareTatter !== "none" && rareTatter.includes(term))
+        );
+      });
+    }
+
+    if (selectedTypes.size) {
+      list = list.filter((m) => selectedTypes.has(normalizeType(m.monsterType)));
+    }
+
+    if (selectedElements.size) {
+      list = list.filter((m) => selectedElements.has((m.elementalAttack || "").trim().toLowerCase()));
+    }
+
+    if (selectedFlags.size) {
+      list = list.filter((m) => {
+        const flags = Array.isArray(m.flags) ? m.flags : [];
+        const effectValue = m.statusEffect;
+        const label = (m.statusEffectLabel || "").toString().trim().toLowerCase();
+        const hasStatus = effectValue !== null && effectValue !== undefined && Number(effectValue) !== 0;
+
+        for (const selected of selectedFlags) {
+          if (selected.startsWith("status:")) {
+            const statusKey = selected.slice("status:".length);
+            if (!hasStatus || !label || label !== statusKey) return false;
+            continue;
+          }
+          if (!flags.includes(selected)) return false;
+        }
+        return true;
+      });
+    }
+
+    list.sort((a, b) => {
+      const aVal = getSortValue(a, sortKey);
+      const bVal = getSortValue(b, sortKey);
+      if (aVal === bVal) return 0;
+      const dir = sortDir === "asc" ? 1 : -1;
+      return aVal > bVal ? dir : -dir;
+    });
+
+    renderTable(list);
+    if (countLabel) {
+      countLabel.textContent = `${list.length.toLocaleString("en-US")} result${list.length === 1 ? "" : "s"}`;
+    }
+    maybeSelectPendingMonster(list);
+  };
+
+const renderTable = (rows) => {
+  if (!rows.length) {
+    renderEmpty("No monsters match your filters.");
+    return;
+  }
+
+    const fragment = document.createDocumentFragment();
+
+    rows.forEach((monster) => {
+      const tr = document.createElement("tr");
+      tr.dataset.id = monster.id;
+
+      const imgCell = document.createElement("td");
+      const img = document.createElement("img");
+      const fallback = () => {
+        img.remove();
+        const noImg = document.createElement("span");
+        noImg.className = "no-image";
+        noImg.textContent = "No Image";
+        imgCell.appendChild(noImg);
+      };
+      setImageSource(img, monster, fallback, () => {
+        img.style.display = "block";
+      });
+      img.alt = monster.name ? `${monster.name} portrait` : "Monster portrait";
+      img.className = "monster-thumb";
+      img.loading = "lazy";
+      imgCell.appendChild(img);
+      tr.appendChild(imgCell);
+
+      const addCell = (value) => {
+        const td = document.createElement("td");
+        td.textContent = value;
+        tr.appendChild(td);
+      };
+
+      addCell(monster.name || "-");
+      addCell(formatNumber(monster.level));
+      addCell(formatNumber(monster.hpMax));
+      addCell(formatDps(monster.dps));
+      addCell(
+        monster.movingSpeed === null || monster.movingSpeed === undefined
+          ? "-"
+          : `${formatNumber(monster.movingSpeed)} ms`
+      );
+      addCell(monster.monsterType || "-");
+
+      const elementTd = document.createElement("td");
+      const elementSpan = document.createElement("span");
+      applyElementColor(monster.elementalAttack, elementSpan);
+      elementTd.appendChild(elementSpan);
+      tr.appendChild(elementTd);
+
+      tr.addEventListener("click", () => {
+        setDetails(monster);
+      });
+
+      fragment.appendChild(tr);
+    });
+
+    tableBody.innerHTML = "";
+    tableBody.appendChild(fragment);
+  };
+
+const unpinTooltip = (tooltip) => {
+  if (!tooltip) return;
+  tooltip.classList.remove("is-pinned");
+  if (pinnedTooltip === tooltip) pinnedTooltip = null;
+};
+
+  const attachTooltipPinning = () => {
+    const tooltips = document.querySelectorAll(
+      ".monster-details .detail-tooltip, .monster-details .flag-tooltip"
+    );
+
+    tooltips.forEach((tooltip) => {
+      if (tooltip.dataset.pinWired === "1") return;
+      let activator = tooltip.closest(".flag-pill");
+      if (!activator) {
+        const stat = tooltip.closest(".detail-stat");
+        activator = stat ? stat.querySelector(".detail-pill") : null;
+      }
+      if (!activator) {
+        activator = tooltip.closest(".detail-pill");
+      }
+      if (!activator) return;
+
+      const togglePin = () => {
+        if (pinnedTooltip && pinnedTooltip !== tooltip) {
+          unpinTooltip(pinnedTooltip);
+        }
+
+        if (tooltip.classList.contains("is-pinned")) {
+          unpinTooltip(tooltip);
+        } else {
+          tooltip.classList.add("is-pinned");
+          pinnedTooltip = tooltip;
+        }
+      };
+
+      activator.addEventListener("click", (event) => {
+        event.stopPropagation();
+        togglePin();
+      });
+
+      tooltip.addEventListener("click", (event) => {
+        event.stopPropagation();
+        togglePin();
+      });
+
+      tooltip.dataset.pinWired = "1";
+    });
+
+    if (!pinDocumentListenerAttached) {
+      document.addEventListener("click", (event) => {
+        if (!pinnedTooltip) return;
+        let activator = pinnedTooltip.closest(".flag-pill");
+        if (!activator) {
+          const stat = pinnedTooltip.closest(".detail-stat");
+          activator = stat ? stat.querySelector(".detail-pill") : null;
+        }
+        if (!activator) {
+          activator = pinnedTooltip.closest(".detail-pill");
+        }
+        if (activator && activator.contains(event.target)) return;
+        if (pinnedTooltip.contains(event.target)) return;
+        unpinTooltip(pinnedTooltip);
+      });
+      pinDocumentListenerAttached = true;
+    }
+  };
+
+  const setDetails = (monster) => {
+    if (!monster) return;
+    if (pinnedTooltip) unpinTooltip(pinnedTooltip);
+    if (typeof window !== "undefined") {
+      window.RogueCodexDebug = window.RogueCodexDebug || {};
+      window.RogueCodexDebug.selectedMonster = monster;
+      window.RogueCodexDebug.statusEffect = {
+        name: monster.name || "",
+        value: monster.statusEffect,
+        label: monster.statusEffectLabel,
+      };
+    }
+    detailFields.name.textContent = monster.name || "Unknown Monster";
+    if (detailFields.mapLink) {
+      const searchName = monster.name || "";
+      detailFields.mapLink.href = `${MAP_SEARCH_BASE}${encodeURIComponent(searchName)}`;
+      detailFields.mapLink.title = searchName ? `Find ${searchName} on the map` : "Find on the map";
+    }
+    const fallbackImage = detailFields.imageFallback;
+    if (detailFields.image) {
+      detailFields.image.style.display = "block";
+    }
+    if (fallbackImage) {
+      fallbackImage.style.display = "none";
+    }
+    setImageSource(
+      detailFields.image,
+      monster,
+      () => {
+        if (detailFields.image) {
+          detailFields.image.style.display = "none";
+        }
+        if (fallbackImage) {
+          fallbackImage.style.display = "flex";
+        }
+      },
+      () => {
+        if (detailFields.image) {
+          detailFields.image.style.display = "block";
+        }
+        if (fallbackImage) {
+          fallbackImage.style.display = "none";
+        }
+      }
+    );
+    detailFields.image.alt = monster.name ? `${monster.name} portrait` : "Monster portrait";
+    detailFields.level.textContent = formatNumber(monster.level);
+    detailFields.hp.textContent = formatNumber(monster.hpMax);
+    detailFields.dmgRange.textContent = formatDamageRange(monster.minDamage, monster.maxDamage);
+    detailFields.dps.textContent = formatDps(monster.dps);
+    if (detailFields.eliteSummary) {
+      detailFields.eliteSummary.textContent = "1.5x dmg, 3x HP";
+    }
+    if (detailFields.corruptedSummary) {
+      detailFields.corruptedSummary.textContent = "1.75x dmg, 5x HP";
+    }
+    if (detailFields.elitePlusSummary) {
+      detailFields.elitePlusSummary.textContent = "2.0x dmg, 10x HP";
+    }
+    setVariantValues(monster.hpMax, 3.0, tooltipFields.elite.hp);
+    if (tooltipFields.elite.dmg) {
+      tooltipFields.elite.dmg.textContent = formatScaledDamageRange(monster.minDamage, monster.maxDamage, 1.5);
+    }
+    setVariantValues(monster.dps, 1.5, tooltipFields.elite.dps, formatDps);
+    setVariantValues(monster.hpMax, 5.0, tooltipFields.corrupted.hp);
+    if (tooltipFields.corrupted.dmg) {
+      tooltipFields.corrupted.dmg.textContent = formatScaledDamageRange(
+        monster.minDamage,
+        monster.maxDamage,
+        1.75
+      );
+    }
+    setVariantValues(monster.dps, 1.75, tooltipFields.corrupted.dps, formatDps);
+    setVariantValues(monster.hpMax, 10.0, tooltipFields.elitePlus.hp);
+    if (tooltipFields.elitePlus.dmg) {
+      tooltipFields.elitePlus.dmg.textContent = formatScaledDamageRange(monster.minDamage, monster.maxDamage, 2.0);
+    }
+    setVariantValues(monster.dps, 2.0, tooltipFields.elitePlus.dps, formatDps);
+    detailFields.attackSpeed.textContent =
+      monster.attackSpeed === null || monster.attackSpeed === undefined
+        ? "-"
+        : `${formatNumber(monster.attackSpeed)} ms`;
+    detailFields.speed.textContent =
+      monster.movingSpeed === null || monster.movingSpeed === undefined
+        ? "-"
+        : `${formatNumber(monster.movingSpeed)} ms`;
+    const formattedType = formatTypeLabel(monster.monsterType);
+    detailFields.type.textContent = formattedType;
+    renderTypeTooltip(monster.monsterType);
+    applyElementColor(monster.elementalAttack, detailFields.element);
+    renderFlags(monster);
+    renderStatusEffect(monster);
+    renderLootTable(monster);
+    renderRecommendedWeapons(monster);
+    renderRecommendedArmors(monster);
+    attachTooltipPinning();
+
+    details.classList.add("show");
+    details.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const clearDetails = () => {
+    details.classList.remove("show");
+  };
+
+  const attachSorting = () => {
+    document.querySelectorAll(".monsters-table th[data-sort-key]").forEach((th) => {
+      th.addEventListener("click", () => {
+        const key = th.getAttribute("data-sort-key");
+        if (!key) return;
+        if (sortKey === key) {
+          sortDir = sortDir === "asc" ? "desc" : "asc";
+        } else {
+          sortKey = key;
+          sortDir = "asc";
+        }
+        applyFilterAndSort();
+      });
+    });
+  };
+
+  const init = () => {
+    Promise.all([
+      fetchJsonCached(dataUrl, { cacheKey: `monsters-data-v${MONSTERS_SCHEMA_VERSION}:${dataUrl}` }),
+      fetchJsonCached(weaponsUrl.toString()),
+      fetchJsonCached(new URL("../items/armors_data06.json", window.location.href).toString()),
+      fetchJsonCached(resistancesUrl),
+      loadAllowlists(),
+      loadDropSources(),
+    ])
+      .then(([monsterData, weaponData, armorData, resistancesData, allowlists, loadedDropSources]) => {
+        const map =
+          resistancesData && typeof resistancesData === "object" ? resistancesData.typeResistances : null;
+        if (map && typeof map === "object") {
+          TYPE_RESISTANCES = map;
+        }
+        applyAllowlists(allowlists);
+        dropSources =
+          loadedDropSources ||
+          (typeof utils.createEmptyDropSources === "function"
+            ? utils.createEmptyDropSources()
+            : dropSources);
+        monsters = normalizeMonsters(Array.isArray(monsterData) ? monsterData : []);
+        weapons = Array.isArray(weaponData)
+          ? weaponData
+              .map((w) => normalizeWeapon(w))
+              .filter((w) => w && !hiddenWeaponNames.has((w.name || "").toLowerCase()))
+          : [];
+        armors = Array.isArray(armorData)
+          ? armorData
+              .map((a) => normalizeArmor(a))
+              .filter((a) => a && !hiddenArmorNames.has((a.name || "").toLowerCase()))
+          : [];
+        if (!monsters.length) {
+          renderEmpty("No monsters found in monsters_data03.json.");
+          return;
+        }
+        populateFilters(monsters);
+        applyFilterAndSort();
+      })
+      .catch(() => {
+        renderEmpty("Unable to load monsters. Add monsters_data03.json beside this page.");
+      });
+  };
+
+  searchInput.addEventListener("input", (event) => {
+    searchTerm = event.target.value || "";
+    applyFilterAndSort();
+  });
+
+  const enableToggleSelect = (selectEl) => {
+    if (!selectEl) return;
+    selectEl.addEventListener("mousedown", (event) => {
+      const option = event.target;
+      if (option && option.tagName === "OPTION") {
+        event.preventDefault();
+        option.selected = !option.selected;
+        selectEl.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+    });
+  };
+
+  const collectSelected = (selectEl) => {
+    const set = new Set();
+    if (!selectEl) return set;
+    Array.from(selectEl.selectedOptions || []).forEach((opt) => {
+      if (opt && opt.value) set.add(opt.value);
+    });
+    return set;
+  };
+
+  if (typeFilter) {
+    enableToggleSelect(typeFilter);
+    typeFilter.addEventListener("change", () => {
+      selectedTypes = collectSelected(typeFilter);
+      applyFilterAndSort();
+    });
+  }
+
+  if (elementFilter) {
+    enableToggleSelect(elementFilter);
+    elementFilter.addEventListener("change", () => {
+      selectedElements = collectSelected(elementFilter);
+      applyFilterAndSort();
+    });
+  }
+
+  if (flagFilter) {
+    enableToggleSelect(flagFilter);
+    flagFilter.addEventListener("change", () => {
+      selectedFlags = collectSelected(flagFilter);
+      applyFilterAndSort();
+    });
+  }
+
+  if (closeBtn) {
+    closeBtn.addEventListener("click", clearDetails);
+  }
+
+  attachTooltipPinning();
+  attachSorting();
+  init();
+})();
