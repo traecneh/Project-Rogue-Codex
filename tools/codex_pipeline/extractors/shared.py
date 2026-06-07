@@ -3,6 +3,7 @@ from __future__ import annotations
 import difflib
 import hashlib
 import json
+import struct
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -52,6 +53,54 @@ def diff_files(old_path: Path, new_path: Path) -> list[str]:
 
 def format_value(value: Any) -> str:
     return json.dumps(value, ensure_ascii=True)
+
+
+def read_xor_encoded_words(path: Path, xor_key: int) -> list[int]:
+    data = path.read_bytes()
+    if len(data) % 2 != 0:
+        raise ValueError(f"{path.name} size is not even ({len(data)} bytes)")
+
+    total_words = len(data) // 2
+    words = struct.unpack(f"<{total_words}H", data)
+    return [word ^ xor_key for word in words]
+
+
+def split_words_into_records(words: list[int], words_per_record: int) -> list[list[int]]:
+    if len(words) % words_per_record != 0:
+        raise ValueError(
+            f"Total words ({len(words)}) is not a multiple of {words_per_record}"
+        )
+
+    return [
+        words[i * words_per_record : (i + 1) * words_per_record]
+        for i in range(len(words) // words_per_record)
+    ]
+
+
+def load_xor_encoded_records(
+    path: Path, *, words_per_record: int, xor_key: int
+) -> list[list[int]]:
+    words = read_xor_encoded_words(path, xor_key)
+    return split_words_into_records(words, words_per_record)
+
+
+def find_varying_indices(records: list[list[int]]) -> list[int]:
+    if not records:
+        return []
+
+    words_per_record = len(records[0])
+    varying_indices = []
+    for idx in range(words_per_record):
+        values = {record[idx] for record in records}
+        if len(values) > 1:
+            varying_indices.append(idx)
+    return varying_indices
+
+
+def extract_ascii_name(record_words: list[int]) -> str:
+    raw_bytes = struct.pack(f"<{len(record_words)}H", *record_words)
+    ascii_all = "".join(chr(byte) if 32 <= byte < 127 else "\0" for byte in raw_bytes)
+    return ascii_all.split("\0", 1)[0].strip()
 
 
 def _index_records(records: list[Any]) -> dict[int, dict[str, Any]]:

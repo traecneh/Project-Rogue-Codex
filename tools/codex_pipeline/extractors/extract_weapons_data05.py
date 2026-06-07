@@ -31,21 +31,26 @@ Notes:
 
 import json
 import re
-import struct
 import sys
 from pathlib import Path
 
 try:
     from tools.codex_pipeline.extractors.shared import (
         diff_json_records_by_id,
+        extract_ascii_name,
+        find_varying_indices,
         file_hash,
+        load_xor_encoded_records,
         make_backup_path,
         parse_extractor_args,
     )
 except ModuleNotFoundError:
     from shared import (
         diff_json_records_by_id,
+        extract_ascii_name,
+        find_varying_indices,
         file_hash,
+        load_xor_encoded_records,
         make_backup_path,
         parse_extractor_args,
     )
@@ -191,35 +196,10 @@ def resolve_corrupted_perk_label(corrupted_val: int, base_val: int | None = None
 
 def parse_data05(path: Path):
     """Parse data05.dat and return a list of weapon dicts."""
-    data = path.read_bytes()
-    if len(data) % 2 != 0:
-        raise ValueError(f"{path.name} size is not even ({len(data)} bytes)")
-
-    total_words = len(data) // 2
-    words = struct.unpack("<%dH" % total_words, data)
-
-    # XOR-decode each 16-bit word
-    decoded_words = [w ^ XOR_KEY_WORD for w in words]
-
-    if total_words % WORDS_PER_RECORD != 0:
-        raise ValueError(
-            f"Total words ({total_words}) is not a multiple of {WORDS_PER_RECORD}"
-        )
-
-    num_records = total_words // WORDS_PER_RECORD
-
-    # Slice all records first so we can discover which indices actually vary
-    records = [
-        decoded_words[i * WORDS_PER_RECORD : (i + 1) * WORDS_PER_RECORD]
-        for i in range(num_records)
-    ]
-
-    # Determine which word indices vary across at least one record
-    varying_indices = []
-    for idx in range(WORDS_PER_RECORD):
-        values = {rec[idx] for rec in records}
-        if len(values) > 1:
-            varying_indices.append(idx)
+    records = load_xor_encoded_records(
+        path, words_per_record=WORDS_PER_RECORD, xor_key=XOR_KEY_WORD
+    )
+    varying_indices = find_varying_indices(records)
 
     # Known field names (indices that have been mapped)
     known_names = {
@@ -313,12 +293,6 @@ def parse_data05(path: Path):
     skipped = 0
 
     for rec_index, rec_words in enumerate(records):
-        # Re-pack as bytes for text extraction
-        raw_bytes = struct.pack("<%dH" % WORDS_PER_RECORD, *rec_words)
-
-        # Build an ASCII view; non-printables -> '\0'
-        ascii_all = "".join(chr(b) if 32 <= b < 127 else "\0" for b in raw_bytes)
-
         fields = {}
         for i in varying_indices:
             fname = field_name(i)
@@ -330,7 +304,7 @@ def parse_data05(path: Path):
             continue
 
         # Weapon name = first printable chunk up to first null
-        name = ascii_all.split("\0", 1)[0].strip()
+        name = extract_ascii_name(rec_words)
         if not name or name.lower() == "unused":
             # Skip placeholder or nameless entries.
             skipped += 1

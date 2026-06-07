@@ -1,4 +1,5 @@
 import json
+import struct
 import tempfile
 import unittest
 from pathlib import Path
@@ -45,6 +46,28 @@ class ExtractorModuleTests(unittest.TestCase):
 
         self.assertIn("-one", lines)
         self.assertIn("+two", lines)
+
+    def test_shared_binary_helpers_decode_records_and_extract_names(self):
+        from tools.codex_pipeline.extractors.shared import (
+            extract_ascii_name,
+            find_varying_indices,
+            load_xor_encoded_records,
+            split_words_into_records,
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "fixture.dat"
+            decoded_words = [0x6F43, 0x646C, 0x0000, 10, 0x6142, 0x6472, 0x0000, 20]
+            encoded_words = [word ^ 0xD4D4 for word in decoded_words]
+            path.write_bytes(struct.pack(f"<{len(encoded_words)}H", *encoded_words))
+
+            records = load_xor_encoded_records(path, words_per_record=4, xor_key=0xD4D4)
+
+        self.assertEqual(split_words_into_records(decoded_words, 4), records)
+        self.assertEqual([[0x6F43, 0x646C, 0x0000, 10], [0x6142, 0x6472, 0x0000, 20]], records)
+        self.assertEqual([0, 1, 3], find_varying_indices(records))
+        self.assertEqual("Cold", extract_ascii_name(records[0]))
+        self.assertEqual("Bard", extract_ascii_name(records[1]))
 
     def test_extractor_scripts_use_shared_helpers_and_expose_parsers(self):
         from tools.codex_pipeline.extractors import (
