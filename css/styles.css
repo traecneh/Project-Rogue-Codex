@@ -1075,6 +1075,16 @@ body {
   text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
 }
 
+.details-image-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.details-title {
+  margin: 0;
+}
+
 .content-tagline {
   margin: 0.3rem 0 0.4rem;
   font-size: 0.9rem;

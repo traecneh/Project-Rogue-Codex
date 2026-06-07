@@ -42,6 +42,7 @@ from tools.codex_pipeline.validators.site import (
     validate_inline_scripts,
     validate_javascript_file,
     validate_manifest_entries,
+    validate_style_attributes,
 )
 
 
@@ -51,6 +52,7 @@ VALIDATED_HTML_PATHS = [
 ]
 
 VALIDATED_STYLE_PATHS = [
+    REPO_ROOT / "css" / "styles.css",
     REPO_ROOT / "css" / "monsters.css",
 ]
 
@@ -247,6 +249,7 @@ def collect_validation_issues() -> list[ValidationIssue]:
             issues.append(ValidationIssue("error", f"{path} failed to read HTML: {exc}"))
             continue
         issues.extend(validate_inline_styles(label, html))
+        issues.extend(validate_style_attributes(label, html))
         issues.extend(validate_inline_scripts(label, html))
 
     for path in VALIDATED_STYLE_PATHS:

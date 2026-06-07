@@ -241,6 +241,29 @@ def validate_inline_styles(label: str, html: str) -> list[ValidationIssue]:
     return issues
 
 
+def validate_style_attributes(label: str, html: str) -> list[ValidationIssue]:
+    issues: list[ValidationIssue] = []
+    tag_re = re.compile(r"<(?!style\b)(?P<tag>[a-zA-Z][\w:-]*)(?P<attrs>[^<>]*)>", re.IGNORECASE)
+    style_attr_re = re.compile(
+        r"(?<![\w:-])style\s*=\s*(?:\"[^\"]*\"|'[^']*'|[^\s>]+)",
+        re.IGNORECASE,
+    )
+    for match in tag_re.finditer(html):
+        attrs = match.group("attrs")
+        attr_match = style_attr_re.search(attrs)
+        if not attr_match:
+            continue
+        line, column = _line_col(html, match.start("attrs") + attr_match.start())
+        issues.append(
+            ValidationIssue(
+                "error",
+                f"{label} inline style attribute #{len(issues) + 1} on <{match.group('tag')}> "
+                f"at line {line}, column {column}",
+            )
+        )
+    return issues
+
+
 def validate_inline_scripts(label: str, html: str) -> list[ValidationIssue]:
     issues: list[ValidationIssue] = []
     script_re = re.compile(r"<script\b(?![^>]*\bsrc\s*=)[^>]*>([\s\S]*?)</script>", re.IGNORECASE)

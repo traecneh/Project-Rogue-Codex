@@ -17,6 +17,28 @@ class SiteValidationTests(unittest.TestCase):
         self.assertEqual(1, len(issues))
         self.assertIn("unexpected closing brace", issues[0].message)
 
+    def test_inline_style_attribute_parser_reports_style_attributes(self):
+        from tools.codex_pipeline.validators.site import validate_style_attributes
+
+        html = '<html><body><div class="ok" style="display: flex;"></div></body></html>'
+        issues = validate_style_attributes("inline-attr.html", html)
+
+        self.assertEqual(1, len(issues))
+        self.assertIn("inline style attribute #1", issues[0].message)
+
+    def test_validated_pages_do_not_use_inline_style_attributes(self):
+        from tools.codex_pipeline import cli
+        from tools.codex_pipeline.config import REPO_ROOT
+        from tools.codex_pipeline.validators.site import validate_style_attributes
+
+        messages = []
+        for path in cli.VALIDATED_HTML_PATHS:
+            label = str(path.relative_to(REPO_ROOT))
+            html = path.read_text(encoding="utf-8")
+            messages.extend(issue.message for issue in validate_style_attributes(label, html))
+
+        self.assertEqual([], messages)
+
     def test_css_file_parser_reports_unmatched_closing_brace(self):
         from tools.codex_pipeline.validators.site import validate_css_file
 
@@ -360,3 +382,43 @@ class SiteValidationTests(unittest.TestCase):
 
         messages = "\n".join(issue.message for issue in issues)
         self.assertIn("broken.css unexpected closing brace", messages)
+
+    def test_cli_reports_inline_style_attributes_in_html(self):
+        from tools.codex_pipeline import cli
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            weapons_data = root / "weapons.json"
+            armors_data = root / "armors.json"
+            monsters_data = root / "monsters.json"
+            drop_sources = root / "drop_sources.json"
+            html = root / "page.html"
+            weapon_images = root / "weapons"
+            armor_images = root / "armors"
+            monster_images = root / "monsters"
+            for folder in [weapon_images, armor_images, monster_images]:
+                folder.mkdir()
+                (folder / "manifest.json").write_text("[]", encoding="utf-8")
+
+            weapons_data.write_text("[]", encoding="utf-8")
+            armors_data.write_text("[]", encoding="utf-8")
+            monsters_data.write_text("[]", encoding="utf-8")
+            drop_sources.write_text('{"schemaVersion": 1, "armors": {}, "weapons": {}}', encoding="utf-8")
+            html.write_text('<html><body><div style="display: flex"></div></body></html>', encoding="utf-8")
+
+            with (
+                patch.object(cli, "DROP_SOURCES_PATH", drop_sources),
+                patch.object(cli, "WEAPONS_DATA_PATH", weapons_data),
+                patch.object(cli, "ARMORS_DATA_PATH", armors_data),
+                patch.object(cli, "MONSTERS_DATA_PATH", monsters_data),
+                patch.object(cli, "WEAPON_IMAGES_DIR", weapon_images),
+                patch.object(cli, "ARMOR_IMAGES_DIR", armor_images),
+                patch.object(cli, "MONSTER_IMAGES_DIR", monster_images),
+                patch.object(cli, "VALIDATED_HTML_PATHS", [html]),
+                patch.object(cli, "VALIDATED_STYLE_PATHS", []),
+                patch.object(cli, "VALIDATED_SCRIPT_PATHS", []),
+            ):
+                issues = cli.collect_validation_issues()
+
+        messages = "\n".join(issue.message for issue in issues)
+        self.assertIn("inline style attribute #1", messages)
