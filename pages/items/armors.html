@@ -672,6 +672,12 @@
             ));
         const loadAllowlists =
           typeof utils.loadAllowlists === "function" ? () => utils.loadAllowlists() : () => Promise.resolve(null);
+        const loadDropSources =
+          typeof utils.loadDropSources === "function" ? () => utils.loadDropSources() : () => Promise.resolve(null);
+        let dropSources =
+          typeof utils.createEmptyDropSources === "function"
+            ? utils.createEmptyDropSources()
+            : { armors: {}, weapons: {}, reverse: { armors: {}, weapons: {} } };
         let hiddenArmorNames = new Set();
         let allowedMonsterNames = new Set();
 
@@ -683,22 +689,6 @@
         const isMonsterAllowed = (monster) => {
           if (!allowedMonsterNames.size) return true;
           return allowedMonsterNames.has((monster.name || "").toLowerCase());
-        };
-
-        const UNIQUE_ARMOR_DROP_SOURCES = {
-          "iceburst amulet": ["ice-devil", "greater-yeti"],
-          "mystic robe": ["dark-monk"],
-          "rune armor": ["balron", "demon-lord"],
-          "rune lord's robe": ["hell-spawn", "balron", "demon-lord"],
-          "rune helmet": ["balron", "demon-lord"],
-          "rune shield": ["werewolf", "demon", "infernal", "hell-spawn"],
-          "rune leggings": ["hell-spawn"],
-          "rune gauntlets": ["demon", "infernal"],
-          "banished gauntlets": ["banished-spirit"],
-          "banished shield": ["banished-spirit", "banished-soldier"],
-          "banished platemail": ["banished-knight"],
-          "banished helmet": ["banished-knight"],
-          "banished leggings": ["banished-soldier"],
         };
 
         const titleCase = (text) =>
@@ -1205,7 +1195,10 @@
               tooltip.textContent = "No monster data loaded";
             } else {
               const itemLevel = Number(item?.level);
-              const uniqueMonsterIds = UNIQUE_ARMOR_DROP_SOURCES[normalizeFilterValue(item?.name)] || null;
+              const uniqueMonsterIds =
+                typeof utils.getDropSourceMonsterIdsByItem === "function"
+                  ? utils.getDropSourceMonsterIdsByItem(dropSources, "armors", item?.name)
+                  : [];
               const useUnique = Array.isArray(uniqueMonsterIds) && uniqueMonsterIds.length > 0;
               if (!useUnique && !Number.isFinite(itemLevel)) {
                 tooltip.textContent = "No level data";
@@ -1591,8 +1584,9 @@
               fetchJsonCached(perksUrl),
               fetchJsonCached(monstersUrl),
               loadAllowlists(),
+              loadDropSources(),
             ])
-              .then(([data, perksData, monstersData, allowlists]) => {
+              .then(([data, perksData, monstersData, allowlists, loadedDropSources]) => {
                 const perks = Array.isArray(perksData?.perks) ? perksData.perks : [];
                 perkIndexByName = new Map();
                 perks.forEach((entry) => {
@@ -1601,6 +1595,9 @@
                   perkIndexByName.set(name.toLowerCase(), entry);
                 });
                 applyAllowlists(allowlists);
+                dropSources =
+                  loadedDropSources ||
+                  (typeof utils.createEmptyDropSources === "function" ? utils.createEmptyDropSources() : dropSources);
                 monsters = normalizeMonsters(Array.isArray(monstersData) ? monstersData : []);
                 items = (Array.isArray(data) ? data : [])
                   .map((row) => normalizeArmor(row))
