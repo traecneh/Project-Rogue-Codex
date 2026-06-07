@@ -70,6 +70,13 @@ python -m tools.codex_pipeline sync-generated --dry-run
 python -m tools.codex_pipeline sync-generated
 ```
 
+Sync reviewed client image changes into the site image folders:
+
+```powershell
+python -m tools.codex_pipeline sync-assets --dry-run
+python -m tools.codex_pipeline sync-assets
+```
+
 To export and sync in one step after you are comfortable with the generated output:
 
 ```powershell

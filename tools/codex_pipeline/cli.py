@@ -16,6 +16,7 @@ from tools.codex_pipeline.config import (
     WEAPON_IMAGES_DIR,
     WEAPONS_DATA_PATH,
 )
+from tools.codex_pipeline.assets import resolve_asset_targets, sync_asset_targets
 from tools.codex_pipeline.drop_audit import build_drop_source_audit_report
 from tools.codex_pipeline.drops import load_drop_sources
 from tools.codex_pipeline.deploy import DEFAULT_LIVE_SITE_URL, verify_live_site
@@ -70,6 +71,7 @@ def build_parser() -> argparse.ArgumentParser:
             "unknown-fields",
             "drop-report",
             "game-update-report",
+            "sync-assets",
         ],
     )
     parser.add_argument(
@@ -88,7 +90,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--dry-run",
         action="store_true",
-        help="For sync-generated/export-sync, report site file changes without copying.",
+        help="For sync-generated/export-sync/sync-assets, report site file changes without copying.",
     )
     parser.add_argument(
         "--site-url",
@@ -455,6 +457,19 @@ def _print_asset_report_summaries(reports) -> None:
             print(f"ASSET ISSUE {issue.severity.upper()}: {issue.message}")
 
 
+def _print_asset_sync_reports(reports) -> None:
+    for report in reports:
+        mode = "DRY-RUN" if report.dry_run else "APPLIED"
+        print(
+            f"ASSET SYNC {mode} {report.target_name}: "
+            f"copied {len(report.copied)}, removed {len(report.removed)}, "
+            f"manifest entries={report.manifest_count}, issues={len(report.issues)} "
+            f"({report.client_dir} -> {report.site_dir})"
+        )
+        for issue in report.issues:
+            print(f"ASSET SYNC ISSUE {issue.severity.upper()}: {issue.message}")
+
+
 def _print_game_update_report(report) -> None:
     print(f"GAME UPDATE REPORT: {report.output_dir}")
     for check in report.source_checks:
@@ -497,6 +512,17 @@ def run_game_update_report(args: argparse.Namespace) -> int:
     return 0 if not report.has_errors else 1
 
 
+def run_sync_assets(args: argparse.Namespace) -> int:
+    try:
+        targets = resolve_asset_targets(args.targets)
+    except ValueError as exc:
+        print(f"ERROR: {exc}")
+        return 1
+    reports = sync_asset_targets(targets, dry_run=args.dry_run)
+    _print_asset_sync_reports(reports)
+    return 0 if not any(report.has_errors for report in reports) else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -520,5 +546,7 @@ def main(argv: list[str] | None = None) -> int:
         return run_drop_report()
     if args.command == "game-update-report":
         return run_game_update_report(args)
+    if args.command == "sync-assets":
+        return run_sync_assets(args)
     parser.error(f"Unsupported command: {args.command}")
     return 2

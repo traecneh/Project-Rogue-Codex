@@ -128,6 +128,7 @@ python -m tools.codex_pipeline export-client-data
 python -m tools.codex_pipeline unknown-fields
 python -m tools.codex_pipeline diff-generated
 python -m tools.codex_pipeline sync-generated
+python -m tools.codex_pipeline sync-assets
 python -m tools.codex_pipeline verify-live
 ```
 
@@ -141,6 +142,7 @@ Command behavior:
 - `unknown-fields`: inventory `unknown_*` fields in site or generated data for mapping research.
 - `diff-generated`: compare generated output against the current site JSON before copying files.
 - `sync-generated`: copy reviewed generated outputs into the existing site paths.
+- `sync-assets`: copy reviewed client image changes into site image folders and regenerate manifests when filenames change.
 - `verify-live`: confirm deployed GitHub Pages JSON matches local site JSON after push and deployment.
 
 ## Validation Rules

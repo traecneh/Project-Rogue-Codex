@@ -82,6 +82,8 @@ Important commands:
   copying files.
 - `sync-generated`: copies generated JSON into site paths. Use `--dry-run` for a
   review-only pass.
+- `sync-assets`: copies reviewed client image changes into site image folders,
+  removes stale site images, and regenerates manifests when filenames change.
 - `export-sync`: runs export and sync in one step.
 - `validate`: validates site JSON, overrides, image manifests, inline page
   scripts, configured JavaScript files, drop references, and corrupted perk
@@ -102,7 +104,7 @@ Core package:
 - `tools/codex_pipeline/config.py`: repository paths, external client paths, site
   data paths, override paths, and image directories.
 - `tools/codex_pipeline/assets.py`: client-vs-site image inventory, hash
-  comparison, and manifest consistency reports.
+  comparison, asset sync, and manifest consistency reports.
 - `tools/codex_pipeline/drop_audit.py`: drop-source audit report assembly and
   validation issue collection.
 - `tools/codex_pipeline/exports.py`: export target definitions, extractor
@@ -192,7 +194,7 @@ For data or extractor changes:
 1. Run `doctor`.
 2. Run `game-update-report`.
 3. Review generated-vs-site diffs, asset image diffs, and update warnings.
-4. Sync only intentional generated changes.
+4. Sync only intentional generated data and asset changes.
 5. Run unit tests and `validate`.
 6. Commit and push.
 7. Wait for GitHub Actions and Pages.
