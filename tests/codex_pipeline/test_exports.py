@@ -146,6 +146,136 @@ class ExportCommandTests(unittest.TestCase):
             self.assertTrue(results[0].changed)
             self.assertFalse(site_path.exists())
 
+    def test_export_client_data_normalizes_audited_armor_unknown_fields(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            script = root / "extract_armors.py"
+            source = root / "source.dat"
+            site_path = root / "site" / "armors.json"
+            output_dir = root / "generated"
+            source.write_bytes(b"fake source")
+            site_path.parent.mkdir()
+            site_path.write_text(
+                json.dumps(
+                    [
+                        {
+                            "id": 1,
+                            "name": "Chainmail",
+                            "fields": {"unknown_26": 0, "unknown_27": 0, "armor": 5},
+                        }
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            script.write_text(
+                textwrap.dedent(
+                    """
+                    import json
+                    import sys
+                    from pathlib import Path
+
+                    output = Path(sys.argv[2])
+                    output.write_text(json.dumps([
+                        {
+                            "id": 1,
+                            "name": "Chainmail",
+                            "fields": {
+                                "unknown_26": 55,
+                                "unknown_27": 5,
+                                "unknown_29": 0,
+                                "armor": 5,
+                                "corrupted_perk": 6
+                            }
+                        },
+                        {
+                            "id": 2,
+                            "name": "Generated Only",
+                            "fields": {
+                                "unknown_26": 55,
+                                "unknown_27": 5,
+                                "unknown_29": 0,
+                                "armor": 10
+                            }
+                        }
+                    ]), encoding="utf-8")
+                    """
+                ).strip()
+                + "\n",
+                encoding="utf-8",
+            )
+            target = ExportTarget(
+                name="armors",
+                extractor_script=script,
+                source_data=source,
+                output_filename="armors.json",
+                site_path=site_path,
+            )
+
+            export_client_data([target], output_dir=output_dir, python_executable=sys.executable)
+
+            exported = json.loads((output_dir / "armors.json").read_text(encoding="utf-8"))
+            self.assertEqual(0, exported[0]["fields"]["unknown_26"])
+            self.assertEqual(0, exported[0]["fields"]["unknown_27"])
+            self.assertNotIn("unknown_29", exported[0]["fields"])
+            self.assertEqual(6, exported[0]["fields"]["corrupted_perk"])
+            self.assertNotIn("unknown_26", exported[1]["fields"])
+            self.assertNotIn("unknown_27", exported[1]["fields"])
+            self.assertNotIn("unknown_29", exported[1]["fields"])
+
+    def test_sync_generated_outputs_normalizes_audited_armor_unknown_fields_before_copying(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            output_dir = root / "generated"
+            generated = output_dir / "armors.json"
+            site_path = root / "site" / "armors.json"
+            output_dir.mkdir()
+            site_path.parent.mkdir()
+            site_path.write_text(
+                json.dumps(
+                    [
+                        {
+                            "id": 1,
+                            "name": "Chainmail",
+                            "fields": {"unknown_26": 0, "unknown_27": 0, "armor": 5},
+                        }
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            generated.write_text(
+                json.dumps(
+                    [
+                        {
+                            "id": 1,
+                            "name": "Chainmail",
+                            "fields": {
+                                "unknown_26": 55,
+                                "unknown_27": 5,
+                                "unknown_29": 0,
+                                "armor": 5,
+                                "corrupted_perk": 6,
+                            },
+                        }
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            target = ExportTarget(
+                name="armors",
+                extractor_script=root / "unused.py",
+                source_data=root / "unused.dat",
+                output_filename="armors.json",
+                site_path=site_path,
+            )
+
+            sync_generated_outputs([target], output_dir=output_dir)
+
+            synced = json.loads(site_path.read_text(encoding="utf-8"))
+            self.assertEqual(0, synced[0]["fields"]["unknown_26"])
+            self.assertEqual(0, synced[0]["fields"]["unknown_27"])
+            self.assertNotIn("unknown_29", synced[0]["fields"])
+            self.assertEqual(6, synced[0]["fields"]["corrupted_perk"])
+
     def test_build_generated_diff_report_summarizes_added_removed_and_changed_records(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

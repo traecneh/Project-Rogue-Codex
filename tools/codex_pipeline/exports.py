@@ -4,6 +4,7 @@ import json
 import shutil
 import subprocess
 import sys
+from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable, Sequence
@@ -103,6 +104,11 @@ DEFAULT_EXPORT_TARGETS: dict[str, ExportTarget] = {
 }
 
 
+SITE_NORMALIZED_FIELD_NAMES_BY_TARGET: dict[str, set[str]] = {
+    "armors": {"unknown_26", "unknown_27", "unknown_29"},
+}
+
+
 def resolve_targets(names: Sequence[str] | None = None) -> list[ExportTarget]:
     if not names:
         return list(DEFAULT_EXPORT_TARGETS.values())
@@ -134,6 +140,10 @@ def _read_json_list(path: Path, target: ExportTarget, label: str) -> list[Any]:
     if not isinstance(data, list):
         raise ExportError(f"{target.name} {label} must be a JSON list: {path}")
     return data
+
+
+def _write_json_list(path: Path, data: list[Any]) -> None:
+    path.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
 
 def _prepare_generated_path(path: Path) -> None:
@@ -185,6 +195,50 @@ def _index_records(records: list[Any]) -> dict[str, Any]:
     return indexed
 
 
+def _normalize_generated_records_for_site(
+    target: ExportTarget,
+    generated_records: list[Any],
+    site_records: list[Any],
+) -> list[Any]:
+    normalized_field_names = SITE_NORMALIZED_FIELD_NAMES_BY_TARGET.get(target.name)
+    if not normalized_field_names:
+        return generated_records
+
+    normalized_records = deepcopy(generated_records)
+    site_by_key = _index_records(site_records)
+    for index, record in enumerate(normalized_records):
+        if not isinstance(record, dict):
+            continue
+        fields = record.get("fields")
+        if not isinstance(fields, dict):
+            continue
+
+        site_record = site_by_key.get(_record_key(record, index))
+        site_fields = site_record.get("fields", {}) if isinstance(site_record, dict) else {}
+        if not isinstance(site_fields, dict):
+            site_fields = {}
+
+        for field_name in normalized_field_names:
+            if field_name in site_fields:
+                fields[field_name] = site_fields[field_name]
+            else:
+                fields.pop(field_name, None)
+    return normalized_records
+
+
+def _normalize_generated_output_for_site(target: ExportTarget, generated_path: Path) -> None:
+    if target.name not in SITE_NORMALIZED_FIELD_NAMES_BY_TARGET:
+        return
+
+    generated_records = _read_json_list(generated_path, target, "generated output")
+    site_records = (
+        _read_json_list(target.site_path, target, "site output") if target.site_path.is_file() else []
+    )
+    normalized_records = _normalize_generated_records_for_site(target, generated_records, site_records)
+    if normalized_records != generated_records:
+        _write_json_list(generated_path, normalized_records)
+
+
 def _display_records(indexed: dict[str, Any], keys: Iterable[str]) -> list[str]:
     return [_record_label(indexed[key], key) for key in keys]
 
@@ -226,6 +280,7 @@ def build_generated_diff_report(target: ExportTarget, *, output_dir: Path = GENE
     if not target.site_path.is_file():
         raise ExportError(f"{target.name} site output not found: {target.site_path}")
 
+    _normalize_generated_output_for_site(target, generated_path)
     generated_records = _read_json_list(generated_path, target, "generated output")
     site_records = _read_json_list(target.site_path, target, "site output")
     generated_by_key = _index_records(generated_records)
@@ -299,6 +354,8 @@ def export_client_data(
         if not generated_path.is_file():
             raise ExportError(f"{target.name} extractor did not write expected output: {generated_path}")
         _validate_generated_json(generated_path, target)
+        _normalize_generated_output_for_site(target, generated_path)
+        _validate_generated_json(generated_path, target)
         results.append(
             ExportResult(
                 target=target,
@@ -322,6 +379,7 @@ def sync_generated_outputs(
         generated_path = target.generated_path(output_dir)
         if not generated_path.is_file():
             raise ExportError(f"{target.name} generated output not found: {generated_path}")
+        _normalize_generated_output_for_site(target, generated_path)
         _validate_generated_json(generated_path, target)
         target.site_path.parent.mkdir(parents=True, exist_ok=True)
 
