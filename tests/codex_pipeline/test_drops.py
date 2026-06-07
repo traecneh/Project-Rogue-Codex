@@ -1,4 +1,5 @@
 import json
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -38,6 +39,28 @@ class DropSourcesSmokeTests(unittest.TestCase):
         reverse = derive_monster_drops(sources)
         self.assertEqual(reverse["armors"]["ice-devil"], ["Iceburst Amulet"])
         self.assertEqual(reverse["armors"]["greater-yeti"], ["Iceburst Amulet"])
+
+    def test_missing_required_drop_kind_raises_value_error(self):
+        from tools.codex_pipeline.drops import load_drop_sources
+
+        for missing_kind in ("armors", "weapons"):
+            data = {
+                "schemaVersion": 1,
+                "armors": {"Iceburst Amulet": ["Ice Devil"]},
+                "weapons": {"Frostbite Sword": ["Greater Yeti"]},
+            }
+            del data[missing_kind]
+
+            with self.subTest(missing_kind=missing_kind):
+                with tempfile.NamedTemporaryFile("w", encoding="utf-8", delete=False) as temp_file:
+                    json.dump(data, temp_file)
+                    temp_path = Path(temp_file.name)
+
+                try:
+                    with self.assertRaises(ValueError):
+                        load_drop_sources(temp_path)
+                finally:
+                    temp_path.unlink()
 
 
 if __name__ == "__main__":

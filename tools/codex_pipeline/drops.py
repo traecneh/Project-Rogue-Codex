@@ -28,7 +28,9 @@ def load_drop_sources(path: Path) -> dict[str, dict[str, list[str]]]:
 
     result: dict[str, dict[str, list[str]]] = {}
     for kind in DROP_KINDS:
-        entries = raw.get(kind, {})
+        if kind not in raw:
+            raise ValueError(f"{kind} drop sources must be an object")
+        entries = raw[kind]
         if not isinstance(entries, dict):
             raise ValueError(f"{kind} drop sources must be an object")
 
