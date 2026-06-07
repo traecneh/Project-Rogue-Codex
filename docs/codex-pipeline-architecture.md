@@ -45,6 +45,7 @@ For normal data refreshes, use this sequence:
 ```powershell
 python -m tools.codex_pipeline doctor
 python -m tools.codex_pipeline game-update-report
+python -m tools.codex_pipeline game-update-workflow
 python -m tools.codex_pipeline export-client-data
 python -m tools.codex_pipeline diff-generated
 python -m tools.codex_pipeline sync-generated --dry-run
@@ -74,6 +75,9 @@ Important commands:
   export to generated output, generated-vs-site diffs, generated unknown-field
   inventory, client-vs-site asset image diffs, generated drop-source
   validation, and generated corrupted-perk validation.
+- `game-update-workflow`: runs the standard game-update review sequence in
+  order. Use `--apply` to sync reviewed generated data and image assets, and
+  `--verify-live` after deployment.
 - `export-client-data`: runs configured extractors and writes generated JSON to
   `generated-output/codex-data/`.
 - `unknown-fields`: inventories `unknown_*` fields in current site data, or in
@@ -192,14 +196,14 @@ GitHub Actions runs the Codex data checks on pushes and pull requests targeting
 
 For data or extractor changes:
 
-1. Run `doctor`.
-2. Run `game-update-report`.
-3. Review generated-vs-site diffs, asset image diffs, and update warnings.
-4. Sync only intentional generated data and asset changes.
-5. Run unit tests and `validate`.
-6. Commit and push.
-7. Wait for GitHub Actions and Pages.
-8. Run `verify-live`.
+1. Run `game-update-workflow`.
+2. Review generated-vs-site diffs, asset image diffs, and update warnings.
+3. Sync only intentional generated data and asset changes, or rerun with
+   `--apply` after review.
+4. Run unit tests and `validate`.
+5. Commit and push.
+6. Wait for GitHub Actions and Pages.
+7. Run `verify-live`, or rerun `game-update-workflow --verify-live`.
 
 For override-only changes:
 

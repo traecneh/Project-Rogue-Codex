@@ -47,6 +47,14 @@ After a game update, generate a review-only update report. This exports current 
 python -m tools.codex_pipeline game-update-report
 ```
 
+To run the normal review workflow in one command:
+
+```powershell
+python -m tools.codex_pipeline game-update-workflow
+```
+
+Use `--apply` to sync reviewed generated data and image assets, and `--verify-live` after a push/deploy when the public site should match local files.
+
 Export client data into the intermediate generated-output folder without touching site files:
 
 ```powershell

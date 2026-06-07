@@ -72,6 +72,7 @@ def build_parser() -> argparse.ArgumentParser:
             "drop-report",
             "game-update-report",
             "sync-assets",
+            "game-update-workflow",
         ],
     )
     parser.add_argument(
@@ -91,6 +92,16 @@ def build_parser() -> argparse.ArgumentParser:
         "--dry-run",
         action="store_true",
         help="For sync-generated/export-sync/sync-assets, report site file changes without copying.",
+    )
+    parser.add_argument(
+        "--apply",
+        action="store_true",
+        help="For game-update-workflow, apply reviewed generated data and asset syncs after dry-run previews.",
+    )
+    parser.add_argument(
+        "--verify-live",
+        action="store_true",
+        help="For game-update-workflow, run verify-live after review/apply steps.",
     )
     parser.add_argument(
         "--site-url",
@@ -523,6 +534,52 @@ def run_sync_assets(args: argparse.Namespace) -> int:
     return 0 if not any(report.has_errors for report in reports) else 1
 
 
+def _args_with(args: argparse.Namespace, **overrides) -> argparse.Namespace:
+    values = vars(args).copy()
+    values.update(overrides)
+    return argparse.Namespace(**values)
+
+
+def _run_workflow_step(label: str, runner, args: argparse.Namespace | None = None) -> int:
+    print(f"WORKFLOW STEP {label}")
+    code = runner(args) if args is not None else runner()
+    if code != 0:
+        print(f"WORKFLOW STOP {label}: exit code {code}")
+    return code
+
+
+def run_game_update_workflow(args: argparse.Namespace) -> int:
+    review_steps = [
+        ("doctor", run_doctor, args),
+        ("game-update-report", run_game_update_report, args),
+        ("sync-generated --dry-run", run_sync_generated, _args_with(args, dry_run=True)),
+        ("sync-assets --dry-run", run_sync_assets, _args_with(args, dry_run=True)),
+    ]
+    for label, runner, step_args in review_steps:
+        code = _run_workflow_step(label, runner, step_args)
+        if code != 0:
+            return code
+
+    if args.apply:
+        apply_steps = [
+            ("sync-generated", run_sync_generated, _args_with(args, dry_run=False)),
+            ("sync-assets", run_sync_assets, _args_with(args, dry_run=False)),
+        ]
+        for label, runner, step_args in apply_steps:
+            code = _run_workflow_step(label, runner, step_args)
+            if code != 0:
+                return code
+
+        validate_code = _run_workflow_step("validate", run_validate)
+        if validate_code != 0:
+            return validate_code
+
+    if args.verify_live:
+        return _run_workflow_step("verify-live", run_verify_live, args)
+
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -548,5 +605,7 @@ def main(argv: list[str] | None = None) -> int:
         return run_game_update_report(args)
     if args.command == "sync-assets":
         return run_sync_assets(args)
+    if args.command == "game-update-workflow":
+        return run_game_update_workflow(args)
     parser.error(f"Unsupported command: {args.command}")
     return 2
