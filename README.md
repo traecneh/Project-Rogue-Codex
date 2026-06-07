@@ -63,7 +63,7 @@ To run the normal review workflow in one command:
 python -m tools.codex_pipeline game-update-workflow
 ```
 
-Use `--apply` to sync reviewed generated data and image assets. After a push/deploy, run `--verify-live` for live data/assets and `smoke-site --live` for live page behavior.
+Use `--apply` to sync reviewed generated data and image assets. After a push/deploy, run `verify-deploy` to wait for GitHub Actions/Pages and check the live site.
 
 Export client data into the intermediate generated-output folder without touching site files:
 
@@ -109,15 +109,16 @@ The static site is published from `origin/main` to:
 https://traecneh.github.io/Project-Rogue-Codex/
 ```
 
-After pushing `main`, verify the public site, deployed JSON data, image manifests, and deployed image hashes match the local site:
+After pushing `main`, wait for GitHub Actions/Pages and verify the public site in one command:
+
+```powershell
+python -m tools.codex_pipeline verify-deploy
+```
+
+This waits for the expected GitHub workflow runs for the current commit, verifies deployed JSON data, image manifests, deployed image hashes, and runs live page behavior smoke checks. The lower-level commands remain available when you need to run one part directly:
 
 ```powershell
 python -m tools.codex_pipeline verify-live
-```
-
-Then run the same page behavior smoke checks against the deployed GitHub Pages URL:
-
-```powershell
 python -m tools.codex_pipeline smoke-site --live
 ```
 

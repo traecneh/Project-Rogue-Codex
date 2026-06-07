@@ -3,7 +3,8 @@
   "private": true,
   "scripts": {
     "smoke-site": "python -m tools.codex_pipeline smoke-site",
-    "smoke-site:live": "python -m tools.codex_pipeline smoke-site --live"
+    "smoke-site:live": "python -m tools.codex_pipeline smoke-site --live",
+    "verify-deploy": "python -m tools.codex_pipeline verify-deploy"
   },
   "devDependencies": {
     "playwright": "1.60.0"

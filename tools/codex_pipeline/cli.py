@@ -19,7 +19,14 @@ from tools.codex_pipeline.config import (
 from tools.codex_pipeline.assets import resolve_asset_targets, sync_asset_targets
 from tools.codex_pipeline.drop_audit import build_drop_source_audit_report
 from tools.codex_pipeline.drops import load_drop_sources
-from tools.codex_pipeline.deploy import DEFAULT_LIVE_SITE_URL, verify_live_site
+from tools.codex_pipeline.deploy import (
+    DEFAULT_DEPLOY_BRANCH,
+    DEFAULT_GITHUB_REPO,
+    DEFAULT_LIVE_SITE_URL,
+    resolve_git_commit,
+    verify_live_site,
+    wait_for_github_workflows,
+)
 from tools.codex_pipeline.exports import (
     DEFAULT_EXPORT_TARGETS,
     ExportError,
@@ -81,6 +88,7 @@ def build_parser() -> argparse.ArgumentParser:
             "sync-generated",
             "diff-generated",
             "export-sync",
+            "verify-deploy",
             "verify-live",
             "doctor",
             "validate-sources",
@@ -121,9 +129,35 @@ def build_parser() -> argparse.ArgumentParser:
         help="For game-update-workflow, run verify-live after review/apply steps.",
     )
     parser.add_argument(
+        "--github-repo",
+        default=DEFAULT_GITHUB_REPO,
+        help="GitHub owner/repo for verify-deploy.",
+    )
+    parser.add_argument(
+        "--branch",
+        default=DEFAULT_DEPLOY_BRANCH,
+        help="GitHub branch for verify-deploy.",
+    )
+    parser.add_argument(
+        "--commit",
+        help="Commit SHA for verify-deploy. Defaults to the current local HEAD.",
+    )
+    parser.add_argument(
+        "--deploy-timeout-seconds",
+        type=float,
+        default=480,
+        help="Maximum time to wait for GitHub Actions and Pages in verify-deploy.",
+    )
+    parser.add_argument(
+        "--poll-seconds",
+        type=float,
+        default=10,
+        help="Polling interval for GitHub Actions and Pages in verify-deploy.",
+    )
+    parser.add_argument(
         "--site-url",
         default=DEFAULT_LIVE_SITE_URL,
-        help="Public site URL for verify-live and smoke-site --live.",
+        help="Public site URL for verify-live, smoke-site --live, and verify-deploy.",
     )
     parser.add_argument(
         "--timeout-seconds",
@@ -401,6 +435,29 @@ def run_smoke_site(args: argparse.Namespace) -> int:
     return result.returncode
 
 
+def run_verify_deploy(args: argparse.Namespace) -> int:
+    commit_sha = args.commit or resolve_git_commit()
+    print(f"DEPLOY WAIT {args.github_repo}@{commit_sha[:7]} on {args.branch}")
+    workflow_results = wait_for_github_workflows(
+        args.github_repo,
+        args.branch,
+        commit_sha,
+        timeout_seconds=args.deploy_timeout_seconds,
+        poll_seconds=args.poll_seconds,
+    )
+    for result in workflow_results:
+        status = "OK" if result.ok else "ERROR"
+        conclusion = f" {result.conclusion}" if result.conclusion else ""
+        print(f"DEPLOY {status} {result.name}: {result.status}{conclusion} ({result.url})")
+    if not all(result.ok for result in workflow_results):
+        return 1
+
+    verify_code = _run_workflow_step("verify-live", run_verify_live, args)
+    if verify_code != 0:
+        return verify_code
+    return _run_workflow_step("smoke-site --live", run_smoke_site, _args_with(args, live=True))
+
+
 def run_doctor(args: argparse.Namespace) -> int:
     try:
         targets = resolve_targets(args.targets)
@@ -642,6 +699,8 @@ def main(argv: list[str] | None = None) -> int:
         return run_diff_generated(args)
     if args.command == "export-sync":
         return run_export_sync(args)
+    if args.command == "verify-deploy":
+        return run_verify_deploy(args)
     if args.command == "verify-live":
         return run_verify_live(args)
     if args.command == "smoke-site":

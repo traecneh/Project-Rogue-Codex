@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import hashlib
 import json
+import subprocess
+import time
 import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Iterable
+from typing import Callable, Iterable, Sequence
 from urllib.parse import quote, urljoin
 
 from tools.codex_pipeline.config import (
@@ -13,12 +15,16 @@ from tools.codex_pipeline.config import (
     ARMORS_DATA_PATH,
     MONSTER_IMAGES_DIR,
     MONSTERS_DATA_PATH,
+    REPO_ROOT,
     WEAPON_IMAGES_DIR,
     WEAPONS_DATA_PATH,
 )
 
 
 DEFAULT_LIVE_SITE_URL = "https://traecneh.github.io/Project-Rogue-Codex/"
+DEFAULT_GITHUB_REPO = "traecneh/Project-Rogue-Codex"
+DEFAULT_DEPLOY_BRANCH = "main"
+DEFAULT_DEPLOY_WORKFLOWS = ("Codex Data Checks", "pages build and deployment")
 
 
 @dataclass(frozen=True)
@@ -44,6 +50,22 @@ class LiveCheckResult:
     message: str
 
 
+@dataclass(frozen=True)
+class WorkflowRunStatus:
+    name: str
+    status: str
+    conclusion: str | None
+    url: str
+
+    @property
+    def completed(self) -> bool:
+        return self.status == "completed"
+
+    @property
+    def ok(self) -> bool:
+        return self.completed and self.conclusion == "success"
+
+
 DEFAULT_LIVE_DATA_TARGETS = [
     LiveDataTarget("weapons", WEAPONS_DATA_PATH, "pages/items/weapons_data05.json"),
     LiveDataTarget("armors", ARMORS_DATA_PATH, "pages/items/armors_data06.json"),
@@ -59,6 +81,7 @@ DEFAULT_LIVE_ASSET_TARGETS = [
 
 FetchText = Callable[[str, float], str]
 FetchBytes = Callable[[str, float], bytes]
+FetchWorkflowRuns = Callable[[str, str, float], object]
 
 
 def fetch_url_text(url: str, timeout_seconds: float) -> str:
@@ -78,6 +101,103 @@ def fetch_url_bytes(url: str, timeout_seconds: float) -> bytes:
     )
     with urllib.request.urlopen(request, timeout=timeout_seconds) as response:
         return response.read()
+
+
+def resolve_git_commit(*, repo_root: Path = REPO_ROOT, git_executable: str = "git") -> str:
+    return subprocess.check_output(
+        [git_executable, "rev-parse", "HEAD"],
+        cwd=repo_root,
+        text=True,
+    ).strip()
+
+
+def fetch_github_workflow_runs(repo: str, branch: str, timeout_seconds: float) -> object:
+    branch_query = quote(branch, safe="")
+    url = f"https://api.github.com/repos/{repo}/actions/runs?branch={branch_query}&per_page=20"
+    request = urllib.request.Request(
+        url,
+        headers={
+            "Accept": "application/vnd.github+json",
+            "User-Agent": "Project-Rogue-Codex-Codex-Pipeline/1.0",
+        },
+    )
+    with urllib.request.urlopen(request, timeout=timeout_seconds) as response:
+        return json.loads(response.read().decode("utf-8"))
+
+
+def _actions_url(repo: str, branch: str) -> str:
+    return f"https://github.com/{repo}/actions?query=branch%3A{quote(branch, safe='')}"
+
+
+def _workflow_statuses(
+    payload: object,
+    *,
+    repo: str,
+    branch: str,
+    commit_sha: str,
+    workflow_names: Sequence[str],
+) -> list[WorkflowRunStatus]:
+    runs = payload.get("workflow_runs", []) if isinstance(payload, dict) else []
+    matched: dict[str, WorkflowRunStatus] = {}
+    wanted = set(workflow_names)
+    for run in runs:
+        if not isinstance(run, dict):
+            continue
+        name = str(run.get("name") or "")
+        if name not in wanted or name in matched or run.get("head_sha") != commit_sha:
+            continue
+        matched[name] = WorkflowRunStatus(
+            name=name,
+            status=str(run.get("status") or "unknown"),
+            conclusion=run.get("conclusion"),
+            url=str(run.get("html_url") or _actions_url(repo, branch)),
+        )
+    return [
+        matched.get(name) or WorkflowRunStatus(name, "missing", None, _actions_url(repo, branch))
+        for name in workflow_names
+    ]
+
+
+def wait_for_github_workflows(
+    repo: str,
+    branch: str,
+    commit_sha: str,
+    *,
+    workflow_names: Sequence[str] = DEFAULT_DEPLOY_WORKFLOWS,
+    timeout_seconds: float = 480,
+    poll_seconds: float = 10,
+    api_timeout_seconds: float = 20,
+    fetch_runs: FetchWorkflowRuns = fetch_github_workflow_runs,
+    sleep: Callable[[float], None] = time.sleep,
+    monotonic: Callable[[], float] = time.monotonic,
+) -> list[WorkflowRunStatus]:
+    deadline = monotonic() + timeout_seconds
+    last_statuses = [
+        WorkflowRunStatus(name, "missing", None, _actions_url(repo, branch))
+        for name in workflow_names
+    ]
+    while True:
+        try:
+            payload = fetch_runs(repo, branch, api_timeout_seconds)
+        except Exception as exc:
+            return [WorkflowRunStatus("GitHub Actions API", "error", str(exc), _actions_url(repo, branch))]
+
+        last_statuses = _workflow_statuses(
+            payload,
+            repo=repo,
+            branch=branch,
+            commit_sha=commit_sha,
+            workflow_names=workflow_names,
+        )
+        if all(status.ok for status in last_statuses):
+            return last_statuses
+        if any(status.completed and not status.ok for status in last_statuses):
+            return last_statuses
+
+        remaining = deadline - monotonic()
+        if remaining <= 0:
+            return last_statuses
+        sleep(max(0.1, min(poll_seconds, remaining)))
 
 
 def _normalize_site_url(site_url: str) -> str:

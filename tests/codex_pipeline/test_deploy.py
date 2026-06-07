@@ -193,3 +193,105 @@ class LiveDeploymentTests(unittest.TestCase):
         printed = output.getvalue()
         self.assertIn("LIVE OK site: site reachable", printed)
         self.assertIn("LIVE ERROR armors: armors live JSON differs", printed)
+
+    def test_cli_verify_deploy_waits_then_runs_live_checks(self):
+        from tools.codex_pipeline import cli
+        from tools.codex_pipeline.deploy import LiveCheckResult, WorkflowRunStatus
+        from tools.codex_pipeline.site_smoke import SiteSmokeRun
+
+        output = io.StringIO()
+        with (
+            patch.object(cli, "resolve_git_commit", return_value="abc123"),
+            patch.object(
+                cli,
+                "wait_for_github_workflows",
+                return_value=[
+                    WorkflowRunStatus(
+                        "Codex Data Checks",
+                        "completed",
+                        "success",
+                        "https://github.test/runs/checks",
+                    ),
+                    WorkflowRunStatus(
+                        "pages build and deployment",
+                        "completed",
+                        "success",
+                        "https://github.test/runs/pages",
+                    ),
+                ],
+            ) as wait_for_workflows,
+            patch.object(
+                cli,
+                "verify_live_site",
+                return_value=[
+                    LiveCheckResult("site", "https://example.test/codex/", True, "site reachable"),
+                ],
+            ) as verify_live,
+            patch.object(
+                cli,
+                "run_site_smoke_command",
+                return_value=SiteSmokeRun(returncode=0, stdout="SMOKE OK site\n", stderr=""),
+            ) as smoke_site,
+            patch("sys.stdout", output),
+        ):
+            exit_code = cli.main(
+                [
+                    "verify-deploy",
+                    "--site-url",
+                    "https://example.test/codex/",
+                    "--deploy-timeout-seconds",
+                    "12",
+                    "--poll-seconds",
+                    "0",
+                ]
+            )
+
+        self.assertEqual(0, exit_code)
+        wait_for_workflows.assert_called_once_with(
+            "traecneh/Project-Rogue-Codex",
+            "main",
+            "abc123",
+            timeout_seconds=12,
+            poll_seconds=0,
+        )
+        verify_live.assert_called_once_with("https://example.test/codex/", timeout_seconds=20)
+        smoke_site.assert_called_once_with(timeout_ms=20000, base_url="https://example.test/codex/")
+        printed = output.getvalue()
+        self.assertIn("DEPLOY OK Codex Data Checks: completed success", printed)
+        self.assertIn("WORKFLOW STEP verify-live", printed)
+        self.assertIn("WORKFLOW STEP smoke-site --live", printed)
+
+    def test_wait_for_github_workflows_reports_matching_completed_runs(self):
+        from tools.codex_pipeline.deploy import wait_for_github_workflows
+
+        def fetch_runs(repo, branch, timeout_seconds):
+            return {
+                "workflow_runs": [
+                    {
+                        "name": "Codex Data Checks",
+                        "head_sha": "abc123",
+                        "status": "completed",
+                        "conclusion": "success",
+                        "html_url": "https://github.test/runs/checks",
+                    },
+                    {
+                        "name": "pages build and deployment",
+                        "head_sha": "abc123",
+                        "status": "completed",
+                        "conclusion": "success",
+                        "html_url": "https://github.test/runs/pages",
+                    },
+                ]
+            }
+
+        results = wait_for_github_workflows(
+            "owner/repo",
+            "main",
+            "abc123",
+            workflow_names=("Codex Data Checks", "pages build and deployment"),
+            fetch_runs=fetch_runs,
+            sleep=lambda seconds: None,
+        )
+
+        self.assertTrue(all(result.ok for result in results), results)
+        self.assertEqual(["Codex Data Checks", "pages build and deployment"], [result.name for result in results])

@@ -37,8 +37,7 @@ Client .dat files
   -> validate
   -> push main
   -> GitHub Pages
-  -> verify-live
-  -> smoke-site --live
+  -> verify-deploy
 ```
 
 For normal data refreshes, use this sequence:
@@ -58,8 +57,7 @@ python -m tools.codex_pipeline smoke-site
 After pushing `main`, confirm the public site:
 
 ```powershell
-python -m tools.codex_pipeline verify-live
-python -m tools.codex_pipeline smoke-site --live
+python -m tools.codex_pipeline verify-deploy
 ```
 
 ## Command Surface
@@ -80,8 +78,8 @@ Important commands:
   validation, and generated corrupted-perk validation.
 - `game-update-workflow`: runs the standard game-update review sequence in
   order. Use `--apply` to sync reviewed generated data and image assets, and
-  `--verify-live` after deployment for live data/assets. Run
-  `smoke-site --live` after deployment for live page behavior.
+  `verify-deploy` after deployment to wait for GitHub Actions/Pages and check
+  the live site.
 - `export-client-data`: runs configured extractors and writes generated JSON to
   `generated-output/codex-data/`.
 - `unknown-fields`: inventories `unknown_*` fields in current site data, or in
@@ -102,6 +100,8 @@ Important commands:
   `--live` to run the same checks against `--site-url`.
 - `drop-report`: audits drop-source overrides and prints both the item-centric
   source view and derived monster-centric loot view.
+- `verify-deploy`: waits for the expected GitHub Actions and Pages runs for the
+  current commit, then runs `verify-live` and `smoke-site --live`.
 - `verify-live`: fetches the deployed GitHub Pages site and confirms live JSON,
   image manifests, and deployed image hashes match local site files.
 
@@ -195,8 +195,7 @@ npm install
 python -m unittest discover -s tests -v
 python -m tools.codex_pipeline validate
 python -m tools.codex_pipeline smoke-site
-python -m tools.codex_pipeline verify-live
-python -m tools.codex_pipeline smoke-site --live
+python -m tools.codex_pipeline verify-deploy
 git diff --check
 ```
 
@@ -213,17 +212,14 @@ For data or extractor changes:
    `--apply` after review.
 4. Run unit tests and `validate`.
 5. Commit and push.
-6. Wait for GitHub Actions and Pages.
-7. Run `verify-live` and `smoke-site --live`, or rerun
-   `game-update-workflow --verify-live` for the data/assets portion.
+6. Run `verify-deploy`.
 
 For override-only changes:
 
 1. Edit the override JSON.
 2. Run unit tests and `validate`.
 3. Confirm affected pages still derive data from the shared override file.
-4. Commit, push, wait for Pages, and run `verify-live` plus
-   `smoke-site --live`.
+4. Commit, push, and run `verify-deploy`.
 
 ## Current Boundary
 
