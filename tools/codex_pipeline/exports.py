@@ -195,17 +195,41 @@ def _index_records(records: list[Any]) -> dict[str, Any]:
     return indexed
 
 
+def _int_or_none(value: Any) -> int | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value
+    if isinstance(value, str):
+        stripped = value.strip()
+        if stripped and stripped.lstrip("-").isdigit():
+            return int(stripped)
+    return None
+
+
+def _uses_untrusted_corrupted_perk_label(fields: dict[str, Any]) -> bool:
+    corrupted_label = fields.get("corrupted_perk_label")
+    perk_label = fields.get("perk_label")
+    if not corrupted_label or corrupted_label != perk_label:
+        return False
+
+    corrupted_perk = _int_or_none(fields.get("corrupted_perk"))
+    perk = _int_or_none(fields.get("perk"))
+    if corrupted_perk is None or not corrupted_perk or perk is None:
+        return False
+    if corrupted_perk == perk:
+        return False
+    return corrupted_perk - perk != 256
+
+
 def _normalize_generated_records_for_site(
     target: ExportTarget,
     generated_records: list[Any],
     site_records: list[Any],
 ) -> list[Any]:
-    normalized_field_names = SITE_NORMALIZED_FIELD_NAMES_BY_TARGET.get(target.name)
-    if not normalized_field_names:
-        return generated_records
-
+    normalized_field_names = SITE_NORMALIZED_FIELD_NAMES_BY_TARGET.get(target.name, set())
     normalized_records = deepcopy(generated_records)
-    site_by_key = _index_records(site_records)
+    site_by_key = _index_records(site_records) if normalized_field_names else {}
     for index, record in enumerate(normalized_records):
         if not isinstance(record, dict):
             continue
@@ -213,23 +237,24 @@ def _normalize_generated_records_for_site(
         if not isinstance(fields, dict):
             continue
 
-        site_record = site_by_key.get(_record_key(record, index))
-        site_fields = site_record.get("fields", {}) if isinstance(site_record, dict) else {}
-        if not isinstance(site_fields, dict):
-            site_fields = {}
+        if normalized_field_names:
+            site_record = site_by_key.get(_record_key(record, index))
+            site_fields = site_record.get("fields", {}) if isinstance(site_record, dict) else {}
+            if not isinstance(site_fields, dict):
+                site_fields = {}
 
-        for field_name in normalized_field_names:
-            if field_name in site_fields:
-                fields[field_name] = site_fields[field_name]
-            else:
-                fields.pop(field_name, None)
+            for field_name in normalized_field_names:
+                if field_name in site_fields:
+                    fields[field_name] = site_fields[field_name]
+                else:
+                    fields.pop(field_name, None)
+
+        if _uses_untrusted_corrupted_perk_label(fields):
+            fields.pop("corrupted_perk_label", None)
     return normalized_records
 
 
 def _normalize_generated_output_for_site(target: ExportTarget, generated_path: Path) -> None:
-    if target.name not in SITE_NORMALIZED_FIELD_NAMES_BY_TARGET:
-        return
-
     generated_records = _read_json_list(generated_path, target, "generated output")
     site_records = (
         _read_json_list(target.site_path, target, "site output") if target.site_path.is_file() else []
