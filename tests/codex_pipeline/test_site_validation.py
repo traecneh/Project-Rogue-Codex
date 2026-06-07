@@ -147,6 +147,26 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn('nameLink.addEventListener("click", stopTooltipLinkPropagation);', armors_html)
         self.assertIn('label.addEventListener("click", stopTooltipLinkPropagation);', monsters_script)
 
+    def test_item_pages_support_detail_url_state(self):
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        weapons_html = (REPO_ROOT / "pages" / "items" / "weapons.html").read_text(encoding="utf-8")
+        armors_html = (REPO_ROOT / "pages" / "items" / "armors.html").read_text(encoding="utf-8")
+
+        self.assertIn("const updateWeaponDetailUrl", weapons_html)
+        self.assertIn("const selectWeapon", weapons_html)
+        self.assertIn('window.addEventListener("popstate"', weapons_html)
+        self.assertIn('history.pushState({ weaponId }, "", targetUrl);', weapons_html)
+        self.assertIn("selectWeapon(item, { updateUrl: true });", weapons_html)
+        self.assertIn("clearDetails({ updateUrl: true });", weapons_html)
+
+        self.assertIn("const updateArmorDetailUrl", armors_html)
+        self.assertIn("const selectArmor", armors_html)
+        self.assertIn('window.addEventListener("popstate"', armors_html)
+        self.assertIn('history.pushState({ armorId }, "", targetUrl);', armors_html)
+        self.assertIn("selectArmor(item, { updateUrl: true });", armors_html)
+        self.assertIn("clearDetails({ updateUrl: true });", armors_html)
+
     def test_manifest_self_reference_is_an_error(self):
         from tools.codex_pipeline.validators.site import validate_manifest_entries
 

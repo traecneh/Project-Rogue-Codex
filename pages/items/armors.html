@@ -545,8 +545,16 @@
         const slotFilter = document.getElementById("filter-slot");
         const resistFilter = document.getElementById("filter-resist");
         const urlParams = new URLSearchParams(window.location.search);
+        const normalizeArmorId = (value) =>
+          (value || "")
+            .toString()
+            .toLowerCase()
+            .replace(/[^a-z0-9_-]+/g, "-")
+            .replace(/^-+|-+$/g, "");
         const initialArmorQuery = (urlParams.get("armor") || urlParams.get("armorName") || "").trim();
+        const initialArmorId = normalizeArmorId(initialArmorQuery);
         const initialArmorSearchTerm = initialArmorQuery.replace(/-/g, " ").trim();
+        let pendingArmorId = initialArmorId;
         let pendingArmorName = initialArmorQuery.toLowerCase();
         const tableHeadRow = document.getElementById("items-head-row");
         const tableBody = document.getElementById("items-body");
@@ -781,7 +789,80 @@
           });
         };
 
-        const getArmorId = (item) => (item && item.name ? item.name.toString().toLowerCase() : "");
+        const getArmorId = (item) => normalizeArmorId(item && (item.id || item.name));
+
+        const getArmorDetailName = (item) => (item && item.name ? item.name.toString().trim() : "");
+
+        const buildArmorDetailStateUrl = (item) => {
+          const name = getArmorDetailName(item);
+          if (!name) return "";
+          const path = window.location.pathname || "pages/items/armors.html";
+          return `${path}?armor=${encodeURIComponent(name)}`;
+        };
+
+        const buildArmorListUrl = () => window.location.pathname || "pages/items/armors.html";
+
+        const updateArmorDetailUrl = (item, options = {}) => {
+          const armorId = getArmorId(item);
+          const targetUrl = buildArmorDetailStateUrl(item);
+          if (!armorId || !targetUrl || !window.history || !window.history.pushState) return;
+          const currentUrl = `${window.location.pathname}${window.location.search}`;
+          if (currentUrl === targetUrl) return;
+          try {
+            if (options.replace) {
+              history.replaceState({ armorId }, "", targetUrl);
+            } else {
+              history.pushState({ armorId }, "", targetUrl);
+            }
+          } catch (error) {
+            // Ignore history failures on nonstandard local file URLs.
+          }
+        };
+
+        const updateArmorListUrl = (options = {}) => {
+          const targetUrl = buildArmorListUrl();
+          if (!targetUrl || !window.history || !window.history.pushState) return;
+          const currentUrl = `${window.location.pathname}${window.location.search}`;
+          if (currentUrl === targetUrl) return;
+          try {
+            if (options.replace) {
+              history.replaceState({}, "", targetUrl);
+            } else {
+              history.pushState({}, "", targetUrl);
+            }
+          } catch (error) {
+            // Ignore history failures on nonstandard local file URLs.
+          }
+        };
+
+        const getArmorRouteFromLocation = () => {
+          const params = new URLSearchParams(window.location.search);
+          const raw = (params.get("armor") || params.get("armorName") || "").trim();
+          return {
+            id: normalizeArmorId(raw),
+            name: raw.toLowerCase(),
+          };
+        };
+
+        const findArmorByRoute = (list, routeId, routeName) =>
+          (Array.isArray(list) ? list : []).find((armor) => {
+            const id = getArmorId(armor);
+            const nameId = normalizeArmorId(armor && armor.name);
+            const nameLower = (armor.name || "").toLowerCase();
+            return (routeId && (id === routeId || nameId === routeId)) || (routeName && nameLower === routeName);
+          });
+
+        const getSelectedArmorFromLocation = (list = items) => {
+          const route = getArmorRouteFromLocation();
+          if (!route.id && !route.name) return null;
+          return findArmorByRoute(list, route.id, route.name);
+        };
+
+        const selectArmor = (item, options = {}) => {
+          if (!item) return;
+          if (options.updateUrl) updateArmorDetailUrl(item, { replace: options.replaceUrl });
+          setDetails(item, { scroll: options.scroll });
+        };
 
         const createCell = (labelContent, valueContent) => {
           const cell = document.createElement("div");
@@ -1358,7 +1439,7 @@
           }
         }
 
-        const setDetails = (item) => {
+        const setDetails = (item, options = {}) => {
           if (!item) return;
           detailFields.name.textContent = item.name || "Unknown";
           ensureImage(detailFields.image, detailFields.imageFallback, item, "armors");
@@ -1474,13 +1555,35 @@
 
           attachTooltipPinning(details);
           details.classList.add("show");
-          details.scrollIntoView({ behavior: "smooth", block: "start" });
+          if (options.scroll !== false) {
+            details.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
         };
 
-        const clearDetails = () => {
+        const clearDetails = (options = {}) => {
           details.classList.remove("show");
           if (pinnedTooltip) unpinTooltip(pinnedTooltip);
+          if (options.updateUrl) updateArmorListUrl({ replace: options.replaceUrl });
         };
+
+        window.addEventListener("popstate", () => {
+          const route = getArmorRouteFromLocation();
+          pendingArmorId = route.id;
+          pendingArmorName = route.name;
+          if (!pendingArmorId && !pendingArmorName) {
+            clearDetails({ updateUrl: false });
+            return;
+          }
+          if (!items.length) return;
+          const selected = getSelectedArmorFromLocation(items);
+          pendingArmorId = "";
+          pendingArmorName = "";
+          if (selected) {
+            selectArmor(selected, { updateUrl: false, scroll: false });
+          } else {
+            clearDetails({ updateUrl: false });
+          }
+        });
 
         const renderTable = (rows) => {
           if (!rows.length) {
@@ -1520,7 +1623,9 @@
               tr.appendChild(td);
             });
 
-            tr.addEventListener("click", () => setDetails(item));
+            tr.addEventListener("click", () => {
+              selectArmor(item, { updateUrl: true });
+            });
             fragment.appendChild(tr);
           });
 
@@ -1530,11 +1635,14 @@
         };
 
         const maybeSelectPendingArmor = (list) => {
-          if (!pendingArmorName) return;
-          const match = (list || items).find((a) => getArmorId(a) === pendingArmorName);
+          if (!pendingArmorId && !pendingArmorName) return;
+          const match =
+            findArmorByRoute(list || items, pendingArmorId, pendingArmorName) ||
+            findArmorByRoute(items, pendingArmorId, pendingArmorName);
           if (!match) return;
+          pendingArmorId = "";
           pendingArmorName = "";
-          setDetails(match);
+          selectArmor(match, { updateUrl: false });
         };
 
         const applyFilterAndSort = () => {
@@ -1661,7 +1769,9 @@
         }
 
         if (closeBtn) {
-          closeBtn.addEventListener("click", clearDetails);
+          closeBtn.addEventListener("click", () => {
+            clearDetails({ updateUrl: true });
+          });
         }
 
         init();

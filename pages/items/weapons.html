@@ -1502,17 +1502,88 @@
 
         const getWeaponId = (item) => normalizeWeaponId(item && (item.id || item.name));
 
+        const getWeaponDetailName = (item) => (item && item.name ? item.name.toString().trim() : "");
+
+        const buildWeaponDetailStateUrl = (item) => {
+          const name = getWeaponDetailName(item);
+          if (!name) return "";
+          const path = window.location.pathname || "pages/items/weapons.html";
+          return `${path}?weapon=${encodeURIComponent(name)}`;
+        };
+
+        const buildWeaponListUrl = () => window.location.pathname || "pages/items/weapons.html";
+
+        const updateWeaponDetailUrl = (item, options = {}) => {
+          const weaponId = getWeaponId(item);
+          const targetUrl = buildWeaponDetailStateUrl(item);
+          if (!weaponId || !targetUrl || !window.history || !window.history.pushState) return;
+          const currentUrl = `${window.location.pathname}${window.location.search}`;
+          if (currentUrl === targetUrl) return;
+          try {
+            if (options.replace) {
+              history.replaceState({ weaponId }, "", targetUrl);
+            } else {
+              history.pushState({ weaponId }, "", targetUrl);
+            }
+          } catch (error) {
+            // Ignore history failures on nonstandard local file URLs.
+          }
+        };
+
+        const updateWeaponListUrl = (options = {}) => {
+          const targetUrl = buildWeaponListUrl();
+          if (!targetUrl || !window.history || !window.history.pushState) return;
+          const currentUrl = `${window.location.pathname}${window.location.search}`;
+          if (currentUrl === targetUrl) return;
+          try {
+            if (options.replace) {
+              history.replaceState({}, "", targetUrl);
+            } else {
+              history.pushState({}, "", targetUrl);
+            }
+          } catch (error) {
+            // Ignore history failures on nonstandard local file URLs.
+          }
+        };
+
+        const getWeaponRouteFromLocation = () => {
+          const params = new URLSearchParams(window.location.search);
+          const raw = (params.get("weapon") || params.get("weaponName") || "").trim();
+          return {
+            id: normalizeWeaponId(raw),
+            name: raw.toLowerCase(),
+          };
+        };
+
+        const findWeaponByRoute = (list, routeId, routeName) =>
+          (Array.isArray(list) ? list : []).find((weapon) => {
+            const id = getWeaponId(weapon);
+            const nameId = normalizeWeaponId(weapon && weapon.name);
+            const nameLower = (weapon.name || "").toLowerCase();
+            return (routeId && (id === routeId || nameId === routeId)) || (routeName && nameLower === routeName);
+          });
+
+        const getSelectedWeaponFromLocation = (list = items) => {
+          const route = getWeaponRouteFromLocation();
+          if (!route.id && !route.name) return null;
+          return findWeaponByRoute(list, route.id, route.name);
+        };
+
+        const selectWeapon = (item, options = {}) => {
+          if (!item) return;
+          if (options.updateUrl) updateWeaponDetailUrl(item, { replace: options.replaceUrl });
+          setDetails(item, { scroll: options.scroll });
+        };
+
         const maybeSelectPendingWeapon = (list) => {
           if (!pendingWeaponId && !pendingWeaponName) return;
-          const match = (list || items).find((w) => {
-            const id = getWeaponId(w);
-            const nameLower = (w.name || "").toLowerCase();
-            return (pendingWeaponId && id === pendingWeaponId) || (pendingWeaponName && nameLower === pendingWeaponName);
-          });
+          const match =
+            findWeaponByRoute(list || items, pendingWeaponId, pendingWeaponName) ||
+            findWeaponByRoute(items, pendingWeaponId, pendingWeaponName);
           if (!match) return;
           pendingWeaponId = "";
           pendingWeaponName = "";
-          setDetails(match);
+          selectWeapon(match, { updateUrl: false });
         };
 
         const updateSortIndicators = () => {
@@ -1621,7 +1692,7 @@
           }
         }
 
-        const setDetails = (item) => {
+        const setDetails = (item, options = {}) => {
           if (!item) return;
           detailFields.name.textContent = item.name || "Unknown";
           ensureImage(detailFields.image, detailFields.imageFallback, item);
@@ -1764,13 +1835,35 @@
 
           attachTooltipPinning(details);
           details.classList.add("show");
-          details.scrollIntoView({ behavior: "smooth", block: "start" });
+          if (options.scroll !== false) {
+            details.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
         };
 
-        const clearDetails = () => {
+        const clearDetails = (options = {}) => {
           details.classList.remove("show");
           if (pinnedTooltip) unpinTooltip(pinnedTooltip);
+          if (options.updateUrl) updateWeaponListUrl({ replace: options.replaceUrl });
         };
+
+        window.addEventListener("popstate", () => {
+          const route = getWeaponRouteFromLocation();
+          pendingWeaponId = route.id;
+          pendingWeaponName = route.name;
+          if (!pendingWeaponId && !pendingWeaponName) {
+            clearDetails({ updateUrl: false });
+            return;
+          }
+          if (!items.length) return;
+          const selected = getSelectedWeaponFromLocation(items);
+          pendingWeaponId = "";
+          pendingWeaponName = "";
+          if (selected) {
+            selectWeapon(selected, { updateUrl: false, scroll: false });
+          } else {
+            clearDetails({ updateUrl: false });
+          }
+        });
 
         const renderTable = (rows) => {
           if (!rows.length) {
@@ -1802,7 +1895,9 @@
               tr.appendChild(td);
             });
 
-            tr.addEventListener("click", () => setDetails(item));
+            tr.addEventListener("click", () => {
+              selectWeapon(item, { updateUrl: true });
+            });
             fragment.appendChild(tr);
           });
 
@@ -1941,7 +2036,9 @@
         }
 
         if (closeBtn) {
-          closeBtn.addEventListener("click", clearDetails);
+          closeBtn.addEventListener("click", () => {
+            clearDetails({ updateUrl: true });
+          });
         }
 
         init();
