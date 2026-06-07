@@ -44,6 +44,7 @@ For normal data refreshes, use this sequence:
 
 ```powershell
 python -m tools.codex_pipeline doctor
+python -m tools.codex_pipeline game-update-report
 python -m tools.codex_pipeline export-client-data
 python -m tools.codex_pipeline diff-generated
 python -m tools.codex_pipeline sync-generated --dry-run
@@ -69,6 +70,10 @@ Important commands:
 
 - `doctor` / `validate-sources`: confirms extractor scripts, client source data,
   site destination folders, and extractor syntax.
+- `game-update-report`: runs a review-only game update pass: source checks,
+  export to generated output, generated-vs-site diffs, generated unknown-field
+  inventory, generated drop-source validation, and generated corrupted-perk
+  validation.
 - `export-client-data`: runs configured extractors and writes generated JSON to
   `generated-output/codex-data/`.
 - `unknown-fields`: inventories `unknown_*` fields in current site data, or in
@@ -101,6 +106,8 @@ Core package:
 - `tools/codex_pipeline/exports.py`: export target definitions, extractor
   subprocess execution, generated-output normalization, diff reporting, and site
   sync.
+- `tools/codex_pipeline/game_update.py`: review-only game update report
+  orchestration.
 - `tools/codex_pipeline/sources.py`: pre-export source checks used by `doctor`.
 - `tools/codex_pipeline/deploy.py`: live GitHub Pages data comparison.
 - `tools/codex_pipeline/drops.py`: drop-source override loading, name
@@ -181,8 +188,8 @@ GitHub Actions runs the Codex data checks on pushes and pull requests targeting
 For data or extractor changes:
 
 1. Run `doctor`.
-2. Export to `generated-output/codex-data/`.
-3. Review `diff-generated`.
+2. Run `game-update-report`.
+3. Review generated-vs-site diffs and update warnings.
 4. Sync only intentional generated changes.
 5. Run unit tests and `validate`.
 6. Commit and push.

@@ -27,6 +27,7 @@ from tools.codex_pipeline.exports import (
     resolve_targets,
     sync_generated_outputs,
 )
+from tools.codex_pipeline.game_update import build_game_update_report
 from tools.codex_pipeline.perks import load_perk_label_overrides
 from tools.codex_pipeline.sources import validate_export_sources
 from tools.codex_pipeline.unknowns import build_unknown_field_reports
@@ -68,6 +69,7 @@ def build_parser() -> argparse.ArgumentParser:
             "validate-sources",
             "unknown-fields",
             "drop-report",
+            "game-update-report",
         ],
     )
     parser.add_argument(
@@ -371,6 +373,16 @@ def _print_unknown_field_reports(reports) -> None:
             )
 
 
+def _print_unknown_field_summaries(reports) -> None:
+    for report in reports:
+        nonzero_field_count = sum(1 for field in report.fields if field.nonzero_count)
+        print(
+            f"UNKNOWN SUMMARY {report.target_name}: "
+            f"{len(report.fields)} field(s), {nonzero_field_count} with nonzero values "
+            f"({report.data_path})"
+        )
+
+
 def run_unknown_fields(args: argparse.Namespace) -> int:
     if args.max_samples < 0:
         print("ERROR: --max-samples must be 0 or greater")
@@ -421,6 +433,56 @@ def run_drop_report() -> int:
     return 0 if not any(issue.severity == "error" for issue in report.validation_issues) else 1
 
 
+def _print_drop_report_summary(report) -> None:
+    print(
+        f"DROP SUMMARY: {report.item_override_count} item override(s), "
+        f"{report.monster_count} monster loot view(s), "
+        f"{len(report.validation_issues)} issue(s) ({report.drop_sources_path})"
+    )
+    for issue in report.validation_issues:
+        print(f"DROP ISSUE {issue.severity.upper()}: {issue.message}")
+
+
+def _print_game_update_report(report) -> None:
+    print(f"GAME UPDATE REPORT: {report.output_dir}")
+    for check in report.source_checks:
+        status = "OK" if check.ok else "ERROR"
+        print(f"SOURCE {status} {check.target} {check.check}: {check.message}")
+
+    for error in report.export_errors:
+        print(f"EXPORT ERROR: {error}")
+
+    if report.export_results:
+        _print_export_results(report.export_results)
+    if report.diff_reports:
+        _print_diff_reports(report.diff_reports)
+    if report.unknown_reports:
+        _print_unknown_field_summaries(report.unknown_reports)
+    if report.drop_report is not None:
+        _print_drop_report_summary(report.drop_report)
+
+    for issue in report.validation_issues:
+        print(f"UPDATE ISSUE {issue.severity.upper()}: {issue.message}")
+    for section in report.skipped_sections:
+        print(f"SKIPPED: {section}")
+
+    review_status = "changes detected" if report.has_changes else "no generated data changes"
+    print(f"REVIEW STATUS: {review_status}")
+    sync_status = "OK" if report.safe_to_sync else "BLOCKED"
+    print(f"SYNC READINESS: {sync_status}")
+
+
+def run_game_update_report(args: argparse.Namespace) -> int:
+    try:
+        targets = resolve_targets(args.targets)
+        report = build_game_update_report(targets, output_dir=args.output_dir)
+    except ExportError as exc:
+        print(f"ERROR: {exc}")
+        return 1
+    _print_game_update_report(report)
+    return 0 if report.safe_to_sync else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -442,5 +504,7 @@ def main(argv: list[str] | None = None) -> int:
         return run_unknown_fields(args)
     if args.command == "drop-report":
         return run_drop_report()
+    if args.command == "game-update-report":
+        return run_game_update_report(args)
     parser.error(f"Unsupported command: {args.command}")
     return 2
