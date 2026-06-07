@@ -54,7 +54,6 @@ Records whose names are not recoverable (would have been "Monster_<idx>") are
 omitted from the output. The script reports how many were written vs skipped.
 """
 
-import json
 import sys
 from pathlib import Path
 
@@ -76,13 +75,11 @@ try:
         enrich_monster_fields,
     )
     from tools.codex_pipeline.extractors.shared import (
-        diff_json_records_by_id,
         extract_ascii_name,
         find_varying_indices,
-        file_hash,
         load_xor_encoded_records,
-        make_backup_path,
         parse_extractor_args,
+        write_extractor_output,
     )
 except ModuleNotFoundError:
     from field_schemas import (
@@ -102,13 +99,11 @@ except ModuleNotFoundError:
         enrich_monster_fields,
     )
     from shared import (
-        diff_json_records_by_id,
         extract_ascii_name,
         find_varying_indices,
-        file_hash,
         load_xor_encoded_records,
-        make_backup_path,
         parse_extractor_args,
+        write_extractor_output,
     )
 
 XOR_KEY_WORD = 0xD4D4
@@ -171,54 +166,16 @@ def main(argv=None):
     if not data_path.is_file():
         raise SystemExit(f"Input file not found: {data_path}")
 
-    backup_info = None
-    if out_path.exists():
-        if not out_path.is_file():
-            raise SystemExit(f"Output path exists and is not a file: {out_path}")
-        old_hash = file_hash(out_path)
-        backup_path = make_backup_path(out_path)
-        out_path.rename(backup_path)
-        backup_info = (backup_path, old_hash)
-        print(
-            f"Backed up existing {out_path.name} to {backup_path.name} "
-            f"(sha256: {old_hash})"
-        )
-
     monsters, skipped, warnings = parse_data03(data_path)
-
-    out_path.write_text(json.dumps(monsters, indent=2))
-    print(
-        f"Wrote {len(monsters)} monsters to {out_path} "
-        f"(skipped {skipped} without names)"
+    write_extractor_output(
+        monsters,
+        out_path,
+        output_label="monsters",
+        skipped_message=f"skipped {skipped} without names",
+        record_label="Monster",
+        diff_out_path=diff_out_path,
+        warnings=warnings,
     )
-    new_hash = file_hash(out_path)
-    if backup_info:
-        backup_path, old_hash = backup_info
-        if old_hash == new_hash:
-            print(f"Hash check: new file matches backup (sha256: {new_hash})")
-        else:
-            print(
-                "Hash check: new file differs from backup "
-                f"(old {old_hash}, new {new_hash})"
-            )
-        diff_lines = diff_json_records_by_id(backup_path, out_path, record_label="Monster")
-        if diff_lines:
-            if diff_out_path is not None:
-                diff_out_path.write_text("\n".join(diff_lines) + "\n", encoding="utf-8")
-                print(f"Diff written to {diff_out_path}")
-            else:
-                print("Diff (name-aware):")
-                for line in diff_lines:
-                    print(line)
-        else:
-            print("Diff: no changes.")
-    else:
-        print(f"New file hash (sha256): {new_hash}")
-
-    if warnings:
-        print("Warnings:")
-        for w in warnings:
-            print(f"  - {w}")
 
 
 if __name__ == "__main__":

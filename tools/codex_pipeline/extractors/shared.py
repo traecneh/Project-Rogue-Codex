@@ -7,7 +7,7 @@ import struct
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Sequence
 
 
 @dataclass(frozen=True)
@@ -191,6 +191,64 @@ def diff_json_records_by_id(old_path: Path, new_path: Path, *, record_label: str
     if not isinstance(old_items, list) or not isinstance(new_items, list):
         return diff_files(old_path, new_path)
     return diff_records_by_id(old_items, new_items, record_label=record_label)
+
+
+def write_extractor_output(
+    records: list[Any],
+    out_path: Path,
+    *,
+    output_label: str,
+    skipped_message: str,
+    record_label: str,
+    diff_out_path: Path | None = None,
+    warnings: Sequence[str] = (),
+) -> None:
+    backup_info = None
+    if out_path.exists():
+        if not out_path.is_file():
+            raise SystemExit(f"Output path exists and is not a file: {out_path}")
+        old_hash = file_hash(out_path)
+        backup_path = make_backup_path(out_path)
+        out_path.rename(backup_path)
+        backup_info = (backup_path, old_hash)
+        print(
+            f"Backed up existing {out_path.name} to {backup_path.name} "
+            f"(sha256: {old_hash})"
+        )
+
+    out_path.write_text(json.dumps(records, indent=2), encoding="utf-8")
+    print(f"Wrote {len(records)} {output_label} to {out_path} ({skipped_message})")
+
+    new_hash = file_hash(out_path)
+    if backup_info:
+        backup_path, old_hash = backup_info
+        if old_hash == new_hash:
+            print(f"Hash check: new file matches backup (sha256: {new_hash})")
+        else:
+            print(
+                "Hash check: new file differs from backup "
+                f"(old {old_hash}, new {new_hash})"
+            )
+        diff_lines = diff_json_records_by_id(
+            backup_path, out_path, record_label=record_label
+        )
+        if diff_lines:
+            if diff_out_path is not None:
+                diff_out_path.write_text("\n".join(diff_lines) + "\n", encoding="utf-8")
+                print(f"Diff written to {diff_out_path}")
+            else:
+                print("Diff (name-aware):")
+                for line in diff_lines:
+                    print(line)
+        else:
+            print("Diff: no changes.")
+    else:
+        print(f"New file hash (sha256): {new_hash}")
+
+    if warnings:
+        print("Warnings:")
+        for warning in warnings:
+            print(f"  - {warning}")
 
 
 def parse_extractor_args(argv: list[str]) -> ParsedExtractorArgs:

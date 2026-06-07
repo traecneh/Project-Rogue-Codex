@@ -2,6 +2,8 @@ import json
 import struct
 import tempfile
 import unittest
+from contextlib import redirect_stdout
+from io import StringIO
 from pathlib import Path
 
 
@@ -46,6 +48,48 @@ class ExtractorModuleTests(unittest.TestCase):
 
         self.assertIn("-one", lines)
         self.assertIn("+two", lines)
+
+    def test_shared_extractor_output_writes_backup_diff_and_warnings(self):
+        from tools.codex_pipeline.extractors.shared import write_extractor_output
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            out_path = root / "weapons.json"
+            diff_path = root / "diff.txt"
+            old_records = [{"id": 1, "name": "Old Blade", "fields": {"damage": 1}}]
+            new_records = [{"id": 1, "name": "New Blade", "fields": {"damage": 2}}]
+            out_path.write_text(json.dumps(old_records, indent=2), encoding="utf-8")
+            buffer = StringIO()
+
+            with redirect_stdout(buffer):
+                write_extractor_output(
+                    new_records,
+                    out_path,
+                    output_label="weapons",
+                    skipped_message="skipped 3 missing/unused names",
+                    record_label="Weapon",
+                    diff_out_path=diff_path,
+                    warnings=["sample warning"],
+                )
+
+            output = buffer.getvalue()
+            backups = list(root.glob("weapons.*.bak.json"))
+            backup_text = backups[0].read_text(encoding="utf-8") if backups else ""
+            written_records = json.loads(out_path.read_text(encoding="utf-8"))
+            diff_text = diff_path.read_text(encoding="utf-8")
+
+        self.assertEqual(new_records, written_records)
+        self.assertEqual(1, len(backups))
+        self.assertEqual(json.dumps(old_records, indent=2), backup_text)
+        self.assertIn("Backed up existing weapons.json", output)
+        self.assertIn("Wrote 1 weapons to", output)
+        self.assertIn("(skipped 3 missing/unused names)", output)
+        self.assertIn("Hash check: new file differs from backup", output)
+        self.assertIn("Diff written to", output)
+        self.assertIn("Warnings:", output)
+        self.assertIn("  - sample warning", output)
+        self.assertIn("Weapon 1: Old Blade -> New Blade", diff_text)
+        self.assertIn("  ~ fields.damage: 1 -> 2", diff_text)
 
     def test_shared_binary_helpers_decode_records_and_extract_names(self):
         from tools.codex_pipeline.extractors.shared import (
@@ -249,3 +293,18 @@ class ExtractorModuleTests(unittest.TestCase):
         self.assertTrue(callable(extract_monsters_data03.parse_data03))
         self.assertTrue(callable(extract_weapons_data05.parse_data05))
         self.assertTrue(callable(extract_armors_data06.parse_data06))
+
+    def test_extractor_scripts_share_output_writing(self):
+        extractors_dir = Path("tools/codex_pipeline/extractors")
+        for script_name in (
+            "extract_monsters_data03.py",
+            "extract_weapons_data05.py",
+            "extract_armors_data06.py",
+        ):
+            source = (extractors_dir / script_name).read_text(encoding="utf-8")
+            self.assertIn("write_extractor_output(", source)
+            self.assertNotIn("backup_info = None", source)
+            self.assertNotIn("make_backup_path(", source)
+            self.assertNotIn("file_hash(", source)
+            self.assertNotIn("diff_json_records_by_id(", source)
+            self.assertNotIn("out_path.write_text(json.dumps", source)
