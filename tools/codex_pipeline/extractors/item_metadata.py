@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import re
-from collections.abc import MutableMapping
+from collections.abc import Mapping, MutableMapping, Sequence
+from typing import Any
 
 
 PERK_LABELS = {
@@ -217,3 +218,71 @@ def enrich_armor_fields(fields: MutableMapping[str, object]) -> None:
     add_field_label(fields, "slot", "slot_label", ARMOR_SLOT_LABELS)
     add_field_label(fields, "max_rarity", "max_rarity_label", RARITY_LABELS)
     add_perk_labels(fields)
+
+
+def _record_fields(record: Mapping[str, Any]) -> Mapping[str, Any]:
+    fields = record.get("fields", {})
+    if isinstance(fields, Mapping):
+        return fields
+    return {}
+
+
+def _record_name(record: Mapping[str, Any]) -> str:
+    name = record.get("name", "<unknown>")
+    return str(name) if name else "<unknown>"
+
+
+def report_item_perk_values(
+    records: Sequence[Mapping[str, Any]],
+    *,
+    include_zero_perks: bool,
+) -> None:
+    perk_groups = {}
+    corrupted_groups = {}
+    for record in records:
+        fields = _record_fields(record)
+        name = _record_name(record)
+        val = fields.get("perk")
+        if val is not None and (include_zero_perks or val != 0):
+            perk_groups.setdefault(val, []).append(name)
+        cval = fields.get("corrupted_perk")
+        if cval not in (None, 0):
+            corrupted_groups.setdefault(cval, []).append(name)
+
+    if perk_groups:
+        labeled = {v: names for v, names in perk_groups.items() if v in PERK_LABELS}
+        unlabeled = {v: names for v, names in perk_groups.items() if v not in PERK_LABELS}
+        if labeled:
+            print("Perk values (labeled):")
+            for val in sorted(labeled):
+                label = PERK_LABELS.get(val, "")
+                names = ", ".join(labeled[val])
+                print(f"  {val} ({label}): {names}")
+        if unlabeled:
+            print("Perk values (unlabeled):")
+            for val in sorted(unlabeled):
+                names = ", ".join(unlabeled[val])
+                print(f"  {val}: {names}")
+
+    if corrupted_groups:
+        labeled_c = {
+            v: names
+            for v, names in corrupted_groups.items()
+            if resolve_corrupted_perk_label(v) is not None
+        }
+        unlabeled_c = {
+            v: names
+            for v, names in corrupted_groups.items()
+            if resolve_corrupted_perk_label(v) is None
+        }
+        if labeled_c:
+            print("Corrupted perk values (labeled):")
+            for val in sorted(labeled_c):
+                label = resolve_corrupted_perk_label(val) or ""
+                names = ", ".join(labeled_c[val])
+                print(f"  {val} ({label}): {names}")
+        if unlabeled_c:
+            print("Corrupted perk values (unlabeled):")
+            for val in sorted(unlabeled_c):
+                names = ", ".join(unlabeled_c[val])
+                print(f"  {val}: {names}")

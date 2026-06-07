@@ -197,6 +197,7 @@ class ExtractorModuleTests(unittest.TestCase):
             WEAPON_SUBTYPE_LABELS,
             enrich_armor_fields,
             enrich_weapon_fields,
+            report_item_perk_values,
             resolve_corrupted_perk_label,
         )
 
@@ -241,6 +242,41 @@ class ExtractorModuleTests(unittest.TestCase):
         self.assertEqual("Rare", armor_fields["max_rarity_label"])
         self.assertEqual("Frozen Heart (Tier 1)", armor_fields["perk_label"])
         self.assertEqual("Frozen Heart (Tier 2)", armor_fields["corrupted_perk_label"])
+        report_records = [
+            {
+                "name": "Frost Blade",
+                "fields": {"perk": 22, "corrupted_perk": 278},
+            },
+            {
+                "name": "Mystery Blade",
+                "fields": {"perk": 999, "corrupted_perk": 999},
+            },
+            {
+                "name": "Zero Blade",
+                "fields": {"perk": 0, "corrupted_perk": 0},
+            },
+        ]
+        buffer = StringIO()
+
+        with redirect_stdout(buffer):
+            report_item_perk_values(report_records, include_zero_perks=True)
+
+        output = buffer.getvalue()
+        self.assertIn("Perk values (labeled):", output)
+        self.assertIn("  22 (Frozen Heart (Tier 1)): Frost Blade", output)
+        self.assertIn("Perk values (unlabeled):", output)
+        self.assertIn("  0: Zero Blade", output)
+        self.assertIn("  999: Mystery Blade", output)
+        self.assertIn("Corrupted perk values (labeled):", output)
+        self.assertIn("  278 (Frozen Heart (Tier 2)): Frost Blade", output)
+        self.assertIn("Corrupted perk values (unlabeled):", output)
+        self.assertIn("  999: Mystery Blade", output)
+
+        buffer = StringIO()
+        with redirect_stdout(buffer):
+            report_item_perk_values(report_records, include_zero_perks=False)
+
+        self.assertNotIn("  0: Zero Blade", buffer.getvalue())
 
         extractors_dir = Path("tools/codex_pipeline/extractors")
         weapon_source = (extractors_dir / "extract_weapons_data05.py").read_text(encoding="utf-8")
@@ -255,8 +291,14 @@ class ExtractorModuleTests(unittest.TestCase):
             self.assertNotIn('fields["perk_label"] =', source)
             self.assertNotIn('fields["corrupted_perk_label"] =', source)
             self.assertNotIn("add_field_label(fields", source)
+            self.assertNotIn("perk_groups = {}", source)
+            self.assertNotIn("corrupted_groups = {}", source)
+            self.assertNotIn("resolve_corrupted_perk_label(", source)
+            self.assertIn("report_item_perk_values(", source)
         self.assertIn("enrich_weapon_fields(fields)", weapon_source)
         self.assertIn("enrich_armor_fields(fields)", armor_source)
+        self.assertIn("include_zero_perks=True", weapon_source)
+        self.assertIn("include_zero_perks=False", armor_source)
 
     def test_monster_extractor_uses_shared_metadata_enrichment(self):
         from tools.codex_pipeline.extractors.monster_metadata import (

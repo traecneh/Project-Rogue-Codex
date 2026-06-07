@@ -37,9 +37,8 @@ try:
         build_fields,
     )
     from tools.codex_pipeline.extractors.item_metadata import (
-        PERK_LABELS,
         enrich_armor_fields,
-        resolve_corrupted_perk_label,
+        report_item_perk_values,
     )
     from tools.codex_pipeline.extractors.shared import (
         ExtractorRunConfig,
@@ -54,9 +53,8 @@ except ModuleNotFoundError:
         build_fields,
     )
     from item_metadata import (
-        PERK_LABELS,
         enrich_armor_fields,
-        resolve_corrupted_perk_label,
+        report_item_perk_values,
     )
     from shared import (
         ExtractorRunConfig,
@@ -124,55 +122,7 @@ def main(argv=None):
         parse_records=parse_data06,
     )
 
-    # Report perk values and associated armors (to help map/verify labels)
-    perk_groups = {}
-    corrupted_groups = {}
-    for a in armors:
-        fields = a["fields"]
-        val = fields.get("perk")
-        if val not in (None, 0):
-            perk_groups.setdefault(val, []).append(a["name"])
-        cval = fields.get("corrupted_perk")
-        if cval not in (None, 0):
-            corrupted_groups.setdefault(cval, []).append(a["name"])
-
-    if perk_groups:
-        labeled = {v: names for v, names in perk_groups.items() if v in PERK_LABELS}
-        unlabeled = {v: names for v, names in perk_groups.items() if v not in PERK_LABELS}
-        if labeled:
-            print("Perk values (labeled):")
-            for val in sorted(labeled):
-                label = PERK_LABELS.get(val, "")
-                names = ", ".join(labeled[val])
-                print(f"  {val} ({label}): {names}")
-        if unlabeled:
-            print("Perk values (unlabeled):")
-            for val in sorted(unlabeled):
-                names = ", ".join(unlabeled[val])
-                print(f"  {val}: {names}")
-
-    if corrupted_groups:
-        labeled_c = {
-            v: names
-            for v, names in corrupted_groups.items()
-            if resolve_corrupted_perk_label(v) is not None
-        }
-        unlabeled_c = {
-            v: names
-            for v, names in corrupted_groups.items()
-            if resolve_corrupted_perk_label(v) is None
-        }
-        if labeled_c:
-            print("Corrupted perk values (labeled):")
-            for val in sorted(labeled_c):
-                label = resolve_corrupted_perk_label(val) or ""
-                names = ", ".join(labeled_c[val])
-                print(f"  {val} ({label}): {names}")
-        if unlabeled_c:
-            print("Corrupted perk values (unlabeled):")
-            for val in sorted(unlabeled_c):
-                names = ", ".join(unlabeled_c[val])
-                print(f"  {val}: {names}")
+    report_item_perk_values(armors, include_zero_perks=False)
 
 
 if __name__ == "__main__":
