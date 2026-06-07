@@ -26,12 +26,19 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
+          cache: "npm"
+
+      - name: Install browser smoke dependencies
+        run: npm ci
 
       - name: Run unit tests
         run: python -m unittest discover -s tests -v
 
       - name: Validate Codex data
         run: python -m tools.codex_pipeline validate
+
+      - name: Smoke test site pages
+        run: python -m tools.codex_pipeline smoke-site
 
       - name: Check whitespace
         run: git diff --check
