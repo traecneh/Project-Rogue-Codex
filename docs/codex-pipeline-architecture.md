@@ -90,8 +90,8 @@ Important commands:
   labels.
 - `drop-report`: audits drop-source overrides and prints both the item-centric
   source view and derived monster-centric loot view.
-- `verify-live`: fetches the deployed GitHub Pages site and confirms live JSON
-  matches local site JSON.
+- `verify-live`: fetches the deployed GitHub Pages site and confirms live JSON,
+  image manifests, and deployed image hashes match local site files.
 
 `--target monsters`, `--target weapons`, and `--target armors` can narrow export,
 sync, diff, and source-check commands.
@@ -113,7 +113,8 @@ Core package:
 - `tools/codex_pipeline/game_update.py`: review-only game update report
   orchestration.
 - `tools/codex_pipeline/sources.py`: pre-export source checks used by `doctor`.
-- `tools/codex_pipeline/deploy.py`: live GitHub Pages data comparison.
+- `tools/codex_pipeline/deploy.py`: live GitHub Pages data, manifest, and image
+  hash comparison.
 - `tools/codex_pipeline/drops.py`: drop-source override loading, name
   normalization, and reverse monster-drop derivation.
 - `tools/codex_pipeline/perks.py`: corrupted perk label override loading.

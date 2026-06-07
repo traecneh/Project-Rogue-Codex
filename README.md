@@ -91,7 +91,7 @@ The static site is published from `origin/main` to:
 https://traecneh.github.io/Project-Rogue-Codex/
 ```
 
-After pushing `main`, verify the public site and deployed JSON data match the local site data:
+After pushing `main`, verify the public site, deployed JSON data, image manifests, and deployed image hashes match the local site:
 
 ```powershell
 python -m tools.codex_pipeline verify-live

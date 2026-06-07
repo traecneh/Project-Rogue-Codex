@@ -143,7 +143,7 @@ Command behavior:
 - `diff-generated`: compare generated output against the current site JSON before copying files.
 - `sync-generated`: copy reviewed generated outputs into the existing site paths.
 - `sync-assets`: copy reviewed client image changes into site image folders and regenerate manifests when filenames change.
-- `verify-live`: confirm deployed GitHub Pages JSON matches local site JSON after push and deployment.
+- `verify-live`: confirm deployed GitHub Pages JSON, image manifests, and image bytes match local site files after push and deployment.
 
 ## Validation Rules
 
