@@ -71,6 +71,8 @@ Important commands:
   site destination folders, and extractor syntax.
 - `export-client-data`: runs configured extractors and writes generated JSON to
   `generated-output/codex-data/`.
+- `unknown-fields`: inventories `unknown_*` fields in current site data, or in
+  generated output with `--source generated`.
 - `diff-generated`: compares generated JSON against current site JSON without
   copying files.
 - `sync-generated`: copies generated JSON into site paths. Use `--dry-run` for a
@@ -100,6 +102,8 @@ Core package:
 - `tools/codex_pipeline/drops.py`: drop-source override loading, name
   normalization, and reverse monster-drop derivation.
 - `tools/codex_pipeline/perks.py`: corrupted perk label override loading.
+- `tools/codex_pipeline/unknowns.py`: unknown-field inventory reports for site
+  or generated data.
 - `tools/codex_pipeline/validators/site.py`: site data, overrides, manifests,
   inline scripts, and JavaScript validation helpers.
 

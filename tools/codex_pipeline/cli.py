@@ -28,6 +28,7 @@ from tools.codex_pipeline.exports import (
 )
 from tools.codex_pipeline.perks import load_perk_label_overrides
 from tools.codex_pipeline.sources import validate_export_sources
+from tools.codex_pipeline.unknowns import build_unknown_field_reports
 from tools.codex_pipeline.validators.site import (
     ValidationIssue,
     read_json,
@@ -64,6 +65,7 @@ def build_parser() -> argparse.ArgumentParser:
             "verify-live",
             "doctor",
             "validate-sources",
+            "unknown-fields",
         ],
     )
     parser.add_argument(
@@ -94,6 +96,18 @@ def build_parser() -> argparse.ArgumentParser:
         type=float,
         default=20,
         help="HTTP timeout for verify-live requests.",
+    )
+    parser.add_argument(
+        "--source",
+        choices=["site", "generated"],
+        default="site",
+        help="Data source for unknown-fields.",
+    )
+    parser.add_argument(
+        "--max-samples",
+        type=int,
+        default=3,
+        help="Maximum nonzero record samples per unknown field.",
     )
     return parser
 
@@ -334,6 +348,46 @@ def run_doctor(args: argparse.Namespace) -> int:
     return 0 if all(result.ok for result in results) else 1
 
 
+def _format_report_values(values) -> str:
+    return ", ".join(_format_value(value) for value in values)
+
+
+def _print_unknown_field_reports(reports) -> None:
+    for report in reports:
+        nonzero_field_count = sum(1 for field in report.fields if field.nonzero_count)
+        print(
+            f"UNKNOWN FIELDS {report.target_name}: "
+            f"{len(report.fields)} field(s), {nonzero_field_count} with nonzero values "
+            f"({report.data_path})"
+        )
+        for field in report.fields:
+            sample_text = "; ".join(field.samples) if field.samples else ""
+            print(
+                f"  {field.name}: records={field.record_count} "
+                f"nonzero={field.nonzero_count} values=[{_format_report_values(field.values)}] "
+                f"samples={sample_text}"
+            )
+
+
+def run_unknown_fields(args: argparse.Namespace) -> int:
+    if args.max_samples < 0:
+        print("ERROR: --max-samples must be 0 or greater")
+        return 1
+    try:
+        targets = resolve_targets(args.targets)
+        reports = build_unknown_field_reports(
+            targets,
+            source=args.source,
+            output_dir=args.output_dir,
+            max_samples=args.max_samples,
+        )
+    except ExportError as exc:
+        print(f"ERROR: {exc}")
+        return 1
+    _print_unknown_field_reports(reports)
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -351,5 +405,7 @@ def main(argv: list[str] | None = None) -> int:
         return run_verify_live(args)
     if args.command in {"doctor", "validate-sources"}:
         return run_doctor(args)
+    if args.command == "unknown-fields":
+        return run_unknown_fields(args)
     parser.error(f"Unsupported command: {args.command}")
     return 2

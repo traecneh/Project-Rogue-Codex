@@ -123,6 +123,7 @@ The command surface should be small:
 python -m tools.codex_pipeline validate
 python -m tools.codex_pipeline doctor
 python -m tools.codex_pipeline export-client-data
+python -m tools.codex_pipeline unknown-fields
 python -m tools.codex_pipeline diff-generated
 python -m tools.codex_pipeline sync-generated
 python -m tools.codex_pipeline verify-live
@@ -133,6 +134,7 @@ Command behavior:
 - `validate`: read current site outputs and overrides, then report data, image, manifest, and drop-source issues.
 - `doctor`: check extractor scripts, source `.dat` files, destination folders, and extractor syntax before export.
 - `export-client-data`: produce weapon, armor, and monster JSON from source data into an intermediate output folder.
+- `unknown-fields`: inventory `unknown_*` fields in site or generated data for mapping research.
 - `diff-generated`: compare generated output against the current site JSON before copying files.
 - `sync-generated`: copy reviewed generated outputs into the existing site paths.
 - `verify-live`: confirm deployed GitHub Pages JSON matches local site JSON after push and deployment.
