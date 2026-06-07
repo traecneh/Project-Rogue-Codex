@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "armors": {
+    "Iceburst Amulet": ["Ice Devil", "Greater Yeti"],
+    "Mystic Robe": ["Dark Monk"],
+    "Rune Armor": ["Balron", "Demon Lord"],
+    "Rune Lord's Robe": ["Hell Spawn", "Balron", "Demon Lord"],
+    "Rune Helmet": ["Balron", "Demon Lord"],
+    "Rune Shield": ["Werewolf", "Demon", "Infernal", "Hell Spawn"],
+    "Rune Leggings": ["Hell Spawn"],
+    "Rune Gauntlets": ["Demon", "Infernal"],
+    "Banished Gauntlets": ["Banished Spirit"],
+    "Banished Shield": ["Banished Spirit", "Banished Soldier"],
+    "Banished Platemail": ["Banished Knight"],
+    "Banished Helmet": ["Banished Knight"],
+    "Banished Leggings": ["Banished Soldier"]
+  },
+  "weapons": {
+    "Rune Sword": ["Rune Warrior", "Balron", "Demon Lord"],
+    "Vengeance Hammer": ["Banished Knight", "Banished Warden"]
+  }
+}
