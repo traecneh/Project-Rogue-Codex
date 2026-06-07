@@ -16,6 +16,7 @@ from tools.codex_pipeline.assets import (
     AssetTarget,
     DEFAULT_ASSET_TARGETS,
     build_asset_change_reports,
+    validate_asset_data_parity,
 )
 from tools.codex_pipeline.drop_audit import DropSourceAuditReport, build_drop_source_audit_report
 from tools.codex_pipeline.exports import (
@@ -134,6 +135,30 @@ def _validate_generated_corrupted_perks(
     return validate_corrupted_perk_labels(item_data, corrupted_perk_overrides=overrides)
 
 
+def _validate_generated_asset_data_parity(
+    targets: list[ExportTarget],
+    *,
+    output_dir: Path,
+    asset_targets: Iterable[AssetTarget],
+    skipped_sections: list[str],
+) -> list[ValidationIssue]:
+    targets_by_name = _target_by_name(targets)
+    issues: list[ValidationIssue] = []
+    for asset_target in asset_targets:
+        target = targets_by_name.get(asset_target.name)
+        if target is None:
+            skipped_sections.append(f"{asset_target.name} asset/data parity requires generated {asset_target.name}")
+            continue
+        issues.extend(
+            validate_asset_data_parity(
+                asset_target.name,
+                target.generated_path(output_dir),
+                asset_target.manifest_path,
+            )
+        )
+    return issues
+
+
 def build_game_update_report(
     targets: Iterable[ExportTarget],
     *,
@@ -144,6 +169,7 @@ def build_game_update_report(
     asset_targets: Iterable[AssetTarget] = DEFAULT_ASSET_TARGETS,
 ) -> GameUpdateReport:
     target_list = list(targets)
+    asset_target_list = list(asset_targets)
     output_dir = output_dir.expanduser().resolve()
     source_checks = validate_export_sources(target_list)
     skipped_sections: list[str] = []
@@ -169,7 +195,7 @@ def build_game_update_report(
         )
         diff_reports = build_generated_diff_reports(target_list, output_dir=output_dir)
         unknown_reports = build_unknown_field_reports(target_list, source="generated", output_dir=output_dir)
-        asset_reports = build_asset_change_reports(asset_targets)
+        asset_reports = build_asset_change_reports(asset_target_list)
         drop_report = _build_generated_drop_report(
             target_list,
             output_dir=output_dir,
@@ -181,6 +207,14 @@ def build_game_update_report(
             output_dir=output_dir,
             perk_label_overrides_path=perk_label_overrides_path,
             skipped_sections=skipped_sections,
+        )
+        validation_issues.extend(
+            _validate_generated_asset_data_parity(
+                target_list,
+                output_dir=output_dir,
+                asset_targets=asset_target_list,
+                skipped_sections=skipped_sections,
+            )
         )
         export_errors: list[str] = []
     except ExportError as exc:

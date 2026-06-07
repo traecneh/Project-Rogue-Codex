@@ -53,8 +53,15 @@ class GameUpdateReportTests(unittest.TestCase):
             site_assets.mkdir(parents=True)
             (client_assets / "Rune Sword.gif").write_bytes(b"new image")
             (site_assets / "Rune Sword.gif").write_bytes(b"old image")
+            (client_assets / "New Sword.gif").write_bytes(b"same image")
+            (site_assets / "New Sword.gif").write_bytes(b"same image")
             (site_assets / "manifest.json").write_text(
-                json.dumps(["images/weapons/Rune Sword.gif"]),
+                json.dumps(
+                    [
+                        "images/weapons/New Sword.gif",
+                        "images/weapons/Rune Sword.gif",
+                    ]
+                ),
                 encoding="utf-8",
             )
 
@@ -132,6 +139,60 @@ class GameUpdateReportTests(unittest.TestCase):
             self.assertIsNotNone(report.drop_report)
             self.assertEqual(2, report.drop_report.item_override_count)
             self.assertEqual(["Rune Sword.gif"], report.asset_reports[0].changed)
+
+    def test_build_game_update_report_warns_about_generated_data_image_mismatches(self):
+        from tools.codex_pipeline.game_update import build_game_update_report
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            output_dir = root / "generated"
+            extractor = root / "extract_json.py"
+            write_json_copy_extractor(extractor)
+
+            client_assets = root / "client-assets" / "Weapons"
+            site_assets = root / "site-assets" / "weapons"
+            client_assets.mkdir(parents=True)
+            site_assets.mkdir(parents=True)
+            for image_name in ["Rune Sword.gif", "Orphan Sword.png"]:
+                (client_assets / image_name).write_bytes(b"same image")
+                (site_assets / image_name).write_bytes(b"same image")
+            (site_assets / "manifest.json").write_text(
+                json.dumps(
+                    [
+                        "images/weapons/Orphan Sword.png",
+                        "images/weapons/Rune Sword.gif",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            weapon_source = root / "sources" / "weapons.dat"
+            write_json(
+                weapon_source,
+                [
+                    {"id": 1, "name": "Rune Sword", "fields": {}},
+                    {"id": 2, "name": "Missing Sword", "fields": {}},
+                ],
+            )
+            weapon_site = root / "site" / "weapons.json"
+            write_json(weapon_site, [{"id": 1, "name": "Rune Sword", "fields": {}}])
+
+            perk_labels = root / "perk_labels.json"
+            write_json(perk_labels, {"schemaVersion": 1, "corruptedPerkLabels": {}})
+            target = ExportTarget("weapons", extractor, weapon_source, "weapons.json", weapon_site)
+
+            report = build_game_update_report(
+                [target],
+                output_dir=output_dir,
+                python_executable=sys.executable,
+                perk_label_overrides_path=perk_labels,
+                asset_targets=[AssetTarget("weapons", client_assets, site_assets)],
+            )
+
+        messages = "\n".join(issue.message for issue in report.validation_issues)
+        self.assertIn("weapons asset/data parity: data record has no matching image: Missing Sword", messages)
+        self.assertIn("weapons asset/data parity: image has no matching data record: Orphan Sword.png", messages)
+        self.assertFalse(report.has_errors)
 
     def test_build_game_update_report_stops_before_export_when_source_checks_fail(self):
         from tools.codex_pipeline.game_update import build_game_update_report

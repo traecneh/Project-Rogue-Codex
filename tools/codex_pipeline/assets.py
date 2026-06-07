@@ -5,7 +5,7 @@ import json
 import shutil
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, Sequence
+from typing import Any, Iterable, Sequence
 
 from tools.codex_pipeline.config import (
     ARMOR_IMAGES_DIR,
@@ -170,6 +170,81 @@ def _write_manifest_entries(target: AssetTarget, entries: Iterable[str]) -> None
 
 def _manifest_entries_match(current_entries: list[str] | None, desired_entries: list[str]) -> bool:
     return current_entries is not None and set(current_entries) == set(desired_entries)
+
+
+def _read_json_list_for_asset_parity(path: Path, label: str, issues: list[ValidationIssue]) -> list[Any] | None:
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        issues.append(ValidationIssue("error", f"{label} failed to read for asset/data parity: {path}: {exc}"))
+        return None
+    if not isinstance(data, list):
+        issues.append(ValidationIssue("error", f"{label} must be a JSON list for asset/data parity: {path}"))
+        return None
+    return data
+
+
+def _image_stem_key(value: object) -> tuple[str, str]:
+    text = str(value).replace("\\", "/").strip()
+    if not text:
+        return "", ""
+    file_name = Path(text).name
+    stem = Path(file_name).stem.strip()
+    return stem.casefold(), file_name
+
+
+def _expected_image_names_from_data(records: list[Any]) -> dict[str, str]:
+    names: dict[str, str] = {}
+    for record in records:
+        if not isinstance(record, dict):
+            continue
+        display_name = str(record.get("name") or "").strip()
+        direct_image = record.get("image") or record.get("icon") or record.get("thumbnail")
+        if direct_image:
+            key, direct_display = _image_stem_key(direct_image)
+            display_name = display_name or direct_display
+        else:
+            key = display_name.casefold()
+        if key:
+            names.setdefault(key, display_name)
+    return names
+
+
+def _image_names_from_manifest(entries: list[Any]) -> dict[str, str]:
+    names: dict[str, str] = {}
+    for entry in entries:
+        key, file_name = _image_stem_key(entry)
+        if not key or file_name == "manifest.json":
+            continue
+        names.setdefault(key, file_name)
+    return names
+
+
+def validate_asset_data_parity(target_name: str, data_path: Path, manifest_path: Path) -> list[ValidationIssue]:
+    issues: list[ValidationIssue] = []
+    records = _read_json_list_for_asset_parity(data_path, f"{target_name} data", issues)
+    manifest_entries = _read_json_list_for_asset_parity(manifest_path, f"{target_name} manifest", issues)
+    if records is None or manifest_entries is None:
+        return issues
+
+    data_names = _expected_image_names_from_data(records)
+    image_names = _image_names_from_manifest(manifest_entries)
+
+    for key in sorted(set(data_names) - set(image_names), key=lambda item: data_names[item].casefold()):
+        issues.append(
+            ValidationIssue(
+                "warning",
+                f"{target_name} asset/data parity: data record has no matching image: {data_names[key]}",
+            )
+        )
+    for key in sorted(set(image_names) - set(data_names), key=lambda item: image_names[item].casefold()):
+        issues.append(
+            ValidationIssue(
+                "warning",
+                f"{target_name} asset/data parity: image has no matching data record: {image_names[key]}",
+            )
+        )
+    return issues
 
 
 def build_asset_change_report(target: AssetTarget) -> AssetChangeReport:
