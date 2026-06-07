@@ -33,7 +33,7 @@ npm install
 python -m tools.codex_pipeline smoke-site
 ```
 
-GitHub Actions also runs the unit tests, Codex validation, and whitespace checks on pushes and pull requests targeting `main`.
+GitHub Actions also runs the unit tests, Codex validation, local browser smoke checks, and whitespace checks on pushes and pull requests targeting `main`.
 
 The first pipeline slice validates weapons, armors, monsters, image manifests, inline page scripts, special drop-source overrides from `data/codex-overrides/drop_sources.json`, and corrupted perk label overrides from `data/codex-overrides/perk_labels.json`.
 
@@ -63,7 +63,7 @@ To run the normal review workflow in one command:
 python -m tools.codex_pipeline game-update-workflow
 ```
 
-Use `--apply` to sync reviewed generated data and image assets, and `--verify-live` after a push/deploy when the public site should match local files.
+Use `--apply` to sync reviewed generated data and image assets. After a push/deploy, run `--verify-live` for live data/assets and `smoke-site --live` for live page behavior.
 
 Export client data into the intermediate generated-output folder without touching site files:
 
@@ -113,6 +113,12 @@ After pushing `main`, verify the public site, deployed JSON data, image manifest
 
 ```powershell
 python -m tools.codex_pipeline verify-live
+```
+
+Then run the same page behavior smoke checks against the deployed GitHub Pages URL:
+
+```powershell
+python -m tools.codex_pipeline smoke-site --live
 ```
 
 Use `--site-url` if the deployment target changes.

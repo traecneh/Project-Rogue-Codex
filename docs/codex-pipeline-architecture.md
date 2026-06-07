@@ -38,6 +38,7 @@ Client .dat files
   -> push main
   -> GitHub Pages
   -> verify-live
+  -> smoke-site --live
 ```
 
 For normal data refreshes, use this sequence:
@@ -58,6 +59,7 @@ After pushing `main`, confirm the public site:
 
 ```powershell
 python -m tools.codex_pipeline verify-live
+python -m tools.codex_pipeline smoke-site --live
 ```
 
 ## Command Surface
@@ -78,7 +80,8 @@ Important commands:
   validation, and generated corrupted-perk validation.
 - `game-update-workflow`: runs the standard game-update review sequence in
   order. Use `--apply` to sync reviewed generated data and image assets, and
-  `--verify-live` after deployment.
+  `--verify-live` after deployment for live data/assets. Run
+  `smoke-site --live` after deployment for live page behavior.
 - `export-client-data`: runs configured extractors and writes generated JSON to
   `generated-output/codex-data/`.
 - `unknown-fields`: inventories `unknown_*` fields in current site data, or in
@@ -95,7 +98,8 @@ Important commands:
   labels.
 - `smoke-site`: starts a temporary local static server and uses Playwright to
   verify Monsters, Weapons, and Armors deep links, reload persistence,
-  row-click URL updates, Close URL clearing, and detail-panel cross-links.
+  row-click URL updates, Close URL clearing, and detail-panel cross-links. Use
+  `--live` to run the same checks against `--site-url`.
 - `drop-report`: audits drop-source overrides and prints both the item-centric
   source view and derived monster-centric loot view.
 - `verify-live`: fetches the deployed GitHub Pages site and confirms live JSON,
@@ -192,6 +196,7 @@ python -m unittest discover -s tests -v
 python -m tools.codex_pipeline validate
 python -m tools.codex_pipeline smoke-site
 python -m tools.codex_pipeline verify-live
+python -m tools.codex_pipeline smoke-site --live
 git diff --check
 ```
 
@@ -209,14 +214,16 @@ For data or extractor changes:
 4. Run unit tests and `validate`.
 5. Commit and push.
 6. Wait for GitHub Actions and Pages.
-7. Run `verify-live`, or rerun `game-update-workflow --verify-live`.
+7. Run `verify-live` and `smoke-site --live`, or rerun
+   `game-update-workflow --verify-live` for the data/assets portion.
 
 For override-only changes:
 
 1. Edit the override JSON.
 2. Run unit tests and `validate`.
 3. Confirm affected pages still derive data from the shared override file.
-4. Commit, push, wait for Pages, and run `verify-live`.
+4. Commit, push, wait for Pages, and run `verify-live` plus
+   `smoke-site --live`.
 
 ## Current Boundary
 

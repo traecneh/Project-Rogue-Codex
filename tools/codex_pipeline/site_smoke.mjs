@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 const args = parseArgs(process.argv.slice(2));
 const root = path.resolve(args.root || path.join(path.dirname(fileURLToPath(import.meta.url)), "..", ".."));
 const timeoutMs = Number(args.timeoutMs || 20000);
+const configuredBaseUrl = args.baseUrl ? normalizeBaseUrl(args.baseUrl) : null;
 
 const smokeSpecs = [
   {
@@ -49,8 +50,8 @@ main().catch((error) => {
 
 async function main() {
   const { chromium } = await importPlaywright();
-  const server = await startStaticServer(root);
-  const baseUrl = `http://127.0.0.1:${server.port}`;
+  const server = configuredBaseUrl ? null : await startStaticServer(root);
+  const baseUrl = configuredBaseUrl || `http://127.0.0.1:${server.port}/`;
   const browser = await launchBrowser(chromium);
   const failures = [];
 
@@ -65,7 +66,7 @@ async function main() {
     }
   } finally {
     await browser.close();
-    await server.close();
+    if (server) await server.close();
   }
 
   if (failures.length) {
@@ -123,7 +124,7 @@ async function runSpec(browser, baseUrl, spec) {
     await waitForRows(page, spec);
     await assertDetailState(page, spec, "reload");
 
-    await page.goto(`${baseUrl}${spec.listPath}`, { waitUntil: "load" });
+    await page.goto(joinUrl(baseUrl, spec.listPath), { waitUntil: "load" });
     await waitForRows(page, spec);
     const clickedName = await clickFirstRow(page, spec);
     await page.waitForURL((url) => url.searchParams.has(spec.queryKey), { timeout: timeoutMs });
@@ -148,9 +149,23 @@ async function runSpec(browser, baseUrl, spec) {
 }
 
 async function openDetail(page, baseUrl, spec) {
-  const url = `${baseUrl}${spec.listPath}?${spec.queryKey}=${encodeURIComponent(spec.detailQuery)}`;
+  const url = joinUrl(baseUrl, spec.listPath, {
+    [spec.queryKey]: spec.detailQuery,
+  });
   await page.goto(url, { waitUntil: "load" });
   await waitForRows(page, spec);
+}
+
+function joinUrl(baseUrl, pathname, query = {}) {
+  const url = new URL(pathname.replace(/^\/+/, ""), normalizeBaseUrl(baseUrl));
+  for (const [key, value] of Object.entries(query)) {
+    url.searchParams.set(key, value);
+  }
+  return url.toString();
+}
+
+function normalizeBaseUrl(baseUrl) {
+  return baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
 }
 
 async function waitForRows(page, spec) {
@@ -231,6 +246,9 @@ function parseArgs(rawArgs) {
       index += 1;
     } else if (arg === "--timeout-ms") {
       parsed.timeoutMs = rawArgs[index + 1];
+      index += 1;
+    } else if (arg === "--base-url") {
+      parsed.baseUrl = rawArgs[index + 1];
       index += 1;
     }
   }

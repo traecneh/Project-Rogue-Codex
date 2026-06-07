@@ -20,6 +20,30 @@ class SiteSmokeTests(unittest.TestCase):
         self.assertEqual(0, exit_code)
         run_smoke.assert_called_once_with(timeout_ms=12345)
 
+    def test_cli_runs_live_site_smoke_command(self):
+        from tools.codex_pipeline import cli
+        from tools.codex_pipeline.site_smoke import SiteSmokeRun
+
+        with patch.object(
+            cli,
+            "run_site_smoke_command",
+            return_value=SiteSmokeRun(returncode=0, stdout="SMOKE OK site\n", stderr=""),
+        ) as run_smoke:
+            with redirect_stdout(io.StringIO()):
+                exit_code = cli.main(
+                    [
+                        "smoke-site",
+                        "--live",
+                        "--site-url",
+                        "https://example.test/codex/",
+                        "--smoke-timeout-ms",
+                        "12345",
+                    ]
+                )
+
+        self.assertEqual(0, exit_code)
+        run_smoke.assert_called_once_with(timeout_ms=12345, base_url="https://example.test/codex/")
+
     def test_site_smoke_reports_missing_node(self):
         from tools.codex_pipeline.site_smoke import run_site_smoke
 
@@ -45,3 +69,17 @@ class SiteSmokeTests(unittest.TestCase):
         self.assertTrue(str(args[1]).endswith("site_smoke.mjs"))
         self.assertIn("--timeout-ms", args)
         self.assertIn("20000", args)
+
+    def test_site_smoke_invokes_node_runner_with_base_url(self):
+        from subprocess import CompletedProcess
+
+        from tools.codex_pipeline.site_smoke import run_site_smoke
+
+        completed = CompletedProcess(args=["node"], returncode=0, stdout="SMOKE OK\n", stderr="")
+        with patch("tools.codex_pipeline.site_smoke.subprocess.run", return_value=completed) as run:
+            result = run_site_smoke(timeout_ms=20000, base_url="https://example.test/codex/")
+
+        self.assertEqual(0, result.returncode)
+        args = run.call_args.args[0]
+        self.assertIn("--base-url", args)
+        self.assertIn("https://example.test/codex/", args)

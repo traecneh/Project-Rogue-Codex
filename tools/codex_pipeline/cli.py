@@ -123,7 +123,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--site-url",
         default=DEFAULT_LIVE_SITE_URL,
-        help="Public site URL for verify-live.",
+        help="Public site URL for verify-live and smoke-site --live.",
     )
     parser.add_argument(
         "--timeout-seconds",
@@ -148,6 +148,11 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         default=20_000,
         help="Timeout in milliseconds for each local site smoke-test action.",
+    )
+    parser.add_argument(
+        "--live",
+        action="store_true",
+        help="For smoke-site, run page behavior checks against --site-url instead of a local server.",
     )
     return parser
 
@@ -385,7 +390,10 @@ def run_verify_live(args: argparse.Namespace) -> int:
 
 
 def run_smoke_site(args: argparse.Namespace) -> int:
-    result = run_site_smoke_command(timeout_ms=args.smoke_timeout_ms)
+    if args.live:
+        result = run_site_smoke_command(timeout_ms=args.smoke_timeout_ms, base_url=args.site_url)
+    else:
+        result = run_site_smoke_command(timeout_ms=args.smoke_timeout_ms)
     if result.stdout:
         print(result.stdout.rstrip())
     if result.stderr:

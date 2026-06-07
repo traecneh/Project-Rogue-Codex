@@ -2,7 +2,8 @@
   "name": "project-rogue-codex",
   "private": true,
   "scripts": {
-    "smoke-site": "python -m tools.codex_pipeline smoke-site"
+    "smoke-site": "python -m tools.codex_pipeline smoke-site",
+    "smoke-site:live": "python -m tools.codex_pipeline smoke-site --live"
   },
   "devDependencies": {
     "playwright": "1.60.0"

@@ -17,6 +17,7 @@ class SiteSmokeRun:
 def run_site_smoke(
     *,
     timeout_ms: int = 20_000,
+    base_url: str | None = None,
     node_executable: str = "node",
     repo_root: Path = REPO_ROOT,
 ) -> SiteSmokeRun:
@@ -36,13 +37,15 @@ def run_site_smoke(
         "--timeout-ms",
         str(timeout_ms),
     ]
+    if base_url:
+        command.extend(["--base-url", base_url])
     try:
         completed = subprocess.run(
             command,
             cwd=repo_root,
             capture_output=True,
             text=True,
-            timeout=max(10, (timeout_ms / 1000) + 10),
+            timeout=max(10, (timeout_ms / 1000) * 3 + 10),
         )
     except FileNotFoundError:
         return SiteSmokeRun(
