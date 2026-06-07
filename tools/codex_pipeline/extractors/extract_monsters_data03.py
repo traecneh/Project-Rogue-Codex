@@ -59,6 +59,10 @@ import sys
 from pathlib import Path
 
 try:
+    from tools.codex_pipeline.extractors.field_schemas import (
+        MONSTER_FIELD_NAMES,
+        field_name,
+    )
     from tools.codex_pipeline.extractors.shared import (
         diff_json_records_by_id,
         extract_ascii_name,
@@ -69,6 +73,10 @@ try:
         parse_extractor_args,
     )
 except ModuleNotFoundError:
+    from field_schemas import (
+        MONSTER_FIELD_NAMES,
+        field_name,
+    )
     from shared import (
         diff_json_records_by_id,
         extract_ascii_name,
@@ -190,70 +198,6 @@ def parse_data03(path: Path):
     )
     varying_indices = find_varying_indices(records)
 
-    known_names = {
-        0: "name_0",
-        1: "name_1",
-        2: "name_2",
-        3: "name_3",
-        4: "name_4",
-        5: "name_5",
-        6: "name_6",
-        7: "name_7",
-        8: "name_8",
-        15: "type",
-        16: "min_damage",
-        17: "max_damage",
-        18: "health",
-        23: "movement_speed",
-        24: "attack_speed",
-        25: "level",
-        28: "elemental_attack",
-        29: "status_effect",
-        26: "total_flags",
-        130: "frame_1_x",
-        131: "frame_1_y",
-        132: "frame_1_width",
-        133: "frame_1_height",
-        134: "frame_2_x",
-        135: "frame_2_y",
-        136: "frame_2_width",
-        137: "frame_2_height",
-        138: "frame_3_x",
-        139: "frame_3_y",
-        140: "frame_3_width",
-        141: "frame_3_height",
-        142: "frame_4_x",
-        143: "frame_4_y",
-        144: "frame_4_width",
-        145: "frame_4_height",
-        146: "frame_5_x",
-        147: "frame_5_y",
-        148: "frame_5_width",
-        149: "frame_5_height",
-        150: "frame_6_x",
-        151: "frame_6_y",
-        152: "frame_6_width",
-        153: "frame_6_height",
-        154: "frame_7_x",
-        155: "frame_7_y",
-        156: "frame_7_width",
-        157: "frame_7_height",
-        158: "frame_8_x",
-        159: "frame_8_y",
-        160: "frame_8_width",
-        161: "frame_8_height",
-        162: "frame_9_x",
-        163: "frame_9_y",
-        164: "frame_9_width",
-        165: "frame_9_height",
-        174: "uncommon_tatter",
-        175: "rare_tatter",
-    }
-
-    def field_name(index: int) -> str:
-        """Return a readable field name for a given word index."""
-        return known_names.get(index, f"unknown_{index}")
-
     monsters = []
     warnings = []
     skipped = 0
@@ -268,7 +212,7 @@ def parse_data03(path: Path):
         unknown_status_effect = None
         fields = {}
         for i in varying_indices:
-            fname = field_name(i)
+            fname = field_name(MONSTER_FIELD_NAMES, i)
             value = rec_words[i]
             fields[fname] = value
             if i == 15:

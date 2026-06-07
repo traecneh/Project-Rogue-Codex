@@ -34,6 +34,10 @@ import sys
 from pathlib import Path
 
 try:
+    from tools.codex_pipeline.extractors.field_schemas import (
+        ARMOR_FIELD_NAMES,
+        field_name,
+    )
     from tools.codex_pipeline.extractors.item_metadata import (
         ARMOR_SLOT_LABELS,
         PERK_LABELS,
@@ -51,6 +55,10 @@ try:
         parse_extractor_args,
     )
 except ModuleNotFoundError:
+    from field_schemas import (
+        ARMOR_FIELD_NAMES,
+        field_name,
+    )
     from item_metadata import (
         ARMOR_SLOT_LABELS,
         PERK_LABELS,
@@ -79,94 +87,13 @@ def parse_data06(path: Path):
     )
     varying_indices = find_varying_indices(records)
 
-    # Known field names we’ve mapped
-    known_names = {
-        # Name fragments (2-byte little-endian char pairs that form the item name)
-        0: "name_0",
-        1: "name_1",
-        2: "name_2",
-        3: "name_3",
-        4: "name_4",
-        5: "name_5",
-        6: "name_6",
-        7: "name_7",
-        8: "name_8",
-        9: "name_9",
-        10: "name_10",
-        11: "name_11",
-        # Stats / properties
-        13: "armor",
-        14: "value_low",
-        15: "value_high",
-        16: "weight",
-        17: "player_level_requirement",
-        19: "slot",
-        20: "level",
-        72: "deconstruction",
-        73: "promotion",
-        79: "cold_resistance",
-        # Frame atlas positions (x, y, width, height)
-        34: "frame_1_x",
-        35: "frame_1_y",
-        36: "frame_1_width",
-        37: "frame_1_height",
-        38: "frame_2_x",
-        39: "frame_2_y",
-        40: "frame_2_width",
-        41: "frame_2_height",
-        42: "frame_3_x",
-        43: "frame_3_y",
-        44: "frame_3_width",
-        45: "frame_3_height",
-        46: "frame_4_x",
-        47: "frame_4_y",
-        48: "frame_4_width",
-        49: "frame_4_height",
-        50: "frame_5_x",
-        51: "frame_5_y",
-        52: "frame_5_width",
-        53: "frame_5_height",
-        54: "frame_6_x",
-        55: "frame_6_y",
-        56: "frame_6_width",
-        57: "frame_6_height",
-        58: "frame_7_x",
-        59: "frame_7_y",
-        60: "frame_7_width",
-        61: "frame_7_height",
-        62: "frame_8_x",
-        63: "frame_8_y",
-        64: "frame_8_width",
-        65: "frame_8_height",
-        66: "frame_9_x",
-        67: "frame_9_y",
-        68: "frame_9_width",
-        69: "frame_9_height",
-        71: "max_rarity",
-        76: "perk",
-        95: "corrupted_perk",
-        78: "fire_resistance",
-        80: "lightning_resistance",
-        82: "acid_resistance",
-        83: "poison_resistance",
-        84: "disease_resistance",
-        86: "strength",
-        87: "dexterity",
-        88: "constitution",
-        92: "to_hit",
-    }
-
-    def field_name(index: int) -> str:
-        """Return a readable field name for a given word index."""
-        return known_names.get(index, f"unknown_{index}")
-
     armors = []
     skipped = 0
 
     for rec_index, rec_words in enumerate(records):
         fields = {}
         for i in varying_indices:
-            fname = field_name(i)
+            fname = field_name(ARMOR_FIELD_NAMES, i)
             fields[fname] = rec_words[i]
 
         # Skip disabled slots (not enabled in game)

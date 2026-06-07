@@ -97,6 +97,29 @@ class ExtractorModuleTests(unittest.TestCase):
             self.assertNotIn("rarity_labels = {", source)
             self.assertNotIn("element_labels = {", source)
 
+    def test_extractors_use_named_field_schemas(self):
+        from tools.codex_pipeline.extractors.field_schemas import (
+            ARMOR_FIELD_NAMES,
+            MONSTER_FIELD_NAMES,
+            WEAPON_FIELD_NAMES,
+            field_name,
+        )
+
+        self.assertEqual("min_damage", MONSTER_FIELD_NAMES[16])
+        self.assertEqual("frame_1_x", MONSTER_FIELD_NAMES[130])
+        self.assertEqual("unknown_777", field_name(MONSTER_FIELD_NAMES, 777))
+        self.assertEqual("subtype", WEAPON_FIELD_NAMES[22])
+        self.assertEqual("proc_chance", WEAPON_FIELD_NAMES[28])
+        self.assertEqual("armor", ARMOR_FIELD_NAMES[13])
+        self.assertEqual("player_level_requirement", ARMOR_FIELD_NAMES[17])
+
+        extractors_dir = Path("tools/codex_pipeline/extractors")
+        for script_path in extractors_dir.glob("extract_*_data*.py"):
+            source = script_path.read_text(encoding="utf-8")
+            self.assertIn("from tools.codex_pipeline.extractors.field_schemas import", source)
+            self.assertNotIn("known_names = {", source)
+            self.assertNotIn("def field_name(", source)
+
     def test_extractor_scripts_use_shared_helpers_and_expose_parsers(self):
         from tools.codex_pipeline.extractors import (
             extract_armors_data06,
