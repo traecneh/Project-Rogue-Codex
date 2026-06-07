@@ -288,8 +288,7 @@ def _normalize_generated_output_for_site(target: ExportTarget, generated_path: P
         site_records,
         corrupted_perk_overrides,
     )
-    if normalized_records != generated_records:
-        _write_json_list(generated_path, normalized_records)
+    _write_json_list(generated_path, normalized_records)
 
 
 def _display_records(indexed: dict[str, Any], keys: Iterable[str]) -> list[str]:
@@ -436,9 +435,11 @@ def sync_generated_outputs(
         _validate_generated_json(generated_path, target)
         target.site_path.parent.mkdir(parents=True, exist_ok=True)
 
-        generated_bytes = generated_path.read_bytes()
-        current_bytes = target.site_path.read_bytes() if target.site_path.is_file() else None
-        changed = current_bytes != generated_bytes
+        generated_records = _read_json_list(generated_path, target, "generated output")
+        current_records = (
+            _read_json_list(target.site_path, target, "site output") if target.site_path.is_file() else None
+        )
+        changed = current_records != generated_records
         if changed and not dry_run:
             shutil.copyfile(generated_path, target.site_path)
         results.append(

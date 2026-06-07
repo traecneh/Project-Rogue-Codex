@@ -147,6 +147,78 @@ class ExportCommandTests(unittest.TestCase):
             self.assertTrue(results[0].changed)
             self.assertFalse(site_path.exists())
 
+    def test_sync_generated_outputs_ignores_formatting_only_differences(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            output_dir = root / "generated"
+            generated = output_dir / "fake.json"
+            site_path = root / "site" / "fake.json"
+            output_dir.mkdir()
+            site_path.parent.mkdir()
+            data = [{"id": 1, "name": "Same", "fields": {"level": 10}}]
+            generated.write_text(json.dumps(data, separators=(",", ":")), encoding="utf-8")
+            site_path.write_text(json.dumps(data, indent=2), encoding="utf-8", newline="\n")
+            target = ExportTarget(
+                name="fake",
+                extractor_script=root / "unused.py",
+                source_data=root / "unused.dat",
+                output_filename="fake.json",
+                site_path=site_path,
+            )
+
+            results = sync_generated_outputs([target], output_dir=output_dir, dry_run=True)
+
+            self.assertFalse(results[0].changed)
+            self.assertEqual(site_path.read_bytes(), generated.read_bytes())
+
+    def test_sync_generated_outputs_ignores_key_order_only_differences(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            output_dir = root / "generated"
+            generated = output_dir / "fake.json"
+            site_path = root / "site" / "fake.json"
+            output_dir.mkdir()
+            site_path.parent.mkdir()
+            generated.write_text(
+                json.dumps(
+                    [
+                        {
+                            "fields": {"level": 10, "damage": 3},
+                            "name": "Same",
+                            "id": 1,
+                        }
+                    ],
+                    indent=2,
+                ),
+                encoding="utf-8",
+                newline="\n",
+            )
+            site_path.write_text(
+                json.dumps(
+                    [
+                        {
+                            "id": 1,
+                            "name": "Same",
+                            "fields": {"damage": 3, "level": 10},
+                        }
+                    ],
+                    indent=2,
+                ),
+                encoding="utf-8",
+                newline="\n",
+            )
+            target = ExportTarget(
+                name="fake",
+                extractor_script=root / "unused.py",
+                source_data=root / "unused.dat",
+                output_filename="fake.json",
+                site_path=site_path,
+            )
+
+            results = sync_generated_outputs([target], output_dir=output_dir, dry_run=True)
+
+            self.assertFalse(results[0].changed)
+
     def test_export_client_data_normalizes_audited_armor_unknown_fields(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
