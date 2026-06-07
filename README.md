@@ -30,6 +30,14 @@ GitHub Actions also runs the unit tests, Codex validation, and whitespace checks
 
 The first pipeline slice validates weapons, armors, monsters, image manifests, inline page scripts, special drop-source overrides from `data/codex-overrides/drop_sources.json`, and corrupted perk label overrides from `data/codex-overrides/perk_labels.json`.
 
+Before exporting from local game client data, check the configured extractor scripts, source `.dat` files, destination folders, and extractor syntax:
+
+```powershell
+python -m tools.codex_pipeline doctor
+```
+
+`validate-sources` is an alias for the same pre-export check.
+
 Export client data into the intermediate generated-output folder without touching site files:
 
 ```powershell

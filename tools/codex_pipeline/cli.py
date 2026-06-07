@@ -27,6 +27,7 @@ from tools.codex_pipeline.exports import (
     sync_generated_outputs,
 )
 from tools.codex_pipeline.perks import load_perk_label_overrides
+from tools.codex_pipeline.sources import validate_export_sources
 from tools.codex_pipeline.validators.site import (
     ValidationIssue,
     read_json,
@@ -61,6 +62,8 @@ def build_parser() -> argparse.ArgumentParser:
             "diff-generated",
             "export-sync",
             "verify-live",
+            "doctor",
+            "validate-sources",
         ],
     )
     parser.add_argument(
@@ -318,6 +321,19 @@ def run_verify_live(args: argparse.Namespace) -> int:
     return 0 if all(result.ok for result in results) else 1
 
 
+def run_doctor(args: argparse.Namespace) -> int:
+    try:
+        targets = resolve_targets(args.targets)
+    except ExportError as exc:
+        print(f"ERROR: {exc}")
+        return 1
+    results = validate_export_sources(targets)
+    for result in results:
+        status = "OK" if result.ok else "ERROR"
+        print(f"DOCTOR {status} {result.target} {result.check}: {result.message}")
+    return 0 if all(result.ok for result in results) else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -333,5 +349,7 @@ def main(argv: list[str] | None = None) -> int:
         return run_export_sync(args)
     if args.command == "verify-live":
         return run_verify_live(args)
+    if args.command in {"doctor", "validate-sources"}:
+        return run_doctor(args)
     parser.error(f"Unsupported command: {args.command}")
     return 2
