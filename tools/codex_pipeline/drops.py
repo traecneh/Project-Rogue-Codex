@@ -23,6 +23,8 @@ def normalize_slug(value: Any) -> str:
 
 def load_drop_sources(path: Path) -> dict[str, dict[str, list[str]]]:
     raw = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(raw, dict):
+        raise ValueError("Drop source root must be an object")
     if raw.get("schemaVersion") != 1:
         raise ValueError(f"Unsupported drop source schemaVersion: {raw.get('schemaVersion')!r}")
 
@@ -41,7 +43,11 @@ def load_drop_sources(path: Path) -> dict[str, dict[str, list[str]]]:
                 raise ValueError(f"{kind} drop source contains an empty item name")
             if not isinstance(monster_names, list):
                 raise ValueError(f"{kind} drop source for {item!r} must be a list")
-            monsters = [normalize_name(name) for name in monster_names if normalize_name(name)]
+            monsters = []
+            for name in monster_names:
+                monster = normalize_name(name)
+                if monster:
+                    monsters.append(monster)
             if not monsters:
                 raise ValueError(f"{kind} drop source for {item!r} must include at least one monster")
             normalized_entries[item] = monsters

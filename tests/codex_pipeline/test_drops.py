@@ -6,6 +6,12 @@ from pathlib import Path
 from tools.codex_pipeline.config import REPO_ROOT, DROP_SOURCES_PATH
 
 
+def write_temp_json(data):
+    with tempfile.NamedTemporaryFile("w", encoding="utf-8", delete=False) as temp_file:
+        json.dump(data, temp_file)
+        return Path(temp_file.name)
+
+
 class DropSourcesSmokeTests(unittest.TestCase):
     def test_drop_sources_file_exists_with_iceburst_override(self):
         expected_root = Path(__file__).resolve().parents[2]
@@ -52,15 +58,24 @@ class DropSourcesSmokeTests(unittest.TestCase):
             del data[missing_kind]
 
             with self.subTest(missing_kind=missing_kind):
-                with tempfile.NamedTemporaryFile("w", encoding="utf-8", delete=False) as temp_file:
-                    json.dump(data, temp_file)
-                    temp_path = Path(temp_file.name)
+                temp_path = write_temp_json(data)
 
                 try:
                     with self.assertRaises(ValueError):
                         load_drop_sources(temp_path)
                 finally:
                     temp_path.unlink()
+
+    def test_non_object_json_root_raises_value_error(self):
+        from tools.codex_pipeline.drops import load_drop_sources
+
+        temp_path = write_temp_json(["not", "an", "object"])
+
+        try:
+            with self.assertRaises(ValueError):
+                load_drop_sources(temp_path)
+        finally:
+            temp_path.unlink()
 
 
 if __name__ == "__main__":
