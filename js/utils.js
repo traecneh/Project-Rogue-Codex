@@ -8,6 +8,9 @@
   let perkIndexMap = null;
   let allowlistsPromise = null;
   let allowlistsCache = null;
+  const DROP_SOURCES_SCHEMA_VERSION = 1;
+  let dropSourcesPromise = null;
+  let dropSourcesCache = null;
 
   function getAbsoluteUrl(url) {
     if (!url) return "";
@@ -42,6 +45,19 @@
       return resolved.toString();
     } catch (error) {
       return "data/allowlists.json";
+    }
+  }
+
+  function getDropSourcesUrl() {
+    try {
+      const base = typeof document !== "undefined" && document.baseURI ? document.baseURI : window.location.href;
+      const resolved = new URL("data/codex-overrides/drop_sources.json", base);
+      if (resolved.protocol === "http:" || resolved.protocol === "https:") {
+        resolved.searchParams.set("v", String(DROP_SOURCES_SCHEMA_VERSION));
+      }
+      return resolved.toString();
+    } catch (error) {
+      return "data/codex-overrides/drop_sources.json";
     }
   }
 
@@ -345,9 +361,98 @@
     return span;
   }
 
+  function normalizeDropName(value) {
+    return (value === null || value === undefined ? "" : String(value)).trim();
+  }
+
+  function normalizeDropKey(value) {
+    return normalizeDropName(value).toLowerCase();
+  }
+
+  function normalizeDropSlug(value) {
+    return normalizeDropKey(value)
+      .replace(/[^a-z0-9_-]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+  }
+
+  function createEmptyDropSources() {
+    return {
+      schemaVersion: DROP_SOURCES_SCHEMA_VERSION,
+      armors: {},
+      weapons: {},
+      reverse: {
+        armors: {},
+        weapons: {},
+      },
+    };
+  }
+
+  function normalizeDropSourceData(data) {
+    const source = data && typeof data === "object" ? data : {};
+    const result = createEmptyDropSources();
+    ["armors", "weapons"].forEach((kind) => {
+      const entries = source[kind] && typeof source[kind] === "object" ? source[kind] : {};
+      Object.entries(entries).forEach(([itemName, monsterNames]) => {
+        const item = normalizeDropName(itemName);
+        if (!item || !Array.isArray(monsterNames)) return;
+        const monsters = monsterNames.map(normalizeDropName).filter(Boolean);
+        if (!monsters.length) return;
+        result[kind][normalizeDropKey(item)] = {
+          name: item,
+          monsters,
+          monsterIds: monsters.map(normalizeDropSlug),
+        };
+        monsters.forEach((monsterName) => {
+          const monsterId = normalizeDropSlug(monsterName);
+          if (!monsterId) return;
+          result.reverse[kind][monsterId] = result.reverse[kind][monsterId] || [];
+          if (!result.reverse[kind][monsterId].includes(item)) {
+            result.reverse[kind][monsterId].push(item);
+          }
+        });
+      });
+    });
+    return result;
+  }
+
+  function loadDropSources() {
+    if (dropSourcesCache) return Promise.resolve(dropSourcesCache);
+    if (dropSourcesPromise) return dropSourcesPromise;
+    dropSourcesPromise = fetchJsonCached(getDropSourcesUrl(), {
+      cacheKey: `drop-sources-v${DROP_SOURCES_SCHEMA_VERSION}`,
+      ttlMs: DEFAULT_JSON_TTL_MS,
+    })
+      .then((data) => {
+        dropSourcesCache = normalizeDropSourceData(data);
+        return dropSourcesCache;
+      })
+      .catch(() => {
+        dropSourcesCache = createEmptyDropSources();
+        return dropSourcesCache;
+      })
+      .finally(() => {
+        dropSourcesPromise = null;
+      });
+    return dropSourcesPromise;
+  }
+
+  function getDropSourceMonsterIdsByItem(dropSources, kind, itemName) {
+    const safe = dropSources || createEmptyDropSources();
+    const entry = safe[kind]?.[normalizeDropKey(itemName)];
+    return Array.isArray(entry?.monsterIds) ? entry.monsterIds : [];
+  }
+
+  function getDropSourceItemNamesByMonster(dropSources, kind, monsterName) {
+    const safe = dropSources || createEmptyDropSources();
+    const monsterId = normalizeDropSlug(monsterName);
+    const entries = safe.reverse?.[kind]?.[monsterId];
+    return Array.isArray(entries) ? entries : [];
+  }
+
   window.RogueCodexUtils = Object.assign(window.RogueCodexUtils || {}, {
     DEFAULT_JSON_TTL_MS,
     ALLOWLISTS_SCHEMA_VERSION,
+    DROP_SOURCES_SCHEMA_VERSION,
     FORCE_JSON_REFRESH,
     getAbsoluteUrl,
     fetchJsonCached,
@@ -356,8 +461,14 @@
     PERK_TIER_COLORS,
     normalizeFilterValue,
     normalizeNameList,
+    createEmptyDropSources,
     buildNameSet,
     loadAllowlists,
+    getDropSourceItemNamesByMonster,
+    getDropSourceMonsterIdsByItem,
+    loadDropSources,
+    normalizeDropSourceData,
+    normalizeDropSlug,
     toNumber,
     titleCaseWords,
     getElementColor,
