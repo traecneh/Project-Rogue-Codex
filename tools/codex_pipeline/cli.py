@@ -19,6 +19,7 @@ from tools.codex_pipeline.drops import load_drop_sources
 from tools.codex_pipeline.exports import (
     DEFAULT_EXPORT_TARGETS,
     ExportError,
+    build_generated_diff_reports,
     export_client_data,
     resolve_targets,
     sync_generated_outputs,
@@ -53,6 +54,7 @@ def build_parser() -> argparse.ArgumentParser:
             "validate-site",
             "export-client-data",
             "sync-generated",
+            "diff-generated",
             "export-sync",
         ],
     )
@@ -183,6 +185,40 @@ def _print_sync_results(results) -> None:
         print(f"{status} {result.target.name}: {result.generated_path} -> {result.site_path}")
 
 
+def _format_value(value) -> str:
+    return json.dumps(value, ensure_ascii=True, sort_keys=True)
+
+
+def _print_diff_reports(reports, *, max_records: int = 12, max_fields: int = 8) -> None:
+    for report in reports:
+        print(
+            f"DIFF {report.target.name}: "
+            f"+{len(report.added)} -{len(report.removed)} ~{len(report.changed)} "
+            f"({report.generated_path} -> {report.site_path})"
+        )
+        if not report.has_changes:
+            continue
+
+        for label in report.added[:max_records]:
+            print(f"  + {label}")
+        if len(report.added) > max_records:
+            print(f"  + ... {len(report.added) - max_records} more")
+
+        for label in report.removed[:max_records]:
+            print(f"  - {label}")
+        if len(report.removed) > max_records:
+            print(f"  - ... {len(report.removed) - max_records} more")
+
+        for record in report.changed[:max_records]:
+            print(f"  ~ {record.label}: {len(record.field_changes)} field change(s)")
+            for change in record.field_changes[:max_fields]:
+                print(f"    {change.path}: {_format_value(change.old_value)} -> {_format_value(change.new_value)}")
+            if len(record.field_changes) > max_fields:
+                print(f"    ... {len(record.field_changes) - max_fields} more field change(s)")
+        if len(report.changed) > max_records:
+            print(f"  ~ ... {len(report.changed) - max_records} more changed record(s)")
+
+
 def run_export_client_data(args: argparse.Namespace) -> int:
     try:
         targets = resolve_targets(args.targets)
@@ -198,13 +234,26 @@ def run_sync_generated(args: argparse.Namespace) -> int:
     try:
         targets = resolve_targets(args.targets)
         results = sync_generated_outputs(targets, output_dir=args.output_dir, dry_run=args.dry_run)
+        diff_reports = build_generated_diff_reports(targets, output_dir=args.output_dir) if args.dry_run else []
     except ExportError as exc:
         print(f"ERROR: {exc}")
         return 1
     _print_sync_results(results)
     if args.dry_run:
+        _print_diff_reports(diff_reports)
         return 0
     return run_validate()
+
+
+def run_diff_generated(args: argparse.Namespace) -> int:
+    try:
+        targets = resolve_targets(args.targets)
+        reports = build_generated_diff_reports(targets, output_dir=args.output_dir)
+    except ExportError as exc:
+        print(f"ERROR: {exc}")
+        return 1
+    _print_diff_reports(reports)
+    return 0
 
 
 def run_export_sync(args: argparse.Namespace) -> int:
@@ -223,6 +272,8 @@ def main(argv: list[str] | None = None) -> int:
         return run_export_client_data(args)
     if args.command == "sync-generated":
         return run_sync_generated(args)
+    if args.command == "diff-generated":
+        return run_diff_generated(args)
     if args.command == "export-sync":
         return run_export_sync(args)
     parser.error(f"Unsupported command: {args.command}")

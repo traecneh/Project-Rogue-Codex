@@ -37,6 +37,7 @@ python -m tools.codex_pipeline export-client-data
 Sync generated files into the site after reviewing them:
 
 ```powershell
+python -m tools.codex_pipeline diff-generated
 python -m tools.codex_pipeline sync-generated --dry-run
 python -m tools.codex_pipeline sync-generated
 ```

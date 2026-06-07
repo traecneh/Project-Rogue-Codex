@@ -8,6 +8,7 @@ from pathlib import Path
 
 from tools.codex_pipeline.exports import (
     ExportTarget,
+    build_generated_diff_report,
     export_client_data,
     resolve_targets,
     sync_generated_outputs,
@@ -144,3 +145,47 @@ class ExportCommandTests(unittest.TestCase):
 
             self.assertTrue(results[0].changed)
             self.assertFalse(site_path.exists())
+
+    def test_build_generated_diff_report_summarizes_added_removed_and_changed_records(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            output_dir = root / "generated"
+            generated = output_dir / "fake.json"
+            site_path = root / "site" / "fake.json"
+            output_dir.mkdir()
+            site_path.parent.mkdir()
+            site_path.write_text(
+                json.dumps(
+                    [
+                        {"id": 1, "name": "Same", "fields": {"level": 10, "damage": 3}},
+                        {"id": 2, "name": "Removed", "fields": {"level": 20}},
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            generated.write_text(
+                json.dumps(
+                    [
+                        {"id": 1, "name": "Same", "fields": {"level": 11, "damage": 3}},
+                        {"id": 3, "name": "Added", "fields": {"level": 30}},
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            target = ExportTarget(
+                name="fake",
+                extractor_script=root / "unused.py",
+                source_data=root / "unused.dat",
+                output_filename="fake.json",
+                site_path=site_path,
+            )
+
+            report = build_generated_diff_report(target, output_dir=output_dir)
+
+            self.assertEqual(["Added (3)"], report.added)
+            self.assertEqual(["Removed (2)"], report.removed)
+            self.assertEqual(1, len(report.changed))
+            self.assertEqual("Same (1)", report.changed[0].label)
+            self.assertEqual("fields.level", report.changed[0].field_changes[0].path)
+            self.assertEqual(10, report.changed[0].field_changes[0].old_value)
+            self.assertEqual(11, report.changed[0].field_changes[0].new_value)
