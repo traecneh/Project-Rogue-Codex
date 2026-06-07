@@ -222,6 +222,14 @@ def validate_css_source(label: str, code: str) -> list[ValidationIssue]:
     return issues
 
 
+def validate_css_file(label: str, path: Path) -> list[ValidationIssue]:
+    try:
+        code = path.read_text(encoding="utf-8")
+    except OSError as exc:
+        return [ValidationIssue("error", f"{label} failed to read CSS: {exc}")]
+    return validate_css_source(label, code)
+
+
 def validate_inline_styles(label: str, html: str) -> list[ValidationIssue]:
     issues: list[ValidationIssue] = []
     style_re = re.compile(r"<style\b[^>]*>([\s\S]*?)</style>", re.IGNORECASE)

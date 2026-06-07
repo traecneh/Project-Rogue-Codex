@@ -36,6 +36,7 @@ from tools.codex_pipeline.validators.site import (
     ValidationIssue,
     read_json,
     validate_corrupted_perk_labels,
+    validate_css_file,
     validate_drop_references,
     validate_inline_styles,
     validate_inline_scripts,
@@ -47,6 +48,10 @@ from tools.codex_pipeline.validators.site import (
 VALIDATED_HTML_PATHS = [
     REPO_ROOT / "pages" / "items" / "armors.html",
     REPO_ROOT / "pages" / "enemies" / "monsters.html",
+]
+
+VALIDATED_STYLE_PATHS = [
+    REPO_ROOT / "css" / "monsters.css",
 ]
 
 VALIDATED_SCRIPT_PATHS = [
@@ -243,6 +248,13 @@ def collect_validation_issues() -> list[ValidationIssue]:
             continue
         issues.extend(validate_inline_styles(label, html))
         issues.extend(validate_inline_scripts(label, html))
+
+    for path in VALIDATED_STYLE_PATHS:
+        try:
+            label = str(path.relative_to(REPO_ROOT))
+        except ValueError:
+            label = str(path)
+        issues.extend(validate_css_file(label, path))
 
     for path in VALIDATED_SCRIPT_PATHS:
         try:

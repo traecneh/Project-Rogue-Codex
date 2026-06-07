@@ -17,20 +17,54 @@ class SiteValidationTests(unittest.TestCase):
         self.assertEqual(1, len(issues))
         self.assertIn("unexpected closing brace", issues[0].message)
 
+    def test_css_file_parser_reports_unmatched_closing_brace(self):
+        from tools.codex_pipeline.validators.site import validate_css_file
+
+        with tempfile.TemporaryDirectory() as tmp:
+            css_path = Path(tmp) / "broken.css"
+            css_path.write_text(".ok { color: red; } } .lost { color: blue; }", encoding="utf-8")
+
+            issues = validate_css_file("broken.css", css_path)
+
+        self.assertEqual(1, len(issues))
+        self.assertIn("unexpected closing brace", issues[0].message)
+
     def test_monsters_table_wrapper_keeps_scroll_container_style(self):
         from tools.codex_pipeline.config import REPO_ROOT
-        from tools.codex_pipeline.validators.site import validate_inline_styles
+        from tools.codex_pipeline.validators.site import validate_css_source
 
-        html_path = REPO_ROOT / "pages" / "enemies" / "monsters.html"
-        html = html_path.read_text(encoding="utf-8")
-        issues = validate_inline_styles("pages/enemies/monsters.html", html)
-        wrapper_match = re.search(r"\.monsters-table-wrapper\s*\{(?P<body>[^}]*)\}", html)
+        css_path = REPO_ROOT / "css" / "monsters.css"
+        css = css_path.read_text(encoding="utf-8")
+        issues = validate_css_source("css/monsters.css", css)
+        wrapper_match = re.search(r"\.monsters-table-wrapper\s*\{(?P<body>[^}]*)\}", css)
 
         self.assertEqual([], issues)
         self.assertIsNotNone(wrapper_match)
         wrapper_body = wrapper_match.group("body") if wrapper_match else ""
         self.assertIn("overflow: auto;", wrapper_body)
         self.assertIn("max-height: 70vh;", wrapper_body)
+
+    def test_monsters_page_uses_external_page_stylesheet(self):
+        from tools.codex_pipeline import cli
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        html_path = REPO_ROOT / "pages" / "enemies" / "monsters.html"
+        css_path = REPO_ROOT / "css" / "monsters.css"
+        html = html_path.read_text(encoding="utf-8")
+        inline_styles = [
+            style.strip()
+            for style in re.findall(
+                r"<style\b[^>]*>([\s\S]*?)</style>",
+                html,
+                flags=re.IGNORECASE,
+            )
+            if style.strip()
+        ]
+
+        self.assertIn('<link rel="stylesheet" href="css/monsters.css" />', html)
+        self.assertTrue(css_path.is_file())
+        self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
+        self.assertEqual([], inline_styles)
 
     def test_monsters_page_uses_external_page_script(self):
         from tools.codex_pipeline import cli
@@ -284,3 +318,45 @@ class SiteValidationTests(unittest.TestCase):
 
         messages = "\n".join(issue.message for issue in issues)
         self.assertIn("broken.js failed parse", messages)
+
+    def test_cli_validates_configured_external_css_files(self):
+        from tools.codex_pipeline import cli
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            weapons_data = root / "weapons.json"
+            armors_data = root / "armors.json"
+            monsters_data = root / "monsters.json"
+            drop_sources = root / "drop_sources.json"
+            html = root / "page.html"
+            style = root / "broken.css"
+            weapon_images = root / "weapons"
+            armor_images = root / "armors"
+            monster_images = root / "monsters"
+            for folder in [weapon_images, armor_images, monster_images]:
+                folder.mkdir()
+                (folder / "manifest.json").write_text("[]", encoding="utf-8")
+
+            weapons_data.write_text("[]", encoding="utf-8")
+            armors_data.write_text("[]", encoding="utf-8")
+            monsters_data.write_text("[]", encoding="utf-8")
+            drop_sources.write_text('{"schemaVersion": 1, "armors": {}, "weapons": {}}', encoding="utf-8")
+            html.write_text("<html><body></body></html>", encoding="utf-8")
+            style.write_text(".ok { color: red; } } .lost { color: blue; }", encoding="utf-8")
+
+            with (
+                patch.object(cli, "DROP_SOURCES_PATH", drop_sources),
+                patch.object(cli, "WEAPONS_DATA_PATH", weapons_data),
+                patch.object(cli, "ARMORS_DATA_PATH", armors_data),
+                patch.object(cli, "MONSTERS_DATA_PATH", monsters_data),
+                patch.object(cli, "WEAPON_IMAGES_DIR", weapon_images),
+                patch.object(cli, "ARMOR_IMAGES_DIR", armor_images),
+                patch.object(cli, "MONSTER_IMAGES_DIR", monster_images),
+                patch.object(cli, "VALIDATED_HTML_PATHS", [html]),
+                patch.object(cli, "VALIDATED_STYLE_PATHS", [style]),
+                patch.object(cli, "VALIDATED_SCRIPT_PATHS", []),
+            ):
+                issues = cli.collect_validation_issues()
+
+        messages = "\n".join(issue.message for issue in issues)
+        self.assertIn("broken.css unexpected closing brace", messages)
