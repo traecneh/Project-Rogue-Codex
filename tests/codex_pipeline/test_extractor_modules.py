@@ -69,6 +69,34 @@ class ExtractorModuleTests(unittest.TestCase):
         self.assertEqual("Cold", extract_ascii_name(records[0]))
         self.assertEqual("Bard", extract_ascii_name(records[1]))
 
+    def test_item_extractors_share_metadata_labels(self):
+        from tools.codex_pipeline.extractors.item_metadata import (
+            ARMOR_SLOT_LABELS,
+            PERK_LABELS,
+            RARITY_LABELS,
+            WEAPON_ELEMENT_LABELS,
+            WEAPON_SPECIALTY_LABELS,
+            WEAPON_SUBTYPE_LABELS,
+            resolve_corrupted_perk_label,
+        )
+
+        self.assertEqual("Frozen Heart (Tier 1)", PERK_LABELS[22])
+        self.assertEqual("Frozen Heart (Tier 2)", resolve_corrupted_perk_label(278, 22))
+        self.assertEqual("Rare", RARITY_LABELS[2])
+        self.assertEqual("Cold", WEAPON_ELEMENT_LABELS[4])
+        self.assertEqual("Strength", WEAPON_SPECIALTY_LABELS[1])
+        self.assertEqual("Sword", WEAPON_SUBTYPE_LABELS[1])
+        self.assertEqual("Helmet", ARMOR_SLOT_LABELS[10])
+
+        extractors_dir = Path("tools/codex_pipeline/extractors")
+        for script_name in ("extract_weapons_data05.py", "extract_armors_data06.py"):
+            source = (extractors_dir / script_name).read_text(encoding="utf-8")
+            self.assertIn("from tools.codex_pipeline.extractors.item_metadata import", source)
+            self.assertNotIn("PERK_LABELS = {", source)
+            self.assertNotIn("def resolve_corrupted_perk_label(", source)
+            self.assertNotIn("rarity_labels = {", source)
+            self.assertNotIn("element_labels = {", source)
+
     def test_extractor_scripts_use_shared_helpers_and_expose_parsers(self):
         from tools.codex_pipeline.extractors import (
             extract_armors_data06,

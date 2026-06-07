@@ -30,11 +30,19 @@ Notes:
 """
 
 import json
-import re
 import sys
 from pathlib import Path
 
 try:
+    from tools.codex_pipeline.extractors.item_metadata import (
+        PERK_LABELS,
+        WEAPON_ELEMENT_LABELS,
+        WEAPON_RARITY_LABELS,
+        WEAPON_SPECIALTY_LABELS,
+        WEAPON_SUBTYPE_LABELS,
+        add_field_label,
+        resolve_corrupted_perk_label,
+    )
     from tools.codex_pipeline.extractors.shared import (
         diff_json_records_by_id,
         extract_ascii_name,
@@ -45,6 +53,15 @@ try:
         parse_extractor_args,
     )
 except ModuleNotFoundError:
+    from item_metadata import (
+        PERK_LABELS,
+        WEAPON_ELEMENT_LABELS,
+        WEAPON_RARITY_LABELS,
+        WEAPON_SPECIALTY_LABELS,
+        WEAPON_SUBTYPE_LABELS,
+        add_field_label,
+        resolve_corrupted_perk_label,
+    )
     from shared import (
         diff_json_records_by_id,
         extract_ascii_name,
@@ -59,141 +76,6 @@ XOR_KEY_WORD = 0xD4D4
 # data05.dat packs eight 248-byte weapon entries back-to-back in each 1984-byte
 # chunk. A single weapon entry is 124 16-bit words.
 WORDS_PER_RECORD = 124
-PERK_LABELS = {
-    1: "Lifesteal (Tier 2)",
-    6: "Vitality (Tier 1)",
-    10: "Juggernaut (Tier 1)",
-    22: "Frozen Heart (Tier 1)",
-    30: "Garrote (Tier 1)",
-    44: "Consecration (Tier 1)",
-    52: "Lethal Toxins (Tier 2)",
-    100: "Runic (Tier 1)",
-    104: "Flame Buffet (Tier 1)",
-    107: "Blood Siphon (Tier 1)",
-    257: "Lifesteal (Tier 2)",
-    258: "Vampirism (Tier 1)",
-    266: "Juggernaut (Tier 2)",
-    270: "Moneybags (Tier 2)",
-    285: "Vampirism (Tier 2)",
-    286: "Garrote (Tier 2)",
-    291: "Epidemic (Tier 2)",
-    293: "Destruction (Tier 2)",
-    295: "Hawkeye (Tier 2)",
-    296: "Overpower (Tier 2)",
-    297: "Demonsbane (Tier 2)",
-    302: "Ice Shatter (Tier 2)",
-    307: "Critical Aegis (Tier 2)",
-    308: "Toxic Shell (Tier 2)",
-    102: "Envenomation (Tier 1)",
-    105: "Crimson Feast (Tier 1)",
-    259: "Rejuvenation (Tier 2)",
-    260: "Antitoxin (Tier 2)",
-    261: "Immunization (Tier 2)",
-    262: "Vitality (Tier 2)",
-    263: "Bolstered Strength (Tier 2)",
-    265: "Magic Shield (Tier 2)",
-    267: "Parry (Tier 2)",
-    268: "Alchemist (Tier 2)",
-    269: "Knowledge (Tier 2)",
-    277: "Demon Blood (Tier 2)",
-    278: "Frozen Heart (Tier 2)",
-    21: "Demon Blood",
-    279: "Lightning Field (Tier 2)",
-    280: "Tourniquet (Tier 2)",
-    281: "Hazmat (Tier 2)",
-    282: "Antacid (Tier 2)",
-    287: "Brutality (Tier 2)",
-    288: "Tenacity (Tier 2)",
-    289: "Swiftness (Tier 2)",
-    292: "Lethal Toxins (Tier 2)",
-    300: "Consecration (Tier 2)",
-    301: "Venomshock (Tier 2)",
-    303: "Desperation (Tier 2)",
-    304: "Bloodlust (Tier 2)",
-    305: "Slayer (Tier 2)",
-    362: "Plague Eater (Tier 2)",
-    513: "Lifesteal (Tier 3)",
-    514: "Bloodthirster (Tier 3)",
-    515: "Rejuvenation (Tier 3)",
-    516: "Antitoxin (Tier 3)",
-    522: "Juggernaut (Tier 3)",
-    524: "Alchemist (Tier 3)",
-    525: "Knowledge (Tier 3)",
-    533: "Demon Blood (Tier 3)",
-    542: "Garrote (Tier 3)",
-    549: "Destruction (Tier 3)",
-    556: "Consecration (Tier 3)",
-    559: "Desperation (Tier 3)",
-    564: "Toxic Shell (Tier 3)",
-    614: "Envenomation (Tier 3)",
-    615: "Lycan (Tier 3)",
-    619: "Blood Siphon (Tier 3)",
-    3: "Rejuvenation (Tier 1)",
-    4: "Antitoxin (Tier 1)",
-    5: "Immunization (Tier 1)",
-    9: "Magic Shield (Tier 1)",
-    11: "Parry (Tier 1)",
-    12: "Alchemist (Tier 1)",
-    15: "Flame Strike (Tier 1)",
-    16: "Lightning Javelin (Tier 1)",
-    17: "Iceburst (Tier 1)",
-    18: "Sulfuric (Tier 1)",
-    19: "Plague (Tier 1)",
-    20: "Toxicity (Tier 1)",
-    36: "Lethal Toxins (Tier 1)",
-    37: "Destruction (Tier 1)",
-    101: "Vengeance (Tier 1)",
-    518: "Vitality (Tier 3)",
-    523: "Parry (Tier 3)",
-    547: "Epidemic (Tier 3)",
-    548: "Lethal Toxins (Tier 3)",
-    560: "Bloodlust (Tier 3)",
-    563: "Critical Aegis (Tier 3)",
-    612: "Runic (Tier 3)",
-    613: "Vengeance (Tier 3)",
-    616: "Flame Buffet (Tier 3)",
-    617: "Crimson Feast (Tier 3)",
-}
-
-
-_TIER_PATTERN = re.compile(r"\(Tier\s*(\d+)\)", re.IGNORECASE)
-
-
-def _bump_tier_label(label: str) -> str:
-    """Increment a '(Tier N)' suffix if present."""
-
-    def repl(match: re.Match[str]) -> str:
-        tier_num = int(match.group(1))
-        return f"(Tier {tier_num + 1})"
-
-    return _TIER_PATTERN.sub(repl, label, count=1)
-
-
-def resolve_corrupted_perk_label(corrupted_val: int, base_val: int | None = None) -> str | None:
-    """
-    Try to resolve a human label for a corrupted perk value.
-
-    Resolution order:
-      1) Direct lookup in PERK_LABELS.
-      2) If paired base perk is known, reuse its label (bumping Tier when cp = base + 256).
-      3) If cp - 256 matches a known perk, use that label with a Tier bump.
-    """
-    if corrupted_val in PERK_LABELS:
-        return PERK_LABELS[corrupted_val]
-
-    if base_val is not None and base_val in PERK_LABELS:
-        base_label = PERK_LABELS[base_val]
-        if corrupted_val - base_val == 256:
-            return _bump_tier_label(base_label)
-        return base_label
-
-    offset_base = corrupted_val - 256
-    if offset_base in PERK_LABELS:
-        return _bump_tier_label(PERK_LABELS[offset_base])
-
-    return None
-
-
 def parse_data05(path: Path):
     """Parse data05.dat and return a list of weapon dicts."""
     records = load_xor_encoded_records(
@@ -314,54 +196,10 @@ def parse_data05(path: Path):
         if "value_low" in fields and "value_high" in fields:
             fields["value"] = fields["value_low"] + (fields["value_high"] << 16)
 
-        # Human-readable subtype
-        subtype_labels = {
-            1: "Sword",
-            2: "Dagger",
-            3: "Axe",
-            4: "Blunt",
-            5: "Polearm",
-        }
-        subtype_val = fields.get("subtype")
-        if subtype_val in subtype_labels:
-            fields["subtype_label"] = subtype_labels[subtype_val]
-
-        # Human-readable specialty
-        specialty_labels = {
-            1: "Strength",
-            2: "Dexterity",
-            3: "Constitution",
-        }
-        spec_val = fields.get("specialty")
-        if spec_val in specialty_labels:
-            fields["specialty_label"] = specialty_labels[spec_val]
-
-        # Human-readable element
-        element_labels = {
-            1: "Fire",
-            2: "Electric",
-            4: "Cold",
-            6: "Acid",
-        7: "Poison",
-        8: "Disease",
-        5: "Magic",
-    }
-        elem_val = fields.get("element")
-        if elem_val in element_labels:
-            fields["element_label"] = element_labels[elem_val]
-
-        # Max rarity label
-        rarity_labels = {
-            1: "Uncommon",
-            2: "Rare",
-            3: "Epic",
-            4: "Legendary",
-            5: "Mythical",
-            6: "Ascendant",
-        }
-        max_rarity_val = fields.get("max_rarity")
-        if max_rarity_val in rarity_labels:
-            fields["max_rarity_label"] = rarity_labels[max_rarity_val]
+        add_field_label(fields, "subtype", "subtype_label", WEAPON_SUBTYPE_LABELS)
+        add_field_label(fields, "specialty", "specialty_label", WEAPON_SPECIALTY_LABELS)
+        add_field_label(fields, "element", "element_label", WEAPON_ELEMENT_LABELS)
+        add_field_label(fields, "max_rarity", "max_rarity_label", WEAPON_RARITY_LABELS)
 
         # Perk labels (game-specific effects; extend as more are mapped)
         perk_val = fields.get("perk")
