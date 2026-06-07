@@ -8,6 +8,7 @@ from tools.codex_pipeline.config import (
     ARMOR_IMAGES_DIR,
     ARMORS_DATA_PATH,
     DROP_SOURCES_PATH,
+    GENERATED_OUTPUT_DIR,
     MONSTER_IMAGES_DIR,
     MONSTERS_DATA_PATH,
     REPO_ROOT,
@@ -15,6 +16,13 @@ from tools.codex_pipeline.config import (
     WEAPONS_DATA_PATH,
 )
 from tools.codex_pipeline.drops import load_drop_sources
+from tools.codex_pipeline.exports import (
+    DEFAULT_EXPORT_TARGETS,
+    ExportError,
+    export_client_data,
+    resolve_targets,
+    sync_generated_outputs,
+)
 from tools.codex_pipeline.validators.site import (
     ValidationIssue,
     read_json,
@@ -37,7 +45,35 @@ VALIDATED_SCRIPT_PATHS = [
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Project Rogue Codex data pipeline")
-    parser.add_argument("command", choices=["validate", "validate-drops", "validate-site"])
+    parser.add_argument(
+        "command",
+        choices=[
+            "validate",
+            "validate-drops",
+            "validate-site",
+            "export-client-data",
+            "sync-generated",
+            "export-sync",
+        ],
+    )
+    parser.add_argument(
+        "--target",
+        action="append",
+        choices=sorted(DEFAULT_EXPORT_TARGETS),
+        dest="targets",
+        help="Limit export/sync to one target. Can be passed multiple times.",
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=GENERATED_OUTPUT_DIR,
+        help="Intermediate generated-output directory.",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="For sync-generated/export-sync, report site file changes without copying.",
+    )
     return parser
 
 
@@ -136,10 +172,58 @@ def run_validate() -> int:
     return _print_issues(issues)
 
 
+def _print_export_results(results) -> None:
+    for result in results:
+        print(f"EXPORTED {result.target.name}: {result.generated_path}")
+
+
+def _print_sync_results(results) -> None:
+    for result in results:
+        status = "WOULD SYNC" if result.dry_run and result.changed else "SYNCED" if result.changed else "UNCHANGED"
+        print(f"{status} {result.target.name}: {result.generated_path} -> {result.site_path}")
+
+
+def run_export_client_data(args: argparse.Namespace) -> int:
+    try:
+        targets = resolve_targets(args.targets)
+        results = export_client_data(targets, output_dir=args.output_dir)
+    except ExportError as exc:
+        print(f"ERROR: {exc}")
+        return 1
+    _print_export_results(results)
+    return 0
+
+
+def run_sync_generated(args: argparse.Namespace) -> int:
+    try:
+        targets = resolve_targets(args.targets)
+        results = sync_generated_outputs(targets, output_dir=args.output_dir, dry_run=args.dry_run)
+    except ExportError as exc:
+        print(f"ERROR: {exc}")
+        return 1
+    _print_sync_results(results)
+    if args.dry_run:
+        return 0
+    return run_validate()
+
+
+def run_export_sync(args: argparse.Namespace) -> int:
+    export_code = run_export_client_data(args)
+    if export_code != 0:
+        return export_code
+    return run_sync_generated(args)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     if args.command in {"validate", "validate-drops", "validate-site"}:
         return run_validate()
+    if args.command == "export-client-data":
+        return run_export_client_data(args)
+    if args.command == "sync-generated":
+        return run_sync_generated(args)
+    if args.command == "export-sync":
+        return run_export_sync(args)
     parser.error(f"Unsupported command: {args.command}")
     return 2

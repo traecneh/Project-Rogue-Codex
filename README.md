@@ -27,3 +27,24 @@ python -m tools.codex_pipeline validate
 ```
 
 The first pipeline slice validates weapons, armors, monsters, image manifests, inline page scripts, and special drop-source overrides from `data/codex-overrides/drop_sources.json`.
+
+Export client data into the intermediate generated-output folder without touching site files:
+
+```powershell
+python -m tools.codex_pipeline export-client-data
+```
+
+Sync generated files into the site after reviewing them:
+
+```powershell
+python -m tools.codex_pipeline sync-generated --dry-run
+python -m tools.codex_pipeline sync-generated
+```
+
+To export and sync in one step after you are comfortable with the generated output:
+
+```powershell
+python -m tools.codex_pipeline export-sync
+```
+
+Use `--target monsters`, `--target weapons`, or `--target armors` to run a narrower export or sync.
