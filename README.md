@@ -1,20 +1,15 @@
-# project-rogue-codex
+# Project Rogue Codex
 
-Minimal project README added during workspace cleanup.
+Static reference site for Project Rogue game data, including weapons, armors, monsters, systems pages, and supporting assets.
 
-## Status
+## Site Entry Points
 
-This project has been moved under projects/ and given a baseline layout. The next useful step is to document purpose, setup, and expected inputs/outputs in more detail.
-
-## Likely entry files
-
-- `index.html`
-- `nav.html`
-
-## Notes
-
-- Project type: Static web
-- This README is intentionally minimal and should be replaced with project-specific instructions when the project is revisited.
+- `index.html`: static-site entry page.
+- `nav.html`: shared navigation markup.
+- `pages/`: content and data pages.
+- `js/`: shared browser-side behavior.
+- `css/`: shared styling.
+- `images/`: item, monster, race, and UI assets.
 
 ## Codex Data Pipeline
 
