@@ -11,6 +11,7 @@ from tools.codex_pipeline.config import (
     GENERATED_OUTPUT_DIR,
     MONSTER_IMAGES_DIR,
     MONSTERS_DATA_PATH,
+    PERK_LABEL_OVERRIDES_PATH,
     REPO_ROOT,
     WEAPON_IMAGES_DIR,
     WEAPONS_DATA_PATH,
@@ -24,9 +25,11 @@ from tools.codex_pipeline.exports import (
     resolve_targets,
     sync_generated_outputs,
 )
+from tools.codex_pipeline.perks import load_perk_label_overrides
 from tools.codex_pipeline.validators.site import (
     ValidationIssue,
     read_json,
+    validate_corrupted_perk_labels,
     validate_drop_references,
     validate_inline_scripts,
     validate_javascript_file,
@@ -107,6 +110,15 @@ def _collect_names_for_validation(path: Path) -> tuple[set[str], list[Validation
     }, []
 
 
+def _collect_item_data_for_validation(path: Path) -> tuple[list[object], list[ValidationIssue]]:
+    data, issue = _read_json_issue(path, "data JSON")
+    if issue:
+        return [], [issue]
+    if not isinstance(data, list):
+        return [], [ValidationIssue("error", f"{path} data JSON must be a list")]
+    return data, []
+
+
 def _load_drop_sources_for_validation(path: Path) -> tuple[dict[str, dict[str, list[str]]] | None, ValidationIssue | None]:
     try:
         return load_drop_sources(path), None
@@ -114,11 +126,21 @@ def _load_drop_sources_for_validation(path: Path) -> tuple[dict[str, dict[str, l
         return None, ValidationIssue("error", f"{path} failed to read drop sources: {exc}")
 
 
+def _load_perk_label_overrides_for_validation(path: Path) -> tuple[dict[int, str | None] | None, ValidationIssue | None]:
+    try:
+        return load_perk_label_overrides(path), None
+    except (OSError, json.JSONDecodeError, ValueError) as exc:
+        return None, ValidationIssue("error", f"{path} failed to read perk label overrides: {exc}")
+
+
 def collect_validation_issues() -> list[ValidationIssue]:
     issues: list[ValidationIssue] = []
     sources, source_issue = _load_drop_sources_for_validation(DROP_SOURCES_PATH)
     if source_issue:
         issues.append(source_issue)
+    perk_overrides, perk_override_issue = _load_perk_label_overrides_for_validation(PERK_LABEL_OVERRIDES_PATH)
+    if perk_override_issue:
+        issues.append(perk_override_issue)
 
     weapon_names, weapon_issues = _collect_names_for_validation(WEAPONS_DATA_PATH)
     armor_names, armor_issues = _collect_names_for_validation(ARMORS_DATA_PATH)
@@ -127,6 +149,11 @@ def collect_validation_issues() -> list[ValidationIssue]:
     issues.extend(armor_issues)
     issues.extend(monster_issues)
 
+    weapon_items, weapon_item_issues = _collect_item_data_for_validation(WEAPONS_DATA_PATH)
+    armor_items, armor_item_issues = _collect_item_data_for_validation(ARMORS_DATA_PATH)
+    issues.extend(weapon_item_issues)
+    issues.extend(armor_item_issues)
+
     if sources is not None and not (weapon_issues or armor_issues or monster_issues):
         issues.extend(
             validate_drop_references(
@@ -134,6 +161,13 @@ def collect_validation_issues() -> list[ValidationIssue]:
                 armor_names=armor_names,
                 weapon_names=weapon_names,
                 monster_names=monster_names,
+            )
+        )
+    if perk_overrides is not None and not (weapon_item_issues or armor_item_issues):
+        issues.extend(
+            validate_corrupted_perk_labels(
+                {"weapons": weapon_items, "armors": armor_items},
+                corrupted_perk_overrides=perk_overrides,
             )
         )
 

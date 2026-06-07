@@ -5,7 +5,7 @@ import re
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable
+from typing import Any, Iterable
 
 from tools.codex_pipeline.drops import DROP_KINDS, normalize_key
 
@@ -65,6 +65,73 @@ def validate_drop_references(
                 if normalize_key(monster_name) not in monsters:
                     issues.append(ValidationIssue("error", f"{kind} drop override monster not found: {monster_name}"))
     return issues
+
+
+def validate_corrupted_perk_labels(
+    item_data_by_kind: dict[str, Iterable[Any]],
+    *,
+    corrupted_perk_overrides: dict[int, str | None],
+) -> list[ValidationIssue]:
+    issues: list[ValidationIssue] = []
+    for kind, items in item_data_by_kind.items():
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+            fields = item.get("fields")
+            if not isinstance(fields, dict):
+                continue
+            code = _int_or_none(fields.get("corrupted_perk"))
+            if code is None or not code:
+                continue
+
+            name = item.get("name") or f"id {item.get('id')}"
+            label = fields.get("corrupted_perk_label")
+            expected = corrupted_perk_overrides.get(code)
+            if not label:
+                if code not in corrupted_perk_overrides:
+                    issues.append(
+                        ValidationIssue(
+                            "error",
+                            f"{kind} {name} has unmapped corrupted perk code {code}",
+                        )
+                    )
+                elif expected is not None:
+                    issues.append(
+                        ValidationIssue(
+                            "error",
+                            f"{kind} {name} missing expected corrupted perk {code} label {expected!r}",
+                        )
+                    )
+                continue
+
+            if code in corrupted_perk_overrides:
+                if expected is None:
+                    issues.append(
+                        ValidationIssue(
+                            "error",
+                            f"{kind} {name} corrupted perk {code} is configured as unknown but has label {label!r}",
+                        )
+                    )
+                elif label != expected:
+                    issues.append(
+                        ValidationIssue(
+                            "error",
+                            f"{kind} {name} expected corrupted perk {code} label {expected!r}, found {label!r}",
+                        )
+                    )
+    return issues
+
+
+def _int_or_none(value: Any) -> int | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value
+    if isinstance(value, str):
+        stripped = value.strip()
+        if stripped and stripped.lstrip("-").isdigit():
+            return int(stripped)
+    return None
 
 
 def validate_javascript_source(label: str, code: str) -> list[ValidationIssue]:

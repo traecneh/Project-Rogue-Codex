@@ -14,8 +14,10 @@ from tools.codex_pipeline.config import (
     CLIENT_DATA_DIR,
     GENERATED_OUTPUT_DIR,
     MONSTERS_DATA_PATH,
+    PERK_LABEL_OVERRIDES_PATH,
     WEAPONS_DATA_PATH,
 )
+from tools.codex_pipeline.perks import CorruptedPerkOverrides, load_perk_label_overrides
 
 
 class ExportError(RuntimeError):
@@ -222,10 +224,24 @@ def _uses_untrusted_corrupted_perk_label(fields: dict[str, Any]) -> bool:
     return corrupted_perk - perk != 256
 
 
+def _apply_corrupted_perk_override(fields: dict[str, Any], overrides: CorruptedPerkOverrides) -> bool:
+    corrupted_perk = _int_or_none(fields.get("corrupted_perk"))
+    if corrupted_perk is None or not corrupted_perk or corrupted_perk not in overrides:
+        return False
+
+    label = overrides[corrupted_perk]
+    if label is None:
+        fields.pop("corrupted_perk_label", None)
+    else:
+        fields["corrupted_perk_label"] = label
+    return True
+
+
 def _normalize_generated_records_for_site(
     target: ExportTarget,
     generated_records: list[Any],
     site_records: list[Any],
+    corrupted_perk_overrides: CorruptedPerkOverrides,
 ) -> list[Any]:
     normalized_field_names = SITE_NORMALIZED_FIELD_NAMES_BY_TARGET.get(target.name, set())
     normalized_records = deepcopy(generated_records)
@@ -249,6 +265,8 @@ def _normalize_generated_records_for_site(
                 else:
                     fields.pop(field_name, None)
 
+        if _apply_corrupted_perk_override(fields, corrupted_perk_overrides):
+            continue
         if _uses_untrusted_corrupted_perk_label(fields):
             fields.pop("corrupted_perk_label", None)
     return normalized_records
@@ -259,7 +277,16 @@ def _normalize_generated_output_for_site(target: ExportTarget, generated_path: P
     site_records = (
         _read_json_list(target.site_path, target, "site output") if target.site_path.is_file() else []
     )
-    normalized_records = _normalize_generated_records_for_site(target, generated_records, site_records)
+    try:
+        corrupted_perk_overrides = load_perk_label_overrides(PERK_LABEL_OVERRIDES_PATH)
+    except (OSError, json.JSONDecodeError, ValueError) as exc:
+        raise ExportError(f"{PERK_LABEL_OVERRIDES_PATH} failed to read perk label overrides: {exc}") from exc
+    normalized_records = _normalize_generated_records_for_site(
+        target,
+        generated_records,
+        site_records,
+        corrupted_perk_overrides,
+    )
     if normalized_records != generated_records:
         _write_json_list(generated_path, normalized_records)
 

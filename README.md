@@ -26,7 +26,7 @@ Run validation before committing data or drop-source changes:
 python -m tools.codex_pipeline validate
 ```
 
-The first pipeline slice validates weapons, armors, monsters, image manifests, inline page scripts, and special drop-source overrides from `data/codex-overrides/drop_sources.json`.
+The first pipeline slice validates weapons, armors, monsters, image manifests, inline page scripts, special drop-source overrides from `data/codex-overrides/drop_sources.json`, and corrupted perk label overrides from `data/codex-overrides/perk_labels.json`.
 
 Export client data into the intermediate generated-output folder without touching site files:
 
@@ -34,7 +34,7 @@ Export client data into the intermediate generated-output folder without touchin
 python -m tools.codex_pipeline export-client-data
 ```
 
-Armor exports preserve existing site values for audited unknown fields (`unknown_26`, `unknown_27`) and suppress newly generated `unknown_29` values until those fields are mapped to a known meaning. Meaningful generated fields such as perks, corrupted perks, and image frame data still appear in review diffs. Corrupted perk labels that only match the base perk fallback are removed so unknown corrupted perk values stay numeric until they are explicitly mapped.
+Armor exports preserve existing site values for audited unknown fields (`unknown_26`, `unknown_27`) and suppress newly generated `unknown_29` values until those fields are mapped to a known meaning. Meaningful generated fields such as perks, corrupted perks, and image frame data still appear in review diffs. Corrupted perk labels that only match the base perk fallback are removed so unknown corrupted perk values stay numeric until they are explicitly mapped in `data/codex-overrides/perk_labels.json`.
 
 Sync generated files into the site after reviewing them:
 

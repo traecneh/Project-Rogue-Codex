@@ -5,6 +5,7 @@ import tempfile
 import textwrap
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from tools.codex_pipeline.exports import (
     ExportTarget,
@@ -333,6 +334,58 @@ class ExportCommandTests(unittest.TestCase):
             self.assertNotIn("corrupted_perk_label", exported[0]["fields"])
             self.assertEqual(41, exported[0]["fields"]["corrupted_perk"])
             self.assertEqual("Vengeance (Tier 2)", exported[1]["fields"]["corrupted_perk_label"])
+
+    def test_export_client_data_applies_explicit_corrupted_perk_label_overrides(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            script = root / "extract_weapons.py"
+            source = root / "source.dat"
+            site_path = root / "site" / "weapons.json"
+            output_dir = root / "generated"
+            override_path = root / "perk_labels.json"
+            source.write_bytes(b"fake source")
+            override_path.write_text(
+                json.dumps({"schemaVersion": 1, "corruptedPerkLabels": {"41": "Mapped Frost Effect"}}),
+                encoding="utf-8",
+            )
+            script.write_text(
+                textwrap.dedent(
+                    """
+                    import json
+                    import sys
+                    from pathlib import Path
+
+                    output = Path(sys.argv[2])
+                    output.write_text(json.dumps([
+                        {
+                            "id": 1,
+                            "name": "Mapped Label",
+                            "fields": {
+                                "perk": 22,
+                                "perk_label": "Frozen Heart (Tier 1)",
+                                "corrupted_perk": 41,
+                                "corrupted_perk_label": "Frozen Heart (Tier 1)"
+                            }
+                        }
+                    ]), encoding="utf-8")
+                    """
+                ).strip()
+                + "\n",
+                encoding="utf-8",
+            )
+            target = ExportTarget(
+                name="weapons",
+                extractor_script=script,
+                source_data=source,
+                output_filename="weapons.json",
+                site_path=site_path,
+            )
+
+            with patch("tools.codex_pipeline.exports.PERK_LABEL_OVERRIDES_PATH", override_path):
+                export_client_data([target], output_dir=output_dir, python_executable=sys.executable)
+
+            exported = json.loads((output_dir / "weapons.json").read_text(encoding="utf-8"))
+            self.assertEqual("Mapped Frost Effect", exported[0]["fields"]["corrupted_perk_label"])
 
     def test_build_generated_diff_report_normalizes_untrusted_corrupted_perk_labels(self):
         with tempfile.TemporaryDirectory() as tmp:

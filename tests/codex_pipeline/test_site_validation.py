@@ -74,6 +74,56 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn("armors drop override item not found: Unknown Amulet", messages)
         self.assertIn("armors drop override monster not found: Unknown Monster", messages)
 
+    def test_corrupted_perk_validation_requires_unknown_overrides_for_unlabeled_codes(self):
+        from tools.codex_pipeline.validators.site import validate_corrupted_perk_labels
+
+        item_data = {
+            "weapons": [
+                {
+                    "id": 1,
+                    "name": "Grips of Winter",
+                    "fields": {"corrupted_perk": 41},
+                }
+            ],
+            "armors": [],
+        }
+
+        issues = validate_corrupted_perk_labels(item_data, corrupted_perk_overrides={})
+        self.assertIn("unmapped corrupted perk code 41", "\n".join(issue.message for issue in issues))
+
+        self.assertEqual(
+            [],
+            validate_corrupted_perk_labels(item_data, corrupted_perk_overrides={41: None}),
+        )
+
+    def test_corrupted_perk_validation_checks_explicit_label_overrides(self):
+        from tools.codex_pipeline.validators.site import validate_corrupted_perk_labels
+
+        item_data = {
+            "weapons": [
+                {
+                    "id": 1,
+                    "name": "Mapped Label",
+                    "fields": {"corrupted_perk": 41, "corrupted_perk_label": "Wrong Label"},
+                },
+                {
+                    "id": 2,
+                    "name": "Known Unknown",
+                    "fields": {"corrupted_perk": 24, "corrupted_perk_label": "Should Not Exist"},
+                },
+            ],
+            "armors": [],
+        }
+
+        issues = validate_corrupted_perk_labels(
+            item_data,
+            corrupted_perk_overrides={41: "Mapped Frost Effect", 24: None},
+        )
+
+        messages = "\n".join(issue.message for issue in issues)
+        self.assertIn("expected corrupted perk 41 label", messages)
+        self.assertIn("configured as unknown but has label", messages)
+
     def test_inline_script_parser_reports_syntax_errors(self):
         from tools.codex_pipeline.validators.site import validate_inline_scripts
 
