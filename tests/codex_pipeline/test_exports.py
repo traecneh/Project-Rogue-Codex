@@ -276,6 +276,8 @@ class ExportCommandTests(unittest.TestCase):
             self.assertEqual(0, synced[0]["fields"]["unknown_27"])
             self.assertNotIn("unknown_29", synced[0]["fields"])
             self.assertEqual(6, synced[0]["fields"]["corrupted_perk"])
+            self.assertNotIn(b"\r\n", generated.read_bytes())
+            self.assertNotIn(b"\r\n", site_path.read_bytes())
 
     def test_export_client_data_removes_untrusted_corrupted_perk_labels(self):
         with tempfile.TemporaryDirectory() as tmp:

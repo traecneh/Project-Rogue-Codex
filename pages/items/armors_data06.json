@@ -1493,11 +1493,12 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "corrupted_perk": 0,
+      "corrupted_perk": 6,
       "value": 230000,
       "slot_label": "Chest",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Rejuvenation (Tier 1)"
+      "perk_label": "Rejuvenation (Tier 1)",
+      "corrupted_perk_label": "Vitality (Tier 1)"
     }
   },
   {
@@ -1594,7 +1595,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "corrupted_perk": 0,
+      "corrupted_perk": 24,
       "value": 100000,
       "slot_label": "Chest",
       "max_rarity_label": "Legendary",
@@ -2597,11 +2598,12 @@
       "to_hit": 0,
       "unknown_93": 59,
       "unknown_94": 1,
-      "corrupted_perk": 0,
+      "corrupted_perk": 521,
       "value": 750000,
       "slot_label": "Chest",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Magic Shield (Tier 2)"
+      "perk_label": "Magic Shield (Tier 2)",
+      "corrupted_perk_label": "Magic Shield (Tier 3)"
     }
   },
   {
@@ -3098,11 +3100,12 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "corrupted_perk": 0,
+      "corrupted_perk": 522,
       "value": 500000,
       "slot_label": "Chest",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Desperation (Tier 3)"
+      "perk_label": "Desperation (Tier 3)",
+      "corrupted_perk_label": "Juggernaut (Tier 3)"
     }
   },
   {
@@ -3300,11 +3303,12 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "corrupted_perk": 0,
+      "corrupted_perk": 524,
       "value": 750000,
       "slot_label": "Chest",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Rejuvenation (Tier 3)"
+      "perk_label": "Rejuvenation (Tier 3)",
+      "corrupted_perk_label": "Alchemist (Tier 3)"
     }
   },
   {
@@ -3802,10 +3806,11 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "corrupted_perk": 0,
+      "corrupted_perk": 6,
       "value": 500000,
       "slot_label": "Chest",
-      "max_rarity_label": "Ascendant"
+      "max_rarity_label": "Ascendant",
+      "corrupted_perk_label": "Vitality (Tier 1)"
     }
   },
   {
@@ -4003,11 +4008,12 @@
       "to_hit": 0,
       "unknown_93": 43,
       "unknown_94": 1,
-      "corrupted_perk": 0,
+      "corrupted_perk": 518,
       "value": 750000,
       "slot_label": "Chest",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Alchemist (Tier 3)"
+      "perk_label": "Alchemist (Tier 3)",
+      "corrupted_perk_label": "Vitality (Tier 3)"
     }
   },
   {
@@ -4305,10 +4311,11 @@
       "to_hit": 0,
       "unknown_93": 68,
       "unknown_94": 0,
-      "corrupted_perk": 0,
+      "corrupted_perk": 304,
       "value": 0,
       "max_rarity_label": "Ascendant",
-      "perk_label": "Knowledge (Tier 3)"
+      "perk_label": "Knowledge (Tier 3)",
+      "corrupted_perk_label": "Bloodlust (Tier 2)"
     }
   },
   {
@@ -7109,11 +7116,12 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "corrupted_perk": 0,
+      "corrupted_perk": 286,
       "value": 450000,
       "slot_label": "Helmet",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Rejuvenation (Tier 3)"
+      "perk_label": "Rejuvenation (Tier 3)",
+      "corrupted_perk_label": "Garrote (Tier 2)"
     }
   },
   {
@@ -7410,11 +7418,12 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "corrupted_perk": 0,
+      "corrupted_perk": 267,
       "value": 750000,
       "slot_label": "Helmet",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Juggernaut (Tier 2)"
+      "perk_label": "Juggernaut (Tier 2)",
+      "corrupted_perk_label": "Parry (Tier 2)"
     }
   },
   {
@@ -7511,7 +7520,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "corrupted_perk": 0,
+      "corrupted_perk": 2,
       "value": 450000,
       "slot_label": "Helmet",
       "max_rarity_label": "Ascendant"
@@ -11925,11 +11934,12 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "corrupted_perk": 0,
+      "corrupted_perk": 281,
       "value": 300000,
       "slot_label": "Shield",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Slayer (Tier 2)"
+      "perk_label": "Slayer (Tier 2)",
+      "corrupted_perk_label": "Hazmat (Tier 2)"
     }
   },
   {
@@ -12126,7 +12136,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "corrupted_perk": 0,
+      "corrupted_perk": 544,
       "value": 750000,
       "slot_label": "Shield",
       "max_rarity_label": "Ascendant",
@@ -12629,11 +12639,12 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "corrupted_perk": 0,
+      "corrupted_perk": 100,
       "value": 750000,
       "slot_label": "Shield",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Lifesteal (Tier 3)"
+      "perk_label": "Lifesteal (Tier 3)",
+      "corrupted_perk_label": "Runic (Tier 1)"
     }
   },
   {
@@ -15539,11 +15550,12 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "corrupted_perk": 0,
+      "corrupted_perk": 286,
       "value": 400000,
       "slot_label": "Leggings",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Hawkeye (Tier 2)"
+      "perk_label": "Hawkeye (Tier 2)",
+      "corrupted_perk_label": "Garrote (Tier 2)"
     }
   },
   {
@@ -15840,10 +15852,11 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "corrupted_perk": 0,
+      "corrupted_perk": 10,
       "value": 400000,
       "slot_label": "Leggings",
-      "max_rarity_label": "Ascendant"
+      "max_rarity_label": "Ascendant",
+      "corrupted_perk_label": "Juggernaut (Tier 1)"
     }
   },
   {
@@ -18647,10 +18660,11 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "corrupted_perk": 0,
+      "corrupted_perk": 21,
       "value": 275000,
       "slot_label": "Gauntlets",
-      "max_rarity_label": "Ascendant"
+      "max_rarity_label": "Ascendant",
+      "corrupted_perk_label": "Demon Blood"
     }
   },
   {
@@ -18947,10 +18961,11 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "corrupted_perk": 0,
+      "corrupted_perk": 6,
       "value": 275000,
       "slot_label": "Gauntlets",
-      "max_rarity_label": "Ascendant"
+      "max_rarity_label": "Ascendant",
+      "corrupted_perk_label": "Vitality (Tier 1)"
     }
   },
   {
@@ -19852,7 +19867,7 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 1,
-      "corrupted_perk": 0,
+      "corrupted_perk": 553,
       "value": 0,
       "slot_label": "Cosmetic",
       "max_rarity_label": "Ascendant",
@@ -20096,7 +20111,7 @@
       "unknown_30": 0,
       "unknown_31": 1,
       "unknown_33": 2,
-      "frame_1_x": 688,
+      "frame_1_x": 848,
       "frame_1_y": 0,
       "frame_1_width": 16,
       "frame_1_height": 16,
@@ -20157,11 +20172,12 @@
       "to_hit": 0,
       "unknown_93": 61,
       "unknown_94": 1,
-      "corrupted_perk": 0,
+      "corrupted_perk": 357,
       "value": 0,
       "slot_label": "Cosmetic",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Vengeance (Tier 1)"
+      "perk_label": "Vengeance (Tier 1)",
+      "corrupted_perk_label": "Vengeance (Tier 2)"
     }
   },
   {
@@ -23409,10 +23425,11 @@
       "to_hit": 0,
       "unknown_93": 0,
       "unknown_94": 0,
-      "corrupted_perk": 0,
+      "corrupted_perk": 552,
       "value": 0,
       "max_rarity_label": "Common",
-      "perk_label": "Overpower (Tier 2)"
+      "perk_label": "Overpower (Tier 2)",
+      "corrupted_perk_label": "Overpower (Tier 3)"
     }
   },
   {

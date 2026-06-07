@@ -145,7 +145,7 @@ def _read_json_list(path: Path, target: ExportTarget, label: str) -> list[Any]:
 
 
 def _write_json_list(path: Path, data: list[Any]) -> None:
-    path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    path.write_text(json.dumps(data, indent=2), encoding="utf-8", newline="\n")
 
 
 def _prepare_generated_path(path: Path) -> None:
