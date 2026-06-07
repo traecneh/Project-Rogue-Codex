@@ -54,7 +54,6 @@ Records whose names are not recoverable (would have been "Monster_<idx>") are
 omitted from the output. The script reports how many were written vs skipped.
 """
 
-import sys
 from pathlib import Path
 
 try:
@@ -75,11 +74,11 @@ try:
         enrich_monster_fields,
     )
     from tools.codex_pipeline.extractors.shared import (
+        ExtractorRunConfig,
         extract_ascii_name,
         find_varying_indices,
         load_xor_encoded_records,
-        parse_extractor_args,
-        write_extractor_output,
+        run_configured_extractor,
     )
 except ModuleNotFoundError:
     from field_schemas import (
@@ -99,15 +98,22 @@ except ModuleNotFoundError:
         enrich_monster_fields,
     )
     from shared import (
+        ExtractorRunConfig,
         extract_ascii_name,
         find_varying_indices,
         load_xor_encoded_records,
-        parse_extractor_args,
-        write_extractor_output,
+        run_configured_extractor,
     )
 
 XOR_KEY_WORD = 0xD4D4
 WORDS_PER_RECORD = 270
+RUN_CONFIG = ExtractorRunConfig(
+    default_data_filename="data03.dat",
+    default_output_filename="monsters_data03.json",
+    output_label="monsters",
+    record_label="Monster",
+    skipped_message_template="skipped {skipped} without names",
+)
 
 
 def parse_data03(path: Path):
@@ -142,39 +148,11 @@ def parse_data03(path: Path):
 
 
 def main(argv=None):
-    if argv is None:
-        argv = sys.argv[1:]
-
-    # Default paths: same folder as this script
-    base_dir = Path(__file__).resolve().parent
-    parsed_args = parse_extractor_args(argv)
-    data_path = parsed_args.data_path
-    out_path = parsed_args.out_path
-    diff_out_path = parsed_args.diff_out_path
-    if data_path is None:
-        data_path = base_dir / "data03.dat"
-    if out_path is None:
-        out_path = base_dir / "monsters_data03.json"
-    if diff_out_path is not None:
-        if diff_out_path.exists() and diff_out_path.is_dir():
-            raise SystemExit(f"Diff output path is a directory: {diff_out_path}")
-        if not diff_out_path.parent.exists():
-            raise SystemExit(
-                f"Diff output directory not found: {diff_out_path.parent}"
-            )
-
-    if not data_path.is_file():
-        raise SystemExit(f"Input file not found: {data_path}")
-
-    monsters, skipped, warnings = parse_data03(data_path)
-    write_extractor_output(
-        monsters,
-        out_path,
-        output_label="monsters",
-        skipped_message=f"skipped {skipped} without names",
-        record_label="Monster",
-        diff_out_path=diff_out_path,
-        warnings=warnings,
+    run_configured_extractor(
+        argv,
+        script_file=__file__,
+        config=RUN_CONFIG,
+        parse_records=parse_data03,
     )
 
 

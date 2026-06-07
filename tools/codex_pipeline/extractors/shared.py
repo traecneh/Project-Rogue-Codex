@@ -4,16 +4,33 @@ import difflib
 import hashlib
 import json
 import struct
+import sys
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Any, Callable, Sequence
 
 
 @dataclass(frozen=True)
 class ParsedExtractorArgs:
     data_path: Path | None
     out_path: Path | None
+    diff_out_path: Path | None
+
+
+@dataclass(frozen=True)
+class ExtractorRunConfig:
+    default_data_filename: str
+    default_output_filename: str
+    output_label: str
+    record_label: str
+    skipped_message_template: str
+
+
+@dataclass(frozen=True)
+class ResolvedExtractorPaths:
+    data_path: Path
+    out_path: Path
     diff_out_path: Path | None
 
 
@@ -249,6 +266,72 @@ def write_extractor_output(
         print("Warnings:")
         for warning in warnings:
             print(f"  - {warning}")
+
+
+def resolve_extractor_paths(
+    argv: Sequence[str],
+    *,
+    script_file: str | Path,
+    config: ExtractorRunConfig,
+) -> ResolvedExtractorPaths:
+    base_dir = Path(script_file).resolve().parent
+    parsed_args = parse_extractor_args(list(argv))
+    data_path = parsed_args.data_path or base_dir / config.default_data_filename
+    out_path = parsed_args.out_path or base_dir / config.default_output_filename
+    diff_out_path = parsed_args.diff_out_path
+
+    if diff_out_path is not None:
+        if diff_out_path.exists() and diff_out_path.is_dir():
+            raise SystemExit(f"Diff output path is a directory: {diff_out_path}")
+        if not diff_out_path.parent.exists():
+            raise SystemExit(f"Diff output directory not found: {diff_out_path.parent}")
+
+    if not data_path.is_file():
+        raise SystemExit(f"Input file not found: {data_path}")
+
+    return ResolvedExtractorPaths(
+        data_path=data_path,
+        out_path=out_path,
+        diff_out_path=diff_out_path,
+    )
+
+
+def _unpack_parse_result(parse_result: Any) -> tuple[list[Any], int, Sequence[str]]:
+    if len(parse_result) == 2:
+        records, skipped = parse_result
+        warnings: Sequence[str] = ()
+    elif len(parse_result) == 3:
+        records, skipped, warnings = parse_result
+    else:
+        raise ValueError(
+            "Extractor parser must return (records, skipped) or "
+            "(records, skipped, warnings)."
+        )
+    return records, skipped, warnings
+
+
+def run_configured_extractor(
+    argv: Sequence[str] | None,
+    *,
+    script_file: str | Path,
+    config: ExtractorRunConfig,
+    parse_records: Callable[[Path], Any],
+) -> list[Any]:
+    if argv is None:
+        argv = sys.argv[1:]
+
+    paths = resolve_extractor_paths(argv, script_file=script_file, config=config)
+    records, skipped, warnings = _unpack_parse_result(parse_records(paths.data_path))
+    write_extractor_output(
+        records,
+        paths.out_path,
+        output_label=config.output_label,
+        skipped_message=config.skipped_message_template.format(skipped=skipped),
+        record_label=config.record_label,
+        diff_out_path=paths.diff_out_path,
+        warnings=warnings,
+    )
+    return records
 
 
 def parse_extractor_args(argv: list[str]) -> ParsedExtractorArgs:

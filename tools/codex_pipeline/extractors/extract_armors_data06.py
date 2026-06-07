@@ -29,7 +29,6 @@ Notes:
   once you map them to in-game meanings (e.g. armor_value, value, resist_type, etc.).
 """
 
-import sys
 from pathlib import Path
 
 try:
@@ -43,11 +42,11 @@ try:
         resolve_corrupted_perk_label,
     )
     from tools.codex_pipeline.extractors.shared import (
+        ExtractorRunConfig,
         extract_ascii_name,
         find_varying_indices,
         load_xor_encoded_records,
-        parse_extractor_args,
-        write_extractor_output,
+        run_configured_extractor,
     )
 except ModuleNotFoundError:
     from field_schemas import (
@@ -60,17 +59,26 @@ except ModuleNotFoundError:
         resolve_corrupted_perk_label,
     )
     from shared import (
+        ExtractorRunConfig,
         extract_ascii_name,
         find_varying_indices,
         load_xor_encoded_records,
-        parse_extractor_args,
-        write_extractor_output,
+        run_configured_extractor,
     )
 
 XOR_KEY_WORD = 0xD4D4
 # data06.dat packs eight 240-byte armor entries back-to-back in each 1920-byte
 # chunk. A single armor entry is 120 16-bit words.
 WORDS_PER_RECORD = 120
+RUN_CONFIG = ExtractorRunConfig(
+    default_data_filename="data06.dat",
+    default_output_filename="armors_data06.json",
+    output_label="armors",
+    record_label="Item",
+    skipped_message_template="skipped {skipped} without names",
+)
+
+
 def parse_data06(path: Path):
     """Parse data06.dat and return a list of armor dicts."""
     records = load_xor_encoded_records(
@@ -109,38 +117,11 @@ def parse_data06(path: Path):
 
 
 def main(argv=None):
-    if argv is None:
-        argv = sys.argv[1:]
-
-    # Default paths: same folder as this script
-    base_dir = Path(__file__).resolve().parent
-    parsed_args = parse_extractor_args(argv)
-    data_path = parsed_args.data_path
-    out_path = parsed_args.out_path
-    diff_out_path = parsed_args.diff_out_path
-    if data_path is None:
-        data_path = base_dir / "data06.dat"
-    if out_path is None:
-        out_path = base_dir / "armors_data06.json"
-    if diff_out_path is not None:
-        if diff_out_path.exists() and diff_out_path.is_dir():
-            raise SystemExit(f"Diff output path is a directory: {diff_out_path}")
-        if not diff_out_path.parent.exists():
-            raise SystemExit(
-                f"Diff output directory not found: {diff_out_path.parent}"
-            )
-
-    if not data_path.is_file():
-        raise SystemExit(f"Input file not found: {data_path}")
-
-    armors, skipped = parse_data06(data_path)
-    write_extractor_output(
-        armors,
-        out_path,
-        output_label="armors",
-        skipped_message=f"skipped {skipped} without names",
-        record_label="Item",
-        diff_out_path=diff_out_path,
+    armors = run_configured_extractor(
+        argv,
+        script_file=__file__,
+        config=RUN_CONFIG,
+        parse_records=parse_data06,
     )
 
     # Report perk values and associated armors (to help map/verify labels)

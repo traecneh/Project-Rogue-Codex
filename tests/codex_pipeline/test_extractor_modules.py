@@ -91,6 +91,80 @@ class ExtractorModuleTests(unittest.TestCase):
         self.assertIn("Weapon 1: Old Blade -> New Blade", diff_text)
         self.assertIn("  ~ fields.damage: 1 -> 2", diff_text)
 
+    def test_shared_extractor_runner_resolves_paths_and_writes_output(self):
+        from tools.codex_pipeline.extractors.shared import (
+            ExtractorRunConfig,
+            run_configured_extractor,
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            data_path = root / "data.dat"
+            out_path = root / "records.json"
+            data_path.write_bytes(b"source")
+            seen_paths = []
+
+            def parse_records(path):
+                seen_paths.append(path)
+                return (
+                    [{"id": 7, "name": "Runner Record", "fields": {"value": 3}}],
+                    4,
+                    ["runner warning"],
+                )
+
+            buffer = StringIO()
+            with redirect_stdout(buffer):
+                records = run_configured_extractor(
+                    [],
+                    script_file=root / "extract_records.py",
+                    config=ExtractorRunConfig(
+                        default_data_filename="data.dat",
+                        default_output_filename="records.json",
+                        output_label="records",
+                        record_label="Record",
+                        skipped_message_template="skipped {skipped} parser rows",
+                    ),
+                    parse_records=parse_records,
+                )
+
+            output = buffer.getvalue()
+            written_records = json.loads(out_path.read_text(encoding="utf-8"))
+
+        self.assertEqual([data_path], seen_paths)
+        self.assertEqual(records, written_records)
+        self.assertIn("Wrote 1 records to", output)
+        self.assertIn("(skipped 4 parser rows)", output)
+        self.assertIn("Warnings:", output)
+        self.assertIn("  - runner warning", output)
+
+    def test_shared_extractor_runner_validates_diff_output_path(self):
+        from tools.codex_pipeline.extractors.shared import (
+            ExtractorRunConfig,
+            run_configured_extractor,
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            data_path = root / "data.dat"
+            diff_dir = root / "diff"
+            data_path.write_bytes(b"source")
+            diff_dir.mkdir()
+            config = ExtractorRunConfig(
+                default_data_filename="data.dat",
+                default_output_filename="records.json",
+                output_label="records",
+                record_label="Record",
+                skipped_message_template="skipped {skipped} parser rows",
+            )
+
+            with self.assertRaisesRegex(SystemExit, "Diff output path is a directory"):
+                run_configured_extractor(
+                    [str(data_path), "--diff-out", str(diff_dir)],
+                    script_file=root / "extract_records.py",
+                    config=config,
+                    parse_records=lambda path: ([], 0),
+                )
+
     def test_shared_binary_helpers_decode_records_and_extract_names(self):
         from tools.codex_pipeline.extractors.shared import (
             extract_ascii_name,
@@ -294,7 +368,7 @@ class ExtractorModuleTests(unittest.TestCase):
         self.assertTrue(callable(extract_weapons_data05.parse_data05))
         self.assertTrue(callable(extract_armors_data06.parse_data06))
 
-    def test_extractor_scripts_share_output_writing(self):
+    def test_extractor_scripts_share_run_configuration(self):
         extractors_dir = Path("tools/codex_pipeline/extractors")
         for script_name in (
             "extract_monsters_data03.py",
@@ -302,7 +376,13 @@ class ExtractorModuleTests(unittest.TestCase):
             "extract_armors_data06.py",
         ):
             source = (extractors_dir / script_name).read_text(encoding="utf-8")
-            self.assertIn("write_extractor_output(", source)
+            self.assertIn("ExtractorRunConfig(", source)
+            self.assertIn("run_configured_extractor(", source)
+            self.assertNotIn("parse_extractor_args(", source)
+            self.assertNotIn("write_extractor_output(", source)
+            self.assertNotIn("base_dir = Path(__file__).resolve().parent", source)
+            self.assertNotIn("Diff output path is a directory", source)
+            self.assertNotIn("Input file not found", source)
             self.assertNotIn("backup_info = None", source)
             self.assertNotIn("make_backup_path(", source)
             self.assertNotIn("file_hash(", source)
