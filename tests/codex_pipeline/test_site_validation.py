@@ -161,6 +161,38 @@ class SiteValidationTests(unittest.TestCase):
                 self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
                 self.assertEqual([], inline_scripts)
 
+    def test_item_pages_share_common_page_utilities(self):
+        from tools.codex_pipeline import cli
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        helper_path = REPO_ROOT / "js" / "items-page-utils.js"
+        helper_script = helper_path.read_text(encoding="utf-8")
+
+        self.assertIn(helper_path, cli.VALIDATED_SCRIPT_PATHS)
+        self.assertIn("window.RogueCodexItemPageUtils", helper_script)
+        self.assertIn("createRouteHelpers", helper_script)
+        self.assertIn("createTooltipPinningController", helper_script)
+        self.assertIn("createDropsFromPill", helper_script)
+        self.assertIn("formatValue", helper_script)
+        self.assertIn("ensureImage", helper_script)
+
+        for page_name in ["weapons", "armors"]:
+            with self.subTest(page=page_name):
+                html_path = REPO_ROOT / "pages" / "items" / f"{page_name}.html"
+                script_path = REPO_ROOT / "js" / f"{page_name}-page.js"
+                html = html_path.read_text(encoding="utf-8")
+                script = script_path.read_text(encoding="utf-8")
+
+                self.assertIn('<script src="js/items-page-utils.js"></script>', html)
+                self.assertIn("const itemUtils = window.RogueCodexItemPageUtils || {};", script)
+                self.assertIn("itemUtils.createRouteHelpers", script)
+                self.assertIn("itemUtils.createTooltipPinningController", script)
+                self.assertIn("itemUtils.createDropsFromPill", script)
+                self.assertIn("itemUtils.formatValue", script)
+                self.assertIn("itemUtils.ensureImage", script)
+                self.assertNotIn("function attachTooltipPinning", script)
+                self.assertNotIn("function unpinTooltip", script)
+
     def test_monsters_page_script_supports_detail_deep_links(self):
         from tools.codex_pipeline.config import REPO_ROOT
 
@@ -178,6 +210,7 @@ class SiteValidationTests(unittest.TestCase):
         from tools.codex_pipeline.config import REPO_ROOT
 
         utils_script = (REPO_ROOT / "js" / "utils.js").read_text(encoding="utf-8")
+        item_utils_script = (REPO_ROOT / "js" / "items-page-utils.js").read_text(encoding="utf-8")
         monsters_script = (REPO_ROOT / "js" / "monsters-page.js").read_text(encoding="utf-8")
         weapons_script = (REPO_ROOT / "js" / "weapons-page.js").read_text(encoding="utf-8")
         armors_script = (REPO_ROOT / "js" / "armors-page.js").read_text(encoding="utf-8")
@@ -186,16 +219,15 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn("function buildWeaponDetailUrl", utils_script)
         self.assertIn("function buildArmorDetailUrl", utils_script)
         self.assertNotIn("UNIQUE_WEAPON_DROP_SOURCES", weapons_script)
-        self.assertIn('utils.getDropSourceMonsterIdsByItem(dropSources, "weapons", item?.name)', weapons_script)
-        self.assertIn("nameLink.href = buildMonsterDetailUrl(entry.id || entry.name);", weapons_script)
-        self.assertIn("nameLink.href = buildMonsterDetailUrl(entry.id || entry.name);", armors_script)
+        self.assertIn("utils.getDropSourceMonsterIdsByItem(dropSources, itemKind, item?.name)", item_utils_script)
+        self.assertIn('itemKind: "weapons"', weapons_script)
+        self.assertIn('itemKind: "armors"', armors_script)
+        self.assertIn("nameLink.href = buildMonsterDetailUrl(entry.id || entry.name);", item_utils_script)
         self.assertIn("label.href = buildWeaponDetailUrl(entry.name);", monsters_script)
         self.assertIn("label.href = buildArmorDetailUrl(entry.name);", monsters_script)
-        self.assertIn("const stopTooltipLinkPropagation", weapons_script)
-        self.assertIn("const stopTooltipLinkPropagation", armors_script)
+        self.assertIn("const stopTooltipLinkPropagation", item_utils_script)
         self.assertIn("const stopTooltipLinkPropagation", monsters_script)
-        self.assertIn('nameLink.addEventListener("click", stopTooltipLinkPropagation);', weapons_script)
-        self.assertIn('nameLink.addEventListener("click", stopTooltipLinkPropagation);', armors_script)
+        self.assertIn('nameLink.addEventListener("click", stopTooltipLinkPropagation);', item_utils_script)
         self.assertIn('label.addEventListener("click", stopTooltipLinkPropagation);', monsters_script)
 
     def test_item_pages_support_detail_url_state(self):
@@ -203,20 +235,22 @@ class SiteValidationTests(unittest.TestCase):
 
         weapons_script = (REPO_ROOT / "js" / "weapons-page.js").read_text(encoding="utf-8")
         armors_script = (REPO_ROOT / "js" / "armors-page.js").read_text(encoding="utf-8")
+        helper_script = (REPO_ROOT / "js" / "items-page-utils.js").read_text(encoding="utf-8")
 
         self.assertIn("const updateWeaponDetailUrl", weapons_script)
         self.assertIn("const selectWeapon", weapons_script)
         self.assertIn('window.addEventListener("popstate"', weapons_script)
-        self.assertIn('history.pushState({ weaponId }, "", targetUrl);', weapons_script)
+        self.assertIn("const updateWeaponDetailUrl = weaponRouteHelpers.updateDetailUrl;", weapons_script)
         self.assertIn("selectWeapon(item, { updateUrl: true });", weapons_script)
         self.assertIn("clearDetails({ updateUrl: true });", weapons_script)
 
         self.assertIn("const updateArmorDetailUrl", armors_script)
         self.assertIn("const selectArmor", armors_script)
         self.assertIn('window.addEventListener("popstate"', armors_script)
-        self.assertIn('history.pushState({ armorId }, "", targetUrl);', armors_script)
+        self.assertIn("const updateArmorDetailUrl = armorRouteHelpers.updateDetailUrl;", armors_script)
         self.assertIn("selectArmor(item, { updateUrl: true });", armors_script)
         self.assertIn("clearDetails({ updateUrl: true });", armors_script)
+        self.assertIn('history.pushState(state, "", targetUrl);', helper_script)
 
     def test_manifest_self_reference_is_an_error(self):
         from tools.codex_pipeline.validators.site import validate_manifest_entries

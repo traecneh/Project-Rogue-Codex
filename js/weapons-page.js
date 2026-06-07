@@ -30,6 +30,7 @@
   };
 
   const utils = window.RogueCodexUtils || {};
+  const itemUtils = window.RogueCodexItemPageUtils || {};
   const fetchJsonCached =
     utils.fetchJsonCached ||
     ((targetUrl) =>
@@ -220,18 +221,8 @@
   let sortDir = "desc";
   let searchTerm = "";
   const urlParams = new URLSearchParams(window.location.search);
-  const normalizeWeaponId = (value) =>
-    (value || "")
-      .toString()
-      .toLowerCase()
-      .replace(/[^a-z0-9_-]+/g, "-")
-      .replace(/^-+|-+$/g, "");
-  const normalizeMonsterId = (value) =>
-    (value || "")
-      .toString()
-      .toLowerCase()
-      .replace(/[^a-z0-9_-]+/g, "-")
-      .replace(/^-+|-+$/g, "");
+  const normalizeWeaponId = itemUtils.normalizeItemId;
+  const normalizeMonsterId = itemUtils.normalizeItemId;
   const rawWeaponQuery = (urlParams.get("weapon") || urlParams.get("weaponName") || "").trim();
   const initialWeaponId = normalizeWeaponId(rawWeaponQuery);
   const initialWeaponSearchTerm = rawWeaponQuery.replace(/-/g, " ").trim();
@@ -248,37 +239,10 @@
     }
   };
 
-  const normalizeSortValue = (value) => {
-    if (value === null || value === undefined) return "";
-    if (typeof value === "number") return value;
-    if (typeof value === "boolean") return value ? 1 : 0;
-    if (Array.isArray(value)) return value.join(", ");
-    if (typeof value === "object") return JSON.stringify(value);
-    return String(value).toLowerCase();
-  };
-
-  const formatValue = (value) => {
-    if (value === null || value === undefined || value === "") return "-";
-    if (Array.isArray(value)) return value.join(", ");
-    if (typeof value === "object") return JSON.stringify(value);
-    return value;
-  };
-
-  const formatNumber = (value, options = {}) => {
-    if (value === null || value === undefined || value === "") return "-";
-    const num = Number(value);
-    if (Number.isNaN(num)) return value;
-    return num.toLocaleString("en-US", { maximumFractionDigits: 0, ...options });
-  };
-
-  const formatRange = (min, max) => {
-    const hasMin = min !== null && min !== undefined && min !== "";
-    const hasMax = max !== null && max !== undefined && max !== "";
-    if (hasMin && hasMax) return `${formatNumber(min)} - ${formatNumber(max)}`;
-    if (hasMin) return `${formatNumber(min)}`;
-    if (hasMax) return `${formatNumber(max)}`;
-    return "-";
-  };
+  const normalizeSortValue = itemUtils.normalizeSortValue;
+  const formatValue = (value) => itemUtils.formatValue(value, { emptyStringAsDash: true });
+  const formatNumber = itemUtils.formatNumber;
+  const formatRange = itemUtils.formatRange;
 
   const ELEMENT_KEYS_WITH_MULTIPLIERS = new Set(["fire", "cold", "electric", "poison", "disease", "acid"]);
 
@@ -551,240 +515,24 @@
     return pill;
   };
 
-  const getMonsterDropRange = (monsterLevel) => {
-    const level = Number(monsterLevel);
-    if (!Number.isFinite(level)) return null;
-    return {
-      level,
-      min: Math.max(0, level - 5),
-      max: level + 5,
-    };
-  };
-
-  const stopTooltipLinkPropagation = (event) => {
-    event.stopPropagation();
-  };
-
-  const createDropsFromPill = (item) => {
-    const pill = document.createElement("span");
-    pill.className = "detail-pill";
-    pill.textContent = "Monsters";
-    pill.tabIndex = 0;
-    pill.setAttribute("aria-label", "Monsters that drop this item");
-
-    const tooltip = document.createElement("span");
-    tooltip.className = "detail-tooltip";
-    tooltip.role = "tooltip";
-
-      if (!Array.isArray(monsters) || !monsters.length) {
-        tooltip.textContent = "No monster data loaded";
-      } else {
-        const itemLevel = Number(item?.level);
-        const uniqueMonsterIds =
-          typeof utils.getDropSourceMonsterIdsByItem === "function"
-            ? utils.getDropSourceMonsterIdsByItem(dropSources, "weapons", item?.name)
-            : [];
-        const useUnique = Array.isArray(uniqueMonsterIds) && uniqueMonsterIds.length > 0;
-        if (!useUnique && !Number.isFinite(itemLevel)) {
-          tooltip.textContent = "No level data";
-        } else {
-          const uniqueSet = useUnique ? new Set(uniqueMonsterIds.map((id) => normalizeMonsterId(id))) : null;
-          const list = monsters
-            .map((monster) => {
-              const monsterId = normalizeMonsterId(monster.name || monster.id);
-              if (useUnique) {
-                if (!uniqueSet.has(monsterId)) return null;
-              } else {
-                const range = getMonsterDropRange(monster.level);
-                if (!range) return null;
-                if (itemLevel < range.min || itemLevel > range.max) return null;
-              }
-              const typeRaw = monster.monsterType || "";
-              const levelValue = Number(monster.level);
-              return {
-                id: monsterId,
-                name: monster.name || "Unknown Monster",
-                type: typeRaw,
-                typeKey: normalizeFilterValue(typeRaw) || "unknown",
-                level: Number.isFinite(levelValue) ? levelValue : null,
-              };
-            })
-            .filter(Boolean)
-            .sort((a, b) => {
-              if (a.typeKey !== b.typeKey) return a.typeKey.localeCompare(b.typeKey);
-              const levelA = Number.isFinite(a.level) ? a.level : -Infinity;
-              const levelB = Number.isFinite(b.level) ? b.level : -Infinity;
-              if (levelB !== levelA) return levelB - levelA;
-              return a.name.localeCompare(b.name);
-            });
-
-        const headerRow = document.createElement("div");
-        headerRow.className = "detail-tooltip-row";
-        const nameLabel = document.createElement("span");
-        nameLabel.className = "detail-tooltip-label";
-        nameLabel.textContent = "Name";
-        const typeLabel = document.createElement("span");
-        typeLabel.className = "detail-tooltip-label";
-        typeLabel.textContent = "Type";
-        headerRow.appendChild(nameLabel);
-        headerRow.appendChild(typeLabel);
-        tooltip.appendChild(headerRow);
-
-        const divider = document.createElement("div");
-        divider.className = "detail-tooltip-divider";
-        tooltip.appendChild(divider);
-
-          if (!list.length) {
-            const emptyRow = document.createElement("div");
-            emptyRow.className = "detail-tooltip-row";
-            const emptyLabel = document.createElement("span");
-            emptyLabel.className = "detail-tooltip-label";
-            emptyLabel.textContent = "No monsters in range";
-            emptyRow.appendChild(emptyLabel);
-            tooltip.appendChild(emptyRow);
-          } else {
-            let lastTypeKey = null;
-            list.forEach((entry) => {
-              if (lastTypeKey && entry.typeKey !== lastTypeKey) {
-                const groupDivider = document.createElement("div");
-                groupDivider.className = "detail-tooltip-divider";
-                tooltip.appendChild(groupDivider);
-              }
-              lastTypeKey = entry.typeKey;
-
-              const row = document.createElement("div");
-              row.className = "detail-tooltip-row";
-              const nameLink = document.createElement("a");
-              nameLink.textContent = entry.name;
-              nameLink.href = buildMonsterDetailUrl(entry.id || entry.name);
-              nameLink.addEventListener("click", stopTooltipLinkPropagation);
-              const typeSpan = document.createElement("span");
-              typeSpan.className = "detail-tooltip-type";
-              typeSpan.textContent = formatMonsterTypeLabel(entry.type);
-              row.appendChild(nameLink);
-              row.appendChild(typeSpan);
-              tooltip.appendChild(row);
-            });
-          }
-        }
-      }
-
-    pill.appendChild(tooltip);
-    return pill;
-  };
-
-  const setOptions = (select, options) => {
-    if (!select) return;
-    select.innerHTML = "";
-    options.forEach(({ value, label }) => {
-      const opt = document.createElement("option");
-      opt.value = value;
-      opt.textContent = label;
-      select.appendChild(opt);
+  const createDropsFromPill = (item) =>
+    itemUtils.createDropsFromPill({
+      buildMonsterDetailUrl,
+      dropSources,
+      formatMonsterTypeLabel,
+      item,
+      itemKind: "weapons",
+      monsters,
+      normalizeFilterValue,
+      normalizeMonsterId,
+      utils,
     });
-  };
 
-  const enableToggleSelect = (selectEl) => {
-    if (!selectEl) return;
-    selectEl.addEventListener("mousedown", (event) => {
-      const option = event.target;
-      if (option && option.tagName === "OPTION") {
-        event.preventDefault();
-        option.selected = !option.selected;
-        selectEl.dispatchEvent(new Event("change", { bubbles: true }));
-      }
-    });
-  };
-
-  const imageManifestCache = new Map();
-  const loadImageManifest = (folder) => {
-    if (imageManifestCache.has(folder)) return imageManifestCache.get(folder);
-    const map = new Map();
-    imageManifestCache.set(folder, map);
-    fetch(`images/${folder}/manifest.json`)
-      .then((res) => (res.ok ? res.json() : Promise.reject()))
-      .then((list) => {
-        const entries = Array.isArray(list) ? list : [];
-        entries.forEach((path) => {
-          const file = String(path || "").split("/").pop() || "";
-          const base = file.replace(/\.[^.]+$/, "").toLowerCase();
-          if (base) map.set(base, path);
-        });
-      })
-      .catch(() => {});
-    return map;
-  };
-
-  loadImageManifest("weapons");
-
-  const deriveImageCandidates = (item, folder = "weapons") => {
-    const candidates = [];
-    const direct = typeof item === "string" ? item : item && item.image;
-    if (direct) candidates.push(direct);
-    const name = (item && (item.name || item.Name || item.id)) || "";
-    const trimmed = String(name).trim();
-    const lower = trimmed.toLowerCase();
-    const manifest = imageManifestCache.get(folder);
-    if (manifest && lower && manifest.has(lower)) {
-      candidates.push(manifest.get(lower));
-    }
-    if (trimmed) {
-      const encoded = encodeURIComponent(trimmed);
-      candidates.push(`images/${folder}/${encoded}.gif`, `images/${folder}/${encoded}.png`);
-    }
-    return Array.from(new Set(candidates.filter(Boolean)));
-  };
-
-  const ensureImage = (img, fallback, item, folder = "weapons") => {
-    if (!img || !fallback) return;
-    fallback.style.display = "none";
-    const sources = deriveImageCandidates(item, folder);
-    if (!sources.length) {
-      img.style.display = "none";
-      fallback.style.display = "flex";
-      return;
-    }
-    let index = 0;
-    const trySet = () => {
-      img.onload = () => {
-        img.style.display = "block";
-        fallback.style.display = "none";
-      };
-      img.onerror = () => {
-        index += 1;
-        if (index < sources.length) {
-          trySet();
-        } else {
-          img.style.display = "none";
-          fallback.style.display = "flex";
-        }
-      };
-      img.src = sources[index];
-    };
-    trySet();
-  };
-
-  const createCell = (labelContent, valueContent) => {
-    const cell = document.createElement("div");
-    cell.className = "detail-cell";
-    const label = document.createElement("span");
-    label.className = "detail-label";
-    if (labelContent instanceof Node) {
-      label.appendChild(labelContent);
-    } else {
-      label.textContent = labelContent;
-    }
-    const value = document.createElement("div");
-    value.className = "detail-value";
-    if (valueContent instanceof Node) {
-      value.appendChild(valueContent);
-    } else {
-      value.textContent = valueContent;
-    }
-    cell.appendChild(label);
-    cell.appendChild(value);
-    return cell;
-  };
+  const setOptions = itemUtils.setOptions;
+  const enableToggleSelect = itemUtils.enableToggleSelect;
+  const weaponImageLoader = itemUtils.createImageLoader("weapons", ["weapons"]);
+  const ensureImage = weaponImageLoader.ensureImage || itemUtils.ensureImage;
+  const createCell = itemUtils.createCell;
 
   const createPill = (items) => {
     const pill = document.createElement("span");
@@ -956,73 +704,19 @@
   };
 
   const getWeaponId = (item) => normalizeWeaponId(item && (item.id || item.name));
-
-  const getWeaponDetailName = (item) => (item && item.name ? item.name.toString().trim() : "");
-
-  const buildWeaponDetailStateUrl = (item) => {
-    const name = getWeaponDetailName(item);
-    if (!name) return "";
-    const path = window.location.pathname || "pages/items/weapons.html";
-    return `${path}?weapon=${encodeURIComponent(name)}`;
-  };
-
-  const buildWeaponListUrl = () => window.location.pathname || "pages/items/weapons.html";
-
-  const updateWeaponDetailUrl = (item, options = {}) => {
-    const weaponId = getWeaponId(item);
-    const targetUrl = buildWeaponDetailStateUrl(item);
-    if (!weaponId || !targetUrl || !window.history || !window.history.pushState) return;
-    const currentUrl = `${window.location.pathname}${window.location.search}`;
-    if (currentUrl === targetUrl) return;
-    try {
-      if (options.replace) {
-        history.replaceState({ weaponId }, "", targetUrl);
-      } else {
-        history.pushState({ weaponId }, "", targetUrl);
-      }
-    } catch (error) {
-      // Ignore history failures on nonstandard local file URLs.
-    }
-  };
-
-  const updateWeaponListUrl = (options = {}) => {
-    const targetUrl = buildWeaponListUrl();
-    if (!targetUrl || !window.history || !window.history.pushState) return;
-    const currentUrl = `${window.location.pathname}${window.location.search}`;
-    if (currentUrl === targetUrl) return;
-    try {
-      if (options.replace) {
-        history.replaceState({}, "", targetUrl);
-      } else {
-        history.pushState({}, "", targetUrl);
-      }
-    } catch (error) {
-      // Ignore history failures on nonstandard local file URLs.
-    }
-  };
-
-  const getWeaponRouteFromLocation = () => {
-    const params = new URLSearchParams(window.location.search);
-    const raw = (params.get("weapon") || params.get("weaponName") || "").trim();
-    return {
-      id: normalizeWeaponId(raw),
-      name: raw.toLowerCase(),
-    };
-  };
-
-  const findWeaponByRoute = (list, routeId, routeName) =>
-    (Array.isArray(list) ? list : []).find((weapon) => {
-      const id = getWeaponId(weapon);
-      const nameId = normalizeWeaponId(weapon && weapon.name);
-      const nameLower = (weapon.name || "").toLowerCase();
-      return (routeId && (id === routeId || nameId === routeId)) || (routeName && nameLower === routeName);
-    });
-
-  const getSelectedWeaponFromLocation = (list = items) => {
-    const route = getWeaponRouteFromLocation();
-    if (!route.id && !route.name) return null;
-    return findWeaponByRoute(list, route.id, route.name);
-  };
+  const weaponRouteHelpers = itemUtils.createRouteHelpers({
+    fallbackPath: "pages/items/weapons.html",
+    getItemId: getWeaponId,
+    getItemName: (item) => (item && item.name ? item.name : ""),
+    normalizeId: normalizeWeaponId,
+    queryKeys: ["weapon", "weaponName"],
+    stateKey: "weaponId",
+  });
+  const updateWeaponDetailUrl = weaponRouteHelpers.updateDetailUrl;
+  const updateWeaponListUrl = weaponRouteHelpers.updateListUrl;
+  const getWeaponRouteFromLocation = weaponRouteHelpers.getRouteFromLocation;
+  const findWeaponByRoute = weaponRouteHelpers.findByRoute;
+  const getSelectedWeaponFromLocation = (list = items) => weaponRouteHelpers.getSelectedFromLocation(list);
 
   const selectWeapon = (item, options = {}) => {
     if (!item) return;
@@ -1090,68 +784,15 @@
     updateSortIndicators();
   };
 
-  let pinnedTooltip = null;
-  let pinDocumentListenerAttached = false;
-
-  function unpinTooltip(tooltip) {
-    if (!tooltip) return;
-    tooltip.classList.remove("is-pinned");
-    if (pinnedTooltip === tooltip) pinnedTooltip = null;
-  }
-
-  function attachTooltipPinning(root) {
-    const scope = root || document;
-    const tooltips = scope.querySelectorAll(".detail-pill .detail-tooltip");
-    tooltips.forEach((tooltip) => {
-      if (!tooltip || tooltip.dataset.pinWired === "1") return;
-      const pill = tooltip.closest(".detail-pill");
-      if (!pill) return;
-
-      const toggle = (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        if (pinnedTooltip && pinnedTooltip !== tooltip) {
-          unpinTooltip(pinnedTooltip);
-        }
-        if (tooltip.classList.contains("is-pinned")) {
-          unpinTooltip(tooltip);
-        } else {
-          tooltip.classList.add("is-pinned");
-          pinnedTooltip = tooltip;
-        }
-      };
-
-      pill.addEventListener("click", toggle);
-      pill.addEventListener("keydown", (event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          toggle(event);
-        }
-      });
-      tooltip.addEventListener("click", (event) => event.stopPropagation());
-      tooltip.dataset.pinWired = "1";
-    });
-
-    if (!pinDocumentListenerAttached) {
-      pinDocumentListenerAttached = true;
-      document.addEventListener("click", (event) => {
-        if (!pinnedTooltip) return;
-        const pill = pinnedTooltip.closest(".detail-pill");
-        if (pill && pill.contains(event.target)) return;
-        unpinTooltip(pinnedTooltip);
-      });
-      document.addEventListener("keydown", (event) => {
-        if (event.key !== "Escape") return;
-        if (!pinnedTooltip) return;
-        unpinTooltip(pinnedTooltip);
-      });
-    }
-  }
+  const tooltipPinning = itemUtils.createTooltipPinningController();
+  const attachTooltipPinning = tooltipPinning.attachTooltipPinning;
+  const unpinPinnedTooltip = tooltipPinning.unpinPinnedTooltip;
 
   const setDetails = (item, options = {}) => {
     if (!item) return;
     detailFields.name.textContent = item.name || "Unknown";
     ensureImage(detailFields.image, detailFields.imageFallback, item);
-    if (pinnedTooltip) unpinTooltip(pinnedTooltip);
+    unpinPinnedTooltip();
 
     const container = detailFields.properties;
     container.innerHTML = "";
@@ -1297,7 +938,7 @@
 
   const clearDetails = (options = {}) => {
     details.classList.remove("show");
-    if (pinnedTooltip) unpinTooltip(pinnedTooltip);
+    unpinPinnedTooltip();
     if (options.updateUrl) updateWeaponListUrl({ replace: options.replaceUrl });
   };
 

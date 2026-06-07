@@ -61,6 +61,7 @@ VALIDATED_STYLE_PATHS = [
 
 VALIDATED_SCRIPT_PATHS = [
     REPO_ROOT / "js" / "utils.js",
+    REPO_ROOT / "js" / "items-page-utils.js",
     REPO_ROOT / "js" / "weapons-page.js",
     REPO_ROOT / "js" / "armors-page.js",
     REPO_ROOT / "js" / "monsters-page.js",

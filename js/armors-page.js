@@ -8,13 +8,9 @@
   const searchInput = document.getElementById("item-search");
   const slotFilter = document.getElementById("filter-slot");
   const resistFilter = document.getElementById("filter-resist");
+  const itemUtils = window.RogueCodexItemPageUtils || {};
   const urlParams = new URLSearchParams(window.location.search);
-  const normalizeArmorId = (value) =>
-    (value || "")
-      .toString()
-      .toLowerCase()
-      .replace(/[^a-z0-9_-]+/g, "-")
-      .replace(/^-+|-+$/g, "");
+  const normalizeArmorId = itemUtils.normalizeItemId;
   const initialArmorQuery = (urlParams.get("armor") || urlParams.get("armorName") || "").trim();
   const initialArmorId = normalizeArmorId(initialArmorQuery);
   const initialArmorSearchTerm = initialArmorQuery.replace(/-/g, " ").trim();
@@ -185,12 +181,7 @@
     return titleCase(String(value));
   };
 
-  const normalizeMonsterId = (value) =>
-    (value || "")
-      .toString()
-      .toLowerCase()
-      .replace(/[^a-z0-9_-]+/g, "-")
-      .replace(/^-+|-+$/g, "");
+  const normalizeMonsterId = itemUtils.normalizeItemId;
 
   const renderEmpty = (message) => {
     if (!tableHeadRow.children.length) {
@@ -202,125 +193,27 @@
     }
   };
 
-  const normalizeSortValue = (value) => {
-    if (value === null || value === undefined) return "";
-    if (typeof value === "number") return value;
-    if (typeof value === "boolean") return value ? 1 : 0;
-    if (Array.isArray(value)) return value.join(", ");
-    if (typeof value === "object") return JSON.stringify(value);
-    return String(value).toLowerCase();
-  };
-
-  const formatValue = (value) => {
-    if (value === null || value === undefined) return "-";
-    if (Array.isArray(value)) return value.join(", ");
-    if (typeof value === "object") return JSON.stringify(value);
-    return value;
-  };
-
-  const formatNumber = (value, options = {}) => {
-    if (value === null || value === undefined || value === "") return "-";
-    const num = Number(value);
-    if (Number.isNaN(num)) return value;
-    return num.toLocaleString("en-US", { maximumFractionDigits: 0, ...options });
-  };
-
-  const toNumber = (value) => {
-    const num = Number(value);
-    return Number.isFinite(num) ? num : null;
-  };
-
-  const setOptions = (select, options) => {
-    if (!select) return;
-    select.innerHTML = "";
-    options.forEach(({ value, label }) => {
-      const opt = document.createElement("option");
-      opt.value = value;
-      opt.textContent = label;
-      select.appendChild(opt);
-    });
-  };
-
-  const enableToggleSelect = (selectEl) => {
-    if (!selectEl) return;
-    selectEl.addEventListener("mousedown", (event) => {
-      const option = event.target;
-      if (option && option.tagName === "OPTION") {
-        event.preventDefault();
-        option.selected = !option.selected;
-        selectEl.dispatchEvent(new Event("change", { bubbles: true }));
-      }
-    });
-  };
+  const normalizeSortValue = itemUtils.normalizeSortValue;
+  const formatValue = itemUtils.formatValue;
+  const formatNumber = itemUtils.formatNumber;
+  const toNumber = itemUtils.toNumber;
+  const setOptions = itemUtils.setOptions;
+  const enableToggleSelect = itemUtils.enableToggleSelect;
 
   const getArmorId = (item) => normalizeArmorId(item && (item.id || item.name));
-
-  const getArmorDetailName = (item) => (item && item.name ? item.name.toString().trim() : "");
-
-  const buildArmorDetailStateUrl = (item) => {
-    const name = getArmorDetailName(item);
-    if (!name) return "";
-    const path = window.location.pathname || "pages/items/armors.html";
-    return `${path}?armor=${encodeURIComponent(name)}`;
-  };
-
-  const buildArmorListUrl = () => window.location.pathname || "pages/items/armors.html";
-
-  const updateArmorDetailUrl = (item, options = {}) => {
-    const armorId = getArmorId(item);
-    const targetUrl = buildArmorDetailStateUrl(item);
-    if (!armorId || !targetUrl || !window.history || !window.history.pushState) return;
-    const currentUrl = `${window.location.pathname}${window.location.search}`;
-    if (currentUrl === targetUrl) return;
-    try {
-      if (options.replace) {
-        history.replaceState({ armorId }, "", targetUrl);
-      } else {
-        history.pushState({ armorId }, "", targetUrl);
-      }
-    } catch (error) {
-      // Ignore history failures on nonstandard local file URLs.
-    }
-  };
-
-  const updateArmorListUrl = (options = {}) => {
-    const targetUrl = buildArmorListUrl();
-    if (!targetUrl || !window.history || !window.history.pushState) return;
-    const currentUrl = `${window.location.pathname}${window.location.search}`;
-    if (currentUrl === targetUrl) return;
-    try {
-      if (options.replace) {
-        history.replaceState({}, "", targetUrl);
-      } else {
-        history.pushState({}, "", targetUrl);
-      }
-    } catch (error) {
-      // Ignore history failures on nonstandard local file URLs.
-    }
-  };
-
-  const getArmorRouteFromLocation = () => {
-    const params = new URLSearchParams(window.location.search);
-    const raw = (params.get("armor") || params.get("armorName") || "").trim();
-    return {
-      id: normalizeArmorId(raw),
-      name: raw.toLowerCase(),
-    };
-  };
-
-  const findArmorByRoute = (list, routeId, routeName) =>
-    (Array.isArray(list) ? list : []).find((armor) => {
-      const id = getArmorId(armor);
-      const nameId = normalizeArmorId(armor && armor.name);
-      const nameLower = (armor.name || "").toLowerCase();
-      return (routeId && (id === routeId || nameId === routeId)) || (routeName && nameLower === routeName);
-    });
-
-  const getSelectedArmorFromLocation = (list = items) => {
-    const route = getArmorRouteFromLocation();
-    if (!route.id && !route.name) return null;
-    return findArmorByRoute(list, route.id, route.name);
-  };
+  const armorRouteHelpers = itemUtils.createRouteHelpers({
+    fallbackPath: "pages/items/armors.html",
+    getItemId: getArmorId,
+    getItemName: (item) => (item && item.name ? item.name : ""),
+    normalizeId: normalizeArmorId,
+    queryKeys: ["armor", "armorName"],
+    stateKey: "armorId",
+  });
+  const updateArmorDetailUrl = armorRouteHelpers.updateDetailUrl;
+  const updateArmorListUrl = armorRouteHelpers.updateListUrl;
+  const getArmorRouteFromLocation = armorRouteHelpers.getRouteFromLocation;
+  const findArmorByRoute = armorRouteHelpers.findByRoute;
+  const getSelectedArmorFromLocation = (list = items) => armorRouteHelpers.getSelectedFromLocation(list);
 
   const selectArmor = (item, options = {}) => {
     if (!item) return;
@@ -328,37 +221,9 @@
     setDetails(item, { scroll: options.scroll });
   };
 
-  const createCell = (labelContent, valueContent) => {
-    const cell = document.createElement("div");
-    cell.className = "detail-cell";
-    const label = document.createElement("span");
-    label.className = "detail-label";
-    if (labelContent instanceof Node) {
-      label.appendChild(labelContent);
-    } else {
-      label.textContent = labelContent;
-    }
-    const value = document.createElement("div");
-    value.className = "detail-value";
-    if (valueContent instanceof Node) {
-      value.appendChild(valueContent);
-    } else {
-      value.textContent = valueContent;
-    }
-    cell.appendChild(label);
-    cell.appendChild(value);
-    return cell;
-  };
-
-  const addDivider = (container) =>
-    container.appendChild(Object.assign(document.createElement("div"), { className: "detail-divider" }));
-
-  const addRow = (container, entries, cols) => {
-    const row = document.createElement("div");
-    row.className = `detail-row detail-row-cols-${cols || 2}`;
-    entries.forEach(([label, value]) => row.appendChild(createCell(label, value)));
-    container.appendChild(row);
-  };
+  const createCell = itemUtils.createCell;
+  const addDivider = itemUtils.addDivider;
+  const addRow = itemUtils.addRow;
 
   const updateSortIndicators = () => {
     document.querySelectorAll(".items-table th[data-sort-key]").forEach((th) => {
@@ -493,74 +358,8 @@
     }
   };
 
-  const imageManifestCache = new Map();
-  const loadImageManifest = (folder) => {
-    if (imageManifestCache.has(folder)) return imageManifestCache.get(folder);
-    const map = new Map();
-    imageManifestCache.set(folder, map);
-    fetch(`images/${folder}/manifest.json`)
-      .then((res) => (res.ok ? res.json() : Promise.reject()))
-      .then((list) => {
-        const entries = Array.isArray(list) ? list : [];
-        entries.forEach((path) => {
-          const file = String(path || "").split("/").pop() || "";
-          const base = file.replace(/\.[^.]+$/, "").toLowerCase();
-          if (base) map.set(base, path);
-        });
-      })
-      .catch(() => {});
-    return map;
-  };
-
-  loadImageManifest("armors");
-  loadImageManifest("weapons");
-
-  const deriveImageCandidates = (item, folder = "armors") => {
-    const candidates = [];
-    const direct = typeof item === "string" ? item : item && item.image;
-    if (direct) candidates.push(direct);
-    const name = (item && (item.name || item.Name || item.id)) || "";
-    const trimmed = String(name).trim();
-    const lower = trimmed.toLowerCase();
-    const manifest = imageManifestCache.get(folder);
-    if (manifest && lower && manifest.has(lower)) {
-      candidates.push(manifest.get(lower));
-    }
-    if (trimmed) {
-      const encoded = encodeURIComponent(trimmed);
-      candidates.push(`images/${folder}/${encoded}.gif`, `images/${folder}/${encoded}.png`);
-    }
-    return Array.from(new Set(candidates.filter(Boolean)));
-  };
-
-  const ensureImage = (img, fallback, item, folder = "armors") => {
-    if (!img || !fallback) return;
-    fallback.style.display = "none";
-    const sources = deriveImageCandidates(item, folder);
-    if (!sources.length) {
-      img.style.display = "none";
-      fallback.style.display = "flex";
-      return;
-    }
-    let index = 0;
-    const trySet = () => {
-      img.onload = () => {
-        img.style.display = "block";
-        fallback.style.display = "none";
-      };
-      img.onerror = () => {
-        index += 1;
-        if (index < sources.length) {
-          trySet();
-        } else {
-          img.style.display = "none";
-          fallback.style.display = "flex";
-        }
-      };
-      img.src = sources[index];
-    };
-    trySet();
-  };
+  const armorImageLoader = itemUtils.createImageLoader("armors", ["armors", "weapons"]);
+  const ensureImage = armorImageLoader.ensureImage || itemUtils.ensureImage;
 
   const buildHead = () => {
     tableHeadRow.innerHTML = "";
@@ -724,190 +523,28 @@
     return pill;
   };
 
-  const getMonsterDropRange = (monsterLevel) => {
-    const level = Number(monsterLevel);
-    if (!Number.isFinite(level)) return null;
-    return {
-      level,
-      min: Math.max(0, level - 5),
-      max: level + 5,
-    };
-  };
-
-  const stopTooltipLinkPropagation = (event) => {
-    event.stopPropagation();
-  };
-
-  const createDropsFromPill = (item) => {
-    const pill = document.createElement("span");
-    pill.className = "detail-pill";
-    pill.textContent = "Monsters";
-    pill.tabIndex = 0;
-    pill.setAttribute("aria-label", "Monsters that drop this item");
-
-    const tooltip = document.createElement("span");
-    tooltip.className = "detail-tooltip";
-    tooltip.role = "tooltip";
-
-      if (!Array.isArray(monsters) || !monsters.length) {
-        tooltip.textContent = "No monster data loaded";
-      } else {
-        const itemLevel = Number(item?.level);
-        const uniqueMonsterIds =
-          typeof utils.getDropSourceMonsterIdsByItem === "function"
-            ? utils.getDropSourceMonsterIdsByItem(dropSources, "armors", item?.name)
-            : [];
-        const useUnique = Array.isArray(uniqueMonsterIds) && uniqueMonsterIds.length > 0;
-        if (!useUnique && !Number.isFinite(itemLevel)) {
-          tooltip.textContent = "No level data";
-        } else {
-          const uniqueSet = useUnique ? new Set(uniqueMonsterIds.map((id) => normalizeMonsterId(id))) : null;
-          const list = monsters
-            .map((monster) => {
-              const monsterId = normalizeMonsterId(monster.name || monster.id);
-              if (useUnique) {
-                if (!uniqueSet.has(monsterId)) return null;
-              } else {
-                const range = getMonsterDropRange(monster.level);
-                if (!range) return null;
-                if (itemLevel < range.min || itemLevel > range.max) return null;
-              }
-              const typeRaw = monster.monsterType || "";
-              const levelValue = Number(monster.level);
-              return {
-                id: monsterId,
-                name: monster.name || "Unknown Monster",
-                type: typeRaw,
-                typeKey: normalizeFilterValue(typeRaw) || "unknown",
-                level: Number.isFinite(levelValue) ? levelValue : null,
-              };
-            })
-            .filter(Boolean)
-            .sort((a, b) => {
-              if (a.typeKey !== b.typeKey) return a.typeKey.localeCompare(b.typeKey);
-              const levelA = Number.isFinite(a.level) ? a.level : -Infinity;
-              const levelB = Number.isFinite(b.level) ? b.level : -Infinity;
-              if (levelB !== levelA) return levelB - levelA;
-              return a.name.localeCompare(b.name);
-            });
-
-        const headerRow = document.createElement("div");
-        headerRow.className = "detail-tooltip-row";
-        const nameLabel = document.createElement("span");
-        nameLabel.className = "detail-tooltip-label";
-        nameLabel.textContent = "Name";
-        const typeLabel = document.createElement("span");
-        typeLabel.className = "detail-tooltip-label";
-        typeLabel.textContent = "Type";
-        headerRow.appendChild(nameLabel);
-        headerRow.appendChild(typeLabel);
-        tooltip.appendChild(headerRow);
-
-        const divider = document.createElement("div");
-        divider.className = "detail-tooltip-divider";
-        tooltip.appendChild(divider);
-
-          if (!list.length) {
-            const emptyRow = document.createElement("div");
-            emptyRow.className = "detail-tooltip-row";
-            const emptyLabel = document.createElement("span");
-            emptyLabel.className = "detail-tooltip-label";
-            emptyLabel.textContent = "No monsters in range";
-            emptyRow.appendChild(emptyLabel);
-            tooltip.appendChild(emptyRow);
-          } else {
-            let lastTypeKey = null;
-            list.forEach((entry) => {
-              if (lastTypeKey && entry.typeKey !== lastTypeKey) {
-                const groupDivider = document.createElement("div");
-                groupDivider.className = "detail-tooltip-divider";
-                tooltip.appendChild(groupDivider);
-              }
-              lastTypeKey = entry.typeKey;
-
-              const row = document.createElement("div");
-              row.className = "detail-tooltip-row";
-              const nameLink = document.createElement("a");
-              nameLink.textContent = entry.name;
-              nameLink.href = buildMonsterDetailUrl(entry.id || entry.name);
-              nameLink.addEventListener("click", stopTooltipLinkPropagation);
-              const typeSpan = document.createElement("span");
-              typeSpan.className = "detail-tooltip-type";
-              typeSpan.textContent = formatMonsterTypeLabel(entry.type);
-              row.appendChild(nameLink);
-              row.appendChild(typeSpan);
-              tooltip.appendChild(row);
-            });
-          }
-        }
-      }
-
-    pill.appendChild(tooltip);
-    return pill;
-  };
-
-  let pinnedTooltip = null;
-  let pinDocumentListenerAttached = false;
-
-  function unpinTooltip(tooltip) {
-    if (!tooltip) return;
-    tooltip.classList.remove("is-pinned");
-    if (pinnedTooltip === tooltip) pinnedTooltip = null;
-  }
-
-  function attachTooltipPinning(root) {
-    const scope = root || document;
-    const tooltips = scope.querySelectorAll(".detail-pill .detail-tooltip");
-    tooltips.forEach((tooltip) => {
-      if (!tooltip || tooltip.dataset.pinWired === "1") return;
-      const pill = tooltip.closest(".detail-pill");
-      if (!pill) return;
-
-      const toggle = (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        if (pinnedTooltip && pinnedTooltip !== tooltip) {
-          unpinTooltip(pinnedTooltip);
-        }
-        if (tooltip.classList.contains("is-pinned")) {
-          unpinTooltip(tooltip);
-        } else {
-          tooltip.classList.add("is-pinned");
-          pinnedTooltip = tooltip;
-        }
-      };
-
-      pill.addEventListener("click", toggle);
-      pill.addEventListener("keydown", (event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          toggle(event);
-        }
-      });
-      tooltip.addEventListener("click", (event) => event.stopPropagation());
-      tooltip.dataset.pinWired = "1";
+  const createDropsFromPill = (item) =>
+    itemUtils.createDropsFromPill({
+      buildMonsterDetailUrl,
+      dropSources,
+      formatMonsterTypeLabel,
+      item,
+      itemKind: "armors",
+      monsters,
+      normalizeFilterValue,
+      normalizeMonsterId,
+      utils,
     });
 
-    if (!pinDocumentListenerAttached) {
-      pinDocumentListenerAttached = true;
-      document.addEventListener("click", (event) => {
-        if (!pinnedTooltip) return;
-        const pill = pinnedTooltip.closest(".detail-pill");
-        if (pill && pill.contains(event.target)) return;
-        unpinTooltip(pinnedTooltip);
-      });
-      document.addEventListener("keydown", (event) => {
-        if (event.key !== "Escape") return;
-        if (!pinnedTooltip) return;
-        unpinTooltip(pinnedTooltip);
-      });
-    }
-  }
+  const tooltipPinning = itemUtils.createTooltipPinningController();
+  const attachTooltipPinning = tooltipPinning.attachTooltipPinning;
+  const unpinPinnedTooltip = tooltipPinning.unpinPinnedTooltip;
 
   const setDetails = (item, options = {}) => {
     if (!item) return;
     detailFields.name.textContent = item.name || "Unknown";
     ensureImage(detailFields.image, detailFields.imageFallback, item, "armors");
-    if (pinnedTooltip) unpinTooltip(pinnedTooltip);
+    unpinPinnedTooltip();
 
     const container = detailFields.properties;
     container.innerHTML = "";
@@ -1026,7 +663,7 @@
 
   const clearDetails = (options = {}) => {
     details.classList.remove("show");
-    if (pinnedTooltip) unpinTooltip(pinnedTooltip);
+    unpinPinnedTooltip();
     if (options.updateUrl) updateArmorListUrl({ replace: options.replaceUrl });
   };
 
