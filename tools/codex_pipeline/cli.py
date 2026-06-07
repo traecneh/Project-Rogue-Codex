@@ -31,6 +31,7 @@ from tools.codex_pipeline.exports import (
 from tools.codex_pipeline.game_update import build_game_update_report
 from tools.codex_pipeline.perks import load_perk_label_overrides
 from tools.codex_pipeline.sources import validate_export_sources
+from tools.codex_pipeline.site_smoke import run_site_smoke as run_site_smoke_command
 from tools.codex_pipeline.unknowns import build_unknown_field_reports
 from tools.codex_pipeline.validators.site import (
     ValidationIssue,
@@ -88,6 +89,7 @@ def build_parser() -> argparse.ArgumentParser:
             "game-update-report",
             "sync-assets",
             "game-update-workflow",
+            "smoke-site",
         ],
     )
     parser.add_argument(
@@ -140,6 +142,12 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         default=3,
         help="Maximum nonzero record samples per unknown field.",
+    )
+    parser.add_argument(
+        "--smoke-timeout-ms",
+        type=int,
+        default=20_000,
+        help="Timeout in milliseconds for each local site smoke-test action.",
     )
     return parser
 
@@ -374,6 +382,15 @@ def run_verify_live(args: argparse.Namespace) -> int:
         status = "OK" if result.ok else "ERROR"
         print(f"LIVE {status} {result.label}: {result.message} ({result.url})")
     return 0 if all(result.ok for result in results) else 1
+
+
+def run_smoke_site(args: argparse.Namespace) -> int:
+    result = run_site_smoke_command(timeout_ms=args.smoke_timeout_ms)
+    if result.stdout:
+        print(result.stdout.rstrip())
+    if result.stderr:
+        print(result.stderr.rstrip())
+    return result.returncode
 
 
 def run_doctor(args: argparse.Namespace) -> int:
@@ -619,6 +636,8 @@ def main(argv: list[str] | None = None) -> int:
         return run_export_sync(args)
     if args.command == "verify-live":
         return run_verify_live(args)
+    if args.command == "smoke-site":
+        return run_smoke_site(args)
     if args.command in {"doctor", "validate-sources"}:
         return run_doctor(args)
     if args.command == "unknown-fields":

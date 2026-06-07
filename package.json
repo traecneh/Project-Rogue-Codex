@@ -1,0 +1,10 @@
+{
+  "name": "project-rogue-codex",
+  "private": true,
+  "scripts": {
+    "smoke-site": "python -m tools.codex_pipeline smoke-site"
+  },
+  "devDependencies": {
+    "playwright": "1.60.0"
+  }
+}

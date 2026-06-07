@@ -51,6 +51,7 @@ python -m tools.codex_pipeline diff-generated
 python -m tools.codex_pipeline sync-generated --dry-run
 python -m tools.codex_pipeline sync-generated
 python -m tools.codex_pipeline validate
+python -m tools.codex_pipeline smoke-site
 ```
 
 After pushing `main`, confirm the public site:
@@ -92,6 +93,9 @@ Important commands:
 - `validate`: validates site JSON, overrides, image manifests, inline page
   scripts, configured JavaScript files, drop references, and corrupted perk
   labels.
+- `smoke-site`: starts a temporary local static server and uses Playwright to
+  verify Monsters, Weapons, and Armors deep links, reload persistence,
+  row-click URL updates, Close URL clearing, and detail-panel cross-links.
 - `drop-report`: audits drop-source overrides and prints both the item-centric
   source view and derived monster-centric loot view.
 - `verify-live`: fetches the deployed GitHub Pages site and confirms live JSON,
@@ -183,8 +187,10 @@ Generated records are normalized before review and sync:
 Local verification should include:
 
 ```powershell
+npm install
 python -m unittest discover -s tests -v
 python -m tools.codex_pipeline validate
+python -m tools.codex_pipeline smoke-site
 python -m tools.codex_pipeline verify-live
 git diff --check
 ```

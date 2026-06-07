@@ -23,6 +23,16 @@ Run validation before committing data or drop-source changes:
 python -m tools.codex_pipeline validate
 ```
 
+Run browser smoke checks before pushing page behavior changes. This starts a
+temporary local static server and verifies Monsters, Weapons, and Armors deep
+links, reload persistence, row-click URL updates, Close URL clearing, and
+detail-panel cross-links:
+
+```powershell
+npm install
+python -m tools.codex_pipeline smoke-site
+```
+
 GitHub Actions also runs the unit tests, Codex validation, and whitespace checks on pushes and pull requests targeting `main`.
 
 The first pipeline slice validates weapons, armors, monsters, image manifests, inline page scripts, special drop-source overrides from `data/codex-overrides/drop_sources.json`, and corrupted perk label overrides from `data/codex-overrides/perk_labels.json`.
