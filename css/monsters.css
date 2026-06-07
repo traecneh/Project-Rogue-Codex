@@ -160,6 +160,18 @@
   cursor: pointer;
 }
 
+.monster-link {
+  color: inherit;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.monster-link:hover,
+.monster-link:focus-visible {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
 .monster-thumb {
   width: 32px;
   height: 32px;

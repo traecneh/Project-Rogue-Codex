@@ -110,6 +110,19 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
         self.assertEqual([], inline_scripts)
 
+    def test_monsters_page_script_supports_detail_deep_links(self):
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        script_path = REPO_ROOT / "js" / "monsters-page.js"
+        script = script_path.read_text(encoding="utf-8")
+
+        self.assertIn("const buildMonsterDetailUrl", script)
+        self.assertIn("const updateMonsterDetailUrl", script)
+        self.assertIn('window.addEventListener("popstate"', script)
+        self.assertRegex(script, r"history\.pushState\([^)]*monsterId")
+        self.assertIn("nameLink.href = buildMonsterDetailUrl(monster);", script)
+        self.assertIn("selectMonster(monster, { updateUrl: true", script)
+
     def test_manifest_self_reference_is_an_error(self):
         from tools.codex_pipeline.validators.site import validate_manifest_entries
 

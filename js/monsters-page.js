@@ -57,6 +57,61 @@
     return "";
   };
 
+  const getMonsterDetailSlug = (monster) => {
+    if (!monster) return "";
+    return normalizeMonsterId(monster.name) || normalizeMonsterId(monster.id);
+  };
+
+  const buildMonsterDetailUrl = (monster) => {
+    const slug = getMonsterDetailSlug(monster);
+    if (!slug) return window.location.pathname || "monsters.html";
+    try {
+      const url = new URL(window.location.href);
+      url.search = "";
+      url.hash = "";
+      url.searchParams.set("monster", slug);
+      return `${url.pathname}${url.search}`;
+    } catch (error) {
+      return `?monster=${encodeURIComponent(slug)}`;
+    }
+  };
+
+  const buildMonsterListUrl = () => {
+    try {
+      const url = new URL(window.location.href);
+      url.search = "";
+      url.hash = "";
+      return url.pathname;
+    } catch (error) {
+      return window.location.pathname || "monsters.html";
+    }
+  };
+
+  const updateMonsterDetailUrl = (monster, options = {}) => {
+    const monsterId = getMonsterDetailSlug(monster);
+    if (!monsterId || !window.history) return;
+    const targetUrl = buildMonsterDetailUrl(monster);
+    const currentUrl = `${window.location.pathname}${window.location.search}`;
+    if (currentUrl === targetUrl) return;
+    if (options.replace) {
+      history.replaceState({ monsterId }, "", targetUrl);
+    } else {
+      history.pushState({ monsterId }, "", targetUrl);
+    }
+  };
+
+  const updateMonsterListUrl = (options = {}) => {
+    if (!window.history) return;
+    const targetUrl = buildMonsterListUrl();
+    const currentUrl = `${window.location.pathname}${window.location.search}`;
+    if (currentUrl === targetUrl) return;
+    if (options.replace) {
+      history.replaceState({}, "", targetUrl);
+    } else {
+      history.pushState({}, "", targetUrl);
+    }
+  };
+
   const getInitialSearchTerm = () => {
     const params = new URLSearchParams(window.location.search || "");
     const fromQuery = params.get("search") || params.get("q") || params.get("perk") || "";
@@ -1576,17 +1631,37 @@ const renderEmpty = (message) => {
     container.textContent = label || "Unknown";
   };
 
-  const maybeSelectPendingMonster = (list) => {
-    if (!pendingMonsterId) return;
-    const normalized = pendingMonsterId;
-    const match = (list || monsters).find((m) => {
+  const findMonsterByRouteId = (list, routeId) => {
+    const normalized = normalizeMonsterId(routeId);
+    if (!normalized) return null;
+    return (Array.isArray(list) ? list : []).find((m) => {
       const idNorm = normalizeMonsterId(m.id);
       const nameNorm = normalizeMonsterId(m.name);
       return idNorm === normalized || nameNorm === normalized;
     });
+  };
+
+  const getSelectedMonsterFromLocation = (list = monsters) => {
+    const routeId = getInitialMonsterId();
+    if (!routeId) return null;
+    return findMonsterByRouteId(list, routeId);
+  };
+
+  const selectMonster = (monster, options = {}) => {
+    if (!monster) return;
+    if (options.updateUrl) {
+      updateMonsterDetailUrl(monster, { replace: options.replaceUrl });
+    }
+    setDetails(monster, { scroll: options.scroll });
+  };
+
+  const maybeSelectPendingMonster = (list) => {
+    if (!pendingMonsterId) return;
+    const normalized = pendingMonsterId;
+    const match = findMonsterByRouteId(list || monsters, normalized) || findMonsterByRouteId(monsters, normalized);
     if (!match) return;
     pendingMonsterId = "";
-    setDetails(match);
+    selectMonster(match, { updateUrl: false });
   };
 
   const applyFilterAndSort = () => {
@@ -1685,7 +1760,18 @@ const renderTable = (rows) => {
         tr.appendChild(td);
       };
 
-      addCell(monster.name || "-");
+      const nameTd = document.createElement("td");
+      const nameLink = document.createElement("a");
+      nameLink.href = buildMonsterDetailUrl(monster);
+      nameLink.className = "monster-link";
+      nameLink.textContent = monster.name || "-";
+      nameLink.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        selectMonster(monster, { updateUrl: true });
+      });
+      nameTd.appendChild(nameLink);
+      tr.appendChild(nameTd);
       addCell(formatNumber(monster.level));
       addCell(formatNumber(monster.hpMax));
       addCell(formatDps(monster.dps));
@@ -1703,7 +1789,7 @@ const renderTable = (rows) => {
       tr.appendChild(elementTd);
 
       tr.addEventListener("click", () => {
-        setDetails(monster);
+        selectMonster(monster, { updateUrl: true });
       });
 
       fragment.appendChild(tr);
@@ -1781,7 +1867,7 @@ const unpinTooltip = (tooltip) => {
     }
   };
 
-  const setDetails = (monster) => {
+  const setDetails = (monster, options = {}) => {
     if (!monster) return;
     if (pinnedTooltip) unpinTooltip(pinnedTooltip);
     if (typeof window !== "undefined") {
@@ -1879,12 +1965,41 @@ const unpinTooltip = (tooltip) => {
     attachTooltipPinning();
 
     details.classList.add("show");
-    details.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (options.scroll !== false) {
+      details.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
   };
 
-  const clearDetails = () => {
+  const clearDetails = (options = {}) => {
     details.classList.remove("show");
+    if (typeof window !== "undefined" && window.RogueCodexDebug) {
+      window.RogueCodexDebug.selectedMonster = null;
+    }
+    if (options.updateUrl) {
+      updateMonsterListUrl({ replace: options.replaceUrl });
+    }
   };
+
+  window.addEventListener("popstate", () => {
+    const routeId = getInitialMonsterId();
+    if (!routeId) {
+      pendingMonsterId = "";
+      clearDetails({ updateUrl: false });
+      return;
+    }
+    if (!monsters.length) {
+      pendingMonsterId = routeId;
+      return;
+    }
+    const selected = getSelectedMonsterFromLocation(monsters);
+    if (selected) {
+      pendingMonsterId = "";
+      selectMonster(selected, { updateUrl: false, scroll: false });
+    } else {
+      pendingMonsterId = "";
+      clearDetails({ updateUrl: false });
+    }
+  });
 
   const attachSorting = () => {
     document.querySelectorAll(".monsters-table th[data-sort-key]").forEach((th) => {
@@ -1997,7 +2112,7 @@ const unpinTooltip = (tooltip) => {
   }
 
   if (closeBtn) {
-    closeBtn.addEventListener("click", clearDetails);
+    closeBtn.addEventListener("click", () => clearDetails({ updateUrl: true }));
   }
 
   attachTooltipPinning();
