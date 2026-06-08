@@ -335,6 +335,41 @@ class SiteValidationTests(unittest.TestCase):
         self.assertNotIn("const selectSlot", script)
         self.assertNotIn("const updateSlotEditor", script)
 
+    def test_build_planner_summary_uses_single_combined_strip(self):
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        html = (REPO_ROOT / "pages" / "General" / "build-planner.html").read_text(encoding="utf-8")
+        script = (REPO_ROOT / "js" / "build-planner.js").read_text(encoding="utf-8")
+        css = (REPO_ROOT / "css" / "build-planner.css").read_text(encoding="utf-8")
+
+        for stat in ["armor", "dps", "weight", "str", "con", "dex", "health", "dr"]:
+            self.assertIn(f'data-quick-stat="{stat}"', html)
+
+        self.assertIn('id="build-details"', html)
+        self.assertIn("<h3>Build Details</h3>", html)
+        self.assertIn('id="sum-element"', html)
+        self.assertIn('id="sum-tohit"', html)
+        self.assertIn('id="sum-resists"', html)
+        self.assertIn('id="sum-perks"', html)
+        self.assertIn('id="calc-regen"', html)
+        self.assertIn('id="calc-melee-mult"', html)
+        self.assertIn('id="calc-max-weight"', html)
+        self.assertIn('id="calc-bleed"', html)
+        self.assertIn('id="calc-crit"', html)
+        self.assertNotIn("<h3>Calculated Details</h3>", html)
+        self.assertNotIn("<h3>Combined Stats</h3>", html)
+        self.assertNotIn('id="calc-max-health"', html)
+        self.assertNotIn('id="calc-dr"', html)
+        for duplicate_id in ["sum-armor", "sum-weight", "sum-dps", "sum-str", "sum-con", "sum-dex"]:
+            self.assertNotIn(f'id="{duplicate_id}"', html)
+
+        self.assertIn("const setElementTextAndTitle", script)
+        self.assertIn("const setQuickSummary", script)
+        self.assertIn('setQuickSummary("armor"', script)
+        self.assertIn('setQuickSummary("health"', script)
+        self.assertIn('setQuickSummary("dr"', script)
+        self.assertIn(".quick-summary-card[title]", css)
+
     def test_build_planner_links_items_to_detail_pages(self):
         from tools.codex_pipeline.config import REPO_ROOT
 

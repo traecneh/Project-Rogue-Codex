@@ -131,6 +131,24 @@
           health: document.querySelector('[data-quick-stat="health"]'),
           dr: document.querySelector('[data-quick-stat="dr"]'),
         };
+        const setElementTitle = (element, title = "") => {
+          if (!element) return;
+          const card = element.closest(".quick-summary-card, .summary-card");
+          [element, card].filter(Boolean).forEach((target) => {
+            if (title) {
+              target.title = title;
+            } else {
+              target.removeAttribute("title");
+            }
+          });
+        };
+        const setElementTextAndTitle = (element, value, title = "") => {
+          if (!element) return;
+          element.textContent = value;
+          setElementTitle(element, title);
+        };
+        const setQuickSummary = (key, value, title = "") =>
+          setElementTextAndTitle(quickSummaryEls[key], value, title);
         const SHORT_STATE_PARAM = "b";
         const LEGACY_STATE_PARAM = "build";
         const BUILD_STATE_VERSION = 1;
@@ -962,25 +980,12 @@
             perkSet.add(`${race.perk} (T${raceTier})`);
           }
 
-          if (totals.armor) totals.armor.textContent = totalArmor;
-          if (totals.armor)
-            totals.armor.title = `Base armor: ${baseArmor}\nRarity bonus: ${rarityArmor}`;
-          if (totals.weight) totals.weight.textContent = totalWeight;
-          if (totals.dps) totals.dps.textContent = totalDps;
-          if (totals.element) totals.element.textContent = element || "None";
-          if (totals.toHit) totals.toHit.textContent = totalToHit;
-          if (totals.str) {
-            totals.str.textContent = totalStr;
-            totals.str.title = `Base: ${baseStrWithChar} (items ${baseStr} + character ${charStr})\nRarity bonus: ${bonusStr}`;
-          }
-          if (totals.con) {
-            totals.con.textContent = totalCon;
-            totals.con.title = `Base: ${baseConWithChar} (items ${baseCon} + character ${charCon})\nRarity bonus: ${bonusCon}`;
-          }
-          if (totals.dex) {
-            totals.dex.textContent = totalDex;
-            totals.dex.title = `Base: ${baseDexWithChar} (items ${baseDex} + character ${charDex})\nRarity bonus: ${bonusDex}`;
-          }
+          setElementTextAndTitle(
+            totals.element,
+            element || "None",
+            weapon ? `Selected weapon: ${weapon.name || "Weapon"}` : "No weapon selected."
+          );
+          setElementTextAndTitle(totals.toHit, totalToHit, `Sum of equipped item To Hit bonuses: ${totalToHit}`);
 
           const baseStatWarningEl = document.getElementById("base-stat-warning");
           const baseStatUnallocatedEl = document.getElementById("base-stat-unallocated");
@@ -1007,10 +1012,12 @@
           if (totals.resists) {
             const list = formatResists(resistTotals, { includeZero: true });
             const hasAny = list.some((entry) => toNumber(entry.value) !== 0);
+            const resistTitle = "Resistance totals from equipped items and rarity bonuses.";
             if (!hasAny) {
-              totals.resists.textContent = "None";
+              setElementTextAndTitle(totals.resists, "None", resistTitle);
             } else {
               totals.resists.innerHTML = "";
+              setElementTitle(totals.resists, resistTitle);
               list.forEach((item) => {
                 const chip = document.createElement("span");
                 chip.className = "summary-chip";
@@ -1028,12 +1035,14 @@
           }
 
           if (totals.perks) {
+            const perksTitle = "Perks from equipped items, corrupted perks, extra perks, and race.";
             if (!perkSet.size) {
-              totals.perks.textContent = "None";
+              setElementTextAndTitle(totals.perks, "None", perksTitle);
             } else {
               const utils = window.RogueCodexUtils || {};
               const getPerkTierColor = utils.getPerkTierColor || (() => "");
               totals.perks.innerHTML = "";
+              setElementTitle(totals.perks, perksTitle);
               Array.from(perkSet).forEach((perk) => {
                 const chip = document.createElement("span");
                 chip.className = "summary-chip";
@@ -1049,71 +1058,73 @@
           }
 
           const maxHealth = 20 + charLevel * 15 + totalCon * 10 + totalStr * 2;
-          const maxHealthEl = document.getElementById("calc-max-health");
-          if (maxHealthEl) {
-            maxHealthEl.textContent = maxHealth;
-            maxHealthEl.title = `20 + (Level ${charLevel} * 15) + (Con ${totalCon} * 10) + (Str ${totalStr} * 2)`;
-          }
+          const healthTitle = `20 + (Level ${charLevel} * 15) + (Con ${totalCon} * 10) + (Str ${totalStr} * 2)`;
 
           const regenPerTick = Math.floor(totalCon / 3);
           const regenEl = document.getElementById("calc-regen");
-          if (regenEl) {
-            regenEl.textContent = `${regenPerTick} HP`;
-            regenEl.title = `Total Constitution (base + items + rarity): ${totalCon} -> ${totalCon}/3 rounded down, every 2 seconds`;
-          }
+          setElementTextAndTitle(
+            regenEl,
+            `${regenPerTick} HP`,
+            `Total Constitution (base + items + rarity): ${totalCon} -> ${totalCon}/3 rounded down, every 2 seconds`
+          );
 
           const charSkill = getCharStat("char-skill");
           const meleeMult = 1 + charSkill / 50 + totalStr / 100 + totalDex / 200;
           const meleeEl = document.getElementById("calc-melee-mult");
-          if (meleeEl) {
-            meleeEl.textContent = `${meleeMult.toFixed(2)}x`;
-            meleeEl.title = `1 + (Skill ${charSkill}/50) + (Str ${totalStr}/100) + (Dex ${totalDex}/200)`;
-          }
+          setElementTextAndTitle(
+            meleeEl,
+            `${meleeMult.toFixed(2)}x`,
+            `1 + (Skill ${charSkill}/50) + (Str ${totalStr}/100) + (Dex ${totalDex}/200)`
+          );
 
           const maxWeight = 150 + 3 * totalStr;
           const maxWeightEl = document.getElementById("calc-max-weight");
-          if (maxWeightEl) {
-            maxWeightEl.textContent = maxWeight;
-            maxWeightEl.title = `150 + (3 * Strength ${totalStr})`;
-          }
+          setElementTextAndTitle(maxWeightEl, maxWeight, `150 + (3 * Strength ${totalStr})`);
 
           const bleedChance = totalStr * 0.1;
           const bleedEl = document.getElementById("calc-bleed");
           if (bleedEl) {
             const showBleed = charStr >= 100;
             if (!showBleed) {
-              bleedEl.textContent = "—";
-              bleedEl.title = "Requires 100+ base Strength from Character Details.";
+              setElementTextAndTitle(bleedEl, "—", "Requires 100+ base Strength from Character Details.");
             } else {
-              bleedEl.textContent = `${bleedChance.toFixed(1)}%`;
-              bleedEl.title = `0.1 * Strength ${totalStr} (base Strength from Character Details: ${charStr})`;
+              setElementTextAndTitle(
+                bleedEl,
+                `${bleedChance.toFixed(1)}%`,
+                `0.1 * Strength ${totalStr} (base Strength from Character Details: ${charStr})`
+              );
             }
           }
 
           const dexForCrit = Math.max(0, charDex - raceBonusDex); // crit uses character dex minus racial bonus
           const critChance = (dexForCrit / 2.5).toFixed(1);
           const critEl = document.getElementById("calc-crit");
-          if (critEl) {
-            critEl.textContent = `${critChance}%`;
-            critEl.title = `Dex from Character Details minus racial bonus (${charDex} - ${raceBonusDex}) / 2.5 => ${critChance}% @ 1.35x damage`;
-          }
+          setElementTextAndTitle(
+            critEl,
+            `${critChance}%`,
+            `Dex from Character Details minus racial bonus (${charDex} - ${raceBonusDex}) / 2.5 => ${critChance}% @ 1.35x damage`
+          );
 
           const drNumerator = totalDex * 0.00125;
           const dr = (drNumerator / (1 + drNumerator)) * 100;
-          const drEl = document.getElementById("calc-dr");
-          if (drEl) {
-            drEl.textContent = `${dr.toFixed(2)}%`;
-            drEl.title = `[(Total Dex ${totalDex} * 0.00125) / (1 + (Total Dex ${totalDex} * 0.00125))] * 100`;
-          }
+          const drTitle = `[(Total Dex ${totalDex} * 0.00125) / (1 + (Total Dex ${totalDex} * 0.00125))] * 100`;
 
-          if (quickSummaryEls.armor) quickSummaryEls.armor.textContent = totalArmor;
-          if (quickSummaryEls.dps) quickSummaryEls.dps.textContent = totalDps;
-          if (quickSummaryEls.weight) quickSummaryEls.weight.textContent = totalWeight;
-          if (quickSummaryEls.str) quickSummaryEls.str.textContent = totalStr;
-          if (quickSummaryEls.con) quickSummaryEls.con.textContent = totalCon;
-          if (quickSummaryEls.dex) quickSummaryEls.dex.textContent = totalDex;
-          if (quickSummaryEls.health) quickSummaryEls.health.textContent = maxHealth;
-          if (quickSummaryEls.dr) quickSummaryEls.dr.textContent = `${dr.toFixed(2)}%`;
+          setQuickSummary("armor", totalArmor, `Base armor: ${baseArmor}\nRarity bonus: ${rarityArmor}`);
+          setQuickSummary(
+            "dps",
+            totalDps,
+            weapon ? `${weapon.name || "Selected weapon"} DPS: ${totalDps}` : "No weapon selected."
+          );
+          setQuickSummary(
+            "weight",
+            totalWeight,
+            `Equipped armor weight: ${totalWeight}\nMax carry weight: ${maxWeight}\nRemaining: ${maxWeight - totalWeight}`
+          );
+          setQuickSummary("str", totalStr, `Items: ${baseStr}\nCharacter base: ${charStr}\nRarity bonus: ${bonusStr}`);
+          setQuickSummary("con", totalCon, `Items: ${baseCon}\nCharacter base: ${charCon}\nRarity bonus: ${bonusCon}`);
+          setQuickSummary("dex", totalDex, `Items: ${baseDex}\nCharacter base: ${charDex}\nRarity bonus: ${bonusDex}`);
+          setQuickSummary("health", maxHealth, healthTitle);
+          setQuickSummary("dr", `${dr.toFixed(2)}%`, drTitle);
           updatePlannerStatus();
         };
 

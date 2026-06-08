@@ -176,6 +176,7 @@ async function runBuildPlannerSpec(browser, baseUrl) {
     await assertBuildPlannerWeapon(page, "Rune Sword");
     await assertBuildPlannerItemLinks(page, "Rune Sword");
     await assertNumberGreaterThan(page, '[data-quick-stat="dps"]', 0, "quick DPS");
+    await assertBuildPlannerSummaryTooltips(page);
 
     await page.locator('[data-slot="Weapon"] [data-rarity-inc]').click();
     await page.waitForFunction(() => {
@@ -271,6 +272,30 @@ async function assertBuildPlannerItemLinks(page, expectedName) {
   }
   if (href !== RUNE_SWORD_DETAIL_PATH) {
     throw new Error(`Build Planner selected item link expected ${RUNE_SWORD_DETAIL_PATH}, got "${href}"`);
+  }
+}
+
+async function assertBuildPlannerSummaryTooltips(page) {
+  await page.locator("#build-details").waitFor({ state: "visible" });
+  const duplicateCount = await page.locator("#calc-dr, #calc-max-health, #sum-armor, #sum-weight, #sum-dps, #sum-str, #sum-con, #sum-dex").count();
+  if (duplicateCount) {
+    throw new Error(`Build Planner rendered ${duplicateCount} duplicate summary value(s) below the top strip`);
+  }
+  const detailsText = (await page.locator("#build-details").textContent()).trim();
+  if (!detailsText.includes("Build Details") || !detailsText.includes("Health Regen") || !detailsText.includes("Element")) {
+    throw new Error(`Build Planner details section was incomplete: "${detailsText}"`);
+  }
+  const armorTitle = await page.locator('[data-quick-stat="armor"]').evaluate((node) =>
+    node.closest(".quick-summary-card")?.getAttribute("title") || node.getAttribute("title") || ""
+  );
+  if (!armorTitle.includes("Base armor") || !armorTitle.includes("Rarity bonus")) {
+    throw new Error(`Build Planner quick Armor tooltip missing breakdown: "${armorTitle}"`);
+  }
+  const regenTitle = await page.locator("#calc-regen").evaluate((node) =>
+    node.closest(".summary-card")?.getAttribute("title") || node.getAttribute("title") || ""
+  );
+  if (!regenTitle.includes("Total Constitution")) {
+    throw new Error(`Build Planner Health Regen tooltip missing breakdown: "${regenTitle}"`);
   }
 }
 

@@ -101,3 +101,6 @@ class SiteSmokeTests(unittest.TestCase):
         self.assertIn("assertBuildPlannerSuggestionDeltas", runner)
         self.assertIn(".suggestion-deltas", runner)
         self.assertIn("data-delta-direction", runner)
+        self.assertIn("assertBuildPlannerSummaryTooltips", runner)
+        self.assertIn("Build Details", runner)
+        self.assertIn("#calc-dr", runner)
