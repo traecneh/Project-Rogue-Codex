@@ -207,7 +207,8 @@
     { key: "name", label: "Name" },
     { key: "type", label: "Type" },
     { key: "level", label: "Level", format: (value) => formatNumber(value) },
-    { key: "dps", label: "DPS", format: (value) => formatNumber(value, { maximumFractionDigits: 2 }) },
+    { key: "dps", label: "DPS", render: (_, item) => createDpsBreakdownPill(item) },
+    { key: "attackSpeed", label: "Speed", render: (value) => createTableSpeedPill(value), className: "speed-column" },
     { key: "perk", label: "Perk", render: (value) => createPerkLinkBadge(value) },
     { key: "element", label: "Element", render: (value) => createElementBadge(value) },
   ];
@@ -429,6 +430,78 @@
     contextLine.className = "perk-tooltip-line";
     contextLine.textContent = "Used for DPS and Perks weapon-speed context.";
     tooltip.appendChild(contextLine);
+
+    pill.appendChild(tooltip);
+    return pill;
+  };
+
+  const formatSpeedLabel = (value) => {
+    const speed = Number(value);
+    if (!Number.isFinite(speed) || speed <= 0) return formatNumber(value);
+    return `${formatNumber(speed)} ms`;
+  };
+
+  const appendTooltipRow = (tooltip, labelText, valueText) => {
+    const row = document.createElement("div");
+    row.className = "detail-tooltip-row";
+    const label = document.createElement("span");
+    label.className = "detail-tooltip-label";
+    label.textContent = labelText;
+    const value = document.createElement("span");
+    value.textContent = valueText;
+    row.appendChild(label);
+    row.appendChild(value);
+    tooltip.appendChild(row);
+  };
+
+  const createTableSpeedPill = (value) => {
+    const span = document.createElement("span");
+    span.className = "table-metric-pill table-speed-pill";
+    span.textContent = formatSpeedLabel(value);
+    return span;
+  };
+
+  const createDpsBreakdownPill = (item) => {
+    const dps = Number(item?.dps);
+    const dpsLabel = formatNumber(item?.dps, { maximumFractionDigits: 2 });
+    if (!Number.isFinite(dps)) return dpsLabel;
+
+    const min = Number(item?.minDamage);
+    const max = Number(item?.maxDamage);
+    const speed = Number(item?.attackSpeed);
+    const hasDamageRange = Number.isFinite(min) && Number.isFinite(max);
+    const hasSpeed = Number.isFinite(speed) && speed > 0;
+
+    const pill = document.createElement("span");
+    pill.className = "detail-pill table-metric-pill dps-breakdown-pill";
+    pill.tabIndex = 0;
+    pill.setAttribute("aria-label", `${dpsLabel} DPS breakdown`);
+
+    const label = document.createElement("span");
+    label.textContent = dpsLabel;
+    pill.appendChild(label);
+
+    const tooltip = document.createElement("span");
+    tooltip.className = "detail-tooltip dps-breakdown-tooltip";
+    tooltip.role = "tooltip";
+
+    const title = document.createElement("div");
+    title.className = "perk-tooltip-title";
+    title.textContent = "DPS Breakdown";
+    tooltip.appendChild(title);
+
+    const divider = document.createElement("div");
+    divider.className = "detail-tooltip-divider";
+    tooltip.appendChild(divider);
+
+    appendTooltipRow(tooltip, "Damage Range", hasDamageRange ? formatRange(min, max) : "-");
+    appendTooltipRow(
+      tooltip,
+      "Average Hit",
+      hasDamageRange ? formatNumber((min + max) / 2, { maximumFractionDigits: 2 }) : "-"
+    );
+    appendTooltipRow(tooltip, "Weapon Speed", hasSpeed ? formatSpeedLabel(speed) : "-");
+    appendTooltipRow(tooltip, "Attacks/Sec", hasSpeed ? `${(1000 / speed).toFixed(2)} attacks/sec` : "-");
 
     pill.appendChild(tooltip);
     return pill;
@@ -833,6 +906,7 @@
     COLUMNS.forEach((col) => {
       const th = document.createElement("th");
       th.setAttribute("scope", "col");
+      if (col.className) th.className = col.className;
 
       const labelSpan = document.createElement("span");
       labelSpan.textContent = col.label;
@@ -1115,6 +1189,7 @@
 
       COLUMNS.forEach((col) => {
         const td = document.createElement("td");
+        if (col.className) td.className = col.className;
         const value = item[col.key];
         if (col.key === "name") {
           const nameLink = document.createElement("a");

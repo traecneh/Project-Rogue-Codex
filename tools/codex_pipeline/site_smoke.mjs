@@ -554,6 +554,7 @@ async function assertWeaponDetailEnhancements(page) {
     .locator('#details-properties a.perk-link[href*="pages/systems/perks.html?perk=Runic"]')
     .first();
   await runicLink.waitFor({ state: "attached" });
+  await assertWeaponTableScanMetrics(page);
 
   const detailText = (await page.locator("#details-properties").textContent()).trim();
   if (!detailText.includes("Weapon Speed") || (!detailText.includes("1,000") && !detailText.includes("1000"))) {
@@ -574,6 +575,21 @@ async function assertWeaponDetailEnhancements(page) {
   await page.goto(weaponDetailUrl, { waitUntil: "load" });
   await page.locator('#details-properties a.perk-link[href*="pages/systems/perks.html?perk=Runic"]').first().waitFor({
     state: "attached",
+  });
+}
+
+async function assertWeaponTableScanMetrics(page) {
+  const tableText = (await page.locator("#items-body").textContent()).trim();
+  if (!tableText.includes("Rune Sword") || !tableText.includes("1,000 ms")) {
+    throw new Error(`Rune Sword table row missing compact speed column: "${tableText}"`);
+  }
+
+  const dpsTooltip = (await page.locator("#items-body .dps-breakdown-tooltip").textContent()).trim();
+  const expected = ["DPS Breakdown", "80 - 150", "1,000 ms", "1.00 attacks/sec"];
+  expected.forEach((value) => {
+    if (!dpsTooltip.includes(value)) {
+      throw new Error(`Rune Sword DPS tooltip missing "${value}": "${dpsTooltip}"`);
+    }
   });
 }
 

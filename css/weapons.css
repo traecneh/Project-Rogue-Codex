@@ -128,6 +128,11 @@
   color: var(--text-muted);
 }
 
+.items-table .speed-column {
+  width: 1%;
+  white-space: nowrap;
+}
+
 .items-table tbody tr {
   background: var(--bg-panel-dark);
 }
@@ -375,6 +380,35 @@
   position: relative;
 }
 
+.table-metric-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 4.25rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(17, 21, 28, 0.72);
+  color: #f1f5f9;
+  font-weight: 800;
+  letter-spacing: 0;
+  white-space: nowrap;
+  position: relative;
+}
+
+.detail-pill.table-metric-pill {
+  gap: 0;
+}
+
+.dps-breakdown-pill {
+  cursor: help;
+}
+
+.table-speed-pill {
+  color: var(--text-main);
+  font-weight: 700;
+}
+
 .detail-pill.perk-link {
   cursor: pointer;
 }
@@ -478,6 +512,18 @@
   min-width: 220px;
   max-width: min(320px, 70vw);
   line-height: 1.3;
+}
+
+.detail-tooltip.dps-breakdown-tooltip {
+  top: auto;
+  bottom: 110%;
+  margin-top: 0;
+  margin-bottom: 0.1rem;
+  white-space: nowrap;
+  min-width: 260px;
+  max-width: min(360px, 70vw);
+  line-height: 1.3;
+  z-index: 8;
 }
 
 .perk-tooltip-title {

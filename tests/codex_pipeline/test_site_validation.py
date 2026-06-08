@@ -287,6 +287,24 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(".perk-link", css)
         self.assertIn(".weapon-speed-pill", css)
 
+    def test_weapons_page_table_compares_speed_and_dps_breakdown(self):
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        script = (REPO_ROOT / "js" / "weapons-page.js").read_text(encoding="utf-8")
+        css = (REPO_ROOT / "css" / "weapons.css").read_text(encoding="utf-8")
+
+        self.assertIn('{ key: "attackSpeed", label: "Speed"', script)
+        self.assertIn('render: (_, item) => createDpsBreakdownPill(item)', script)
+        self.assertIn("const createDpsBreakdownPill", script)
+        self.assertIn("const createTableSpeedPill", script)
+        self.assertIn('"DPS Breakdown"', script)
+        self.assertIn('"Damage Range"', script)
+        self.assertIn('"Attacks/Sec"', script)
+        self.assertIn(".table-metric-pill", css)
+        self.assertIn(".dps-breakdown-tooltip", css)
+        self.assertIn(".speed-column", css)
+        self.assertRegex(css, r"\.detail-tooltip\.dps-breakdown-tooltip\s*\{[^}]*bottom:\s*110%;")
+
     def test_weapons_page_search_includes_detail_and_drop_source_text(self):
         from tools.codex_pipeline.config import REPO_ROOT
 
