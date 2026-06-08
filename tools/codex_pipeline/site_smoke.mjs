@@ -85,6 +85,12 @@ async function main() {
     } catch (error) {
       failures.push(`SMOKE ERROR rarity: ${formatError(error)}`);
     }
+    try {
+      await runRerollSpec(browser, baseUrl);
+      console.log("SMOKE OK re-roll: decision reference, flow, related links");
+    } catch (error) {
+      failures.push(`SMOKE ERROR re-roll: ${formatError(error)}`);
+    }
   } finally {
     await browser.close();
     if (server) await server.close();
@@ -94,7 +100,7 @@ async function main() {
     failures.forEach((failure) => console.error(failure));
     process.exit(1);
   }
-  console.log(`SMOKE OK site: ${smokeSpecs.length + 3} page(s) checked at ${baseUrl}`);
+  console.log(`SMOKE OK site: ${smokeSpecs.length + 4} page(s) checked at ${baseUrl}`);
 }
 
 async function importPlaywright() {
@@ -344,6 +350,57 @@ async function runRaritySpec(browser, baseUrl) {
     for (const expected of ["Rarity", "Uncommon", "Max Rarity", "Ascendant", "Item Power", "x2"]) {
       if (!upgradedText.includes(expected)) {
         throw new Error(`Rarity upgrade result missing "${expected}": "${upgradedText}"`);
+      }
+    }
+
+    if (runtimeErrors.length) {
+      throw new Error(`browser errors: ${runtimeErrors.join("; ")}`);
+    }
+  } finally {
+    await page.close();
+  }
+}
+
+async function runRerollSpec(browser, baseUrl) {
+  const page = await browser.newPage();
+  page.setDefaultTimeout(timeoutMs);
+  const runtimeErrors = [];
+  page.on("console", (message) => {
+    const text = message.text();
+    if (message.type() === "error" && !text.startsWith("Failed to load resource")) runtimeErrors.push(text);
+  });
+  page.on("pageerror", (error) => runtimeErrors.push(formatError(error)));
+
+  try {
+    await page.goto(joinUrl(baseUrl, "/pages/systems/re-roll.html"), { waitUntil: "load" });
+    await page.locator(".reroll-compare-grid").waitFor({ state: "visible" });
+    const pageText = (await page.locator("#reroll-basics").textContent()).trim();
+    for (const expected of [
+      "What Changes",
+      "What Does Not Change",
+      "Re-Roll Flow",
+      "Before You Roll",
+      "When Re-Roll Helps",
+      "Reroll Shards",
+      "Reroll Stone",
+      "Current Rarity",
+      "Max Rarity",
+    ]) {
+      if (!pageText.includes(expected)) {
+        throw new Error(`Re-Roll page missing "${expected}": "${pageText}"`);
+      }
+    }
+
+    for (const href of [
+      "pages/systems/rarity.html",
+      "pages/items/weapons.html",
+      "pages/items/armors.html",
+      "pages/systems/deconstruct.html",
+      "pages/systems/crafting.html",
+    ]) {
+      const count = await page.locator(`.reroll-link-grid a[href="${href}"]`).count();
+      if (count !== 1) {
+        throw new Error(`Re-Roll related link expected one "${href}", found ${count}`);
       }
     }
 

@@ -652,6 +652,58 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(".rarity-summary-grid", css)
         self.assertIn(".rarity-link-grid", css)
 
+    def test_reroll_page_has_compact_decision_reference(self):
+        from tools.codex_pipeline import cli
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        html_path = REPO_ROOT / "pages" / "systems" / "re-roll.html"
+        css_path = REPO_ROOT / "css" / "reroll.css"
+        html = html_path.read_text(encoding="utf-8")
+        css = css_path.read_text(encoding="utf-8") if css_path.exists() else ""
+
+        self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
+        self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
+        self.assertIn('<link rel="stylesheet" href="css/reroll.css" />', html)
+        self.assertNotIn("<style>", html)
+        self.assertEqual(
+            [],
+            [
+                block.strip()
+                for block in re.findall(
+                    r"<script\b(?![^>]*\bsrc\s*=)[^>]*>([\s\S]*?)</script>",
+                    html,
+                    flags=re.IGNORECASE,
+                )
+                if block.strip()
+            ],
+        )
+
+        for expected in [
+            "What Changes",
+            "What Does Not Change",
+            "Re-Roll Flow",
+            "Before You Roll",
+            "When Re-Roll Helps",
+            "Related Item Pages",
+            "Stat Spread",
+            "Current Rarity",
+            "Item Identity",
+            "Max Rarity",
+            "Reroll Shards",
+            "Reroll Stone",
+            "pages/systems/rarity.html",
+            "pages/items/weapons.html",
+            "pages/items/armors.html",
+            "pages/systems/deconstruct.html",
+            "pages/systems/crafting.html",
+        ]:
+            self.assertIn(expected, html)
+
+        self.assertIn(".reroll-summary-grid", css)
+        self.assertIn(".reroll-compare-grid", css)
+        self.assertIn(".reroll-flow", css)
+        self.assertIn(".reroll-link-grid", css)
+
     def test_armors_page_uses_linked_names_and_non_sortable_image_column(self):
         from tools.codex_pipeline.config import REPO_ROOT
 

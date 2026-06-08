@@ -1,0 +1,178 @@
+.reroll-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 0.75rem;
+  margin: 1rem 0 1.5rem;
+}
+
+.reroll-summary-card {
+  min-height: 132px;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 0.85rem;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.045), rgba(0, 0, 0, 0.26)),
+    rgba(14, 18, 25, 0.74);
+}
+
+.reroll-summary-card h3 {
+  margin: 0.25rem 0 0.4rem;
+  font-size: 1rem;
+  color: var(--text-main);
+}
+
+.reroll-summary-card p:last-child {
+  margin-bottom: 0;
+}
+
+.reroll-compare,
+.reroll-flow-section,
+.reroll-guidance,
+.reroll-related {
+  margin-top: 1.5rem;
+}
+
+.reroll-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 0.85rem;
+  margin-top: 0.8rem;
+}
+
+.reroll-panel {
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 0.95rem;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.reroll-panel h3 {
+  margin: 0 0 0.65rem;
+  font-size: 1rem;
+}
+
+.reroll-panel ul,
+.reroll-check-list {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+  padding-left: 1.15rem;
+}
+
+.reroll-panel li,
+.reroll-check-list li {
+  padding-left: 0.15rem;
+}
+
+.reroll-panel-change {
+  border-color: rgba(126, 206, 255, 0.45);
+}
+
+.reroll-panel-change h3 {
+  color: #8bd4ff;
+}
+
+.reroll-panel-stable {
+  border-color: rgba(255, 179, 71, 0.42);
+}
+
+.reroll-panel-stable h3 {
+  color: #ffbd66;
+}
+
+.reroll-flow {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0.85rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.reroll-flow li {
+  display: grid;
+  grid-template-columns: 2.2rem 1fr;
+  gap: 0.75rem;
+  align-items: start;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 0.85rem;
+  background: rgba(5, 8, 12, 0.34);
+}
+
+.reroll-flow span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  border: 1px solid rgba(126, 206, 255, 0.5);
+  border-radius: 999px;
+  color: #ffffff;
+  font-weight: 800;
+  background: rgba(126, 206, 255, 0.12);
+}
+
+.reroll-flow h3 {
+  margin: 0 0 0.2rem;
+  font-size: 1rem;
+}
+
+.reroll-flow p {
+  margin: 0;
+}
+
+.reroll-guidance {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.reroll-guidance > div {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 0.95rem;
+}
+
+.reroll-link-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.65rem;
+  margin-top: 0.8rem;
+}
+
+.reroll-link-grid a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.6rem;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  color: var(--text-main);
+  text-decoration: none;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.reroll-link-grid a:hover,
+.reroll-link-grid a:focus-visible {
+  border-color: var(--accent-blue);
+  color: #ffffff;
+  outline: none;
+}
+
+@media (max-width: 640px) {
+  .reroll-summary-grid,
+  .reroll-compare-grid,
+  .reroll-guidance {
+    grid-template-columns: 1fr;
+  }
+
+  .reroll-flow li {
+    grid-template-columns: 1.9rem 1fr;
+    gap: 0.65rem;
+  }
+
+  .reroll-flow span {
+    width: 1.9rem;
+    height: 1.9rem;
+  }
+}

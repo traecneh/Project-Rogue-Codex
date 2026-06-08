@@ -11,6 +11,7 @@
     <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
     <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/reroll.css" />
     <script src="js/site-search.js" defer></script>
     <script src="js/weapon-specialty.js" defer></script>
     <script src="js/stat-widgets.js" defer></script>
@@ -26,38 +27,124 @@
       <main class="main-content">
         <header class="content-header">
           <h1 class="content-title">Re-Roll System</h1>
-          <p class="content-tagline">Spend reroll shards and stones to spin new stat rolls on gear.</p>
+          <p class="content-tagline">Spend reroll shards and stones to replace an item's current stat spread.</p>
         </header>
 
         <article class="content-section" id="reroll-basics">
-          <h2>How Re-Roll Works</h2>
-          <p>Re-roll replaces an item's current stat rolls. Bring the required shard currency and a reroll stone, then select your item.</p>
-
-          <div class="stat-grid" role="list">
-            <section class="stat-card" role="listitem">
+          <h2>What Re-Roll Uses</h2>
+          <div class="reroll-summary-grid" role="list">
+            <section class="reroll-summary-card" role="listitem">
               <p class="stat-label">Currency</p>
               <h3>Reroll Shards</h3>
               <p>Earned from blacksmith NPCs in towns; required for each reroll attempt.</p>
             </section>
 
-            <section class="stat-card" role="listitem">
+            <section class="reroll-summary-card" role="listitem">
               <p class="stat-label">Stone</p>
-              <h3>Purchase & Carry</h3>
+              <h3>Reroll Stone</h3>
               <p>Buy a reroll stone from a town shopkeeper and keep it in your inventory.</p>
             </section>
 
-            <section class="stat-card" role="listitem">
+            <section class="reroll-summary-card" role="listitem">
               <p class="stat-label">Menu</p>
               <h3>Select the Item</h3>
               <p>Open the Reroll menu and choose the item you want to reroll.</p>
             </section>
 
-            <section class="stat-card" role="listitem">
+            <section class="reroll-summary-card" role="listitem">
               <p class="stat-label">Outcome</p>
               <h3>Fresh Stat Spread</h3>
-              <p>Stats are rerolled within the item's tier—hope for better spread and totals.</p>
+              <p>Stats are rerolled within the item's current rarity tier.</p>
             </section>
           </div>
+
+          <section class="reroll-compare">
+            <h2>What Changes</h2>
+            <div class="reroll-compare-grid">
+              <section class="reroll-panel reroll-panel-change">
+                <h3>Changes</h3>
+                <ul>
+                  <li><strong>Stat Spread</strong> is replaced with a fresh roll.</li>
+                  <li>Strength, Dexterity, and Constitution can land in a different distribution.</li>
+                  <li>The total stat value can move within the current rarity tier's range.</li>
+                </ul>
+              </section>
+              <section class="reroll-panel reroll-panel-stable">
+                <h3>What Does Not Change</h3>
+                <ul>
+                  <li><strong>Item Identity</strong> stays the same weapon or armor.</li>
+                  <li><strong>Current Rarity</strong> is not promoted by re-rolling.</li>
+                  <li><strong>Max Rarity</strong>, drop source, craft source, and base item values stay tied to the item.</li>
+                </ul>
+              </section>
+            </div>
+          </section>
+
+          <section class="reroll-flow-section">
+            <h2>Re-Roll Flow</h2>
+            <ol class="reroll-flow">
+              <li>
+                <span>1</span>
+                <div>
+                  <h3>Pick a keeper</h3>
+                  <p>Start with an item whose base stats, rarity, source, or perk make it worth improving.</p>
+                </div>
+              </li>
+              <li>
+                <span>2</span>
+                <div>
+                  <h3>Bring resources</h3>
+                  <p>Carry the required reroll shards and a reroll stone before opening the menu.</p>
+                </div>
+              </li>
+              <li>
+                <span>3</span>
+                <div>
+                  <h3>Replace the roll</h3>
+                  <p>Select the item and commit only when you are ready to replace its current stat spread.</p>
+                </div>
+              </li>
+              <li>
+                <span>4</span>
+                <div>
+                  <h3>Check the result</h3>
+                  <p>Compare the new Strength, Dexterity, and Constitution spread against the build you are chasing.</p>
+                </div>
+              </li>
+            </ol>
+          </section>
+
+          <section class="reroll-guidance">
+            <div>
+              <h2>Before You Roll</h2>
+              <ul class="reroll-check-list">
+                <li>Check the item's current rarity on the item detail page.</li>
+                <li>Use the Rarity page to understand the stat range for that tier.</li>
+                <li>Know which stat your build actually needs before replacing a decent roll.</li>
+                <li>Consider Deconstruct when the item itself is not worth keeping.</li>
+              </ul>
+            </div>
+            <div>
+              <h2>When Re-Roll Helps</h2>
+              <ul class="reroll-check-list">
+                <li>The item is strong, but its bonus stats landed in the wrong places.</li>
+                <li>A build is short on Strength, Dexterity, or Constitution.</li>
+                <li>You want a better spread without changing the item, source, or rarity tier.</li>
+              </ul>
+            </div>
+          </section>
+
+          <section class="reroll-related">
+            <h2>Related Item Pages</h2>
+            <div class="reroll-link-grid" aria-label="Related re-roll pages">
+              <a href="pages/systems/rarity.html">Rarity</a>
+              <a href="pages/items/weapons.html">Weapons</a>
+              <a href="pages/items/armors.html">Armors</a>
+              <a href="pages/systems/deconstruct.html">Deconstruct</a>
+              <a href="pages/systems/crafting.html">Crafting</a>
+              <a href="pages/General/build-planner.html">Build Planner</a>
+            </div>
+          </section>
         </article>
       </main>
     </div>

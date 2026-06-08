@@ -60,6 +60,7 @@ VALIDATED_HTML_PATHS = [
     REPO_ROOT / "pages" / "enemies" / "monsters.html",
     REPO_ROOT / "pages" / "systems" / "perks.html",
     REPO_ROOT / "pages" / "systems" / "rarity.html",
+    REPO_ROOT / "pages" / "systems" / "re-roll.html",
 ]
 
 VALIDATED_STYLE_PATHS = [
@@ -69,6 +70,7 @@ VALIDATED_STYLE_PATHS = [
     REPO_ROOT / "css" / "monsters.css",
     REPO_ROOT / "css" / "perks.css",
     REPO_ROOT / "css" / "rarity.css",
+    REPO_ROOT / "css" / "reroll.css",
 ]
 
 VALIDATED_SCRIPT_PATHS = [
