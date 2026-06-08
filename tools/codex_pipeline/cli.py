@@ -64,6 +64,7 @@ VALIDATED_HTML_PATHS = [
     REPO_ROOT / "pages" / "systems" / "deconstruct.html",
     REPO_ROOT / "pages" / "systems" / "ascend.html",
     REPO_ROOT / "pages" / "systems" / "craft.html",
+    REPO_ROOT / "pages" / "systems" / "imbuements.html",
     REPO_ROOT / "pages" / "systems" / "crafting.html",
 ]
 
@@ -78,6 +79,7 @@ VALIDATED_STYLE_PATHS = [
     REPO_ROOT / "css" / "deconstruct.css",
     REPO_ROOT / "css" / "ascend.css",
     REPO_ROOT / "css" / "craft.css",
+    REPO_ROOT / "css" / "imbuements.css",
     REPO_ROOT / "css" / "crafting.css",
 ]
 

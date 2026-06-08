@@ -863,6 +863,65 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(".craft-flow", css)
         self.assertIn(".craft-link-grid", css)
 
+    def test_imbuements_page_has_compact_targeting_reference(self):
+        from tools.codex_pipeline import cli
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        html_path = REPO_ROOT / "pages" / "systems" / "imbuements.html"
+        css_path = REPO_ROOT / "css" / "imbuements.css"
+        html = html_path.read_text(encoding="utf-8")
+        css = css_path.read_text(encoding="utf-8") if css_path.exists() else ""
+
+        self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
+        self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
+        self.assertIn('<link rel="stylesheet" href="css/imbuements.css" />', html)
+        self.assertNotIn("<style>", html)
+        self.assertEqual(
+            [],
+            [
+                block.strip()
+                for block in re.findall(
+                    r"<script\b(?![^>]*\bsrc\s*=)[^>]*>([\s\S]*?)</script>",
+                    html,
+                    flags=re.IGNORECASE,
+                )
+                if block.strip()
+            ],
+        )
+
+        for expected in [
+            "Imbuement Flow",
+            "Source Mechanics",
+            "Tier Roll Odds",
+            "Targeting Decisions",
+            "Tattered Imbuement",
+            "Scroll of Imbuement",
+            "250 Matching Tatters",
+            "25 Tattered Imbuements",
+            "80% T1",
+            "15% T2",
+            "5% T3",
+            "Epic+ Item",
+            "Uncommon Tatter",
+            "Rare Tatter",
+            "Level Scaling",
+            "Hell Spawn",
+            "Bloodthirster",
+            "pages/systems/perks.html?perk=Bloodthirster",
+            "pages/enemies/monsters.html?monster=hell-spawn",
+            "pages/enemies/monsters.html?monster=werewolf",
+            "pages/systems/craft.html",
+            "pages/systems/purge.html",
+            "pages/items/weapons.html",
+            "pages/items/armors.html",
+        ]:
+            self.assertIn(expected, html)
+
+        self.assertIn(".imbuement-summary-grid", css)
+        self.assertIn(".imbuement-flow", css)
+        self.assertIn(".imbuement-odds-grid", css)
+        self.assertIn(".imbuement-link-grid", css)
+
     def test_crafting_page_has_compact_armor_crafting_reference(self):
         from tools.codex_pipeline import cli
         from tools.codex_pipeline.config import REPO_ROOT

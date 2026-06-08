@@ -110,6 +110,12 @@ async function main() {
       failures.push(`SMOKE ERROR craft: ${formatError(error)}`);
     }
     try {
+      await runImbuementsSpec(browser, baseUrl);
+      console.log("SMOKE OK imbuements: targeting flow, source mechanics, related links");
+    } catch (error) {
+      failures.push(`SMOKE ERROR imbuements: ${formatError(error)}`);
+    }
+    try {
       await runCraftingSpec(browser, baseUrl);
       console.log("SMOKE OK crafting: armor reference, set preview, materials calculator");
     } catch (error) {
@@ -124,7 +130,7 @@ async function main() {
     failures.forEach((failure) => console.error(failure));
     process.exit(1);
   }
-  console.log(`SMOKE OK site: ${smokeSpecs.length + 8} page(s) checked at ${baseUrl}`);
+  console.log(`SMOKE OK site: ${smokeSpecs.length + 9} page(s) checked at ${baseUrl}`);
 }
 
 async function importPlaywright() {
@@ -587,6 +593,78 @@ async function runCraftSpec(browser, baseUrl) {
       const count = await page.locator(`.craft-link-grid a[href="${href}"]`).count();
       if (count !== 1) {
         throw new Error(`Craft related link expected one "${href}", found ${count}`);
+      }
+    }
+
+    if (runtimeErrors.length) {
+      throw new Error(`browser errors: ${runtimeErrors.join("; ")}`);
+    }
+  } finally {
+    await page.close();
+  }
+}
+
+async function runImbuementsSpec(browser, baseUrl) {
+  const page = await browser.newPage();
+  page.setDefaultTimeout(timeoutMs);
+  const runtimeErrors = [];
+  page.on("console", (message) => {
+    const text = message.text();
+    if (message.type() === "error" && !text.startsWith("Failed to load resource")) runtimeErrors.push(text);
+  });
+  page.on("pageerror", (error) => runtimeErrors.push(formatError(error)));
+
+  try {
+    await page.goto(joinUrl(baseUrl, "/pages/systems/imbuements.html"), { waitUntil: "load" });
+    await page.locator(".imbuement-flow").waitFor({ state: "visible" });
+    const pageText = (await page.locator("#imbuement-basics").textContent()).trim();
+    for (const expected of [
+      "Targeted Perk Path",
+      "Imbuement Flow",
+      "Source Mechanics",
+      "Tier Roll Odds",
+      "Targeting Decisions",
+      "Tattered Imbuement",
+      "Scroll of Imbuement",
+      "250 Matching Tatters",
+      "25 Tattered Imbuements",
+      "Epic+ Item",
+      "Uncommon Tatter",
+      "Rare Tatter",
+      "Level Scaling",
+      "80% T1",
+      "15% T2",
+      "5% T3",
+      "Hell Spawn",
+      "Bloodthirster",
+    ]) {
+      if (!pageText.includes(expected)) {
+        throw new Error(`Imbuements page missing "${expected}": "${pageText}"`);
+      }
+    }
+
+    for (const href of [
+      "pages/systems/perks.html?perk=Bloodthirster",
+      "pages/enemies/monsters.html?monster=hell-spawn",
+      "pages/enemies/monsters.html?monster=werewolf",
+    ]) {
+      const count = await page.locator(`.imbuement-example-grid a[href="${href}"]`).count();
+      if (count !== 1) {
+        throw new Error(`Imbuements example link expected one "${href}", found ${count}`);
+      }
+    }
+
+    for (const href of [
+      "pages/systems/perks.html",
+      "pages/enemies/monsters.html",
+      "pages/systems/craft.html",
+      "pages/systems/purge.html",
+      "pages/items/weapons.html",
+      "pages/items/armors.html",
+    ]) {
+      const count = await page.locator(`.imbuement-link-grid a[href="${href}"]`).count();
+      if (count !== 1) {
+        throw new Error(`Imbuements related link expected one "${href}", found ${count}`);
       }
     }
 

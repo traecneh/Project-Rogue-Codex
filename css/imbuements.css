@@ -1,0 +1,252 @@
+.imbuement-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
+  gap: 0.75rem;
+  margin: 1rem 0 1.5rem;
+}
+
+.imbuement-summary-card,
+.imbuement-odds-card {
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 0.85rem;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.045), rgba(0, 0, 0, 0.24)),
+    rgba(14, 18, 25, 0.74);
+}
+
+.imbuement-summary-card {
+  min-height: 132px;
+}
+
+.imbuement-summary-card h3,
+.imbuement-odds-card h3 {
+  margin: 0.25rem 0 0.4rem;
+  font-size: 1rem;
+  color: var(--text-main);
+}
+
+.imbuement-summary-card p:last-child,
+.imbuement-odds-card p:last-child,
+.imbuement-panel p:last-child {
+  margin-bottom: 0;
+}
+
+.imbuement-flow-section,
+.imbuement-source-section,
+.imbuement-odds-section,
+.imbuement-targeting,
+.imbuement-examples,
+.imbuement-related {
+  margin-top: 1.5rem;
+}
+
+.imbuement-flow {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0.85rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.imbuement-flow li {
+  display: grid;
+  grid-template-columns: 2.2rem 1fr;
+  gap: 0.75rem;
+  align-items: start;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 0.85rem;
+  background: rgba(5, 8, 12, 0.34);
+}
+
+.imbuement-flow span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  border: 1px solid rgba(126, 206, 255, 0.5);
+  border-radius: 999px;
+  color: #ffffff;
+  font-weight: 800;
+  background: rgba(126, 206, 255, 0.12);
+}
+
+.imbuement-flow h3 {
+  margin: 0 0 0.2rem;
+  font-size: 1rem;
+}
+
+.imbuement-flow p {
+  margin: 0;
+}
+
+.imbuement-source-grid,
+.imbuement-decision-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 0.85rem;
+  margin-top: 0.85rem;
+}
+
+.imbuement-panel {
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 0.95rem;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.imbuement-panel h3 {
+  margin: 0 0 0.65rem;
+  font-size: 1rem;
+}
+
+.imbuement-panel ul {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+  padding-left: 1.15rem;
+}
+
+.imbuement-panel-primary {
+  border-color: rgba(126, 206, 255, 0.45);
+}
+
+.imbuement-panel-primary h3 {
+  color: #8bd4ff;
+}
+
+.imbuement-panel-secondary {
+  border-color: rgba(142, 225, 177, 0.42);
+}
+
+.imbuement-panel-secondary h3 {
+  color: #9ee8bd;
+}
+
+.imbuement-panel-warning {
+  border-color: rgba(255, 179, 71, 0.42);
+}
+
+.imbuement-panel-warning h3 {
+  color: #ffbd66;
+}
+
+.imbuement-panel-neutral {
+  border-color: rgba(198, 206, 223, 0.28);
+}
+
+.imbuement-panel-neutral h3 {
+  color: #d4dbea;
+}
+
+.imbuement-odds-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.85rem;
+}
+
+.imbuement-odds-card:nth-child(1) h3 {
+  color: #8bd4ff;
+}
+
+.imbuement-odds-card:nth-child(2) h3 {
+  color: #9ee8bd;
+}
+
+.imbuement-odds-card:nth-child(3) h3 {
+  color: #ffbd66;
+}
+
+.imbuement-example-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(215px, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.85rem;
+}
+
+.imbuement-example-card {
+  display: grid;
+  gap: 0.3rem;
+  min-height: 7.25rem;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 0.9rem;
+  color: var(--text-main);
+  text-decoration: none;
+  background: rgba(5, 8, 12, 0.32);
+}
+
+.imbuement-example-card strong {
+  color: #ffffff;
+  font-size: 1rem;
+}
+
+.imbuement-example-card span:last-child {
+  color: var(--text-muted);
+}
+
+.imbuement-example-card:hover,
+.imbuement-example-card:focus-visible {
+  border-color: var(--accent-blue);
+  color: #ffffff;
+  outline: none;
+}
+
+.imbuement-link-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.65rem;
+  margin-top: 0.8rem;
+}
+
+.imbuement-link-grid a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.6rem;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  color: var(--text-main);
+  text-decoration: none;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.imbuement-link-grid a:hover,
+.imbuement-link-grid a:focus-visible {
+  border-color: var(--accent-blue);
+  color: #ffffff;
+  outline: none;
+}
+
+@media (max-width: 820px) {
+  .imbuement-odds-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .content-header {
+    padding-left: 2.25rem;
+  }
+
+  .imbuement-summary-grid,
+  .imbuement-source-grid,
+  .imbuement-decision-grid,
+  .imbuement-example-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .imbuement-flow li {
+    grid-template-columns: 1.9rem 1fr;
+    gap: 0.65rem;
+  }
+
+  .imbuement-flow span {
+    width: 1.9rem;
+    height: 1.9rem;
+  }
+}
