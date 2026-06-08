@@ -107,3 +107,8 @@ class SiteSmokeTests(unittest.TestCase):
         self.assertIn("assertBuildPlannerIssueIndicators", runner)
         self.assertIn("#build-issues", runner)
         self.assertIn("Dark Sword", runner)
+        self.assertIn("runPerksSpec", runner)
+        self.assertIn("/pages/systems/perks.html?perk=Runic", runner)
+        self.assertIn("assertPerkSources", runner)
+        self.assertIn("#perk-search", runner)
+        self.assertIn("#perk-type-filter", runner)

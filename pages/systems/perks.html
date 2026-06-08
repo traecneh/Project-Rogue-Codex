@@ -11,99 +11,14 @@
     <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
     <link rel="stylesheet" href="css/styles.css" />
-    <style>
-      .perk-index {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        flex-wrap: wrap;
-        margin: 0 0 1rem;
-        padding: 0.75rem;
-        border: 1px solid var(--border-soft);
-        border-radius: var(--radius-md);
-        background: linear-gradient(180deg, var(--bg-panel-gradient-start), var(--bg-panel-gradient-end));
-      }
-
-      .perk-index-label {
-        color: var(--text-muted);
-        font-size: 0.95rem;
-      }
-
-      .perk-index-select {
-        min-width: min(360px, 100%);
-        padding: 0.5rem 0.6rem;
-        border-radius: var(--radius-sm);
-        border: 1px solid var(--border-soft);
-        background: var(--bg-panel-dark);
-        color: var(--text-main);
-      }
-
-      .perk-index-select:focus-visible {
-        outline: 2px solid var(--accent);
-        outline-offset: 2px;
-      }
-
-      .perk-groups {
-        display: flex;
-        flex-direction: column;
-        gap: 1.4rem;
-      }
-
-      .perk-group {
-        display: flex;
-        flex-direction: column;
-        gap: 0.6rem;
-      }
-
-      .perk-group-header {
-        margin: 0;
-        padding-bottom: 0.4rem;
-        border-bottom: 1px solid var(--border-soft);
-        text-transform: uppercase;
-        letter-spacing: 0.12em;
-        font-size: 0.85rem;
-        color: var(--text-muted);
-      }
-
-      .perk-group .stat-grid {
-        margin: 0;
-      }
-
-      .perk-abbrev {
-        display: inline-flex;
-        align-items: center;
-        padding: 0.15rem 0.45rem;
-        margin: 0.2rem 0 0.35rem;
-        border-radius: 999px;
-        border: 1px solid rgba(139, 148, 167, 0.85);
-        background: #151923;
-        color: var(--text-muted);
-        font-size: 0.7rem;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-      }
-
-      .stat-card.perk-jump-target {
-        border-color: var(--accent);
-        outline: 2px solid rgba(75, 255, 75, 0.45);
-        outline-offset: 3px;
-        box-shadow:
-          0 0 0 1px rgba(75, 255, 75, 0.12),
-          0 0 18px rgba(75, 255, 75, 0.18);
-      }
-
-      @media (prefers-reduced-motion: reduce) {
-        .stat-card.perk-jump-target {
-          transition: none;
-        }
-      }
-    </style>
+    <link rel="stylesheet" href="css/perks.css" />
     <script src="js/site-search.js" defer></script>
     <script src="js/weapon-specialty.js" defer></script>
     <script src="js/stat-widgets.js" defer></script>
     <script src="js/keyword-links.js" defer></script>
     <script src="js/cursor-toggle.js" defer></script>
     <script src="js/perks.js" defer></script>
+    <script src="js/perks-page.js" defer></script>
     <script src="js/rarity-roller.js" defer></script>
     <script src="js/nav-core.js" defer></script>
   </head>
@@ -114,7 +29,7 @@
         <header class="content-header">
           <h1 class="content-title">Perks System</h1>
           <p class="content-tagline">
-            Perks are item-based effects with tiered values and stacking rules.
+            Perks are item-based effects with tiered values, stacking rules, and item/race sources.
           </p>
         </header>
 
@@ -171,12 +86,46 @@
 
         <article class="content-section" id="perk-list">
           <h2>Perks</h2>
-          <div class="perk-index" aria-label="Perk index">
-            <label class="perk-index-label" for="perk-jump">Jump to perk</label>
-            <select id="perk-jump" class="perk-index-select" aria-label="Jump to perk">
-              <option value="">Loading perks…</option>
-            </select>
+          <div class="perk-tools" aria-label="Perk reference controls">
+            <div class="perk-controls">
+              <div class="perk-control">
+                <label for="perk-search">Search</label>
+                <input
+                  type="search"
+                  id="perk-search"
+                  class="perk-input"
+                  placeholder="Search perks, effects, or sources..."
+                  autocomplete="off"
+                />
+              </div>
+              <div class="perk-control">
+                <label for="perk-type-filter">Type</label>
+                <select id="perk-type-filter" class="perk-select">
+                  <option value="">All types</option>
+                  <option value="standard">Standard</option>
+                  <option value="unique">Unique</option>
+                </select>
+              </div>
+              <div class="perk-control">
+                <label for="perk-group-filter">Group</label>
+                <select id="perk-group-filter" class="perk-select">
+                  <option value="">All groups</option>
+                </select>
+              </div>
+              <div class="perk-control">
+                <label for="perk-jump">Jump</label>
+                <select id="perk-jump" class="perk-select" aria-label="Jump to perk">
+                  <option value="">Loading perks...</option>
+                </select>
+              </div>
+              <button type="button" id="perk-clear" class="perk-clear-button">Reset</button>
+            </div>
+            <div class="perk-results-meta">
+              <span id="perk-result-count" data-perk-results>Loading perks...</span>
+              <span class="perk-index-hint">Selecting a perk updates the page link.</span>
+            </div>
           </div>
+          <p id="perk-empty" class="perk-empty-state" data-perk-empty hidden>No perks match these filters.</p>
           <div class="perk-groups" id="perk-list-cards"></div>
         </article>
 
@@ -186,341 +135,5 @@
         </article>
       </main>
     </div>
-
-    <script>
-      (() => {
-        const perkJump = document.getElementById("perk-jump");
-        const perkList = document.getElementById("perk-list-cards");
-        const uniquePerkList = document.getElementById("unique-perk-cards");
-        let highlightedCard = null;
-
-        const PERK_GROUP_ORDER = [
-          "Slayer & Bane",
-          "Ailment Offense",
-          "General Offense",
-          "Proc Buffs",
-          "Sustain & Healing",
-          "Mitigation & Shields",
-          "Resistances",
-          "Ailment Avoidance",
-          "Utility & Economy",
-        ];
-        const perkGroupOrderMap = new Map(
-          PERK_GROUP_ORDER.map((label, index) => [label.toLowerCase(), index])
-        );
-
-        const getPerkApi = () => window.RogueCodexPerks || {};
-
-        const getPreferredScrollBehavior = () => {
-          try {
-            return window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
-          } catch (error) {
-            return "smooth";
-          }
-        };
-
-        const getPerkSlug = (name) => {
-          if (!name) return "";
-          const slug = String(name)
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, "-")
-            .replace(/^-+|-+$/g, "");
-          return slug ? `perk-${slug}` : "";
-        };
-
-        const getPerkName = (entry) => (entry && typeof entry.name === "string" ? entry.name.trim() : "");
-
-        const normalizeGroupLabel = (value) => String(value || "").trim();
-
-        const sortGroupLabels = (left, right) => {
-          const leftKey = String(left || "");
-          const rightKey = String(right || "");
-          const leftIndex = perkGroupOrderMap.has(leftKey.toLowerCase())
-            ? perkGroupOrderMap.get(leftKey.toLowerCase())
-            : Number.MAX_SAFE_INTEGER;
-          const rightIndex = perkGroupOrderMap.has(rightKey.toLowerCase())
-            ? perkGroupOrderMap.get(rightKey.toLowerCase())
-            : Number.MAX_SAFE_INTEGER;
-          if (leftIndex !== rightIndex) return leftIndex - rightIndex;
-          return leftKey.localeCompare(rightKey);
-        };
-
-        const sortByName = (left, right) => getPerkName(left).localeCompare(getPerkName(right));
-
-        const buildPerkGroups = (list) => {
-          const grouped = new Map();
-          const ungrouped = [];
-
-          list.forEach((entry) => {
-            const name = getPerkName(entry);
-            if (!name) return;
-            const group = normalizeGroupLabel(entry.group);
-            if (group) {
-              const items = grouped.get(group) || [];
-              items.push(entry);
-              grouped.set(group, items);
-            } else {
-              ungrouped.push(entry);
-            }
-          });
-
-          grouped.forEach((items) => items.sort(sortByName));
-          ungrouped.sort(sortByName);
-
-          const groupLabels = Array.from(grouped.keys()).sort(sortGroupLabels);
-          return { grouped, groupLabels, ungrouped };
-        };
-
-        const createGroupSection = (label) => {
-          const section = document.createElement("section");
-          section.className = "perk-group";
-          const header = document.createElement("h3");
-          header.className = "perk-group-header";
-          header.textContent = label;
-          section.appendChild(header);
-          const grid = document.createElement("div");
-          grid.className = "stat-grid perk-grid";
-          section.appendChild(grid);
-          return { section, grid };
-        };
-
-        const addPerkAbbreviation = (card, entry) => {
-          if (!card) return;
-          const abbrev = entry && entry.abbreviation ? String(entry.abbreviation).trim() : "";
-          if (!abbrev) return;
-          if (card.querySelector(".perk-abbrev")) return;
-          const badge = document.createElement("span");
-          badge.className = "perk-abbrev";
-          badge.textContent = abbrev;
-          const heading = card.querySelector("h3");
-          if (heading) {
-            heading.insertAdjacentElement("afterend", badge);
-          } else {
-            card.appendChild(badge);
-          }
-        };
-
-        const fetchPerksIndex = async () => {
-          const api = getPerkApi();
-          if (typeof api.fetchPerksIndex === "function") {
-            return api.fetchPerksIndex();
-          }
-          try {
-            const url = new URL("pages/systems/perks.json", document.baseURI).toString();
-            const response = await fetch(url, { cache: "no-store" });
-            if (!response.ok) throw new Error("Failed to load perks.json");
-            return await response.json();
-          } catch (error) {
-            console.warn(error.message || error);
-            return null;
-          }
-        };
-
-        const buildPerkCard = (entry) => {
-          const api = getPerkApi();
-          if (typeof api.buildPerkCard === "function") {
-            return api.buildPerkCard(entry);
-          }
-
-          const card = document.createElement("section");
-          card.className = "stat-card";
-          const name = entry && typeof entry.name === "string" ? entry.name.trim() : "";
-          const heading = document.createElement("h3");
-          heading.textContent = name || "Unknown";
-          card.appendChild(heading);
-
-          const details = Array.isArray(entry?.details)
-            ? entry.details.map((line) => (line ?? "").toString().trim()).filter(Boolean)
-            : [];
-          if (!details.length) {
-            const fallback = document.createElement("p");
-            fallback.textContent = "Perk info unavailable.";
-            card.appendChild(fallback);
-          } else {
-            details.forEach((line) => {
-              const paragraph = document.createElement("p");
-              paragraph.textContent = line;
-              card.appendChild(paragraph);
-            });
-          }
-
-          const slug = entry?.slug || getPerkSlug(name);
-          if (slug) card.id = slug;
-          if (name) card.setAttribute("data-perk-name", name);
-          return card;
-        };
-
-        const highlightCard = (node) => {
-          const card = node ? node.closest?.(".stat-card") || node : null;
-          if (!card) return;
-
-          if (highlightedCard && highlightedCard !== card) {
-            highlightedCard.classList.remove("perk-jump-target");
-          }
-
-          highlightedCard = card;
-          card.classList.add("perk-jump-target");
-        };
-
-        const jumpToSlug = (slug, { updateHistory = false } = {}) => {
-          const targetSlug = (slug || "").replace(/^#/, "");
-          if (!targetSlug) return;
-          const target = document.getElementById(targetSlug);
-          if (!target) return;
-          target.scrollIntoView({ behavior: getPreferredScrollBehavior(), block: "start" });
-          highlightCard(target);
-          if (updateHistory) {
-            try {
-              history.replaceState(null, "", `#${targetSlug}`);
-            } catch (error) {
-              /* noop */
-            }
-          }
-        };
-
-        const renderPerkCards = (perks) => {
-          if (!perkList || !uniquePerkList) return;
-          perkList.innerHTML = "";
-          uniquePerkList.innerHTML = "";
-
-          const validPerks = perks.filter((entry) => entry && typeof entry.name === "string" && entry.name.trim());
-          const normal = validPerks.filter((entry) => entry.isUnique !== true);
-          const unique = validPerks.filter((entry) => entry.isUnique === true);
-
-          const appendCard = (container, entry) => {
-            const card = buildPerkCard(entry);
-            if (!card) return;
-            addPerkAbbreviation(card, entry);
-            container.appendChild(card);
-          };
-
-          const appendGroup = (label, items) => {
-            if (!items.length) return;
-            const { section, grid } = createGroupSection(label);
-            items.forEach((entry) => appendCard(grid, entry));
-            perkList.appendChild(section);
-          };
-
-          if (!normal.length) {
-            const empty = document.createElement("p");
-            empty.textContent = "Perks unavailable.";
-            perkList.appendChild(empty);
-          } else {
-            const { grouped, groupLabels, ungrouped } = buildPerkGroups(normal);
-            if (ungrouped.length) {
-              appendGroup("Perks", ungrouped);
-            }
-            groupLabels.forEach((label) => appendGroup(label, grouped.get(label) || []));
-          }
-
-          if (!unique.length) {
-            const empty = document.createElement("p");
-            empty.textContent = "Unique perks unavailable.";
-            uniquePerkList.appendChild(empty);
-          } else {
-            unique.sort(sortByName);
-            unique.forEach((entry) => appendCard(uniquePerkList, entry));
-          }
-        };
-
-        const bindCardIds = (perks) => {
-          const cards = Array.from(document.querySelectorAll("#perk-list .stat-card, #unique-effects .stat-card"));
-          if (!cards.length) return;
-
-          const byName = new Map();
-          perks.forEach((entry) => {
-            if (!entry || typeof entry.name !== "string") return;
-            byName.set(entry.name.trim().toLowerCase(), entry);
-          });
-
-          cards.forEach((card) => {
-            const name = card.querySelector("h3")?.textContent?.trim() || "";
-            if (!name) return;
-            const entry = byName.get(name.toLowerCase());
-            const slug = entry?.slug || getPerkSlug(name);
-            if (slug) card.id = slug;
-            card.setAttribute("data-perk-name", name);
-          });
-        };
-
-        const populatePerkJump = (perks) => {
-          if (!perkJump) return;
-
-          const normal = perks
-            .filter((entry) => entry && typeof entry.name === "string")
-            .filter((entry) => entry.isUnique !== true)
-            .map((entry) => ({
-              name: entry.name.trim(),
-              slug: entry.slug || getPerkSlug(entry.name),
-              group: entry.group ? String(entry.group).trim() : "",
-            }))
-            .filter((entry) => entry.name && entry.slug);
-
-          const unique = perks
-            .filter((entry) => entry && typeof entry.name === "string")
-            .filter((entry) => entry.isUnique === true)
-            .map((entry) => ({ name: entry.name.trim(), slug: entry.slug || getPerkSlug(entry.name) }))
-            .filter((entry) => entry.name && entry.slug);
-
-          const { grouped, groupLabels, ungrouped } = buildPerkGroups(normal);
-          unique.sort(sortByName);
-
-          perkJump.innerHTML = "";
-          const placeholder = document.createElement("option");
-          placeholder.value = "";
-          placeholder.textContent = "Jump to…";
-          perkJump.appendChild(placeholder);
-
-          const appendGroup = (label, items) => {
-            if (!items.length) return;
-            const group = document.createElement("optgroup");
-            group.label = label;
-            items.forEach((item) => {
-              const opt = document.createElement("option");
-              opt.value = item.slug;
-              opt.textContent = item.name;
-              group.appendChild(opt);
-            });
-            perkJump.appendChild(group);
-          };
-
-          if (ungrouped.length) {
-            appendGroup("Perks", ungrouped);
-          }
-          groupLabels.forEach((label) => appendGroup(label, grouped.get(label) || []));
-          appendGroup("Unique Perks", unique);
-
-          perkJump.addEventListener("change", () => {
-            const slug = perkJump.value || "";
-            if (!slug) return;
-            jumpToSlug(slug, { updateHistory: true });
-          });
-        };
-
-        document.addEventListener("DOMContentLoaded", async () => {
-          const index = await fetchPerksIndex();
-          const perks = Array.isArray(index?.perks) ? index.perks : [];
-          if (!perks.length) {
-            if (perkJump) {
-              perkJump.innerHTML = '<option value="">Perks unavailable</option>';
-            }
-            renderPerkCards([]);
-            return;
-          }
-          renderPerkCards(perks);
-          bindCardIds(perks);
-          populatePerkJump(perks);
-
-          if (window.location.hash) {
-            jumpToSlug(window.location.hash, { updateHistory: false });
-          }
-
-          window.addEventListener("hashchange", () => {
-            if (!window.location.hash) return;
-            jumpToSlug(window.location.hash, { updateHistory: false });
-          });
-        });
-      })();
-    </script>
   </body>
 </html>

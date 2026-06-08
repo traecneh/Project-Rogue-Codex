@@ -9,6 +9,7 @@ const root = path.resolve(args.root || path.join(path.dirname(fileURLToPath(impo
 const timeoutMs = Number(args.timeoutMs || 20000);
 const configuredBaseUrl = args.baseUrl ? normalizeBaseUrl(args.baseUrl) : null;
 const RUNE_SWORD_DETAIL_PATH = "pages/items/weapons.html?weapon=Rune%20Sword";
+const PERKS_RUNIC_PATH = "/pages/systems/perks.html?perk=Runic";
 
 const smokeSpecs = [
   {
@@ -71,6 +72,12 @@ async function main() {
     } catch (error) {
       failures.push(`SMOKE ERROR build planner: ${formatError(error)}`);
     }
+    try {
+      await runPerksSpec(browser, baseUrl);
+      console.log("SMOKE OK perks: deep link, search, filters, source links");
+    } catch (error) {
+      failures.push(`SMOKE ERROR perks: ${formatError(error)}`);
+    }
   } finally {
     await browser.close();
     if (server) await server.close();
@@ -80,7 +87,7 @@ async function main() {
     failures.forEach((failure) => console.error(failure));
     process.exit(1);
   }
-  console.log(`SMOKE OK site: ${smokeSpecs.length + 1} page(s) checked at ${baseUrl}`);
+  console.log(`SMOKE OK site: ${smokeSpecs.length + 2} page(s) checked at ${baseUrl}`);
 }
 
 async function importPlaywright() {
@@ -212,6 +219,60 @@ async function runBuildPlannerSpec(browser, baseUrl) {
   }
 }
 
+async function runPerksSpec(browser, baseUrl) {
+  const page = await browser.newPage();
+  page.setDefaultTimeout(timeoutMs);
+  const runtimeErrors = [];
+  page.on("console", (message) => {
+    const text = message.text();
+    if (message.type() === "error" && !text.startsWith("Failed to load resource")) runtimeErrors.push(text);
+  });
+  page.on("pageerror", (error) => runtimeErrors.push(formatError(error)));
+
+  try {
+    await page.goto(joinUrl(baseUrl, PERKS_RUNIC_PATH), { waitUntil: "load" });
+    await page.locator("#perk-search").waitFor({ state: "visible" });
+    await page.locator('[data-perk-name="Runic"].perk-selected').waitFor({ state: "visible" });
+    await assertPerkSources(page);
+
+    await page.locator("#perk-search").fill("lifesteal");
+    await page.waitForFunction(() => {
+      const lifesteal = document.querySelector('[data-perk-name="Lifesteal"]');
+      const runic = document.querySelector('[data-perk-name="Runic"]');
+      return lifesteal && !lifesteal.classList.contains("perk-card-hidden") && runic?.classList.contains("perk-card-hidden");
+    });
+
+    await page.locator("#perk-clear").click();
+    await page.locator("#perk-type-filter").selectOption("unique");
+    await page.waitForFunction(() => {
+      const unique = document.querySelector('[data-perk-name="Blood Siphon"]');
+      const standard = document.querySelector('[data-perk-name="Beastslayer"]');
+      return unique && !unique.classList.contains("perk-card-hidden") && standard?.classList.contains("perk-card-hidden");
+    });
+
+    await page.locator("#perk-type-filter").selectOption("");
+    await page.locator("#perk-group-filter").selectOption("Resistances");
+    await page.waitForFunction(() => {
+      const resist = document.querySelector('[data-perk-name="Demon Blood"]');
+      const sustain = document.querySelector('[data-perk-name="Lifesteal"]');
+      return resist && !resist.classList.contains("perk-card-hidden") && sustain?.classList.contains("perk-card-hidden");
+    });
+
+    await page.locator("#perk-clear").click();
+    await page.locator("#perk-jump").selectOption("Runic");
+    await page.locator('[data-perk-name="Runic"].perk-selected').waitFor({ state: "visible" });
+    if (!new URL(page.url()).searchParams.has("perk")) {
+      throw new Error("Perks page did not write selected perk query state");
+    }
+
+    if (runtimeErrors.length) {
+      throw new Error(`browser errors: ${runtimeErrors.join("; ")}`);
+    }
+  } finally {
+    await page.close();
+  }
+}
+
 async function selectBuildPlannerItem(page, itemName) {
   await page.locator("#gear-search").fill(itemName);
   const suggestion = page.locator("#gear-suggestions .suggestion").filter({ hasText: itemName }).first();
@@ -323,6 +384,19 @@ async function assertBuildPlannerIssueIndicators(page) {
   const requirementTitle = (await requirementChip.getAttribute("title")) || "";
   if (!requirementTitle.includes("Dark Sword") || !requirementTitle.includes("Skill") || !requirementTitle.includes("Level")) {
     throw new Error(`Build Planner requirement issue did not include Dark Sword skill/level details: "${requirementTitle}"`);
+  }
+}
+
+async function assertPerkSources(page) {
+  const sourceText = (await page.locator('[data-perk-name="Runic"] .perk-source-list').textContent()).trim();
+  if (!sourceText.includes("Weapon: Rune Sword") || !sourceText.includes("Armor: Scabbard of Arcus")) {
+    throw new Error(`Runic perk source list missing expected item links: "${sourceText}"`);
+  }
+  const weaponHref = await page
+    .locator('[data-perk-name="Runic"] .perk-source-chip[href*="weapons.html?weapon=Rune%20Sword"]')
+    .getAttribute("href");
+  if (!weaponHref) {
+    throw new Error("Runic perk source list missing Rune Sword detail link");
   }
 }
 

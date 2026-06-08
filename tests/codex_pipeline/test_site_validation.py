@@ -440,6 +440,69 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(".suggestion-delta", css)
         self.assertIn('[data-delta-direction="up"]', css)
 
+    def test_perks_page_uses_external_assets_and_reference_controls(self):
+        from tools.codex_pipeline import cli
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        html_path = REPO_ROOT / "pages" / "systems" / "perks.html"
+        css_path = REPO_ROOT / "css" / "perks.css"
+        script_path = REPO_ROOT / "js" / "perks-page.js"
+        html = html_path.read_text(encoding="utf-8")
+        css = css_path.read_text(encoding="utf-8") if css_path.exists() else ""
+        script = script_path.read_text(encoding="utf-8") if script_path.exists() else ""
+
+        self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
+        self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
+        self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
+        self.assertIn('<link rel="stylesheet" href="css/perks.css" />', html)
+        self.assertIn('<script src="js/perks-page.js" defer></script>', html)
+        self.assertNotIn("<style>", html)
+        self.assertEqual(
+            [],
+            [
+                block.strip()
+                for block in re.findall(
+                    r"<script\b(?![^>]*\bsrc\s*=)[^>]*>([\s\S]*?)</script>",
+                    html,
+                    flags=re.IGNORECASE,
+                )
+                if block.strip()
+            ],
+        )
+
+        for expected in [
+            'id="perk-search"',
+            'id="perk-type-filter"',
+            'id="perk-group-filter"',
+            'id="perk-result-count"',
+            'data-perk-results',
+            'data-perk-empty',
+        ]:
+            self.assertIn(expected, html)
+
+        for expected in [
+            'const PERK_ROUTE_PARAM = "perk";',
+            "const buildPerkSourceIndex",
+            "const renderPerkSources",
+            "const applyPerkFilters",
+            "const selectPerk",
+            "pages/items/weapons_data05.json",
+            "pages/items/armors_data06.json",
+            "pages/items/weapons.html?weapon=",
+            "pages/items/armors.html?armor=",
+            "pages/stats/races.html",
+        ]:
+            self.assertIn(expected, script)
+
+        for expected in [
+            ".perk-controls",
+            ".perk-source-chip",
+            ".perk-card-hidden",
+            ".stat-card.perk-selected",
+            ".perk-empty-state",
+        ]:
+            self.assertIn(expected, css)
+
     def test_armors_page_uses_linked_names_and_non_sortable_image_column(self):
         from tools.codex_pipeline.config import REPO_ROOT
 

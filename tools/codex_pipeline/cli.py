@@ -58,6 +58,7 @@ VALIDATED_HTML_PATHS = [
     REPO_ROOT / "pages" / "items" / "weapons.html",
     REPO_ROOT / "pages" / "items" / "armors.html",
     REPO_ROOT / "pages" / "enemies" / "monsters.html",
+    REPO_ROOT / "pages" / "systems" / "perks.html",
 ]
 
 VALIDATED_STYLE_PATHS = [
@@ -65,6 +66,7 @@ VALIDATED_STYLE_PATHS = [
     REPO_ROOT / "css" / "weapons.css",
     REPO_ROOT / "css" / "armors.css",
     REPO_ROOT / "css" / "monsters.css",
+    REPO_ROOT / "css" / "perks.css",
 ]
 
 VALIDATED_SCRIPT_PATHS = [
@@ -73,6 +75,7 @@ VALIDATED_SCRIPT_PATHS = [
     REPO_ROOT / "js" / "weapons-page.js",
     REPO_ROOT / "js" / "armors-page.js",
     REPO_ROOT / "js" / "monsters-page.js",
+    REPO_ROOT / "js" / "perks-page.js",
 ]
 
 
