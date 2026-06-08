@@ -116,9 +116,10 @@
       effects: [stackEffect("potion healing", [30, 40, 50], { prefix: "+", unit: "%", suffix: "potion healing" })],
     },
     Bloodthirster: {
+      independentProc: true,
       speedChance: speedChance("heal trigger chance", [21, 26, 31, 36]),
       effects: [stackEffect("max health heal", [4, 6, 8], { unit: "%", suffix: "max health heal" })],
-      note: "PvE effectiveness is half of the PvP heal value.",
+      note: "PvE effectiveness is half of the PvP heal value. Independent copies roll separately; multiple copies can trigger 1, 2, or 3 heals.",
     },
     Lifesteal: {
       effects: [
@@ -159,12 +160,15 @@
     },
     Juggernaut: {
       damageTakenExample: 1000,
-      note: "20% trigger chance. Reduction is multiplicative, so stacked copies are shown as listed tier values.",
+      independentProc: true,
+      note: "20% trigger chance. Independent copies roll separately; multiple copies can trigger 1, 2, or 3 procs. Each proc applies multiplicative damage reduction.",
       effects: [stackEffect("damage reduction", [25, 30, 35], { unit: "%", suffix: "damage reduction", stack: false })],
     },
     Parry: {
       damageTakenExample: 1000,
+      independentProc: true,
       speedChance: speedChance("parry chance", [6, 7, 9, 10]),
+      note: "Independent copies roll separately; multiple copies can trigger 1, 2, or 3 parries. Each proc applies multiplicative damage reduction.",
       effects: [stackEffect("damage reduction", [70, 80, 90], { unit: "%", suffix: "damage reduction", stack: false })],
     },
     "Toxic Shell": {
@@ -291,6 +295,23 @@
     return `${effect.prefix || ""}${formatNumber(value)}${effect.unit || ""} ${effect.suffix || effect.label}`.trim();
   };
 
+  const formatIndependentProcScenarioValue = (effect, scenario) => {
+    const base = Number(effect.values?.[scenario.tierIndex]);
+    if (!Number.isFinite(base) || scenario.count <= 1) return "";
+    const suffix = effect.suffix || effect.label;
+    if (String(suffix).toLowerCase() === "damage reduction") {
+      return `independent rolls; ${formatNumber(base)}${effect.unit || ""} damage reduction per proc`;
+    }
+    const outcomes = [];
+    for (let procCount = 1; procCount <= scenario.count; procCount += 1) {
+      const value = effect.stack === false ? base : base * procCount;
+      outcomes.push(
+        `${procCount} proc${procCount === 1 ? "" : "s"} ${effect.prefix || ""}${formatNumber(value)}${effect.unit || ""}`
+      );
+    }
+    return `independent rolls; ${outcomes.join(", ")} ${suffix}`.trim();
+  };
+
   const effectScenarioValue = (effect, scenario) => {
     const base = Number(effect.values?.[scenario.tierIndex]);
     if (!Number.isFinite(base)) return null;
@@ -335,7 +356,13 @@
 
   const buildScenarioParts = (metadata, scenario, speedValue) => {
     const effects = Array.isArray(metadata.effects) ? metadata.effects : [];
-    const parts = effects.map((effect) => formatEffectValue(effect, scenario)).filter(Boolean);
+    const parts = effects
+      .map((effect) =>
+        metadata.independentProc
+          ? formatIndependentProcScenarioValue(effect, scenario) || formatEffectValue(effect, scenario)
+          : formatEffectValue(effect, scenario)
+      )
+      .filter(Boolean);
     effects
       .filter((effect) => effect.proc)
       .forEach((effect) => {
@@ -365,6 +392,15 @@
       ? metadata.effects.find((effect) => String(effect.suffix || effect.label || "").toLowerCase() === "damage reduction")
       : null;
 
+  const appendIndependentDamageTakenExample = (parent, scenario, incomingDamage, reduction) => {
+    const outcomes = [];
+    for (let procCount = 1; procCount <= scenario.count; procCount += 1) {
+      const damageTaken = Math.max(0, incomingDamage * Math.pow(1 - reduction / 100, procCount));
+      outcomes.push(`${procCount} proc${procCount === 1 ? "" : "s"} ${formatExampleNumber(damageTaken)}`);
+    }
+    appendScenarioRow(parent, scenario, [`${outcomes.join(", ")} damage taken`]);
+  };
+
   const appendDamageTakenExample = (parent, metadata) => {
     const incomingDamage = Number(metadata.damageTakenExample);
     const effect = findDamageReductionEffect(metadata);
@@ -375,6 +411,10 @@
     STACK_SCENARIOS.forEach((scenario) => {
       const reduction = effectScenarioValue(effect, scenario);
       if (!Number.isFinite(reduction)) return;
+      if (metadata.independentProc && scenario.count > 1) {
+        appendIndependentDamageTakenExample(parent, scenario, incomingDamage, reduction);
+        return;
+      }
       const damageTaken = Math.max(0, incomingDamage * (1 - reduction / 100));
       appendScenarioRow(parent, scenario, [`${formatExampleNumber(damageTaken)} damage taken`]);
     });

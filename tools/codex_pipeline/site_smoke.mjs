@@ -460,16 +460,21 @@ async function assertPerkMathTooltip(page) {
   await assertDamageReductionExample(page, "Juggernaut", [
     "Example: 1,000 incoming damage",
     "1x T1: 750 damage taken",
-    "3x T1: 750 damage taken",
-    "3x T2: 700 damage taken",
-    "3x T3: 650 damage taken",
+    "3x T1: 1 proc 750, 2 procs 562.5, 3 procs 421.88 damage taken",
+    "3x T2: 1 proc 700, 2 procs 490, 3 procs 343 damage taken",
+    "3x T3: 1 proc 650, 2 procs 422.5, 3 procs 274.63 damage taken",
   ]);
   await assertDamageReductionExample(page, "Parry", [
     "Example: 1,000 incoming damage",
     "1x T1: 300 damage taken",
-    "3x T1: 300 damage taken",
-    "3x T2: 200 damage taken",
-    "3x T3: 100 damage taken",
+    "3x T1: 1 proc 300, 2 procs 90, 3 procs 27 damage taken",
+    "3x T2: 1 proc 200, 2 procs 40, 3 procs 8 damage taken",
+    "3x T3: 1 proc 100, 2 procs 10, 3 procs 1 damage taken",
+  ]);
+  await assertIndependentProcExample(page, "Bloodthirster", [
+    "Independent copies roll separately",
+    "3x T1: independent rolls; 1 proc 4%, 2 procs 8%, 3 procs 12% max health heal",
+    "3x T3: independent rolls; 1 proc 8%, 2 procs 16%, 3 procs 24% max health heal",
   ]);
 }
 
@@ -478,6 +483,15 @@ async function assertDamageReductionExample(page, perkName, expectedLines) {
   for (const expected of expectedLines) {
     if (!tooltipText.includes(expected)) {
       throw new Error(`${perkName} tooltip missing damage example "${expected}": "${tooltipText}"`);
+    }
+  }
+}
+
+async function assertIndependentProcExample(page, perkName, expectedLines) {
+  const tooltipText = (await page.locator(`[data-perk-name="${perkName}"] .perk-math-tooltip`).textContent()).trim();
+  for (const expected of expectedLines) {
+    if (!tooltipText.includes(expected)) {
+      throw new Error(`${perkName} tooltip missing independent proc example "${expected}": "${tooltipText}"`);
     }
   }
 }
