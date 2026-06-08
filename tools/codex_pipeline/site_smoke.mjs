@@ -450,6 +450,30 @@ async function assertPerkMathTooltip(page) {
       throw new Error(`Demon Blood tooltip missing "${expected}": "${demonBloodText}"`);
     }
   }
+
+  await assertDamageReductionExample(page, "Juggernaut", [
+    "Example: 1,000 incoming damage",
+    "1x T1: 750 damage taken",
+    "3x T1: 750 damage taken",
+    "3x T2: 700 damage taken",
+    "3x T3: 650 damage taken",
+  ]);
+  await assertDamageReductionExample(page, "Parry", [
+    "Example: 1,000 incoming damage",
+    "1x T1: 300 damage taken",
+    "3x T1: 300 damage taken",
+    "3x T2: 200 damage taken",
+    "3x T3: 100 damage taken",
+  ]);
+}
+
+async function assertDamageReductionExample(page, perkName, expectedLines) {
+  const tooltipText = (await page.locator(`[data-perk-name="${perkName}"] .perk-math-tooltip`).textContent()).trim();
+  for (const expected of expectedLines) {
+    if (!tooltipText.includes(expected)) {
+      throw new Error(`${perkName} tooltip missing damage example "${expected}": "${tooltipText}"`);
+    }
+  }
 }
 
 async function assertNumberGreaterThan(page, selector, minimum, label) {

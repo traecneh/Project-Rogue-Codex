@@ -158,10 +158,12 @@
       effects: [stackEffect("armor", [4, 5, 6], { prefix: "+", suffix: "armor" })],
     },
     Juggernaut: {
+      damageTakenExample: 1000,
       note: "20% trigger chance. Reduction is multiplicative, so stacked copies are shown as listed tier values.",
       effects: [stackEffect("damage reduction", [25, 30, 35], { unit: "%", suffix: "damage reduction", stack: false })],
     },
     Parry: {
+      damageTakenExample: 1000,
       speedChance: speedChance("parry chance", [6, 7, 9, 10]),
       effects: [stackEffect("damage reduction", [70, 80, 90], { unit: "%", suffix: "damage reduction", stack: false })],
     },
@@ -275,11 +277,24 @@
     return Number.isInteger(rounded) ? String(rounded) : String(rounded).replace(/0+$/, "").replace(/\.$/, "");
   };
 
+  const formatExampleNumber = (value) => {
+    const formatted = formatNumber(value);
+    const [whole, decimal] = formatted.split(".");
+    const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    return decimal ? `${grouped}.${decimal}` : grouped;
+  };
+
   const formatEffectValue = (effect, scenario) => {
     const base = Number(effect.values?.[scenario.tierIndex]);
     if (!Number.isFinite(base)) return "";
     const value = effect.stack === false ? base : base * scenario.count;
     return `${effect.prefix || ""}${formatNumber(value)}${effect.unit || ""} ${effect.suffix || effect.label}`.trim();
+  };
+
+  const effectScenarioValue = (effect, scenario) => {
+    const base = Number(effect.values?.[scenario.tierIndex]);
+    if (!Number.isFinite(base)) return null;
+    return effect.stack === false ? base : base * scenario.count;
   };
 
   const appendText = (parent, tagName, className, text) => {
@@ -345,6 +360,26 @@
     return row;
   };
 
+  const findDamageReductionEffect = (metadata) =>
+    Array.isArray(metadata.effects)
+      ? metadata.effects.find((effect) => String(effect.suffix || effect.label || "").toLowerCase() === "damage reduction")
+      : null;
+
+  const appendDamageTakenExample = (parent, metadata) => {
+    const incomingDamage = Number(metadata.damageTakenExample);
+    const effect = findDamageReductionEffect(metadata);
+    if (!Number.isFinite(incomingDamage) || incomingDamage <= 0 || !effect) return;
+
+    appendDivider(parent);
+    appendText(parent, "p", "perk-math-example-title", `Example: ${formatExampleNumber(incomingDamage)} incoming damage`);
+    STACK_SCENARIOS.forEach((scenario) => {
+      const reduction = effectScenarioValue(effect, scenario);
+      if (!Number.isFinite(reduction)) return;
+      const damageTaken = Math.max(0, incomingDamage * (1 - reduction / 100));
+      appendScenarioRow(parent, scenario, [`${formatExampleNumber(damageTaken)} damage taken`]);
+    });
+  };
+
   const renderPerkMath = (perkName, speedValue = DEFAULT_SPEED) => {
     const metadata = normalizedCalculations.get(normalizePerkName(perkName));
     if (!metadata) return null;
@@ -370,6 +405,7 @@
     STACK_SCENARIOS.forEach((scenario) => {
       appendScenarioRow(tooltip, scenario, buildScenarioParts(metadata, scenario, speedValue));
     });
+    appendDamageTakenExample(tooltip, metadata);
     if (metadata.note) {
       appendDivider(tooltip);
       appendText(tooltip, "p", "perk-math-note", metadata.note);

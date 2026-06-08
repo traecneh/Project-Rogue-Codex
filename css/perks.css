@@ -177,6 +177,7 @@
 
 .perk-math-context,
 .perk-math-row,
+.perk-math-example-title,
 .perk-math-note {
   margin: 0.22rem 0;
 }
@@ -195,6 +196,12 @@
   color: var(--accent);
   font-weight: 800;
   white-space: nowrap;
+}
+
+.perk-math-example-title {
+  color: var(--text-main);
+  font-weight: 800;
+  text-align: center;
 }
 
 .perk-math-note {

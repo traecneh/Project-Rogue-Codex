@@ -511,12 +511,18 @@ class SiteValidationTests(unittest.TestCase):
             "const PERK_CALCULATIONS",
             '"Bloodlust"',
             '"Demon Blood"',
+            "Juggernaut:",
+            "Parry:",
+            "damageTakenExample: 1000",
             "const attacksPerMinute",
+            "const formatExampleNumber",
             "const appendDivider",
             "const appendScenarioRow",
+            "const appendDamageTakenExample",
             "const renderPerkMath",
             '"perk-math-separator"',
             '"perk-math-scenario"',
+            '"perk-math-example-title"',
         ]:
             self.assertIn(expected, calc_script)
         self.assertEqual(
@@ -531,6 +537,7 @@ class SiteValidationTests(unittest.TestCase):
             ".perk-math-tooltip",
             ".perk-math-separator",
             ".perk-math-scenario",
+            ".perk-math-example-title",
             ".perk-source-chip",
             ".perk-card-hidden",
             ".stat-card.perk-selected",
