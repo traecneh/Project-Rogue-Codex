@@ -1,0 +1,214 @@
+.craft-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
+  gap: 0.75rem;
+  margin: 1rem 0 1.5rem;
+}
+
+.craft-summary-card,
+.craft-shop-card {
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 0.85rem;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.045), rgba(0, 0, 0, 0.24)),
+    rgba(14, 18, 25, 0.74);
+}
+
+.craft-summary-card {
+  min-height: 128px;
+}
+
+.craft-summary-card h3,
+.craft-shop-card h3 {
+  margin: 0.25rem 0 0.4rem;
+  font-size: 1rem;
+  color: var(--text-main);
+}
+
+.craft-summary-card p:last-child,
+.craft-shop-card p:last-child,
+.craft-note p {
+  margin-bottom: 0;
+}
+
+.craft-shop,
+.craft-imbuement,
+.craft-flow-section,
+.craft-note,
+.craft-related {
+  margin-top: 1.5rem;
+}
+
+.craft-shop-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.85rem;
+}
+
+.craft-shop-card h3 {
+  color: #8bd4ff;
+}
+
+.craft-shop-card ul {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0.6rem 0 0;
+  padding-left: 1.15rem;
+}
+
+.craft-shop-card-wide {
+  grid-column: span 2;
+}
+
+.craft-imbuement-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 0.85rem;
+  margin-top: 0.85rem;
+}
+
+.craft-panel {
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 0.95rem;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.craft-panel h3 {
+  margin: 0 0 0.65rem;
+  font-size: 1rem;
+}
+
+.craft-panel ul {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+  padding-left: 1.15rem;
+}
+
+.craft-panel-primary {
+  border-color: rgba(126, 206, 255, 0.45);
+}
+
+.craft-panel-primary h3 {
+  color: #8bd4ff;
+}
+
+.craft-panel-secondary {
+  border-color: rgba(142, 225, 177, 0.42);
+}
+
+.craft-panel-secondary h3 {
+  color: #9ee8bd;
+}
+
+.craft-panel-warning {
+  border-color: rgba(255, 179, 71, 0.42);
+}
+
+.craft-panel-warning h3 {
+  color: #ffbd66;
+}
+
+.craft-flow {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0.85rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.craft-flow li {
+  display: grid;
+  grid-template-columns: 2.2rem 1fr;
+  gap: 0.75rem;
+  align-items: start;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 0.85rem;
+  background: rgba(5, 8, 12, 0.34);
+}
+
+.craft-flow span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  border: 1px solid rgba(126, 206, 255, 0.5);
+  border-radius: 999px;
+  color: #ffffff;
+  font-weight: 800;
+  background: rgba(126, 206, 255, 0.12);
+}
+
+.craft-flow h3 {
+  margin: 0 0 0.2rem;
+  font-size: 1rem;
+}
+
+.craft-flow p {
+  margin: 0;
+}
+
+.craft-note {
+  border: 1px solid rgba(142, 225, 177, 0.38);
+  border-radius: 8px;
+  padding: 0.95rem;
+  background: rgba(142, 225, 177, 0.07);
+}
+
+.craft-note h2 {
+  margin-top: 0;
+}
+
+.craft-link-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.65rem;
+  margin-top: 0.8rem;
+}
+
+.craft-link-grid a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.6rem;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  color: var(--text-main);
+  text-decoration: none;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.craft-link-grid a:hover,
+.craft-link-grid a:focus-visible {
+  border-color: var(--accent-blue);
+  color: #ffffff;
+  outline: none;
+}
+
+@media (max-width: 700px) {
+  .craft-summary-grid,
+  .craft-shop-grid,
+  .craft-imbuement-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .craft-shop-card-wide {
+    grid-column: auto;
+  }
+
+  .craft-flow li {
+    grid-template-columns: 1.9rem 1fr;
+    gap: 0.65rem;
+  }
+
+  .craft-flow span {
+    width: 1.9rem;
+    height: 1.9rem;
+  }
+}

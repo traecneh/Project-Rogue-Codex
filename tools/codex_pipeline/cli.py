@@ -63,6 +63,8 @@ VALIDATED_HTML_PATHS = [
     REPO_ROOT / "pages" / "systems" / "re-roll.html",
     REPO_ROOT / "pages" / "systems" / "deconstruct.html",
     REPO_ROOT / "pages" / "systems" / "ascend.html",
+    REPO_ROOT / "pages" / "systems" / "craft.html",
+    REPO_ROOT / "pages" / "systems" / "crafting.html",
 ]
 
 VALIDATED_STYLE_PATHS = [
@@ -75,6 +77,8 @@ VALIDATED_STYLE_PATHS = [
     REPO_ROOT / "css" / "reroll.css",
     REPO_ROOT / "css" / "deconstruct.css",
     REPO_ROOT / "css" / "ascend.css",
+    REPO_ROOT / "css" / "craft.css",
+    REPO_ROOT / "css" / "crafting.css",
 ]
 
 VALIDATED_SCRIPT_PATHS = [
@@ -86,6 +90,7 @@ VALIDATED_SCRIPT_PATHS = [
     REPO_ROOT / "js" / "perk-calculations.js",
     REPO_ROOT / "js" / "perks-page.js",
     REPO_ROOT / "js" / "rarity-roller.js",
+    REPO_ROOT / "js" / "crafting-page.js",
 ]
 
 

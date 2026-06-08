@@ -809,6 +809,122 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(".ascend-flow", css)
         self.assertIn(".ascend-link-grid", css)
 
+    def test_craft_page_has_compact_ascendancy_shop_reference(self):
+        from tools.codex_pipeline import cli
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        html_path = REPO_ROOT / "pages" / "systems" / "craft.html"
+        css_path = REPO_ROOT / "css" / "craft.css"
+        html = html_path.read_text(encoding="utf-8")
+        css = css_path.read_text(encoding="utf-8") if css_path.exists() else ""
+
+        self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
+        self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
+        self.assertIn('<link rel="stylesheet" href="css/craft.css" />', html)
+        self.assertNotIn("<style>", html)
+        self.assertEqual(
+            [],
+            [
+                block.strip()
+                for block in re.findall(
+                    r"<script\b(?![^>]*\bsrc\s*=)[^>]*>([\s\S]*?)</script>",
+                    html,
+                    flags=re.IGNORECASE,
+                )
+                if block.strip()
+            ],
+        )
+
+        for expected in [
+            "Craft Menu Role",
+            "Ethereal Shard Purchases",
+            "Scrolls of Imbuement",
+            "Craft vs Crafting",
+            "Ethereal Shards",
+            "Augment Orb",
+            "Scroll of Regret",
+            "Race Change Scroll",
+            "Collector's Pouch",
+            "Berserker Potion",
+            "250 Tattered Imbuements",
+            "25 Tattered Imbuements",
+            "Epic+ Only",
+            "pages/systems/crafting.html",
+            "pages/systems/imbuements.html",
+            "pages/systems/deconstruct.html",
+            "pages/systems/purge.html",
+            "pages/systems/rarity.html",
+            "pages/systems/ascend.html",
+        ]:
+            self.assertIn(expected, html)
+
+        self.assertIn(".craft-summary-grid", css)
+        self.assertIn(".craft-shop-grid", css)
+        self.assertIn(".craft-flow", css)
+        self.assertIn(".craft-link-grid", css)
+
+    def test_crafting_page_has_compact_armor_crafting_reference(self):
+        from tools.codex_pipeline import cli
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        html_path = REPO_ROOT / "pages" / "systems" / "crafting.html"
+        css_path = REPO_ROOT / "css" / "crafting.css"
+        script_path = REPO_ROOT / "js" / "crafting-page.js"
+        html = html_path.read_text(encoding="utf-8")
+        css = css_path.read_text(encoding="utf-8") if css_path.exists() else ""
+        script = script_path.read_text(encoding="utf-8") if script_path.exists() else ""
+
+        self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
+        self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
+        self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
+        self.assertIn('<link rel="stylesheet" href="css/crafting.css" />', html)
+        self.assertIn('<script src="js/crafting-page.js" defer></script>', html)
+        self.assertNotIn("<style>", html)
+        self.assertEqual(
+            [],
+            [
+                block.strip()
+                for block in re.findall(
+                    r"<script\b(?![^>]*\bsrc\s*=)[^>]*>([\s\S]*?)</script>",
+                    html,
+                    flags=re.IGNORECASE,
+                )
+                if block.strip()
+            ],
+        )
+
+        for expected in [
+            "Armor Crafting Scope",
+            "Frost vs Dragon Materials",
+            "Material Costs",
+            "Crafting Flow",
+            "Materials Calculator",
+            "Set Preview",
+            "Ice Crystals",
+            "Dragon Scales",
+            "Hammer &amp; Anvil",
+            "100% Success",
+            "Random Rarity",
+            "Full Suit",
+            "455",
+            "Current Materials",
+            "data-materials-range",
+            "data-set-option",
+            "pages/systems/craft.html",
+            "pages/items/armors.html",
+            "pages/systems/rarity.html",
+        ]:
+            self.assertIn(expected, html)
+
+        self.assertIn(".crafting-summary-grid", css)
+        self.assertIn(".crafting-cost-grid", css)
+        self.assertIn(".crafting-flow", css)
+        self.assertIn(".crafting-link-grid", css)
+        self.assertIn("const ARMOR_SETS", script)
+        self.assertIn("data-materials-range", script)
+        self.assertIn("data-set-option", script)
+        self.assertIn("Select at least one slot to see totals.", script)
+
     def test_armors_page_uses_linked_names_and_non_sortable_image_column(self):
         from tools.codex_pipeline.config import REPO_ROOT
 

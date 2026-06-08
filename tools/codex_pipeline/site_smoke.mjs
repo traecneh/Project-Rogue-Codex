@@ -103,6 +103,18 @@ async function main() {
     } catch (error) {
       failures.push(`SMOKE ERROR ascend: ${formatError(error)}`);
     }
+    try {
+      await runCraftSpec(browser, baseUrl);
+      console.log("SMOKE OK craft: ascendancy shop, imbuement crafting, related links");
+    } catch (error) {
+      failures.push(`SMOKE ERROR craft: ${formatError(error)}`);
+    }
+    try {
+      await runCraftingSpec(browser, baseUrl);
+      console.log("SMOKE OK crafting: armor reference, set preview, materials calculator");
+    } catch (error) {
+      failures.push(`SMOKE ERROR crafting: ${formatError(error)}`);
+    }
   } finally {
     await browser.close();
     if (server) await server.close();
@@ -112,7 +124,7 @@ async function main() {
     failures.forEach((failure) => console.error(failure));
     process.exit(1);
   }
-  console.log(`SMOKE OK site: ${smokeSpecs.length + 6} page(s) checked at ${baseUrl}`);
+  console.log(`SMOKE OK site: ${smokeSpecs.length + 8} page(s) checked at ${baseUrl}`);
 }
 
 async function importPlaywright() {
@@ -522,6 +534,138 @@ async function runAscendSpec(browser, baseUrl) {
       const count = await page.locator(`.ascend-link-grid a[href="${href}"]`).count();
       if (count !== 1) {
         throw new Error(`Ascend related link expected one "${href}", found ${count}`);
+      }
+    }
+
+    if (runtimeErrors.length) {
+      throw new Error(`browser errors: ${runtimeErrors.join("; ")}`);
+    }
+  } finally {
+    await page.close();
+  }
+}
+
+async function runCraftSpec(browser, baseUrl) {
+  const page = await browser.newPage();
+  page.setDefaultTimeout(timeoutMs);
+  const runtimeErrors = [];
+  page.on("console", (message) => {
+    const text = message.text();
+    if (message.type() === "error" && !text.startsWith("Failed to load resource")) runtimeErrors.push(text);
+  });
+  page.on("pageerror", (error) => runtimeErrors.push(formatError(error)));
+
+  try {
+    await page.goto(joinUrl(baseUrl, "/pages/systems/craft.html"), { waitUntil: "load" });
+    await page.locator(".craft-shop-grid").waitFor({ state: "visible" });
+    const pageText = (await page.locator("#craft-basics").textContent()).trim();
+    for (const expected of [
+      "Craft Menu Role",
+      "Ethereal Shard Purchases",
+      "Scrolls of Imbuement",
+      "Craft vs Crafting",
+      "Ethereal Shards",
+      "Augment Orb",
+      "Race Change Scroll",
+      "250 Tattered Imbuements",
+      "25 Tattered Imbuements",
+      "Epic+ Only",
+    ]) {
+      if (!pageText.includes(expected)) {
+        throw new Error(`Craft page missing "${expected}": "${pageText}"`);
+      }
+    }
+
+    for (const href of [
+      "pages/systems/crafting.html",
+      "pages/systems/imbuements.html",
+      "pages/systems/deconstruct.html",
+      "pages/systems/purge.html",
+      "pages/systems/rarity.html",
+      "pages/systems/ascend.html",
+    ]) {
+      const count = await page.locator(`.craft-link-grid a[href="${href}"]`).count();
+      if (count !== 1) {
+        throw new Error(`Craft related link expected one "${href}", found ${count}`);
+      }
+    }
+
+    if (runtimeErrors.length) {
+      throw new Error(`browser errors: ${runtimeErrors.join("; ")}`);
+    }
+  } finally {
+    await page.close();
+  }
+}
+
+async function runCraftingSpec(browser, baseUrl) {
+  const page = await browser.newPage();
+  page.setDefaultTimeout(timeoutMs);
+  const runtimeErrors = [];
+  page.on("console", (message) => {
+    const text = message.text();
+    if (message.type() === "error" && !text.startsWith("Failed to load resource")) runtimeErrors.push(text);
+  });
+  page.on("pageerror", (error) => runtimeErrors.push(formatError(error)));
+
+  try {
+    await page.goto(joinUrl(baseUrl, "/pages/systems/crafting.html"), { waitUntil: "load" });
+    await page.locator(".crafting-cost-grid").waitFor({ state: "visible" });
+    const pageText = (await page.locator("#crafting-basics").textContent()).trim();
+    for (const expected of [
+      "Armor Crafting Scope",
+      "Frost vs Dragon Materials",
+      "Material Costs",
+      "Crafting Flow",
+      "Materials Calculator",
+      "Set Preview",
+      "Ice Crystals",
+      "Dragon Scales",
+      "Hammer & Anvil",
+      "100% Success",
+      "Random Rarity",
+      "Full Suit",
+      "455",
+    ]) {
+      if (!pageText.includes(expected)) {
+        throw new Error(`Crafting page missing "${expected}": "${pageText}"`);
+      }
+    }
+
+    await page.locator('[data-set-option="black"]').click();
+    await page.waitForFunction(() =>
+      Array.from(document.querySelectorAll("[data-slot-preview]")).every((img) => img.alt.includes("Black Dragon"))
+    );
+    const blackHelmSrc = await page.locator('[data-slot-preview][data-slot="helm"]').getAttribute("src");
+    if (!blackHelmSrc || !blackHelmSrc.includes("Black%20Dragon%20Helmet")) {
+      throw new Error(`Crafting set preview did not swap to Black Dragon helm: "${blackHelmSrc}"`);
+    }
+
+    await page.locator("[data-materials-range]").evaluate((slider) => {
+      slider.value = "100";
+      slider.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await page.locator('[data-slot="plate"] [data-qty-plus]').click();
+    await page.waitForFunction(() => document.querySelector("[data-material-summary]")?.textContent?.includes("Need 58 more"));
+    const summaryText = (await page.locator("[data-material-summary]").textContent()).trim();
+    if (!summaryText.includes("Need 58 more") || !summaryText.includes("1 Plate")) {
+      throw new Error(`Crafting calculator summary was unexpected: "${summaryText}"`);
+    }
+    await page.locator('[data-slot="plate"] [data-qty-minus]').click();
+    await page.waitForFunction(
+      () => document.querySelector("[data-material-summary]")?.textContent?.trim() === "Select at least one slot to see totals."
+    );
+
+    for (const href of [
+      "pages/systems/craft.html",
+      "pages/items/armors.html",
+      "pages/systems/rarity.html",
+      "pages/systems/deconstruct.html",
+      "pages/General/build-planner.html",
+    ]) {
+      const count = await page.locator(`.crafting-link-grid a[href="${href}"]`).count();
+      if (count !== 1) {
+        throw new Error(`Crafting related link expected one "${href}", found ${count}`);
       }
     }
 

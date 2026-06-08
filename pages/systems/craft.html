@@ -11,6 +11,7 @@
     <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
     <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/craft.css" />
     <script src="js/site-search.js" defer></script>
     <script src="js/weapon-specialty.js" defer></script>
     <script src="js/stat-widgets.js" defer></script>
@@ -26,96 +27,167 @@
       <main class="main-content">
         <header class="content-header">
           <h1 class="content-title">Craft System</h1>
-          <p class="content-tagline">Spend Ethereal Shards to buy power items or craft Scrolls of Imbuement.</p>
+          <p class="content-tagline">
+            The Ascendancy Craft menu: spend Ethereal Shards, buy utility items, and craft Scrolls of Imbuement.
+          </p>
         </header>
 
         <article class="content-section" id="craft-basics">
-          <h2>Ethereal Shards</h2>
-          <p>Ethereal Shards drop in the world and fund every purchase and craft in this menu.</p>
-          <div class="stat-grid" role="list">
-            <section class="stat-card" role="listitem">
+          <h2>Craft Menu Role</h2>
+          <div class="craft-summary-grid" role="list">
+            <section class="craft-summary-card" role="listitem">
               <p class="stat-label">Currency</p>
-              <h3>Shard Sink</h3>
-              <p>All craft purchases and scroll crafting consume Ethereal Shards.</p>
+              <h3>Ethereal Shards</h3>
+              <p>Ethereal Shards fund every direct purchase and scroll craft in this menu.</p>
             </section>
 
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Access</p>
-              <h3>Craft Menu</h3>
-              <p>Open the Craft menu to spend shards, buy items, or craft imbuement scrolls.</p>
+            <section class="craft-summary-card" role="listitem">
+              <p class="stat-label">Shop</p>
+              <h3>Shard Purchases</h3>
+              <p>Buy utility and progression items directly with Ethereal Shards.</p>
+            </section>
+
+            <section class="craft-summary-card" role="listitem">
+              <p class="stat-label">Imbuements</p>
+              <h3>Targeted Perks</h3>
+              <p>Craft Scrolls of Imbuement from matching Tattered Imbuements.</p>
+            </section>
+
+            <section class="craft-summary-card" role="listitem">
+              <p class="stat-label">Travel</p>
+              <h3>Race Change</h3>
+              <p>The Race Change Scroll sends eligible characters to Race Change Island.</p>
             </section>
           </div>
-        </article>
 
-        <article class="content-section" id="craft-shop">
-          <h2>Shard Purchases</h2>
-          <p>Buy these directly with Ethereal Shards.</p>
-          <div class="stat-grid" role="list">
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Augment Orb</p>
-              <h3>100,000 Shards</h3>
-              <p>Imbues a random T3 perk on an item.</p>
-            </section>
+          <section class="craft-shop">
+            <h2>Ethereal Shard Purchases</h2>
+            <div class="craft-shop-grid" role="list">
+              <section class="craft-shop-card" role="listitem">
+                <p class="stat-label">Augment Orb</p>
+                <h3>100,000 Shards</h3>
+                <p>Imbues a random T3 perk on an eligible item.</p>
+              </section>
 
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Scroll of Regret</p>
-              <h3>25,000 Shards</h3>
-              <p>Returns 5 of each stat back as orbs.</p>
-            </section>
+              <section class="craft-shop-card" role="listitem">
+                <p class="stat-label">Scroll of Regret</p>
+                <h3>25,000 Shards</h3>
+                <p>Returns 5 of each stat back as orbs.</p>
+              </section>
 
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Race Change Scroll</p>
-              <h3>250,000 Shards</h3>
-              <p>Teleports you to Race Change Island.</p>
-              <p>
-                Use criteria: you must be in a safe zone, not flagged criminal, and remain stationary for
-                <strong>30+ seconds</strong>.
-              </p>
-              <p>On exit, you are transported to <strong>Jeel</strong>.</p>
-            </section>
+              <section class="craft-shop-card craft-shop-card-wide" role="listitem">
+                <p class="stat-label">Race Change Scroll</p>
+                <h3>250,000 Shards</h3>
+                <p>Teleports you to Race Change Island when the safety requirements are met.</p>
+                <ul>
+                  <li>Character must be in a safe zone.</li>
+                  <li>Character must not be flagged criminal.</li>
+                  <li>Character must remain stationary for <strong>30+ seconds</strong>.</li>
+                  <li>Leaving the island transports the character to <strong>Jeel</strong>.</li>
+                </ul>
+              </section>
 
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Collector's Pouch</p>
-              <h3>100,000 Shards</h3>
-              <p>Automatically loots gold and imbuements.</p>
-            </section>
+              <section class="craft-shop-card" role="listitem">
+                <p class="stat-label">Collector's Pouch</p>
+                <h3>100,000 Shards</h3>
+                <p>Automatically loots gold and imbuements.</p>
+              </section>
 
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Berserker Potion (1)</p>
-              <h3>10,000 Shards</h3>
-              <p>Allows you to attack in all directions.</p>
-            </section>
+              <section class="craft-shop-card" role="listitem">
+                <p class="stat-label">Berserker Potion</p>
+                <h3>10,000 Shards</h3>
+                <p>Buys 1 potion. Allows attacks in all directions.</p>
+              </section>
 
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Berserker Potion (5)</p>
-              <h3>40,000 Shards</h3>
-              <p>Allows you to attack in all directions.</p>
-            </section>
-          </div>
-        </article>
+              <section class="craft-shop-card" role="listitem">
+                <p class="stat-label">Berserker Potion Bundle</p>
+                <h3>40,000 Shards</h3>
+                <p>Buys 5 potions at a bundle price.</p>
+              </section>
+            </div>
+          </section>
 
-        <article class="content-section" id="craft-imbuement">
-          <h2>Scrolls of Imbuement</h2>
-          <p>Craft scrolls and apply them to qualifying gear.</p>
-          <div class="stat-grid" role="list">
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Cost</p>
-              <h3>Scroll of Imbuement</h3>
-              <p>Requires 250 Tattered Imbuements; craft to imbue a specific perk on an item.</p>
-            </section>
+          <section class="craft-imbuement">
+            <h2>Scrolls of Imbuement</h2>
+            <div class="craft-imbuement-grid">
+              <section class="craft-panel craft-panel-primary">
+                <h3>Craft Scroll</h3>
+                <ul>
+                  <li><strong>250 Tattered Imbuements</strong> of the same perk type craft one Scroll of Imbuement.</li>
+                  <li>The resulting scroll targets that specific perk when applied.</li>
+                  <li>Scroll crafting happens from the Craft menu, while applying uses the Imbue tool.</li>
+                </ul>
+              </section>
+              <section class="craft-panel craft-panel-secondary">
+                <h3>Convert T1 Imbuements</h3>
+                <ul>
+                  <li>Any T1 Imbuement can be converted into <strong>25 Tattered Imbuements</strong>.</li>
+                  <li>This ties the Craft menu directly into Deconstruct and Purge decisions.</li>
+                </ul>
+              </section>
+              <section class="craft-panel craft-panel-warning">
+                <h3>Epic+ Only</h3>
+                <ul>
+                  <li>Items must be Epic rarity or higher to receive an imbuement.</li>
+                  <li>Check the Rarity page before spending a scroll on a borderline item.</li>
+                </ul>
+              </section>
+            </div>
+          </section>
 
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Convert</p>
-              <h3>Tattered Imbuement</h3>
-              <p>Turn any T1 Imbuement into <strong>25 Tattered Imbuements</strong>.</p>
-            </section>
+          <section class="craft-flow-section">
+            <h2>Craft Menu Flow</h2>
+            <ol class="craft-flow">
+              <li>
+                <span>1</span>
+                <div>
+                  <h3>Collect shards or tattereds</h3>
+                  <p>Use Ethereal Shards for shop purchases or matching Tattered Imbuements for scroll crafting.</p>
+                </div>
+              </li>
+              <li>
+                <span>2</span>
+                <div>
+                  <h3>Choose the path</h3>
+                  <p>Buy a utility item, craft a targeted imbuement scroll, or prepare a Race Change Scroll.</p>
+                </div>
+              </li>
+              <li>
+                <span>3</span>
+                <div>
+                  <h3>Check eligibility</h3>
+                  <p>Race changes require safe conditions; imbuements require an Epic+ item.</p>
+                </div>
+              </li>
+              <li>
+                <span>4</span>
+                <div>
+                  <h3>Spend deliberately</h3>
+                  <p>These currencies connect to Ascend, Deconstruct, Purge, and build-planning decisions.</p>
+                </div>
+              </li>
+            </ol>
+          </section>
 
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Apply</p>
-              <h3>Epic+ Only</h3>
-              <p>You can only apply an imbuement to items that are Epic rarity or higher.</p>
-            </section>
-          </div>
+          <section class="craft-note">
+            <h2>Craft vs Crafting</h2>
+            <p>
+              This page covers the Ascendancy Craft menu. The separate Crafting page covers hammer-and-anvil armor
+              crafting with Ice Crystals and Dragon Scales.
+            </p>
+          </section>
+
+          <section class="craft-related">
+            <h2>Related Item Pages</h2>
+            <div class="craft-link-grid" aria-label="Related craft pages">
+              <a href="pages/systems/crafting.html">Crafting</a>
+              <a href="pages/systems/imbuements.html">Imbuements</a>
+              <a href="pages/systems/deconstruct.html">Deconstruct</a>
+              <a href="pages/systems/purge.html">Purge</a>
+              <a href="pages/systems/rarity.html">Rarity</a>
+              <a href="pages/systems/ascend.html">Ascend</a>
+            </div>
+          </section>
         </article>
       </main>
     </div>
