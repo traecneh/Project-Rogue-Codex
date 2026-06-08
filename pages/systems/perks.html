@@ -18,6 +18,7 @@
     <script src="js/keyword-links.js" defer></script>
     <script src="js/cursor-toggle.js" defer></script>
     <script src="js/perks.js" defer></script>
+    <script src="js/perk-calculations.js" defer></script>
     <script src="js/perks-page.js" defer></script>
     <script src="js/rarity-roller.js" defer></script>
     <script src="js/nav-core.js" defer></script>
@@ -110,6 +111,12 @@
                 <label for="perk-group-filter">Group</label>
                 <select id="perk-group-filter" class="perk-select">
                   <option value="">All groups</option>
+                </select>
+              </div>
+              <div class="perk-control">
+                <label for="perk-speed-context">Speed Context</label>
+                <select id="perk-speed-context" class="perk-select perk-speed-context">
+                  <option value="1000">1000ms</option>
                 </select>
               </div>
               <div class="perk-control">

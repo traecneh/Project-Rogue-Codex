@@ -112,5 +112,8 @@ class SiteSmokeTests(unittest.TestCase):
         self.assertIn("assertPerkSources", runner)
         self.assertIn("#perk-search", runner)
         self.assertIn("#perk-type-filter", runner)
+        self.assertIn("#perk-speed-context", runner)
+        self.assertIn("assertPerkMathTooltip", runner)
+        self.assertIn("procs/min", runner)
         self.assertIn('!runic.classList.contains("perk-selected")', runner)
         self.assertIn('!params.has("perk")', runner)

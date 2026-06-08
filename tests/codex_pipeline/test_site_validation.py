@@ -446,15 +446,19 @@ class SiteValidationTests(unittest.TestCase):
 
         html_path = REPO_ROOT / "pages" / "systems" / "perks.html"
         css_path = REPO_ROOT / "css" / "perks.css"
+        calc_script_path = REPO_ROOT / "js" / "perk-calculations.js"
         script_path = REPO_ROOT / "js" / "perks-page.js"
         html = html_path.read_text(encoding="utf-8")
         css = css_path.read_text(encoding="utf-8") if css_path.exists() else ""
+        calc_script = calc_script_path.read_text(encoding="utf-8") if calc_script_path.exists() else ""
         script = script_path.read_text(encoding="utf-8") if script_path.exists() else ""
 
         self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
+        self.assertIn(calc_script_path, cli.VALIDATED_SCRIPT_PATHS)
         self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
         self.assertIn('<link rel="stylesheet" href="css/perks.css" />', html)
+        self.assertIn('<script src="js/perk-calculations.js" defer></script>', html)
         self.assertIn('<script src="js/perks-page.js" defer></script>', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
@@ -474,6 +478,7 @@ class SiteValidationTests(unittest.TestCase):
             'id="perk-search"',
             'id="perk-type-filter"',
             'id="perk-group-filter"',
+            'id="perk-speed-context"',
             'id="perk-result-count"',
             'data-perk-results',
             'data-perk-empty',
@@ -484,6 +489,8 @@ class SiteValidationTests(unittest.TestCase):
             'const PERK_ROUTE_PARAM = "perk";',
             "const buildPerkSourceIndex",
             "const renderPerkSources",
+            "const renderPerkMath",
+            "const updatePerkMath",
             "const applyPerkFilters",
             "const clearSelectedPerk",
             "const selectPerk",
@@ -497,7 +504,22 @@ class SiteValidationTests(unittest.TestCase):
             self.assertIn(expected, script)
 
         for expected in [
+            "RogueCodexPerkCalculations",
+            "const SPEED_OPTIONS",
+            "const STACK_SCENARIOS",
+            "const PERK_CALCULATIONS",
+            '"Bloodlust"',
+            '"Demon Blood"',
+            "const attacksPerMinute",
+            "const renderPerkMath",
+        ]:
+            self.assertIn(expected, calc_script)
+
+        for expected in [
             ".perk-controls",
+            ".perk-speed-context",
+            ".perk-math",
+            ".perk-math-tooltip",
             ".perk-source-chip",
             ".perk-card-hidden",
             ".stat-card.perk-selected",

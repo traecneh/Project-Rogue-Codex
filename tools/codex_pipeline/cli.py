@@ -75,6 +75,7 @@ VALIDATED_SCRIPT_PATHS = [
     REPO_ROOT / "js" / "weapons-page.js",
     REPO_ROOT / "js" / "armors-page.js",
     REPO_ROOT / "js" / "monsters-page.js",
+    REPO_ROOT / "js" / "perk-calculations.js",
     REPO_ROOT / "js" / "perks-page.js",
 ]
 

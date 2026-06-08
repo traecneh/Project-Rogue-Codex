@@ -27,6 +27,7 @@
   const perkSearch = document.getElementById("perk-search");
   const typeFilter = document.getElementById("perk-type-filter");
   const groupFilter = document.getElementById("perk-group-filter");
+  const speedContext = document.getElementById("perk-speed-context");
   const clearButton = document.getElementById("perk-clear");
   const resultCount = document.getElementById("perk-result-count");
   const emptyState = document.querySelector("[data-perk-empty]");
@@ -43,6 +44,7 @@
   };
 
   const getPerkApi = () => window.RogueCodexPerks || {};
+  const getCalculationApi = () => window.RogueCodexPerkCalculations || {};
 
   const getPreferredScrollBehavior = () => {
     try {
@@ -262,6 +264,41 @@
     card.appendChild(wrapper);
   };
 
+  const selectedSpeedContext = () => speedContext?.value || getCalculationApi().DEFAULT_SPEED || "1000";
+
+  const insertPerkMath = (card, mathNode) => {
+    if (!mathNode) return;
+    const sourceList = card.querySelector(".perk-source-list");
+    if (sourceList) {
+      card.insertBefore(mathNode, sourceList);
+    } else {
+      card.appendChild(mathNode);
+    }
+  };
+
+  const renderPerkMath = (card, entry) => {
+    const api = getCalculationApi();
+    if (typeof api.renderPerkMath !== "function") return;
+    const node = api.renderPerkMath(getPerkName(entry), selectedSpeedContext());
+    insertPerkMath(card, node);
+  };
+
+  const updatePerkMath = () => {
+    const api = getCalculationApi();
+    if (typeof api.renderPerkMath !== "function") return;
+    state.records.forEach((record) => {
+      const existing = record.card.querySelector("[data-perk-math]");
+      const replacement = api.renderPerkMath(record.name, selectedSpeedContext());
+      if (existing && replacement) {
+        existing.replaceWith(replacement);
+      } else if (existing) {
+        existing.remove();
+      } else {
+        insertPerkMath(record.card, replacement);
+      }
+    });
+  };
+
   const buildPerkCard = (entry) => {
     const api = getPerkApi();
     const card =
@@ -278,6 +315,7 @@
     card.dataset.perkGroup = entry?.isUnique === true ? "Unique Perks" : normalizeGroupLabel(entry.group || "Perks");
     card.tabIndex = 0;
     addPerkAbbreviation(card, entry);
+    renderPerkMath(card, entry);
     renderPerkSources(card, entry);
     return card;
   };
@@ -314,7 +352,7 @@
     state.records.push(record);
 
     const activate = (event) => {
-      if (event?.target?.closest?.("a")) return;
+      if (event?.target?.closest?.("a, button, input, select, textarea")) return;
       if (state.selectedCard === card) {
         clearSelectedPerk({ updateUrl: true });
         return;
@@ -323,6 +361,7 @@
     };
     card.addEventListener("click", activate);
     card.addEventListener("keydown", (event) => {
+      if (event.target?.closest?.("a, button, input, select, textarea")) return;
       if (event.key !== "Enter" && event.key !== " ") return;
       event.preventDefault();
       activate(event);
@@ -397,6 +436,24 @@
       option.textContent = group;
       groupFilter.appendChild(option);
     });
+  };
+
+  const populateSpeedContext = () => {
+    if (!speedContext) return;
+    const api = getCalculationApi();
+    const options = Array.isArray(api.SPEED_OPTIONS) ? api.SPEED_OPTIONS : [];
+    if (!options.length) return;
+    const selected = speedContext.value || api.DEFAULT_SPEED || "1000";
+    speedContext.innerHTML = "";
+    options.forEach((option) => {
+      const node = document.createElement("option");
+      node.value = String(option.value);
+      node.textContent = option.label || `${option.value}ms`;
+      speedContext.appendChild(node);
+    });
+    speedContext.value = options.some((option) => String(option.value) === selected)
+      ? selected
+      : api.DEFAULT_SPEED || "1000";
   };
 
   const getRouteValue = () => {
@@ -506,6 +563,7 @@
     if (perkSearch) perkSearch.addEventListener("input", applyPerkFilters);
     if (typeFilter) typeFilter.addEventListener("change", applyPerkFilters);
     if (groupFilter) groupFilter.addEventListener("change", applyPerkFilters);
+    if (speedContext) speedContext.addEventListener("change", updatePerkMath);
     if (clearButton) clearButton.addEventListener("click", clearFilters);
     if (perkJump) {
       perkJump.addEventListener("change", () => {
@@ -540,6 +598,7 @@
     });
     state.perks = data.perks;
     state.sourcesByPerk = buildPerkSourceIndex(data);
+    populateSpeedContext();
     renderPerkCards(state.perks);
     populatePerkJump();
     populateGroupFilter();

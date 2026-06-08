@@ -74,7 +74,7 @@ async function main() {
     }
     try {
       await runPerksSpec(browser, baseUrl);
-      console.log("SMOKE OK perks: deep link, search, filters, source links");
+      console.log("SMOKE OK perks: deep link, search, filters, source links, tooltips");
     } catch (error) {
       failures.push(`SMOKE ERROR perks: ${formatError(error)}`);
     }
@@ -232,8 +232,10 @@ async function runPerksSpec(browser, baseUrl) {
   try {
     await page.goto(joinUrl(baseUrl, PERKS_RUNIC_PATH), { waitUntil: "load" });
     await page.locator("#perk-search").waitFor({ state: "visible" });
+    await page.locator("#perk-speed-context").waitFor({ state: "visible" });
     await page.locator('[data-perk-name="Runic"].perk-selected').waitFor({ state: "visible" });
     await assertPerkSources(page);
+    await assertPerkMathTooltip(page);
 
     await page.locator("#perk-search").fill("lifesteal");
     await page.waitForFunction(() => {
@@ -404,6 +406,33 @@ async function assertPerkSources(page) {
     .getAttribute("href");
   if (!weaponHref) {
     throw new Error("Runic perk source list missing Rune Sword detail link");
+  }
+}
+
+async function assertPerkMathTooltip(page) {
+  const bloodlust = page.locator('[data-perk-name="Bloodlust"]');
+  await bloodlust.scrollIntoViewIfNeeded();
+  const trigger = bloodlust.locator(".perk-math-trigger");
+  await trigger.hover();
+  const initialText = (await bloodlust.locator(".perk-math-tooltip").textContent()).trim();
+  for (const expected of ["Stack examples", "1x T1", "3x T3", "15% trigger chance", "9 procs/min"]) {
+    if (!initialText.includes(expected)) {
+      throw new Error(`Bloodlust tooltip missing "${expected}": "${initialText}"`);
+    }
+  }
+
+  await page.locator("#perk-speed-context").selectOption("1500");
+  await trigger.hover();
+  const slowerText = (await bloodlust.locator(".perk-math-tooltip").textContent()).trim();
+  if (!slowerText.includes("1500ms") || !slowerText.includes("6 procs/min")) {
+    throw new Error(`Bloodlust tooltip did not update for slower weapon speed: "${slowerText}"`);
+  }
+
+  const demonBloodText = (await page.locator('[data-perk-name="Demon Blood"] .perk-math-tooltip').textContent()).trim();
+  for (const expected of ["Fire resistance", "1x T1: +8%", "3x T3: +36%"]) {
+    if (!demonBloodText.includes(expected)) {
+      throw new Error(`Demon Blood tooltip missing "${expected}": "${demonBloodText}"`);
+    }
   }
 }
 
