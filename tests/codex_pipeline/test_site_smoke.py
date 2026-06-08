@@ -117,3 +117,8 @@ class SiteSmokeTests(unittest.TestCase):
         self.assertIn("procs/min", runner)
         self.assertIn('!runic.classList.contains("perk-selected")', runner)
         self.assertIn('!params.has("perk")', runner)
+        self.assertIn("runAscendSpec", runner)
+        self.assertIn("/pages/systems/ascend.html", runner)
+        self.assertIn("SMOKE OK ascend", runner)
+        self.assertIn(".ascend-compare-grid", runner)
+        self.assertIn("Promotion Cost", runner)

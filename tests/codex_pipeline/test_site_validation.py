@@ -757,6 +757,58 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(".deconstruct-flow", css)
         self.assertIn(".deconstruct-link-grid", css)
 
+    def test_ascend_page_has_compact_progression_reference(self):
+        from tools.codex_pipeline import cli
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        html_path = REPO_ROOT / "pages" / "systems" / "ascend.html"
+        css_path = REPO_ROOT / "css" / "ascend.css"
+        html = html_path.read_text(encoding="utf-8")
+        css = css_path.read_text(encoding="utf-8") if css_path.exists() else ""
+
+        self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
+        self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
+        self.assertIn('<link rel="stylesheet" href="css/ascend.css" />', html)
+        self.assertNotIn("<style>", html)
+        self.assertEqual(
+            [],
+            [
+                block.strip()
+                for block in re.findall(
+                    r"<script\b(?![^>]*\bsrc\s*=)[^>]*>([\s\S]*?)</script>",
+                    html,
+                    flags=re.IGNORECASE,
+                )
+                if block.strip()
+            ],
+        )
+
+        for expected in [
+            "What Ascend Uses",
+            "What Changes",
+            "What Stays Fixed",
+            "Ascend Flow",
+            "Ascend or Save",
+            "Current Rarity",
+            "Max Rarity",
+            "Promotion Cost",
+            "Ascendency Shards",
+            "One Tier",
+            "Item Ceiling",
+            "pages/items/weapons.html",
+            "pages/items/armors.html",
+            "pages/systems/deconstruct.html",
+            "pages/systems/rarity.html",
+            "pages/systems/re-roll.html",
+            "pages/General/build-planner.html",
+        ]:
+            self.assertIn(expected, html)
+
+        self.assertIn(".ascend-summary-grid", css)
+        self.assertIn(".ascend-compare-grid", css)
+        self.assertIn(".ascend-flow", css)
+        self.assertIn(".ascend-link-grid", css)
+
     def test_armors_page_uses_linked_names_and_non_sortable_image_column(self):
         from tools.codex_pipeline.config import REPO_ROOT
 

@@ -97,6 +97,12 @@ async function main() {
     } catch (error) {
       failures.push(`SMOKE ERROR deconstruct: ${formatError(error)}`);
     }
+    try {
+      await runAscendSpec(browser, baseUrl);
+      console.log("SMOKE OK ascend: progression reference, decision guidance, related links");
+    } catch (error) {
+      failures.push(`SMOKE ERROR ascend: ${formatError(error)}`);
+    }
   } finally {
     await browser.close();
     if (server) await server.close();
@@ -106,7 +112,7 @@ async function main() {
     failures.forEach((failure) => console.error(failure));
     process.exit(1);
   }
-  console.log(`SMOKE OK site: ${smokeSpecs.length + 5} page(s) checked at ${baseUrl}`);
+  console.log(`SMOKE OK site: ${smokeSpecs.length + 6} page(s) checked at ${baseUrl}`);
 }
 
 async function importPlaywright() {
@@ -462,6 +468,60 @@ async function runDeconstructSpec(browser, baseUrl) {
       const count = await page.locator(`.deconstruct-link-grid a[href="${href}"]`).count();
       if (count !== 1) {
         throw new Error(`Deconstruct related link expected one "${href}", found ${count}`);
+      }
+    }
+
+    if (runtimeErrors.length) {
+      throw new Error(`browser errors: ${runtimeErrors.join("; ")}`);
+    }
+  } finally {
+    await page.close();
+  }
+}
+
+async function runAscendSpec(browser, baseUrl) {
+  const page = await browser.newPage();
+  page.setDefaultTimeout(timeoutMs);
+  const runtimeErrors = [];
+  page.on("console", (message) => {
+    const text = message.text();
+    if (message.type() === "error" && !text.startsWith("Failed to load resource")) runtimeErrors.push(text);
+  });
+  page.on("pageerror", (error) => runtimeErrors.push(formatError(error)));
+
+  try {
+    await page.goto(joinUrl(baseUrl, "/pages/systems/ascend.html"), { waitUntil: "load" });
+    await page.locator(".ascend-compare-grid").waitFor({ state: "visible" });
+    const pageText = (await page.locator("#ascend-basics").textContent()).trim();
+    for (const expected of [
+      "What Ascend Uses",
+      "What Changes",
+      "What Stays Fixed",
+      "Ascend Flow",
+      "Ascend or Save",
+      "Current Rarity",
+      "Max Rarity",
+      "Promotion Cost",
+      "Ascendency Shards",
+      "One Tier",
+      "Item Ceiling",
+    ]) {
+      if (!pageText.includes(expected)) {
+        throw new Error(`Ascend page missing "${expected}": "${pageText}"`);
+      }
+    }
+
+    for (const href of [
+      "pages/items/weapons.html",
+      "pages/items/armors.html",
+      "pages/systems/deconstruct.html",
+      "pages/systems/rarity.html",
+      "pages/systems/re-roll.html",
+      "pages/General/build-planner.html",
+    ]) {
+      const count = await page.locator(`.ascend-link-grid a[href="${href}"]`).count();
+      if (count !== 1) {
+        throw new Error(`Ascend related link expected one "${href}", found ${count}`);
       }
     }
 

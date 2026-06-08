@@ -62,6 +62,7 @@ VALIDATED_HTML_PATHS = [
     REPO_ROOT / "pages" / "systems" / "rarity.html",
     REPO_ROOT / "pages" / "systems" / "re-roll.html",
     REPO_ROOT / "pages" / "systems" / "deconstruct.html",
+    REPO_ROOT / "pages" / "systems" / "ascend.html",
 ]
 
 VALIDATED_STYLE_PATHS = [
@@ -73,6 +74,7 @@ VALIDATED_STYLE_PATHS = [
     REPO_ROOT / "css" / "rarity.css",
     REPO_ROOT / "css" / "reroll.css",
     REPO_ROOT / "css" / "deconstruct.css",
+    REPO_ROOT / "css" / "ascend.css",
 ]
 
 VALIDATED_SCRIPT_PATHS = [
