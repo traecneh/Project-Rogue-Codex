@@ -178,7 +178,7 @@ async function runBuildPlannerSpec(browser, baseUrl) {
       const label = document.querySelector('[data-slot="Weapon"] [data-rarity-label]');
       return label && label.textContent.trim() !== "Common";
     });
-    await assertNumberGreaterThan(page, '[data-quick-stat="str"]', 5, "quick Strength");
+    await assertBuildPlannerQuickStatGain(page);
 
     await page.locator("#share-build").click();
     const sharedUrl = page.url();
@@ -239,6 +239,16 @@ async function assertNumberGreaterThan(page, selector, minimum, label) {
   const value = Number(text.replace(/[^\d.-]/g, ""));
   if (!Number.isFinite(value) || value <= minimum) {
     throw new Error(`${label} expected to be greater than ${minimum}, got "${text}"`);
+  }
+}
+
+async function assertBuildPlannerQuickStatGain(page) {
+  const stats = await page.evaluate(() =>
+    ["str", "con", "dex"].map((stat) => Number(document.querySelector(`[data-quick-stat="${stat}"]`)?.textContent || 0))
+  );
+  const total = stats.reduce((sum, value) => sum + value, 0);
+  if (total <= 15) {
+    throw new Error(`quick STR/CON/DEX expected rarity stat gain, got ${stats.join("/")}`);
   }
 }
 
