@@ -172,6 +172,7 @@ async function runBuildPlannerSpec(browser, baseUrl) {
 
     await assertBuildPlannerSuggestionLink(page, "Rune Sword");
     await assertBuildPlannerSuggestionDeltas(page, "Rune Sword");
+    await assertBuildPlannerIssueIndicators(page);
     await selectBuildPlannerItem(page, "Rune Sword");
     await assertBuildPlannerWeapon(page, "Rune Sword");
     await assertBuildPlannerItemLinks(page, "Rune Sword");
@@ -296,6 +297,32 @@ async function assertBuildPlannerSummaryTooltips(page) {
   );
   if (!regenTitle.includes("Total Constitution")) {
     throw new Error(`Build Planner Health Regen tooltip missing breakdown: "${regenTitle}"`);
+  }
+}
+
+async function assertBuildPlannerIssueIndicators(page) {
+  await page.locator("#build-issues").waitFor({ state: "visible" });
+  const initialText = (await page.locator("#build-issues").textContent()).trim();
+  if (!initialText.includes("Missing 6 core slots")) {
+    throw new Error(`Build Planner issue strip did not report missing core slots: "${initialText}"`);
+  }
+  const missingLevel = await page.locator('[data-build-issue="missing-slots"]').getAttribute("data-issue-level");
+  if (missingLevel !== "warning") {
+    throw new Error(`Build Planner missing-slots issue level expected warning, got "${missingLevel}"`);
+  }
+
+  await selectBuildPlannerItem(page, "Dark Sword");
+  await assertBuildPlannerWeapon(page, "Dark Sword");
+  await page.waitForFunction(() => document.querySelector("#build-issues")?.textContent?.includes("unmet req"));
+  const requirementChip = page.locator('[data-build-issue="requirements"]');
+  await requirementChip.waitFor({ state: "visible" });
+  const requirementLevel = await requirementChip.getAttribute("data-issue-level");
+  if (requirementLevel !== "error") {
+    throw new Error(`Build Planner requirements issue level expected error, got "${requirementLevel}"`);
+  }
+  const requirementTitle = (await requirementChip.getAttribute("title")) || "";
+  if (!requirementTitle.includes("Dark Sword") || !requirementTitle.includes("Skill") || !requirementTitle.includes("Level")) {
+    throw new Error(`Build Planner requirement issue did not include Dark Sword skill/level details: "${requirementTitle}"`);
   }
 }
 

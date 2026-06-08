@@ -370,6 +370,35 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn('setQuickSummary("dr"', script)
         self.assertIn(".quick-summary-card[title]", css)
 
+    def test_build_planner_has_compact_issue_indicators(self):
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        html = (REPO_ROOT / "pages" / "General" / "build-planner.html").read_text(encoding="utf-8")
+        script = (REPO_ROOT / "js" / "build-planner.js").read_text(encoding="utf-8")
+        css = (REPO_ROOT / "css" / "build-planner.css").read_text(encoding="utf-8")
+
+        self.assertIn('id="build-issues"', html)
+        self.assertIn('data-build-issue-list', html)
+        self.assertIn('data-build-issue-count', html)
+        self.assertIn("Build issues", html)
+
+        self.assertIn("const collectBuildIssues", script)
+        self.assertIn("const renderBuildIssues", script)
+        self.assertIn("const getRequirementIssues", script)
+        self.assertIn("const getMissingSlotIssues", script)
+        self.assertIn("const getWeightIssue", script)
+        self.assertIn("const getBaseStatCapIssue", script)
+        self.assertIn("renderBuildIssues(collectBuildIssues(", script)
+        self.assertIn("skillRequirement: toNumber(fields.skill_requirement)", script)
+        self.assertIn("levelRequirement: toNumber(fields.level_requirement)", script)
+        self.assertIn("playerLevelRequirement: toNumber(fields.player_level_requirement)", script)
+
+        self.assertIn(".build-issues", css)
+        self.assertIn(".build-issue-chip", css)
+        self.assertIn('[data-issue-level="ok"]', css)
+        self.assertIn('[data-issue-level="warning"]', css)
+        self.assertIn('[data-issue-level="error"]', css)
+
     def test_build_planner_links_items_to_detail_pages(self):
         from tools.codex_pipeline.config import REPO_ROOT
 

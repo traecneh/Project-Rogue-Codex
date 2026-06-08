@@ -104,3 +104,6 @@ class SiteSmokeTests(unittest.TestCase):
         self.assertIn("assertBuildPlannerSummaryTooltips", runner)
         self.assertIn("Build Details", runner)
         self.assertIn("#calc-dr", runner)
+        self.assertIn("assertBuildPlannerIssueIndicators", runner)
+        self.assertIn("#build-issues", runner)
+        self.assertIn("Dark Sword", runner)

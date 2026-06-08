@@ -535,6 +535,65 @@
         line-height: 1.2;
       }
 
+      .build-issues {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        min-height: 30px;
+        margin: -0.25rem 0 0.75rem;
+        color: var(--text-muted);
+        font-size: 0.78rem;
+      }
+
+      .build-issues-label {
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-muted);
+        white-space: nowrap;
+      }
+
+      .build-issue-list {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.3rem;
+        min-width: 0;
+      }
+
+      .build-issue-chip {
+        display: inline-flex;
+        align-items: center;
+        border: 1px solid var(--border-soft);
+        border-radius: 999px;
+        padding: 0.15rem 0.5rem;
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--text-muted);
+        line-height: 1.2;
+        white-space: nowrap;
+        cursor: help;
+      }
+
+      .build-issue-chip[data-issue-level="ok"] {
+        border-color: rgba(110, 214, 128, 0.65);
+        color: #9ee6ad;
+      }
+
+      .build-issue-chip[data-issue-level="warning"] {
+        border-color: rgba(255, 204, 102, 0.7);
+        color: #ffd27d;
+      }
+
+      .build-issue-chip[data-issue-level="error"] {
+        border-color: rgba(255, 120, 120, 0.75);
+        color: #ff9c9c;
+      }
+
+      .build-issue-count {
+        color: var(--text-muted);
+        white-space: nowrap;
+      }
+
       .slot-card:not(.has-item) .slot-rarity,
       .slot-card:not(.has-item) .slot-stat-adjust,
       .slot-card:not(.has-item) .slot-extra-perk {

@@ -85,6 +85,7 @@
           { value: "gnoll", label: "Gnoll", bonus: { str: 0, dex: 0, con: 5 }, perk: "Rejuvenation" },
           { value: "dark-elf", label: "Dark Elf", bonus: { str: 0, dex: 5, con: 0 }, perk: "Alchemist" },
         ];
+        const CORE_BUILD_SLOTS = ["Weapon", "Helmet", "Chest", "Leggings", "Gauntlets", "Shield"];
 
         const normalizeRarityLabel = (label) => {
           const lower = String(label || "").toLowerCase().trim();
@@ -130,6 +131,11 @@
           dex: document.querySelector('[data-quick-stat="dex"]'),
           health: document.querySelector('[data-quick-stat="health"]'),
           dr: document.querySelector('[data-quick-stat="dr"]'),
+        };
+        const buildIssueEls = {
+          container: document.getElementById("build-issues"),
+          list: document.querySelector("[data-build-issue-list]"),
+          count: document.querySelector("[data-build-issue-count]"),
         };
         const setElementTitle = (element, title = "") => {
           if (!element) return;
@@ -713,6 +719,8 @@
             maxRarityLabel: fields.max_rarity_label || fields.max_rarity,
             armor: toNumber(fields.armor),
             weight: toNumber(fields.weight),
+            level: toNumber(fields.level),
+            playerLevelRequirement: toNumber(fields.player_level_requirement),
             toHit: toNumber(fields.to_hit),
             strength: toNumber(fields.strength),
             constitution: toNumber(fields.constitution),
@@ -751,6 +759,8 @@
             image: raw.image || raw.icon || raw.thumbnail || "",
             maxRarityLabel: fields.max_rarity_label || fields.max_rarity,
             dps,
+            levelRequirement: toNumber(fields.level_requirement),
+            skillRequirement: toNumber(fields.skill_requirement),
             element: fields.element_label || (fields.element ? fields.element : "None"),
             toHit: toNumber(fields.to_hit),
             strength: toNumber(fields.strength),
@@ -916,6 +926,124 @@
           updateStatAdjustUI(slot);
         };
 
+        const formatIssueNumber = (value) => {
+          const rounded = Math.round(toNumber(value) * 100) / 100;
+          return Number.isInteger(rounded) ? String(rounded) : String(rounded.toFixed(2).replace(/0+$/, "").replace(/\.$/, ""));
+        };
+
+        const createBuildIssue = (key, label, title, level = "warning") => ({
+          key,
+          label,
+          title,
+          level,
+        });
+
+        const getMissingSlotIssues = () => {
+          const missingSlots = CORE_BUILD_SLOTS.filter((slot) => slotEls.has(slot) && !selectedBySlot[slot]);
+          if (!missingSlots.length) return [];
+          const slotText = missingSlots.length === 1 ? "core slot" : "core slots";
+          return [
+            createBuildIssue(
+              "missing-slots",
+              `Missing ${missingSlots.length} ${slotText}`,
+              `Empty core slots:\n${missingSlots.join("\n")}`
+            ),
+          ];
+        };
+
+        const getRequirementIssues = ({ selected, charLevel, charSkill }) => {
+          const unmet = [];
+          selected.forEach((item) => {
+            const name = item?.name || "Selected item";
+            if (item.kind === "weapon") {
+              const skillRequirement = toNumber(item.skillRequirement);
+              const levelRequirement = toNumber(item.levelRequirement);
+              if (skillRequirement > charSkill) {
+                unmet.push(`${name}: Skill ${charSkill} / ${skillRequirement}`);
+              }
+              if (levelRequirement > charLevel) {
+                unmet.push(`${name}: Level ${charLevel} / ${levelRequirement}`);
+              }
+            } else if (item.kind === "armor") {
+              const playerLevelRequirement = toNumber(item.playerLevelRequirement);
+              const isSpecialRequirement = playerLevelRequirement === 2 || playerLevelRequirement === 6;
+              if (playerLevelRequirement > 0 && !isSpecialRequirement && playerLevelRequirement > charLevel) {
+                unmet.push(`${name}: Level ${charLevel} / ${playerLevelRequirement}`);
+              }
+            }
+          });
+          if (!unmet.length) return [];
+          const countText = unmet.length === 1 ? "1 unmet req" : `${unmet.length} unmet reqs`;
+          return [createBuildIssue("requirements", countText, `Unmet requirements:\n${unmet.join("\n")}`, "error")];
+        };
+
+        const getWeightIssue = ({ totalWeight, maxWeight }) => {
+          const excess = totalWeight - maxWeight;
+          if (excess <= 0) return [];
+          return [
+            createBuildIssue(
+              "overweight",
+              `Overweight +${formatIssueNumber(excess)}`,
+              `Equipped armor weight ${formatIssueNumber(totalWeight)} exceeds max weight ${formatIssueNumber(maxWeight)}.`,
+              "error"
+            ),
+          ];
+        };
+
+        const getBaseStatCapIssue = ({ baseStatSpent, baseStatLimit }) => {
+          const excess = baseStatSpent - baseStatLimit;
+          if (excess <= 0) return [];
+          return [
+            createBuildIssue(
+              "stat-cap",
+              `Stats over +${formatIssueNumber(excess)}`,
+              `Base stat points spent ${formatIssueNumber(baseStatSpent)} exceeds level cap ${formatIssueNumber(baseStatLimit)}.`,
+              "error"
+            ),
+          ];
+        };
+
+        const collectBuildIssues = (context) => [
+          ...getRequirementIssues(context),
+          ...getWeightIssue(context),
+          ...getBaseStatCapIssue(context),
+          ...getMissingSlotIssues(context),
+        ];
+
+        const renderBuildIssues = (issues) => {
+          if (!buildIssueEls.list) return;
+          const visibleIssues = Array.isArray(issues) ? issues.filter(Boolean) : [];
+          const chips = visibleIssues.length
+            ? visibleIssues
+            : [
+                createBuildIssue(
+                  "ready",
+                  "No build issues",
+                  "All core slots are filled and equipped items meet current character limits.",
+                  "ok"
+                ),
+              ];
+          buildIssueEls.list.innerHTML = "";
+          chips.forEach((issue) => {
+            const chip = document.createElement("span");
+            chip.className = "build-issue-chip";
+            chip.dataset.issueLevel = issue.level || "warning";
+            chip.setAttribute("data-build-issue", issue.key || "build-issue");
+            chip.textContent = issue.label || "Build issue";
+            chip.title = issue.title || chip.textContent;
+            buildIssueEls.list.appendChild(chip);
+          });
+          if (buildIssueEls.count) {
+            const count = visibleIssues.length;
+            buildIssueEls.count.textContent = `${count} issue${count === 1 ? "" : "s"}`;
+          }
+          if (buildIssueEls.container) {
+            const hasError = visibleIssues.some((issue) => issue.level === "error");
+            const hasWarning = visibleIssues.some((issue) => issue.level === "warning");
+            buildIssueEls.container.dataset.issueState = hasError ? "error" : hasWarning ? "warning" : "ok";
+          }
+        };
+
         const updateTotals = () => {
           const selected = Object.values(selectedBySlot || {});
           const armors = selected.filter((i) => i.kind === "armor");
@@ -937,6 +1065,7 @@
           const charDex = getCharStat("char-dex");
           const charCon = getCharStat("char-con");
           const charLevel = getCharStat("char-level");
+          const charSkill = getCharStat("char-skill");
           const race = getRaceData(raceSelect ? raceSelect.value : "");
           const raceBonusStr = race?.bonus?.str || 0;
           const raceBonusDex = race?.bonus?.dex || 0;
@@ -1068,7 +1197,6 @@
             `Total Constitution (base + items + rarity): ${totalCon} -> ${totalCon}/3 rounded down, every 2 seconds`
           );
 
-          const charSkill = getCharStat("char-skill");
           const meleeMult = 1 + charSkill / 50 + totalStr / 100 + totalDex / 200;
           const meleeEl = document.getElementById("calc-melee-mult");
           setElementTextAndTitle(
@@ -1080,6 +1208,15 @@
           const maxWeight = 150 + 3 * totalStr;
           const maxWeightEl = document.getElementById("calc-max-weight");
           setElementTextAndTitle(maxWeightEl, maxWeight, `150 + (3 * Strength ${totalStr})`);
+          renderBuildIssues(collectBuildIssues({
+            selected,
+            totalWeight,
+            maxWeight,
+            baseStatSpent,
+            baseStatLimit,
+            charLevel,
+            charSkill,
+          }));
 
           const bleedChance = totalStr * 0.1;
           const bleedEl = document.getElementById("calc-bleed");
