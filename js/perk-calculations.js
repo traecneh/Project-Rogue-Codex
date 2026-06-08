@@ -290,6 +290,14 @@
     return node;
   };
 
+  const appendDivider = (parent) => {
+    const divider = document.createElement("div");
+    divider.className = "perk-math-separator";
+    divider.setAttribute("aria-hidden", "true");
+    parent.appendChild(divider);
+    return divider;
+  };
+
   const currentSpeedLabel = (speedValue) => {
     const value = String(speedValue || DEFAULT_SPEED);
     return SPEED_OPTIONS.find((option) => option.value === value)?.label || `${value}ms`;
@@ -310,7 +318,7 @@
     appendText(tooltip, "p", "perk-math-context", parts.join("; "));
   };
 
-  const buildScenarioLine = (metadata, scenario, speedValue) => {
+  const buildScenarioParts = (metadata, scenario, speedValue) => {
     const effects = Array.isArray(metadata.effects) ? metadata.effects : [];
     const parts = effects.map((effect) => formatEffectValue(effect, scenario)).filter(Boolean);
     effects
@@ -321,7 +329,20 @@
           parts.push(`${formatNumber((attacksPerMinute(speedValue) * chance) / 100)} procs/min`);
         }
       });
-    return `${scenario.label}: ${parts.join(", ")}`;
+    return parts;
+  };
+
+  const appendScenarioRow = (parent, scenario, parts) => {
+    if (!parts.length) return null;
+    const row = document.createElement("p");
+    row.className = "perk-math-row";
+    const label = document.createElement("span");
+    label.className = "perk-math-scenario";
+    label.textContent = `${scenario.label}:`;
+    row.appendChild(label);
+    row.appendChild(document.createTextNode(` ${parts.join(", ")}`));
+    parent.appendChild(row);
+    return row;
   };
 
   const renderPerkMath = (perkName, speedValue = DEFAULT_SPEED) => {
@@ -343,12 +364,16 @@
     tooltip.className = "perk-math-tooltip";
     tooltip.setAttribute("role", "tooltip");
     appendText(tooltip, "strong", "perk-math-title", "Stack examples");
+    appendDivider(tooltip);
     appendSpeedContext(tooltip, metadata, speedValue);
+    appendDivider(tooltip);
     STACK_SCENARIOS.forEach((scenario) => {
-      const line = buildScenarioLine(metadata, scenario, speedValue);
-      if (!line.endsWith(": ")) appendText(tooltip, "p", "perk-math-row", line);
+      appendScenarioRow(tooltip, scenario, buildScenarioParts(metadata, scenario, speedValue));
     });
-    if (metadata.note) appendText(tooltip, "p", "perk-math-note", metadata.note);
+    if (metadata.note) {
+      appendDivider(tooltip);
+      appendText(tooltip, "p", "perk-math-note", metadata.note);
+    }
     wrapper.appendChild(tooltip);
     return wrapper;
   };

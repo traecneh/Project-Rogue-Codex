@@ -512,7 +512,11 @@ class SiteValidationTests(unittest.TestCase):
             '"Bloodlust"',
             '"Demon Blood"',
             "const attacksPerMinute",
+            "const appendDivider",
+            "const appendScenarioRow",
             "const renderPerkMath",
+            '"perk-math-separator"',
+            '"perk-math-scenario"',
         ]:
             self.assertIn(expected, calc_script)
         self.assertEqual(
@@ -525,12 +529,17 @@ class SiteValidationTests(unittest.TestCase):
             ".perk-speed-context",
             ".perk-math",
             ".perk-math-tooltip",
+            ".perk-math-separator",
+            ".perk-math-scenario",
             ".perk-source-chip",
             ".perk-card-hidden",
             ".stat-card.perk-selected",
             ".perk-empty-state",
         ]:
             self.assertIn(expected, css)
+        self.assertRegex(css, r"\.perk-math-title\s*\{[^}]*text-align:\s*center;")
+        self.assertIn("@media (max-width: 640px)", css)
+        self.assertIn("width: min(320px, calc(100vw - 4rem));", css)
 
     def test_armors_page_uses_linked_names_and_non_sortable_image_column(self):
         from tools.codex_pipeline.config import REPO_ROOT

@@ -420,6 +420,22 @@ async function assertPerkMathTooltip(page) {
       throw new Error(`Bloodlust tooltip missing "${expected}": "${initialText}"`);
     }
   }
+  const separatorCount = await bloodlust.locator(".perk-math-separator").count();
+  if (separatorCount < 3) {
+    throw new Error(`Bloodlust tooltip expected at least 3 separators, found ${separatorCount}`);
+  }
+  const scenarioLabels = await bloodlust.locator(".perk-math-scenario").allTextContents();
+  for (const expected of ["1x T1:", "3x T1:", "3x T2:", "3x T3:"]) {
+    if (!scenarioLabels.includes(expected)) {
+      throw new Error(`Bloodlust tooltip missing scenario label "${expected}": ${scenarioLabels.join(", ")}`);
+    }
+  }
+  const titleAlign = await bloodlust
+    .locator(".perk-math-title")
+    .evaluate((element) => window.getComputedStyle(element).textAlign);
+  if (titleAlign !== "center") {
+    throw new Error(`Bloodlust tooltip title should be centered, got "${titleAlign}"`);
+  }
 
   await page.locator("#perk-speed-context").selectOption("1500");
   await trigger.hover();
