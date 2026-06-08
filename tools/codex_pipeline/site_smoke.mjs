@@ -13,8 +13,9 @@ const PERKS_RUNIC_PATH = "/pages/systems/perks.html?perk=Runic";
 
 const smokeSpecs = [
   {
-    detailName: "Short Sword",
-    detailQuery: "Short Sword",
+    assertDetail: assertWeaponDetailEnhancements,
+    detailName: "Rune Sword",
+    detailQuery: "Rune Sword",
     label: "weapons",
     listPath: "/pages/items/weapons.html",
     detailSelector: "#item-details",
@@ -133,6 +134,9 @@ async function runSpec(browser, baseUrl, spec) {
     await openDetail(page, baseUrl, spec);
     await assertDetailState(page, spec, "deep link");
     await assertDetailLinks(page, spec);
+    if (typeof spec.assertDetail === "function") {
+      await spec.assertDetail(page);
+    }
 
     await page.reload({ waitUntil: "load" });
     await waitForRows(page, spec);
@@ -543,6 +547,34 @@ async function assertBuildPlannerQuickStatGain(page) {
   if (total <= 15) {
     throw new Error(`quick STR/CON/DEX expected rarity stat gain, got ${stats.join("/")}`);
   }
+}
+
+async function assertWeaponDetailEnhancements(page) {
+  const runicLink = page
+    .locator('#details-properties a.perk-link[href*="pages/systems/perks.html?perk=Runic"]')
+    .first();
+  await runicLink.waitFor({ state: "attached" });
+
+  const detailText = (await page.locator("#details-properties").textContent()).trim();
+  if (!detailText.includes("Weapon Speed") || (!detailText.includes("1,000") && !detailText.includes("1000"))) {
+    throw new Error(`Rune Sword detail missing weapon speed context: "${detailText}"`);
+  }
+
+  const speedTooltip = (await page.locator("#details-properties .weapon-speed-pill .detail-tooltip").textContent()).trim();
+  if (!speedTooltip.includes("Base weapon speed") || !speedTooltip.includes("1.00 attacks/sec")) {
+    throw new Error(`Weapon speed tooltip missing expected context: "${speedTooltip}"`);
+  }
+
+  const weaponDetailUrl = page.url();
+  await runicLink.click();
+  await page.waitForURL((url) => url.pathname.endsWith("/pages/systems/perks.html") && url.searchParams.get("perk") === "Runic", {
+    timeout: timeoutMs,
+  });
+  await page.locator('[data-perk-name="Runic"].perk-selected').waitFor({ state: "visible" });
+  await page.goto(weaponDetailUrl, { waitUntil: "load" });
+  await page.locator('#details-properties a.perk-link[href*="pages/systems/perks.html?perk=Runic"]').first().waitFor({
+    state: "attached",
+  });
 }
 
 async function openDetail(page, baseUrl, spec) {

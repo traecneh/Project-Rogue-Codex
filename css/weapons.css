@@ -153,6 +153,23 @@
   text-decoration: underline;
 }
 
+.perk-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.perk-link:hover,
+.perk-link:focus-visible {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.perk-table-link {
+  display: inline-flex;
+  align-items: center;
+  font-weight: 700;
+}
+
 .item-thumb {
   width: 32px;
   height: 32px;
@@ -358,6 +375,19 @@
   position: relative;
 }
 
+.detail-pill.perk-link {
+  cursor: pointer;
+}
+
+.detail-pill.perk-link:hover,
+.detail-pill.perk-link:focus-visible {
+  border-color: rgba(75, 255, 75, 0.45);
+}
+
+.weapon-speed-pill {
+  cursor: help;
+}
+
 .detail-pill:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
@@ -440,6 +470,13 @@
   white-space: normal;
   min-width: 260px;
   max-width: min(520px, 70vw);
+  line-height: 1.3;
+}
+
+.detail-tooltip.weapon-speed-tooltip {
+  white-space: normal;
+  min-width: 220px;
+  max-width: min(320px, 70vw);
   line-height: 1.3;
 }
 

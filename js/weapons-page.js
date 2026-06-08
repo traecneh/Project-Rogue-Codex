@@ -208,7 +208,7 @@
     { key: "type", label: "Type" },
     { key: "level", label: "Level", format: (value) => formatNumber(value) },
     { key: "dps", label: "DPS", format: (value) => formatNumber(value, { maximumFractionDigits: 2 }) },
-    { key: "perk", label: "Perk", render: (value) => createPerkBadge(value) },
+    { key: "perk", label: "Perk", render: (value) => createPerkLinkBadge(value) },
     { key: "element", label: "Element", render: (value) => createElementBadge(value) },
   ];
 
@@ -301,6 +301,43 @@
     return true;
   };
 
+  const buildPerkDetailUrl = (baseName) => {
+    if (!baseName) return "pages/systems/perks.html";
+    try {
+      const resolved = new URL(window.location.href);
+      resolved.pathname = "/pages/systems/perks.html";
+      resolved.search = "";
+      resolved.hash = "";
+      resolved.searchParams.set("perk", baseName);
+      return `${resolved.pathname.replace(/^\/+/, "")}${resolved.search}`;
+    } catch (error) {
+      return `pages/systems/perks.html?perk=${encodeURIComponent(baseName)}`;
+    }
+  };
+
+  const stopPerkLinkClickPropagation = (event) => {
+    event.stopPropagation();
+  };
+
+  const createPerkLinkBadge = (value) => {
+    const baseName = extractPerkBaseName(value);
+    if (!baseName) return createPerkBadge(value);
+
+    const link = document.createElement("a");
+    link.className = "perk-link perk-table-link";
+    link.href = buildPerkDetailUrl(baseName);
+    link.setAttribute("aria-label", `View ${baseName} perk details`);
+    link.addEventListener("click", stopPerkLinkClickPropagation);
+
+    const badge = createPerkBadge(value);
+    if (badge instanceof Node) {
+      link.appendChild(badge);
+    } else {
+      link.textContent = formatValue(value);
+    }
+    return link;
+  };
+
   const createPerkDetailPill = (value) => {
     const labelText = formatValue(value);
     const baseName = extractPerkBaseName(value);
@@ -308,10 +345,11 @@
       return createPerkBadge(value);
     }
 
-    const pill = document.createElement("span");
-    pill.className = "detail-pill";
-    pill.tabIndex = 0;
-    pill.setAttribute("aria-label", `${labelText} perk details`);
+    const pill = document.createElement("a");
+    pill.className = "detail-pill perk-link";
+    pill.href = buildPerkDetailUrl(baseName);
+    pill.setAttribute("aria-label", `View ${labelText} perk details`);
+    pill.addEventListener("click", stopPerkLinkClickPropagation);
 
     const labelSpan = document.createElement("span");
     labelSpan.textContent = labelText;
@@ -350,6 +388,47 @@
       line.textContent = "Perk info unavailable.";
       tooltip.appendChild(line);
     }
+
+    pill.appendChild(tooltip);
+    return pill;
+  };
+
+  const createWeaponSpeedPill = (value) => {
+    const speed = Number(value);
+    const labelText = formatNumber(value);
+    if (!Number.isFinite(speed) || speed <= 0) return labelText;
+
+    const pill = document.createElement("span");
+    pill.className = "detail-pill weapon-speed-pill";
+    pill.tabIndex = 0;
+    pill.setAttribute("aria-label", `${labelText} millisecond base weapon speed`);
+
+    const labelSpan = document.createElement("span");
+    labelSpan.textContent = `${labelText} ms`;
+    pill.appendChild(labelSpan);
+
+    const tooltip = document.createElement("span");
+    tooltip.className = "detail-tooltip weapon-speed-tooltip";
+    tooltip.role = "tooltip";
+
+    const title = document.createElement("div");
+    title.className = "perk-tooltip-title";
+    title.textContent = "Base weapon speed";
+    tooltip.appendChild(title);
+
+    const divider = document.createElement("div");
+    divider.className = "detail-tooltip-divider";
+    tooltip.appendChild(divider);
+
+    const attacksLine = document.createElement("div");
+    attacksLine.className = "perk-tooltip-line";
+    attacksLine.textContent = `${(1000 / speed).toFixed(2)} attacks/sec`;
+    tooltip.appendChild(attacksLine);
+
+    const contextLine = document.createElement("div");
+    contextLine.className = "perk-tooltip-line";
+    contextLine.textContent = "Used for DPS and Perks weapon-speed context.";
+    tooltip.appendChild(contextLine);
 
     pill.appendChild(tooltip);
     return pill;
@@ -887,7 +966,7 @@
             : `${formatNumber(item.procChance, { maximumFractionDigits: 2 })}%`,
         ],
         ["Damage", formatRange(item.minDamage, item.maxDamage)],
-        ["Attack Speed (ms)", formatNumber(item.attackSpeed)],
+        ["Weapon Speed", createWeaponSpeedPill(item.attackSpeed)],
       ],
       4
     );

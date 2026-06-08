@@ -175,6 +175,8 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn("createDropsFromPill", helper_script)
         self.assertIn("formatValue", helper_script)
         self.assertIn("ensureImage", helper_script)
+        self.assertIn('const isNavigationPill = pill.tagName === "A";', helper_script)
+        self.assertIn("if (!isNavigationPill) {", helper_script)
 
         for page_name in ["weapons", "armors"]:
             with self.subTest(page=page_name):
@@ -264,6 +266,26 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn("event.preventDefault();", script)
         self.assertIn("event.stopPropagation();", script)
         self.assertIn(".weapon-link", css)
+
+    def test_weapons_page_links_perks_and_explains_weapon_speed(self):
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        html = (REPO_ROOT / "pages" / "items" / "weapons.html").read_text(encoding="utf-8")
+        script = (REPO_ROOT / "js" / "weapons-page.js").read_text(encoding="utf-8")
+        css = (REPO_ROOT / "css" / "weapons.css").read_text(encoding="utf-8")
+
+        self.assertIn('<label class="filter-label" for="filter-attack-speed">Weapon Speed</label>', html)
+        self.assertIn("const buildPerkDetailUrl", script)
+        self.assertIn('resolved.pathname = "/pages/systems/perks.html";', script)
+        self.assertIn('resolved.searchParams.set("perk", baseName);', script)
+        self.assertIn('pill.className = "detail-pill perk-link";', script)
+        self.assertIn("pill.href = buildPerkDetailUrl(baseName);", script)
+        self.assertIn('pill.addEventListener("click", stopPerkLinkClickPropagation);', script)
+        self.assertIn("const createWeaponSpeedPill", script)
+        self.assertIn('["Weapon Speed", createWeaponSpeedPill(item.attackSpeed)]', script)
+        self.assertIn("Base weapon speed", script)
+        self.assertIn(".perk-link", css)
+        self.assertIn(".weapon-speed-pill", css)
 
     def test_weapons_page_search_includes_detail_and_drop_source_text(self):
         from tools.codex_pipeline.config import REPO_ROOT

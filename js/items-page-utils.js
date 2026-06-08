@@ -123,6 +123,7 @@
         if (!tooltip || tooltip.dataset.pinWired === "1") return;
         const pill = tooltip.closest(".detail-pill");
         if (!pill) return;
+        const isNavigationPill = pill.tagName === "A";
 
         const toggle = (event) => {
           event.preventDefault();
@@ -138,12 +139,14 @@
           }
         };
 
-        pill.addEventListener("click", toggle);
-        pill.addEventListener("keydown", (event) => {
-          if (event.key === "Enter" || event.key === " ") {
-            toggle(event);
-          }
-        });
+        if (!isNavigationPill) {
+          pill.addEventListener("click", toggle);
+          pill.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              toggle(event);
+            }
+          });
+        }
         tooltip.addEventListener("click", (event) => event.stopPropagation());
         tooltip.dataset.pinWired = "1";
       });
