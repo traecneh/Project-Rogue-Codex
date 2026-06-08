@@ -1700,6 +1700,7 @@ a {
   }
 
   .sidebar {
+    order: 2;
     position: static;
     width: 100%;
     max-height: none;
@@ -1707,7 +1708,12 @@ a {
     overscroll-behavior: auto;
   }
 
+  .sidebar:not(.collapsed) {
+    order: 0;
+  }
+
   .sidebar.collapsed {
+    order: 2;
     width: 0;
     padding: 0;
     max-height: 0;
@@ -1721,6 +1727,7 @@ a {
   }
 
   .main-content {
+    order: 1;
     padding: 1rem 1rem 1.3rem;
   }
 }

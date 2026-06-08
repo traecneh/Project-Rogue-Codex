@@ -129,6 +129,12 @@ function initializeSidebar() {
   const sidebarRoot = document.querySelector(".sidebar");
   const collapseToggle = document.querySelector("[data-collapse-toggle]");
   const layoutRoot = document.querySelector(".layout");
+  const mobileMediaQuery =
+    typeof window.matchMedia === "function" ? window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT_PX}px)`) : null;
+  const isMobileViewport = () => {
+    if (mobileMediaQuery) return mobileMediaQuery.matches;
+    return window.innerWidth <= MOBILE_BREAKPOINT_PX;
+  };
 
   const loadNavState = () => {
     try {
@@ -178,7 +184,19 @@ function initializeSidebar() {
     }
   };
 
-  applyCollapsedState(loadCollapsedState());
+  const applyResponsiveCollapsedState = () => {
+    applyCollapsedState(isMobileViewport() ? true : loadCollapsedState());
+  };
+
+  applyResponsiveCollapsedState();
+
+  if (mobileMediaQuery) {
+    if (typeof mobileMediaQuery.addEventListener === "function") {
+      mobileMediaQuery.addEventListener("change", applyResponsiveCollapsedState);
+    } else if (typeof mobileMediaQuery.addListener === "function") {
+      mobileMediaQuery.addListener(applyResponsiveCollapsedState);
+    }
+  }
 
   if (sidebarRoot) {
     try {

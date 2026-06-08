@@ -795,11 +795,76 @@ async function runCorruptionSpec(browser, baseUrl) {
       }
     }
 
+    await assertMobilePageFirstNavigation(page, baseUrl, "/pages/systems/corruption.html");
+
     if (runtimeErrors.length) {
       throw new Error(`browser errors: ${runtimeErrors.join("; ")}`);
     }
   } finally {
     await page.close();
+  }
+}
+
+async function assertMobilePageFirstNavigation(page, baseUrl, pathName) {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(joinUrl(baseUrl, pathName), { waitUntil: "load" });
+  await page.locator(".content-title").waitFor({ state: "visible" });
+  await page.locator(".sidebar").waitFor({ state: "attached" });
+
+  const collapsedMetrics = await page.evaluate(() => {
+    const root = document.documentElement;
+    const body = document.body;
+    const title = document.querySelector(".content-title")?.getBoundingClientRect();
+    const sidebar = document.querySelector(".sidebar");
+    return {
+      horizontalOverflow: Math.max(root.scrollWidth, body.scrollWidth) > root.clientWidth + 1,
+      sidebarCollapsed: Boolean(sidebar?.classList.contains("collapsed")),
+      titleTop: title?.top ?? null,
+      viewportHeight: root.clientHeight,
+    };
+  });
+  if (!collapsedMetrics.sidebarCollapsed) {
+    throw new Error(`Mobile navigation should start collapsed so page content is first: ${JSON.stringify(collapsedMetrics)}`);
+  }
+  if (collapsedMetrics.titleTop === null || collapsedMetrics.titleTop < 0 || collapsedMetrics.titleTop > 180) {
+    throw new Error(`Mobile page title should be in the first viewport: ${JSON.stringify(collapsedMetrics)}`);
+  }
+  if (collapsedMetrics.horizontalOverflow) {
+    throw new Error(`Mobile layout has horizontal overflow: ${JSON.stringify(collapsedMetrics)}`);
+  }
+
+  const toggle = page.locator("[data-collapse-toggle]");
+  const toggleCount = await toggle.count();
+  if (toggleCount !== 1) {
+    throw new Error(`Mobile navigation toggle expected one control, found ${toggleCount}`);
+  }
+  await toggle.click();
+  await page.waitForFunction(() => !document.querySelector(".sidebar")?.classList.contains("collapsed"));
+  const expandedMetrics = await page.evaluate(() => {
+    const search = document.querySelector(".nav-search-input")?.getBoundingClientRect();
+    const sidebar = document.querySelector(".sidebar")?.getBoundingClientRect();
+    return {
+      searchTop: search?.top ?? null,
+      sidebarTop: sidebar?.top ?? null,
+      sidebarHeight: sidebar?.height ?? null,
+      sidebarCollapsed: Boolean(document.querySelector(".sidebar")?.classList.contains("collapsed")),
+    };
+  });
+  if (expandedMetrics.sidebarCollapsed || expandedMetrics.searchTop === null || expandedMetrics.searchTop > 360) {
+    throw new Error(`Mobile navigation did not expand into reachable view: ${JSON.stringify(expandedMetrics)}`);
+  }
+
+  await toggle.click();
+  await page.waitForFunction(() => document.querySelector(".sidebar")?.classList.contains("collapsed"));
+  const recollapsedMetrics = await page.evaluate(() => {
+    const title = document.querySelector(".content-title")?.getBoundingClientRect();
+    return {
+      sidebarCollapsed: Boolean(document.querySelector(".sidebar")?.classList.contains("collapsed")),
+      titleTop: title?.top ?? null,
+    };
+  });
+  if (!recollapsedMetrics.sidebarCollapsed || recollapsedMetrics.titleTop === null || recollapsedMetrics.titleTop > 180) {
+    throw new Error(`Mobile navigation did not return to page-first layout: ${JSON.stringify(recollapsedMetrics)}`);
   }
 }
 
