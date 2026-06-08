@@ -105,6 +105,15 @@
   margin: 0;
 }
 
+.perk-grid .stat-card {
+  position: relative;
+}
+
+.perk-grid .stat-card:hover,
+.perk-grid .stat-card:focus-within {
+  z-index: 30;
+}
+
 .perk-abbrev {
   display: inline-flex;
   align-items: center;

@@ -222,6 +222,7 @@ async function runBuildPlannerSpec(browser, baseUrl) {
 async function runPerksSpec(browser, baseUrl) {
   const page = await browser.newPage();
   page.setDefaultTimeout(timeoutMs);
+  await page.setViewportSize({ width: 1280, height: 1000 });
   const runtimeErrors = [];
   page.on("console", (message) => {
     const text = message.text();
@@ -436,6 +437,7 @@ async function assertPerkMathTooltip(page) {
   if (titleAlign !== "center") {
     throw new Error(`Bloodlust tooltip title should be centered, got "${titleAlign}"`);
   }
+  await assertTooltipCoversOverlappingTriggers(page, bloodlust);
 
   await page.locator("#perk-speed-context").selectOption("1500");
   await trigger.hover();
@@ -473,6 +475,55 @@ async function assertDamageReductionExample(page, perkName, expectedLines) {
     if (!tooltipText.includes(expected)) {
       throw new Error(`${perkName} tooltip missing damage example "${expected}": "${tooltipText}"`);
     }
+  }
+}
+
+async function assertTooltipCoversOverlappingTriggers(page, activeCard) {
+  const result = await activeCard.evaluate((card) => {
+    const tooltip = card.querySelector(".perk-math-tooltip");
+    if (!tooltip) return { error: "Tooltip missing" };
+    const tooltipRect = tooltip.getBoundingClientRect();
+    const overlappingTriggers = Array.from(document.querySelectorAll(".perk-math-trigger"))
+      .filter((trigger) => !card.contains(trigger))
+      .map((trigger) => {
+        const rect = trigger.getBoundingClientRect();
+        return { trigger, rect };
+      })
+      .filter(
+        ({ rect }) =>
+          rect.left < tooltipRect.right &&
+          rect.right > tooltipRect.left &&
+          rect.top < tooltipRect.bottom &&
+          rect.bottom > tooltipRect.top
+      );
+
+    if (!overlappingTriggers.length) return { error: "No overlapping stacking trigger found for regression check" };
+
+    const leaks = overlappingTriggers
+      .map(({ trigger, rect }) => {
+        const x = (rect.left + rect.right) / 2;
+        const y = (rect.top + rect.bottom) / 2;
+        const top = document.elementFromPoint(x, y);
+        return {
+          perk: trigger.closest("[data-perk-name]")?.dataset.perkName || "unknown",
+          topClass: top?.className || "",
+          topPerk: top?.closest?.("[data-perk-name]")?.dataset.perkName || "",
+          tooltipContainsTop: tooltip.contains(top),
+        };
+      })
+      .filter((sample) => !sample.tooltipContainsTop);
+
+    return {
+      leaks,
+      overlapCount: overlappingTriggers.length,
+    };
+  });
+
+  if (result.error) {
+    throw new Error(result.error);
+  }
+  if (result.leaks.length) {
+    throw new Error(`Perk tooltip did not cover overlapping STACKING trigger(s): ${JSON.stringify(result.leaks)}`);
   }
 }
 

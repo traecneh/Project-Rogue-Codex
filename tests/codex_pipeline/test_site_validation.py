@@ -533,6 +533,7 @@ class SiteValidationTests(unittest.TestCase):
         for expected in [
             ".perk-controls",
             ".perk-speed-context",
+            ".perk-grid .stat-card",
             ".perk-math",
             ".perk-math-tooltip",
             ".perk-math-separator",
@@ -545,6 +546,8 @@ class SiteValidationTests(unittest.TestCase):
         ]:
             self.assertIn(expected, css)
         self.assertRegex(css, r"\.perk-math-title\s*\{[^}]*text-align:\s*center;")
+        self.assertRegex(css, r"\.perk-grid \.stat-card\s*\{[^}]*position:\s*relative;")
+        self.assertRegex(css, r"\.perk-grid \.stat-card:hover,\s*\.perk-grid \.stat-card:focus-within\s*\{[^}]*z-index:\s*30;")
         self.assertIn("@media (max-width: 640px)", css)
         self.assertIn("width: min(320px, calc(100vw - 4rem));", css)
 
