@@ -1,0 +1,221 @@
+.corruption-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
+  gap: 0.75rem;
+  margin: 1rem 0 1.5rem;
+}
+
+.corruption-summary-card {
+  min-height: 130px;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 0.85rem;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.045), rgba(0, 0, 0, 0.24)),
+    rgba(14, 18, 25, 0.74);
+}
+
+.corruption-summary-card h3 {
+  margin: 0.25rem 0 0.4rem;
+  font-size: 1rem;
+  color: var(--text-main);
+}
+
+.corruption-summary-card a {
+  color: #8bd4ff;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.corruption-summary-card a:hover,
+.corruption-summary-card a:focus-visible {
+  color: #ffffff;
+  outline: none;
+  text-decoration: underline;
+}
+
+.corruption-summary-card p:last-child,
+.corruption-panel p:last-child,
+.corruption-example-card span:last-child,
+.corruption-warning p:last-child {
+  margin-bottom: 0;
+}
+
+.corruption-compare-section,
+.corruption-example-section,
+.corruption-flow-section,
+.corruption-warning,
+.corruption-related {
+  margin-top: 1.5rem;
+}
+
+.corruption-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 0.85rem;
+  margin-top: 0.85rem;
+}
+
+.corruption-panel {
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 0.95rem;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.corruption-panel h3 {
+  margin: 0.2rem 0 0.65rem;
+  font-size: 1rem;
+}
+
+.corruption-panel ul {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+  padding-left: 1.15rem;
+}
+
+.corruption-panel-primary {
+  border-color: rgba(142, 225, 177, 0.44);
+}
+
+.corruption-panel-primary h3 {
+  color: #9ee8bd;
+}
+
+.corruption-panel-secondary {
+  border-color: rgba(126, 206, 255, 0.45);
+}
+
+.corruption-panel-secondary h3 {
+  color: #8bd4ff;
+}
+
+.corruption-example-card {
+  display: grid;
+  gap: 0.3rem;
+  max-width: 31rem;
+  margin-top: 0.85rem;
+  border: 1px solid rgba(255, 179, 71, 0.42);
+  border-radius: 8px;
+  padding: 0.9rem;
+  color: var(--text-main);
+  text-decoration: none;
+  background: rgba(255, 179, 71, 0.07);
+}
+
+.corruption-example-card strong {
+  color: #ffffff;
+  font-size: 1rem;
+}
+
+.corruption-example-card span:last-child {
+  color: var(--text-muted);
+}
+
+.corruption-example-card:hover,
+.corruption-example-card:focus-visible {
+  border-color: var(--accent-blue);
+  color: #ffffff;
+  outline: none;
+}
+
+.corruption-flow {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0.85rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.corruption-flow li {
+  display: grid;
+  grid-template-columns: 2.2rem 1fr;
+  gap: 0.75rem;
+  align-items: start;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 0.85rem;
+  background: rgba(5, 8, 12, 0.34);
+}
+
+.corruption-flow span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  border: 1px solid rgba(142, 225, 177, 0.52);
+  border-radius: 999px;
+  color: #ffffff;
+  font-weight: 800;
+  background: rgba(142, 225, 177, 0.12);
+}
+
+.corruption-flow h3 {
+  margin: 0 0 0.2rem;
+  font-size: 1rem;
+}
+
+.corruption-flow p {
+  margin: 0;
+}
+
+.corruption-warning {
+  border: 1px solid rgba(255, 179, 71, 0.42);
+  border-radius: 8px;
+  padding: 0.95rem;
+  background: rgba(255, 179, 71, 0.07);
+}
+
+.corruption-warning h2 {
+  margin-top: 0.15rem;
+}
+
+.corruption-link-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.65rem;
+  margin-top: 0.8rem;
+}
+
+.corruption-link-grid a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.6rem;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  color: var(--text-main);
+  text-decoration: none;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.corruption-link-grid a:hover,
+.corruption-link-grid a:focus-visible {
+  border-color: var(--accent-blue);
+  color: #ffffff;
+  outline: none;
+}
+
+@media (max-width: 640px) {
+  .content-header {
+    padding-left: 2.25rem;
+  }
+
+  .corruption-summary-grid,
+  .corruption-compare-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .corruption-flow li {
+    grid-template-columns: 1.9rem 1fr;
+    gap: 0.65rem;
+  }
+
+  .corruption-flow span {
+    width: 1.9rem;
+    height: 1.9rem;
+  }
+}

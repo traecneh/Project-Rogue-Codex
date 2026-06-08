@@ -975,6 +975,56 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(".purge-flow", css)
         self.assertIn(".purge-link-grid", css)
 
+    def test_corruption_page_has_compact_cleanse_reference(self):
+        from tools.codex_pipeline import cli
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        html_path = REPO_ROOT / "pages" / "systems" / "corruption.html"
+        css_path = REPO_ROOT / "css" / "corruption.css"
+        html = html_path.read_text(encoding="utf-8")
+        css = css_path.read_text(encoding="utf-8") if css_path.exists() else ""
+
+        self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
+        self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
+        self.assertIn('<link rel="stylesheet" href="css/corruption.css" />', html)
+        self.assertNotIn("<style>", html)
+        self.assertEqual(
+            [],
+            [
+                block.strip()
+                for block in re.findall(
+                    r"<script\b(?![^>]*\bsrc\s*=)[^>]*>([\s\S]*?)</script>",
+                    html,
+                    flags=re.IGNORECASE,
+                )
+                if block.strip()
+            ],
+        )
+
+        for expected in [
+            "Corruption Roles",
+            "Corrupted Innate",
+            "Hard Bosses",
+            "Cleanse with Purge",
+            "What Corruption Changes",
+            "Cleanse Flow",
+            "Before You Cleanse",
+            "No Item Reset",
+            "Purge Tool",
+            "pages/systems/purge.html",
+            "pages/systems/imbuements.html",
+            "pages/systems/rarity.html",
+            "pages/systems/re-roll.html",
+            "pages/items/weapons.html",
+            "pages/items/armors.html",
+        ]:
+            self.assertIn(expected, html)
+
+        self.assertIn(".corruption-summary-grid", css)
+        self.assertIn(".corruption-compare-grid", css)
+        self.assertIn(".corruption-flow", css)
+        self.assertIn(".corruption-link-grid", css)
+
     def test_crafting_page_has_compact_armor_crafting_reference(self):
         from tools.codex_pipeline import cli
         from tools.codex_pipeline.config import REPO_ROOT

@@ -11,6 +11,7 @@
     <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
     <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/corruption.css" />
     <script src="js/site-search.js" defer></script>
     <script src="js/weapon-specialty.js" defer></script>
     <script src="js/stat-widgets.js" defer></script>
@@ -31,33 +32,122 @@
           </p>
         </header>
 
-        <article class="content-section" id="corruption-overview">
-          <h2>Corruption Rules</h2>
-          <div class="stat-grid" role="list">
-            <section class="stat-card" role="listitem">
+        <article class="content-section" id="corruption-basics">
+          <h2>Corruption Roles</h2>
+          <div class="corruption-summary-grid" role="list">
+            <section class="corruption-summary-card" role="listitem">
               <p class="stat-label">Override</p>
-              <h3>Innate Swap</h3>
-              <p>The corruption system lets an item's innate perk be overridden with a different perk or a higher-tier version.</p>
+              <h3>Corrupted Innate</h3>
+              <p>Corruption replaces the item's normal innate perk line with its corrupted perk line.</p>
             </section>
 
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Designated</p>
-              <h3>Assigned Corruption</h3>
-              <p>Items can define a specific corruption perk; e.g., Dark Sword's innate is <strong>Epidemic T3</strong> and its corruption can be <strong>Crimson Feast T1</strong>.</p>
+            <section class="corruption-summary-card" role="listitem">
+              <p class="stat-label">Sources</p>
+              <h3>Hard Bosses</h3>
+              <p>Corrupted loot is tied to hard boss and corrupted-monster sources; item pages are the place to confirm exact drops.</p>
             </section>
 
-            <section class="stat-card" role="listitem">
+            <section class="corruption-summary-card" role="listitem">
               <p class="stat-label">Cleanse</p>
-              <h3>Purge Tool</h3>
-              <p>Corrupted items can be cleansed back to their innate perk via the <strong>Purge</strong> tool.</p>
+              <h3>Cleanse with Purge</h3>
+              <p>Use the <a href="pages/systems/purge.html">Purge Tool</a> when the goal is removing a corrupted innate.</p>
             </section>
 
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Availability</p>
-              <h3>Drop Sources</h3>
-              <p>Corrupted items currently drop at <strong>night</strong> and from <strong>Corrupted Elites</strong> at all times.</p>
+            <section class="corruption-summary-card" role="listitem">
+              <p class="stat-label">Plan</p>
+              <h3>Check Gear Pages</h3>
+              <p>Weapon and armor detail panels show both normal perks and Corrupted Perk values when the data has them.</p>
             </section>
           </div>
+
+          <section class="corruption-compare-section">
+            <h2>What Corruption Changes</h2>
+            <div class="corruption-compare-grid">
+              <section class="corruption-panel corruption-panel-primary">
+                <p class="stat-label">Corrupted Item</p>
+                <h3>Innate Line Changes</h3>
+                <ul>
+                  <li>The item keeps its identity, slot, rarity state, base requirements, and normal stat ranges.</li>
+                  <li>The normal innate perk is overridden by the item's corrupted perk.</li>
+                  <li>Some items use a specific alternate perk rather than a simple tier increase.</li>
+                </ul>
+              </section>
+
+              <section class="corruption-panel corruption-panel-secondary">
+                <p class="stat-label">Cleaned Item</p>
+                <h3>Normal Innate Returns</h3>
+                <ul>
+                  <li>Cleanse targets the corrupted innate, not an applied imbuement or special effect.</li>
+                  <li>After cleansing, evaluate the item by its normal innate and remaining gear values.</li>
+                  <li>Use Purge for cleanup; use Re-Roll or Ascend for item improvement decisions.</li>
+                </ul>
+              </section>
+            </div>
+          </section>
+
+          <section class="corruption-example-section">
+            <h2>Example Read</h2>
+            <a class="corruption-example-card" href="pages/items/weapons.html?weapon=Dark%20Sword">
+              <span class="stat-label">Dark Sword</span>
+              <strong>Epidemic T3 -> Crimson Feast T1</strong>
+              <span>Use the item detail view to compare the innate perk against the Corrupted Perk line.</span>
+            </a>
+          </section>
+
+          <section class="corruption-flow-section">
+            <h2>Cleanse Flow</h2>
+            <ol class="corruption-flow">
+              <li>
+                <span>1</span>
+                <div>
+                  <h3>Inspect the item</h3>
+                  <p>Confirm the unwanted line is the Corrupted Perk, not a crafted imbuement or normal innate.</p>
+                </div>
+              </li>
+              <li>
+                <span>2</span>
+                <div>
+                  <h3>Compare the perk value</h3>
+                  <p>Check whether the corrupted perk helps the build before removing it.</p>
+                </div>
+              </li>
+              <li>
+                <span>3</span>
+                <div>
+                  <h3>Use Purge Tool cleanse</h3>
+                  <p>Cleanse through Purge when you want the item back on its normal innate track.</p>
+                </div>
+              </li>
+              <li>
+                <span>4</span>
+                <div>
+                  <h3>Rebuild around the result</h3>
+                  <p>After cleansing, revisit perks, imbuements, rarity, and re-roll decisions as separate systems.</p>
+                </div>
+              </li>
+            </ol>
+          </section>
+
+          <section class="corruption-warning">
+            <p class="stat-label">No Item Reset</p>
+            <h2>Before You Cleanse</h2>
+            <p>
+              Cleanse is a targeted cleanup action, not a full item reset. It does not reroll rarity, restore a removed
+              imbuement, or change the item's other values, so only remove corruption when the normal innate is better for the build.
+            </p>
+          </section>
+
+          <section class="corruption-related">
+            <h2>Related Pages</h2>
+            <div class="corruption-link-grid" aria-label="Related corruption pages">
+              <a href="pages/systems/purge.html">Purge</a>
+              <a href="pages/systems/imbuements.html">Imbuements</a>
+              <a href="pages/systems/rarity.html">Rarity</a>
+              <a href="pages/systems/re-roll.html">Re-Roll</a>
+              <a href="pages/items/weapons.html">Weapons</a>
+              <a href="pages/items/armors.html">Armors</a>
+            </div>
+          </section>
         </article>
       </main>
     </div>

@@ -122,6 +122,12 @@ async function main() {
       failures.push(`SMOKE ERROR purge: ${formatError(error)}`);
     }
     try {
+      await runCorruptionSpec(browser, baseUrl);
+      console.log("SMOKE OK corruption: corrupted innates, cleanse flow, related links");
+    } catch (error) {
+      failures.push(`SMOKE ERROR corruption: ${formatError(error)}`);
+    }
+    try {
       await runCraftingSpec(browser, baseUrl);
       console.log("SMOKE OK crafting: armor reference, set preview, materials calculator");
     } catch (error) {
@@ -136,7 +142,7 @@ async function main() {
     failures.forEach((failure) => console.error(failure));
     process.exit(1);
   }
-  console.log(`SMOKE OK site: ${smokeSpecs.length + 10} page(s) checked at ${baseUrl}`);
+  console.log(`SMOKE OK site: ${smokeSpecs.length + 11} page(s) checked at ${baseUrl}`);
 }
 
 async function importPlaywright() {
@@ -727,6 +733,65 @@ async function runPurgeSpec(browser, baseUrl) {
       const count = await page.locator(`.purge-link-grid a[href="${href}"]`).count();
       if (count !== 1) {
         throw new Error(`Purge related link expected one "${href}", found ${count}`);
+      }
+    }
+
+    if (runtimeErrors.length) {
+      throw new Error(`browser errors: ${runtimeErrors.join("; ")}`);
+    }
+  } finally {
+    await page.close();
+  }
+}
+
+async function runCorruptionSpec(browser, baseUrl) {
+  const page = await browser.newPage();
+  page.setDefaultTimeout(timeoutMs);
+  const runtimeErrors = [];
+  page.on("console", (message) => {
+    const text = message.text();
+    if (message.type() === "error" && !text.startsWith("Failed to load resource")) runtimeErrors.push(text);
+  });
+  page.on("pageerror", (error) => runtimeErrors.push(formatError(error)));
+
+  try {
+    await page.goto(joinUrl(baseUrl, "/pages/systems/corruption.html"), { waitUntil: "load" });
+    await page.locator(".corruption-compare-grid").waitFor({ state: "visible" });
+    const pageText = (await page.locator("#corruption-basics").textContent()).trim();
+    for (const expected of [
+      "Corruption Roles",
+      "Corrupted Innate",
+      "Hard Bosses",
+      "Cleanse with Purge",
+      "What Corruption Changes",
+      "Cleanse Flow",
+      "Before You Cleanse",
+      "No Item Reset",
+      "Purge Tool",
+      "Epidemic T3",
+      "Crimson Feast T1",
+    ]) {
+      if (!pageText.includes(expected)) {
+        throw new Error(`Corruption page missing "${expected}": "${pageText}"`);
+      }
+    }
+
+    const exampleCount = await page.locator('.corruption-example-card[href="pages/items/weapons.html?weapon=Dark%20Sword"]').count();
+    if (exampleCount !== 1) {
+      throw new Error(`Corruption example link expected one Dark Sword link, found ${exampleCount}`);
+    }
+
+    for (const href of [
+      "pages/systems/purge.html",
+      "pages/systems/imbuements.html",
+      "pages/systems/rarity.html",
+      "pages/systems/re-roll.html",
+      "pages/items/weapons.html",
+      "pages/items/armors.html",
+    ]) {
+      const count = await page.locator(`.corruption-link-grid a[href="${href}"]`).count();
+      if (count !== 1) {
+        throw new Error(`Corruption related link expected one "${href}", found ${count}`);
       }
     }
 
