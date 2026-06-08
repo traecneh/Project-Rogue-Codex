@@ -211,6 +211,7 @@
   });
   const updateArmorDetailUrl = armorRouteHelpers.updateDetailUrl;
   const updateArmorListUrl = armorRouteHelpers.updateListUrl;
+  const buildArmorDetailUrl = armorRouteHelpers.buildDetailStateUrl;
   const getArmorRouteFromLocation = armorRouteHelpers.getRouteFromLocation;
   const findArmorByRoute = armorRouteHelpers.findByRoute;
   const getSelectedArmorFromLocation = (list = items) => armorRouteHelpers.getSelectedFromLocation(list);
@@ -376,28 +377,35 @@
       }
       th.appendChild(labelSpan);
 
-      th.dataset.sortKey = col.key;
-      const indicator = document.createElement("span");
-      indicator.className = "sort-indicator";
-      indicator.setAttribute("aria-hidden", "true");
-      indicator.textContent = "\u2195";
-      th.appendChild(indicator);
+      if (col.sortable !== false) {
+        th.dataset.sortKey = col.key;
+        const indicator = document.createElement("span");
+        indicator.className = "sort-indicator";
+        indicator.setAttribute("aria-hidden", "true");
+        indicator.textContent = "\u2195";
+        th.appendChild(indicator);
 
-      th.addEventListener("click", () => {
-        if (sortKey === col.key) {
-          sortDir = sortDir === "asc" ? "desc" : "asc";
-        } else {
-          sortKey = col.key;
-          sortDir = "asc";
-        }
-        applyFilterAndSort();
-      });
+        th.addEventListener("click", () => {
+          if (sortKey === col.key) {
+            sortDir = sortDir === "asc" ? "desc" : "asc";
+          } else {
+            sortKey = col.key;
+            sortDir = "asc";
+          }
+          applyFilterAndSort();
+        });
+      } else {
+        th.style.cursor = "default";
+      }
       tableHeadRow.appendChild(th);
     });
     updateSortIndicators();
   };
 
   const formatRequirement = (requirement) => {
+    if (requirement === null || requirement === undefined || requirement === "") return "None";
+    const numeric = Number(requirement);
+    if (numeric === 0) return "None";
     if (requirement === 2) return "Evil Reputation";
     if (requirement === 6) return "Good Reputation";
     return `Player Level ${formatNumber(requirement)}`;
@@ -412,6 +420,12 @@
       .replace(/\s*tier\s*\d+\s*$/i, "")
       .replace(/\s*t\s*\d+\s*$/i, "")
       .trim();
+  };
+
+  const isPerkValueSet = (value) => {
+    const text = (value ?? "").toString().trim();
+    if (!text || text === "-" || text.toLowerCase() === "none") return false;
+    return true;
   };
 
   const createPerkDetailPill = (value) => {
@@ -536,6 +550,54 @@
       utils,
     });
 
+  const getArmorDropSourceNames = (item) => {
+    const uniqueMonsterIds =
+      typeof utils.getDropSourceMonsterIdsByItem === "function"
+        ? utils.getDropSourceMonsterIdsByItem(dropSources, "armors", item.name)
+        : [];
+    if (!Array.isArray(uniqueMonsterIds) || !uniqueMonsterIds.length) return [];
+    const uniqueSet = new Set(uniqueMonsterIds.map((id) => normalizeMonsterId(id)));
+    return monsters
+      .filter(
+        (monster) =>
+          uniqueSet.has(normalizeMonsterId(monster.id)) ||
+          uniqueSet.has(normalizeMonsterId(monster.name))
+      )
+      .map((monster) => monster.name || monster.id)
+      .filter(Boolean);
+  };
+
+  const getArmorSearchText = (item) => {
+    const res = item.resistances || {};
+    const stats = item.stats || {};
+    return [
+      ...COLUMNS.map((col) => formatValue(item[col.key])),
+      formatValue(item.slot),
+      formatRequirement(item.playerLevelRequirement),
+      formatValue(item.maxRarity),
+      formatValue(item.perk),
+      formatValue(item.corruptedPerk),
+      formatNumber(item.weight),
+      formatNumber(item.toHit),
+      formatNumber(item.deconstruction),
+      formatNumber(item.promotion),
+      formatNumber(item.sellValue, { maximumFractionDigits: 2 }),
+      formatNumber(item.value),
+      formatNumber(stats.strength ?? 0),
+      formatNumber(stats.constitution ?? 0),
+      formatNumber(stats.dexterity ?? 0),
+      formatNumber(res.fire ?? 0),
+      formatNumber(res.poison ?? 0),
+      formatNumber(res.cold ?? 0),
+      formatNumber(res.disease ?? 0),
+      formatNumber(res.acid ?? 0),
+      formatNumber(res.lightning ?? res.electric ?? 0),
+      ...getArmorDropSourceNames(item),
+    ]
+      .join(" ")
+      .toLowerCase();
+  };
+
   const tooltipPinning = itemUtils.createTooltipPinningController();
   const attachTooltipPinning = tooltipPinning.attachTooltipPinning;
   const unpinPinnedTooltip = tooltipPinning.unpinPinnedTooltip;
@@ -607,14 +669,18 @@
 
     addDivider(container);
 
-    addRow(
-      container,
-      [
-        ["Innate Perk", createPerkDetailPill(item.perk)],
-        ["Corrupted Perk", createPerkDetailPill(item.corruptedPerk)],
-      ],
-      2
-    );
+    if (isPerkValueSet(item.corruptedPerk)) {
+      addRow(
+        container,
+        [
+          ["Innate Perk", createPerkDetailPill(item.perk)],
+          ["Corrupted Perk", createPerkDetailPill(item.corruptedPerk)],
+        ],
+        2
+      );
+    } else {
+      addRow(container, [["Innate Perk", createPerkDetailPill(item.perk)]], 1);
+    }
 
     addDivider(container);
 
@@ -711,6 +777,17 @@
           ensureImage(img, fallback, item, "armors");
           td.appendChild(img);
           td.appendChild(fallback);
+        } else if (col.key === "name") {
+          const nameLink = document.createElement("a");
+          nameLink.href = buildArmorDetailUrl(item);
+          nameLink.className = "armor-link";
+          nameLink.textContent = formatValue(value);
+          nameLink.addEventListener("click", (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            selectArmor(item, { updateUrl: true });
+          });
+          td.appendChild(nameLink);
         } else if (col.format) {
           td.textContent = col.format(value);
         } else {
@@ -773,14 +850,7 @@
       }
 
       if (!searchTerm) return true;
-      const text = [
-        ...COLUMNS.map((col) => formatValue(item[col.key])),
-        formatValue(item.perk),
-        formatValue(item.corruptedPerk),
-      ]
-        .join(" ")
-        .toLowerCase();
-      return text.includes(searchTerm.toLowerCase());
+      return getArmorSearchText(item).includes(searchTerm.toLowerCase());
     });
 
     const sorted = filtered.sort((a, b) => {

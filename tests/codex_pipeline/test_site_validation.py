@@ -252,6 +252,41 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn("clearDetails({ updateUrl: true });", armors_script)
         self.assertIn('history.pushState(state, "", targetUrl);', helper_script)
 
+    def test_armors_page_uses_linked_names_and_non_sortable_image_column(self):
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        script = (REPO_ROOT / "js" / "armors-page.js").read_text(encoding="utf-8")
+        css = (REPO_ROOT / "css" / "armors.css").read_text(encoding="utf-8")
+
+        self.assertIn('if (col.sortable !== false) {', script)
+        self.assertIn('th.style.cursor = "default";', script)
+        self.assertIn("const buildArmorDetailUrl = armorRouteHelpers.buildDetailStateUrl;", script)
+        self.assertIn('nameLink.className = "armor-link";', script)
+        self.assertIn("nameLink.href = buildArmorDetailUrl(item);", script)
+        self.assertIn("event.preventDefault();", script)
+        self.assertIn("event.stopPropagation();", script)
+        self.assertIn(".armor-link", css)
+
+    def test_armors_page_detail_hides_empty_corrupted_perks_and_empty_requirements(self):
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        script = (REPO_ROOT / "js" / "armors-page.js").read_text(encoding="utf-8")
+
+        self.assertIn("const isPerkValueSet", script)
+        self.assertIn("if (isPerkValueSet(item.corruptedPerk))", script)
+        self.assertIn('if (numeric === 0) return "None";', script)
+
+    def test_armors_page_search_includes_detail_and_drop_source_text(self):
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        script = (REPO_ROOT / "js" / "armors-page.js").read_text(encoding="utf-8")
+
+        self.assertIn("const getArmorSearchText", script)
+        self.assertIn('utils.getDropSourceMonsterIdsByItem(dropSources, "armors", item.name)', script)
+        self.assertIn("uniqueSet.has(normalizeMonsterId(monster.name))", script)
+        self.assertIn("formatRequirement(item.playerLevelRequirement)", script)
+        self.assertIn("getArmorSearchText(item).includes(searchTerm.toLowerCase())", script)
+
     def test_manifest_self_reference_is_an_error(self):
         from tools.codex_pipeline.validators.site import validate_manifest_entries
 
