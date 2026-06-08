@@ -95,3 +95,6 @@ class SiteSmokeTests(unittest.TestCase):
         self.assertIn("Rune Sword", runner)
         self.assertIn("#reset-build", runner)
         self.assertIn('[data-quick-stat="dps"]', runner)
+        self.assertIn("assertBuildPlannerItemLinks", runner)
+        self.assertIn(".suggestion-link", runner)
+        self.assertIn("pages/items/weapons.html?weapon=Rune%20Sword", runner)

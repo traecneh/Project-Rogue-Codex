@@ -1186,9 +1186,12 @@
             div.setAttribute("role", "option");
             div.setAttribute("aria-selected", "false");
 
-            const title = document.createElement("div");
-            title.className = "suggestion-title";
+            const title = document.createElement("a");
+            title.className = "suggestion-title suggestion-link";
             title.textContent = item.name || "Unknown";
+            title.href = getItemHref(item);
+            title.setAttribute("aria-label", `Open ${item.name || "item"} details`);
+            title.addEventListener("click", (event) => event.stopPropagation());
 
             const meta = document.createElement("div");
             meta.className = "suggestion-meta";

@@ -334,6 +334,23 @@ class SiteValidationTests(unittest.TestCase):
         self.assertNotIn("Select a filled slot", html)
         self.assertNotIn("const selectSlot", script)
         self.assertNotIn("const updateSlotEditor", script)
+
+    def test_build_planner_links_items_to_detail_pages(self):
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        html = (REPO_ROOT / "pages" / "General" / "build-planner.html").read_text(encoding="utf-8")
+        script = (REPO_ROOT / "js" / "build-planner.js").read_text(encoding="utf-8")
+        css = (REPO_ROOT / "css" / "build-planner.css").read_text(encoding="utf-8")
+
+        self.assertIn('class="slot-name slot-item-link"', html)
+        self.assertIn("const getItemHref", script)
+        self.assertIn('if (item.kind === "weapon") return `pages/items/weapons.html?weapon=${encodeURIComponent(name)}`;', script)
+        self.assertIn('if (item.kind === "armor") return `pages/items/armors.html?armor=${encodeURIComponent(name)}`;', script)
+        self.assertIn('const title = document.createElement("a");', script)
+        self.assertIn('title.className = "suggestion-title suggestion-link";', script)
+        self.assertIn("title.href = getItemHref(item);", script)
+        self.assertIn('title.addEventListener("click", (event) => event.stopPropagation());', script)
+        self.assertIn(".suggestion-link", css)
         self.assertNotIn("selectedSlotName", script)
         self.assertIn(".slot-card:not(.has-item) .slot-rarity", css)
         self.assertNotIn(".slot-card .slot-stat-adjust", css)

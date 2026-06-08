@@ -366,6 +366,21 @@
         color: var(--text-main);
       }
 
+      .suggestion-link {
+        align-self: flex-start;
+        max-width: 100%;
+        color: var(--text-main);
+        text-decoration: none;
+        overflow-wrap: anywhere;
+      }
+
+      .suggestion-link:hover,
+      .suggestion-link:focus-visible {
+        color: var(--accent);
+        text-decoration: underline;
+        text-underline-offset: 0.18em;
+      }
+
       .suggestion-meta {
         font-size: 0.85rem;
         color: var(--text-muted);

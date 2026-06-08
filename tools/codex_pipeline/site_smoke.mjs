@@ -8,6 +8,7 @@ const args = parseArgs(process.argv.slice(2));
 const root = path.resolve(args.root || path.join(path.dirname(fileURLToPath(import.meta.url)), "..", ".."));
 const timeoutMs = Number(args.timeoutMs || 20000);
 const configuredBaseUrl = args.baseUrl ? normalizeBaseUrl(args.baseUrl) : null;
+const RUNE_SWORD_DETAIL_PATH = "pages/items/weapons.html?weapon=Rune%20Sword";
 
 const smokeSpecs = [
   {
@@ -169,8 +170,10 @@ async function runBuildPlannerSpec(browser, baseUrl) {
     await page.locator("#gear-search").waitFor({ state: "visible" });
     await assertNoBuildPlannerSlotEditor(page);
 
+    await assertBuildPlannerSuggestionLink(page, "Rune Sword");
     await selectBuildPlannerItem(page, "Rune Sword");
     await assertBuildPlannerWeapon(page, "Rune Sword");
+    await assertBuildPlannerItemLinks(page, "Rune Sword");
     await assertNumberGreaterThan(page, '[data-quick-stat="dps"]', 0, "quick DPS");
 
     await page.locator('[data-slot="Weapon"] [data-rarity-inc]').click();
@@ -210,7 +213,7 @@ async function selectBuildPlannerItem(page, itemName) {
   await page.locator("#gear-search").fill(itemName);
   const suggestion = page.locator("#gear-suggestions .suggestion").filter({ hasText: itemName }).first();
   await suggestion.waitFor({ state: "visible" });
-  await suggestion.click();
+  await suggestion.locator(".suggestion-meta").click();
 }
 
 async function assertBuildPlannerWeapon(page, expectedName) {
@@ -232,6 +235,28 @@ async function assertBuildPlannerWeapon(page, expectedName) {
 async function assertNoBuildPlannerSlotEditor(page) {
   const editorCount = await page.locator("#slot-editor").count();
   if (editorCount) throw new Error("Build Planner rendered the removed selected-slot editor");
+}
+
+async function assertBuildPlannerSuggestionLink(page, itemName) {
+  await page.locator("#gear-search").fill(itemName);
+  const suggestionLink = page.locator("#gear-suggestions .suggestion-link").filter({ hasText: itemName }).first();
+  await suggestionLink.waitFor({ state: "visible" });
+  const href = await suggestionLink.getAttribute("href");
+  if (href !== RUNE_SWORD_DETAIL_PATH) {
+    throw new Error(`Build Planner suggestion link expected ${RUNE_SWORD_DETAIL_PATH}, got "${href}"`);
+  }
+}
+
+async function assertBuildPlannerItemLinks(page, expectedName) {
+  const link = page.locator('[data-slot="Weapon"] [data-slot-item]');
+  const href = await link.getAttribute("href");
+  const text = (await link.textContent()).trim();
+  if (text !== expectedName) {
+    throw new Error(`Build Planner selected item link text expected "${expectedName}", got "${text}"`);
+  }
+  if (href !== RUNE_SWORD_DETAIL_PATH) {
+    throw new Error(`Build Planner selected item link expected ${RUNE_SWORD_DETAIL_PATH}, got "${href}"`);
+  }
 }
 
 async function assertNumberGreaterThan(page, selector, minimum, label) {
