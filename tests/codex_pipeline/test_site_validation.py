@@ -285,6 +285,58 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn('if (numeric === 0) return "None";', script)
         self.assertIn("[\"Requirement\", formatRequirement(item.skillRequirement)]", script)
 
+    def test_build_planner_uses_external_assets(self):
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        html = (REPO_ROOT / "pages" / "General" / "build-planner.html").read_text(encoding="utf-8")
+        css_path = REPO_ROOT / "css" / "build-planner.css"
+        script_path = REPO_ROOT / "js" / "build-planner.js"
+
+        self.assertTrue(css_path.exists())
+        self.assertTrue(script_path.exists())
+        self.assertIn('<link rel="stylesheet" href="css/build-planner.css" />', html)
+        self.assertIn('<script src="js/build-planner.js" defer></script>', html)
+        self.assertNotIn("<style>", html)
+        self.assertNotIn("const RARITY_TIERS = [", html)
+        self.assertNotIn("var LZString=function()", html)
+
+    def test_build_planner_script_preserves_share_state_contract(self):
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        script_path = REPO_ROOT / "js" / "build-planner.js"
+        self.assertTrue(script_path.exists())
+        script = script_path.read_text(encoding="utf-8")
+
+        self.assertIn('const SHORT_STATE_PARAM = "b";', script)
+        self.assertIn('const LEGACY_STATE_PARAM = "build";', script)
+        self.assertIn("compressToEncodedURIComponent", script)
+        self.assertIn("decompressFromEncodedURIComponent", script)
+        self.assertIn("getBuildParamFromSearch", script)
+        self.assertIn("applySavedState", script)
+
+    def test_build_planner_compact_ui_contracts(self):
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        html = (REPO_ROOT / "pages" / "General" / "build-planner.html").read_text(encoding="utf-8")
+        script_path = REPO_ROOT / "js" / "build-planner.js"
+        css_path = REPO_ROOT / "css" / "build-planner.css"
+        self.assertTrue(script_path.exists())
+        self.assertTrue(css_path.exists())
+        script = script_path.read_text(encoding="utf-8")
+        css = css_path.read_text(encoding="utf-8")
+
+        self.assertIn('id="reset-build"', html)
+        self.assertIn('id="planner-status"', html)
+        self.assertIn('id="quick-summary"', html)
+        self.assertIn('id="slot-editor"', html)
+        self.assertIn("const selectSlot", script)
+        self.assertIn("const updatePlannerStatus", script)
+        self.assertIn("const updateSlotEditor", script)
+        self.assertIn("const resetBuild", script)
+        self.assertIn(".slot-card:not(.has-item) .slot-rarity", css)
+        self.assertIn(".slot-editor", css)
+        self.assertIn(".formula-tip", css)
+
     def test_armors_page_uses_linked_names_and_non_sortable_image_column(self):
         from tools.codex_pipeline.config import REPO_ROOT
 
