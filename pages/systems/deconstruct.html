@@ -11,6 +11,7 @@
     <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
     <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/deconstruct.css" />
     <script src="js/site-search.js" defer></script>
     <script src="js/weapon-specialty.js" defer></script>
     <script src="js/stat-widgets.js" defer></script>
@@ -27,62 +28,143 @@
         <header class="content-header">
           <h1 class="content-title">Deconstruct System</h1>
           <p class="content-tagline">
-            Convert items into Ascendency Shards in the Deconstruct menu.
+            Convert unwanted gear into Ascendency Shards without losing track of what is worth keeping.
           </p>
         </header>
 
-        <article class="content-section">
-          <h2>How Deconstruct Works</h2>
-          <div class="stat-grid" role="list">
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Basics</p>
+        <article class="content-section" id="deconstruct-basics">
+          <h2>What Deconstruct Returns</h2>
+          <div class="deconstruct-summary-grid" role="list">
+            <section class="deconstruct-summary-card" role="listitem">
+              <p class="stat-label">Currency</p>
               <h3>Shard Conversion</h3>
               <p>
                 Deconstruct turns gear into <strong>Ascendency Shards</strong>; higher rarity and level grant more shards.
               </p>
-              <p>
-                Press <strong>[R]</strong>, open the Deconstruct tab, and see eligible backpack items with their shard
-                payouts.
-              </p>
             </section>
 
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Finality</p>
-              <h3>No Takebacks</h3>
-              <p>
-                Every deconstruct is final; shards go straight into your inventory and the original item cannot be
-                recovered.
-              </p>
+            <section class="deconstruct-summary-card" role="listitem">
+              <p class="stat-label">Value</p>
+              <h3>Inspect Payout</h3>
+              <p>Select an eligible backpack item to see its shard payout before confirming.</p>
             </section>
 
-            <section class="stat-card" role="listitem">
+            <section class="deconstruct-summary-card" role="listitem">
               <p class="stat-label">Dirty Loot</p>
               <h3>Half Value</h3>
               <p>Deconstructing dirty looted items returns <strong>half</strong> the normal shard value.</p>
             </section>
 
-            <section class="stat-card" role="listitem">
+            <section class="deconstruct-summary-card" role="listitem">
               <p class="stat-label">Imbuements</p>
               <h3>T1 Returns</h3>
-              <p>Deconstructing T1 Imbuements from the Craft menu returns <strong>25 Tattered Imbuements</strong>.</p>
+              <p>Deconstructing <strong>T1 Imbuements</strong> from the Craft menu returns <strong>25 Tattered Imbuements</strong>.</p>
             </section>
 
-            <section class="stat-card" role="listitem">
-              <h3>Open & Inspect</h3>
-              <p>
-                Select an item in the Deconstruct list to see its shard payout before confirming.
-              </p>
-              <p>You can deconstruct individually by clicking <strong>Select</strong> and then <strong>Decon</strong>.</p>
-            </section>
-
-            <section class="stat-card" role="listitem">
-              <h3>Bulk Deconstruct</h3>
-              <p>
-                Use <strong>Deconstruct All</strong> near the bottom to deconstruct everything in your backpack. It
-                takes three presses of Deconstruct All, then a fourth click to confirm the action.
-              </p>
+            <section class="deconstruct-summary-card" role="listitem">
+              <p class="stat-label">Finality</p>
+              <h3>No Takebacks</h3>
+              <p>Every deconstruct is final; shards go to your inventory and the original item cannot be recovered.</p>
             </section>
           </div>
+
+          <section class="deconstruct-value">
+            <h2>What Affects Value</h2>
+            <div class="deconstruct-value-grid" role="list">
+              <section class="deconstruct-value-card" role="listitem">
+                <h3>Rarity & Level</h3>
+                <p>Higher rarity and item level grant more Ascendency Shards.</p>
+              </section>
+              <section class="deconstruct-value-card" role="listitem">
+                <h3>Dirty State</h3>
+                <p>Dirty looted items return half of the normal shard payout.</p>
+              </section>
+              <section class="deconstruct-value-card" role="listitem">
+                <h3>Item Data</h3>
+                <p>Weapon and armor detail pages show deconstruction and promotion values for each item.</p>
+              </section>
+              <section class="deconstruct-value-card" role="listitem">
+                <h3>Imbuement Type</h3>
+                <p>T1 imbuements convert into Tattered Imbuements instead of regular gear shards.</p>
+              </section>
+            </div>
+          </section>
+
+          <section class="deconstruct-decision">
+            <h2>Deconstruct or Keep</h2>
+            <div class="deconstruct-decision-grid">
+              <section class="deconstruct-panel deconstruct-panel-break">
+                <h3>Deconstruct</h3>
+                <ul>
+                  <li>The item has poor base value, weak rarity, or no useful perk.</li>
+                  <li>The shard payout is more useful than trying to improve the item.</li>
+                  <li>You need Ascendency Shards for another item's promotion path.</li>
+                </ul>
+              </section>
+              <section class="deconstruct-panel deconstruct-panel-keep">
+                <h3>Keep / Improve</h3>
+                <ul>
+                  <li>The item has a strong source, high max rarity, or a perk you want.</li>
+                  <li>The current roll is bad, but the item is worth a Re-Roll attempt.</li>
+                  <li>The item can still Ascend and fits a build you are planning.</li>
+                </ul>
+              </section>
+            </div>
+          </section>
+
+          <section class="deconstruct-flow-section">
+            <h2>Deconstruct Flow</h2>
+            <ol class="deconstruct-flow">
+              <li>
+                <span>1</span>
+                <div>
+                  <h3>Open the tab</h3>
+                  <p>Press <strong>[R]</strong>, then open the Deconstruct tab.</p>
+                </div>
+              </li>
+              <li>
+                <span>2</span>
+                <div>
+                  <h3>Inspect payout</h3>
+                  <p>Select an eligible backpack item to view the shard payout before committing.</p>
+                </div>
+              </li>
+              <li>
+                <span>3</span>
+                <div>
+                  <h3>Single item</h3>
+                  <p>Click <strong>Select</strong>, then <strong>Decon</strong> to deconstruct one item.</p>
+                </div>
+              </li>
+              <li>
+                <span>4</span>
+                <div>
+                  <h3>Bulk Safety</h3>
+                  <p><strong>Deconstruct All</strong> requires three presses, then a fourth click to confirm the action.</p>
+                </div>
+              </li>
+            </ol>
+          </section>
+
+          <section class="deconstruct-warning">
+            <h2>Bulk Safety</h2>
+            <p>
+              Use <strong>Deconstruct All</strong> only after checking the backpack. It targets everything eligible in
+              your backpack, and the action cannot be undone after confirmation.
+            </p>
+          </section>
+
+          <section class="deconstruct-related">
+            <h2>Related Item Pages</h2>
+            <div class="deconstruct-link-grid" aria-label="Related deconstruct pages">
+              <a href="pages/items/weapons.html">Weapons</a>
+              <a href="pages/items/armors.html">Armors</a>
+              <a href="pages/systems/re-roll.html">Re-Roll</a>
+              <a href="pages/systems/ascend.html">Ascend</a>
+              <a href="pages/systems/craft.html">Craft</a>
+              <a href="pages/systems/rarity.html">Rarity</a>
+            </div>
+          </section>
         </article>
       </main>
     </div>

@@ -91,6 +91,12 @@ async function main() {
     } catch (error) {
       failures.push(`SMOKE ERROR re-roll: ${formatError(error)}`);
     }
+    try {
+      await runDeconstructSpec(browser, baseUrl);
+      console.log("SMOKE OK deconstruct: shard decision reference, flow, related links");
+    } catch (error) {
+      failures.push(`SMOKE ERROR deconstruct: ${formatError(error)}`);
+    }
   } finally {
     await browser.close();
     if (server) await server.close();
@@ -100,7 +106,7 @@ async function main() {
     failures.forEach((failure) => console.error(failure));
     process.exit(1);
   }
-  console.log(`SMOKE OK site: ${smokeSpecs.length + 4} page(s) checked at ${baseUrl}`);
+  console.log(`SMOKE OK site: ${smokeSpecs.length + 5} page(s) checked at ${baseUrl}`);
 }
 
 async function importPlaywright() {
@@ -401,6 +407,61 @@ async function runRerollSpec(browser, baseUrl) {
       const count = await page.locator(`.reroll-link-grid a[href="${href}"]`).count();
       if (count !== 1) {
         throw new Error(`Re-Roll related link expected one "${href}", found ${count}`);
+      }
+    }
+
+    if (runtimeErrors.length) {
+      throw new Error(`browser errors: ${runtimeErrors.join("; ")}`);
+    }
+  } finally {
+    await page.close();
+  }
+}
+
+async function runDeconstructSpec(browser, baseUrl) {
+  const page = await browser.newPage();
+  page.setDefaultTimeout(timeoutMs);
+  const runtimeErrors = [];
+  page.on("console", (message) => {
+    const text = message.text();
+    if (message.type() === "error" && !text.startsWith("Failed to load resource")) runtimeErrors.push(text);
+  });
+  page.on("pageerror", (error) => runtimeErrors.push(formatError(error)));
+
+  try {
+    await page.goto(joinUrl(baseUrl, "/pages/systems/deconstruct.html"), { waitUntil: "load" });
+    await page.locator(".deconstruct-decision-grid").waitFor({ state: "visible" });
+    const pageText = (await page.locator("#deconstruct-basics").textContent()).trim();
+    for (const expected of [
+      "What Deconstruct Returns",
+      "What Affects Value",
+      "Deconstruct Flow",
+      "Deconstruct or Keep",
+      "Bulk Safety",
+      "Dirty Loot",
+      "Half Value",
+      "No Takebacks",
+      "Ascendency Shards",
+      "T1 Imbuements",
+      "25 Tattered Imbuements",
+      "Deconstruct All",
+    ]) {
+      if (!pageText.includes(expected)) {
+        throw new Error(`Deconstruct page missing "${expected}": "${pageText}"`);
+      }
+    }
+
+    for (const href of [
+      "pages/items/weapons.html",
+      "pages/items/armors.html",
+      "pages/systems/re-roll.html",
+      "pages/systems/ascend.html",
+      "pages/systems/craft.html",
+      "pages/systems/rarity.html",
+    ]) {
+      const count = await page.locator(`.deconstruct-link-grid a[href="${href}"]`).count();
+      if (count !== 1) {
+        throw new Error(`Deconstruct related link expected one "${href}", found ${count}`);
       }
     }
 

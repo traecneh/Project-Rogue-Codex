@@ -704,6 +704,59 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(".reroll-flow", css)
         self.assertIn(".reroll-link-grid", css)
 
+    def test_deconstruct_page_has_compact_shard_decision_reference(self):
+        from tools.codex_pipeline import cli
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        html_path = REPO_ROOT / "pages" / "systems" / "deconstruct.html"
+        css_path = REPO_ROOT / "css" / "deconstruct.css"
+        html = html_path.read_text(encoding="utf-8")
+        css = css_path.read_text(encoding="utf-8") if css_path.exists() else ""
+
+        self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
+        self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
+        self.assertIn('<link rel="stylesheet" href="css/deconstruct.css" />', html)
+        self.assertNotIn("<style>", html)
+        self.assertEqual(
+            [],
+            [
+                block.strip()
+                for block in re.findall(
+                    r"<script\b(?![^>]*\bsrc\s*=)[^>]*>([\s\S]*?)</script>",
+                    html,
+                    flags=re.IGNORECASE,
+                )
+                if block.strip()
+            ],
+        )
+
+        for expected in [
+            "What Deconstruct Returns",
+            "What Affects Value",
+            "Deconstruct Flow",
+            "Deconstruct or Keep",
+            "Bulk Safety",
+            "Dirty Loot",
+            "Half Value",
+            "No Takebacks",
+            "Ascendency Shards",
+            "T1 Imbuements",
+            "25 Tattered Imbuements",
+            "Deconstruct All",
+            "pages/items/weapons.html",
+            "pages/items/armors.html",
+            "pages/systems/re-roll.html",
+            "pages/systems/ascend.html",
+            "pages/systems/craft.html",
+            "pages/systems/rarity.html",
+        ]:
+            self.assertIn(expected, html)
+
+        self.assertIn(".deconstruct-summary-grid", css)
+        self.assertIn(".deconstruct-decision-grid", css)
+        self.assertIn(".deconstruct-flow", css)
+        self.assertIn(".deconstruct-link-grid", css)
+
     def test_armors_page_uses_linked_names_and_non_sortable_image_column(self):
         from tools.codex_pipeline.config import REPO_ROOT
 
