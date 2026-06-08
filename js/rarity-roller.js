@@ -1,11 +1,11 @@
 const rarityDefinitions = [
-  { name: "Normal", color: "#ffffff", min: 0, max: 0, perkChance: 0, ac: 0 },
-  { name: "Uncommon", color: "#ffd966", min: 2, max: 5, perkChance: 0, ac: 0 },
-  { name: "Rare", color: "#0000ff", min: 6, max: 10, perkChance: 0, ac: 0 },
-  { name: "Epic", color: "#741b47", min: 11, max: 15, perkChance: 0.4, ac: 2 },
-  { name: "Legendary", color: "#ff9900", min: 16, max: 20, perkChance: 0.6, ac: 3 },
-  { name: "Mythical", color: "#6aa84f", min: 21, max: 25, perkChance: 0.8, ac: 4 },
-  { name: "Ascendant", color: "#ff0000", min: 26, max: 30, perkChance: 1, ac: 5 },
+  { name: "Common", color: "#ffffff", min: 0, max: 0, perkChance: 0, ac: 0, multiplier: 1 },
+  { name: "Uncommon", color: "#ffd966", min: 2, max: 5, perkChance: 0, ac: 0, multiplier: 2 },
+  { name: "Rare", color: "#6f8fff", min: 6, max: 10, perkChance: 0, ac: 0, multiplier: 4 },
+  { name: "Epic", color: "#d56ca8", min: 11, max: 15, perkChance: 0.4, ac: 2, multiplier: 6 },
+  { name: "Legendary", color: "#ffb347", min: 16, max: 20, perkChance: 0.6, ac: 3, multiplier: 8 },
+  { name: "Mythical", color: "#84c96c", min: 21, max: 25, perkChance: 0.8, ac: 4, multiplier: 10 },
+  { name: "Ascendant", color: "#ff6666", min: 26, max: 30, perkChance: 1, ac: 5, multiplier: 12 },
 ];
 
 let perksCacheForRoller = null;
@@ -23,6 +23,7 @@ function initializeRarityRoller() {
   let currentMaxIndex = rarityDefinitions.length - 1;
   let currentPerkOutcome = null;
   let currentPerkMeta = null;
+  let hasRolled = false;
   let perkMapPromise = null;
 
   const lastIndex = rarityDefinitions.length - 1;
@@ -41,8 +42,7 @@ function initializeRarityRoller() {
 
   const updateUpgradeAvailability = () => {
     if (!upgradeButton) return;
-    const atMax = currentIndex >= currentMaxIndex;
-    upgradeButton.disabled = atMax;
+    upgradeButton.disabled = !hasRolled || currentIndex >= currentMaxIndex;
   };
 
   const setLoadingState = (isLoading, activeButton) => {
@@ -78,6 +78,7 @@ function initializeRarityRoller() {
     );
     const acValue = typeof rarity.ac === "number" ? rarity.ac : 0;
     fragments.push(createResultLine("Bonus AC", `${acValue}`));
+    fragments.push(createResultLine("Item Power", `x${rarity.multiplier || 1}`));
     fragments.push(createResultLine("Split", `STR ${statSplit.str}, DEX ${statSplit.dex}, CON ${statSplit.con}`));
 
     const perkLabel = perkMeta && perkMeta.source ? `Perk (from ${perkMeta.source} roll)` : "Perk Roll";
@@ -104,6 +105,7 @@ function initializeRarityRoller() {
   const renderFromIndex = (index, activeButton, { rerollPerk, setMax } = {}) => {
     const clampedIndex = Math.max(0, Math.min(index, rarityDefinitions.length - 1));
     currentIndex = clampedIndex;
+    hasRolled = true;
     if (setMax) {
       currentMaxIndex = computeMaxIndex(clampedIndex);
     }

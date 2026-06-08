@@ -11,6 +11,7 @@
     <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
     <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/rarity.css" />
     <script src="js/site-search.js" defer></script>
     <script src="js/weapon-specialty.js" defer></script>
     <script src="js/stat-widgets.js" defer></script>
@@ -27,91 +28,138 @@
         <header class="content-header">
           <h1 class="content-title">Rarity System</h1>
           <p class="content-tagline">
-            How item rarity tiers boost base stats and unlock perk eligibility in Project Rogue.
+            How item rarity tiers affect bonus stats, armor class, perk rolls, and item power.
           </p>
         </header>
 
         <article class="content-section">
-          <h2>Overview</h2>
-          <p>
-            Project Rogue features seven loot rarities: normal, uncommon, rare, epic, legendary, mythical,
-            and ascendant. Higher tiers roll larger stat bonuses distributed across Strength, Dexterity,
-            and Constitution, and may also qualify for perks.
-          </p>
-          <p>
-            Each tier carries a signature color in-game. Browse the ladder of rarity cards below to see bonus windows
-            and perk eligibility at a glance.
-          </p>
-
-          <div class="rarity-stack">
-            <section class="rarity-card">
-              <header style="color: #ffffff">
-                <span class="rarity-label">Normal</span>
-              </header>
-              <p><strong>0</strong> bonus stats</p>
-              <p><strong>0</strong> bonus AC</p>
-              <p>No perk eligibility</p>
+          <h2>What Rarity Affects</h2>
+          <div class="rarity-summary-grid" role="list">
+            <section class="rarity-summary-card" role="listitem">
+              <p class="stat-label">Bonus Stats</p>
+              <h3>STR / DEX / CON</h3>
+              <p>Each tier has a total bonus stat range that splits across Strength, Dexterity, and Constitution.</p>
             </section>
-            <section class="rarity-card">
-              <header style="color: #ffd966">
-                <span class="rarity-label">Uncommon</span>
-              </header>
-              <p><strong>2&ndash;5</strong> bonus stats</p>
-              <p><strong>0</strong> bonus AC</p>
-              <p>No perk eligibility</p>
+            <section class="rarity-summary-card" role="listitem">
+              <p class="stat-label">Bonus AC</p>
+              <h3>Epic+</h3>
+              <p>Armor class bonuses begin at Epic and scale through Ascendant.</p>
             </section>
-            <section class="rarity-card">
-              <header style="color: #0000ff">
-                <span class="rarity-label">Rare</span>
-              </header>
-              <p><strong>6&ndash;10</strong> bonus stats</p>
-              <p><strong>0</strong> bonus AC</p>
-              <p>No perk eligibility</p>
+            <section class="rarity-summary-card" role="listitem">
+              <p class="stat-label">Perk Eligibility</p>
+              <h3>Epic+</h3>
+              <p>Epic, Legendary, Mythical, and Ascendant can roll perks at increasing chances.</p>
             </section>
-            <section class="rarity-card">
-              <header style="color: #741b47">
-                <span class="rarity-label">Epic</span>
-              </header>
-              <p><strong>11&ndash;15</strong> bonus stats</p>
-              <p><strong>2</strong> bonus AC</p>
-              <p>Perk eligible &mdash; <strong>40%</strong></p>
+            <section class="rarity-summary-card" role="listitem">
+              <p class="stat-label">Max Rarity</p>
+              <h3>Item Bound</h3>
+              <p>Weapons and armors expose their max rarity, which caps upgrade previews and planner choices.</p>
             </section>
-            <section class="rarity-card">
-              <header style="color: #ff9900">
-                <span class="rarity-label">Legendary</span>
-              </header>
-              <p><strong>16&ndash;20</strong> bonus stats</p>
-              <p><strong>3</strong> bonus AC</p>
-              <p>Perk eligible &mdash; <strong>60%</strong></p>
-            </section>
-            <section class="rarity-card">
-              <header style="color: #6aa84f">
-                <span class="rarity-label">Mythical</span>
-              </header>
-              <p><strong>21&ndash;25</strong> bonus stats</p>
-              <p><strong>4</strong> bonus AC</p>
-              <p>Perk eligible &mdash; <strong>80%</strong></p>
-            </section>
-            <section class="rarity-card">
-              <header style="color: #ff0000">
-                <span class="rarity-label">Ascendant</span>
-              </header>
-              <p><strong>26&ndash;30</strong> bonus stats</p>
-              <p><strong>5</strong> bonus AC</p>
-              <p>Perk eligible &mdash; <strong>100%</strong></p>
+            <section class="rarity-summary-card" role="listitem">
+              <p class="stat-label">Item Power</p>
+              <h3>Value Scaling</h3>
+              <p>Damage, armor, resistance, and requirement ranges display tier multipliers on item detail pages.</p>
             </section>
           </div>
 
-          <hr class="rarity-divider" />
+          <section class="rarity-reference">
+            <h2>Rarity Ladder</h2>
+            <div class="rarity-table-wrap">
+              <table class="rarity-reference-table">
+                <thead>
+                  <tr>
+                    <th>Tier</th>
+                    <th>Bonus Stats</th>
+                    <th>Bonus AC</th>
+                    <th>Perk Chance</th>
+                    <th>Item Power</th>
+                    <th>Read</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr data-rarity="common">
+                    <th scope="row"><span class="rarity-dot" aria-hidden="true"></span>Common</th>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>0%</td>
+                    <td>x1</td>
+                    <td>Base item tier.</td>
+                  </tr>
+                  <tr data-rarity="uncommon">
+                    <th scope="row"><span class="rarity-dot" aria-hidden="true"></span>Uncommon</th>
+                    <td>2&ndash;5</td>
+                    <td>0</td>
+                    <td>0%</td>
+                    <td>x2</td>
+                    <td>Early stat roll tier.</td>
+                  </tr>
+                  <tr data-rarity="rare">
+                    <th scope="row"><span class="rarity-dot" aria-hidden="true"></span>Rare</th>
+                    <td>6&ndash;10</td>
+                    <td>0</td>
+                    <td>0%</td>
+                    <td>x4</td>
+                    <td>Highest no-perk tier.</td>
+                  </tr>
+                  <tr data-rarity="epic">
+                    <th scope="row"><span class="rarity-dot" aria-hidden="true"></span>Epic</th>
+                    <td>11&ndash;15</td>
+                    <td>+2</td>
+                    <td>40%</td>
+                    <td>x6</td>
+                    <td>First perk-eligible tier.</td>
+                  </tr>
+                  <tr data-rarity="legendary">
+                    <th scope="row"><span class="rarity-dot" aria-hidden="true"></span>Legendary</th>
+                    <td>16&ndash;20</td>
+                    <td>+3</td>
+                    <td>60%</td>
+                    <td>x8</td>
+                    <td>High stat and perk odds.</td>
+                  </tr>
+                  <tr data-rarity="mythical">
+                    <th scope="row"><span class="rarity-dot" aria-hidden="true"></span>Mythical</th>
+                    <td>21&ndash;25</td>
+                    <td>+4</td>
+                    <td>80%</td>
+                    <td>x10</td>
+                    <td>Near-ceiling gear rolls.</td>
+                  </tr>
+                  <tr data-rarity="ascendant">
+                    <th scope="row"><span class="rarity-dot" aria-hidden="true"></span>Ascendant</th>
+                    <td>26&ndash;30</td>
+                    <td>+5</td>
+                    <td>100%</td>
+                    <td>x12</td>
+                    <td>Guaranteed perk roll.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
 
           <section class="rarity-roller-section" id="rarity-roller">
-            <h3>Random Rarity Roll</h3>
+            <h2>Upgrade Preview</h2>
             <p>
-              Click to simulate a drop: the rarity tiers are weighted evenly, bonus stats roll within their ranges, and
-              perk eligibility follows each tier's chance. Unique perks are excluded from these rolls.
+              Roll a sandbox item rarity, then step it upward until the simulated max rarity is reached. The perk result
+              stays tied to the original roll so upgrades show stat and AC movement separately.
             </p>
-            <button class="rarity-roll-button" type="button" data-rarity-roll>Roll Random Rarity</button>
+            <div class="rarity-roller-actions">
+              <button class="rarity-roll-button" type="button" data-rarity-roll>Roll Random Rarity</button>
+              <button class="rarity-roll-button" type="button" data-rarity-upgrade>Upgrade +1</button>
+            </div>
             <div class="rarity-roll-result" data-rarity-result>Roll results will appear here.</div>
+          </section>
+
+          <section class="rarity-related">
+            <h2>Related Item Pages</h2>
+            <div class="rarity-link-grid" aria-label="Related item progression pages">
+              <a href="pages/items/weapons.html">Weapons</a>
+              <a href="pages/items/armors.html">Armors</a>
+              <a href="pages/systems/perks.html">Perks</a>
+              <a href="pages/systems/re-roll.html">Re-Roll</a>
+              <a href="pages/systems/crafting.html">Crafting</a>
+            </div>
           </section>
         </article>
       </main>

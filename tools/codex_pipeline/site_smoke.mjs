@@ -79,6 +79,12 @@ async function main() {
     } catch (error) {
       failures.push(`SMOKE ERROR perks: ${formatError(error)}`);
     }
+    try {
+      await runRaritySpec(browser, baseUrl);
+      console.log("SMOKE OK rarity: reference table, deterministic roll, upgrade preview");
+    } catch (error) {
+      failures.push(`SMOKE ERROR rarity: ${formatError(error)}`);
+    }
   } finally {
     await browser.close();
     if (server) await server.close();
@@ -88,7 +94,7 @@ async function main() {
     failures.forEach((failure) => console.error(failure));
     process.exit(1);
   }
-  console.log(`SMOKE OK site: ${smokeSpecs.length + 2} page(s) checked at ${baseUrl}`);
+  console.log(`SMOKE OK site: ${smokeSpecs.length + 3} page(s) checked at ${baseUrl}`);
 }
 
 async function importPlaywright() {
@@ -278,6 +284,68 @@ async function runPerksSpec(browser, baseUrl) {
       const params = new URL(window.location.href).searchParams;
       return runic && !runic.classList.contains("perk-selected") && jump?.value === "" && !params.has("perk");
     });
+
+    if (runtimeErrors.length) {
+      throw new Error(`browser errors: ${runtimeErrors.join("; ")}`);
+    }
+  } finally {
+    await page.close();
+  }
+}
+
+async function runRaritySpec(browser, baseUrl) {
+  const page = await browser.newPage();
+  page.setDefaultTimeout(timeoutMs);
+  const runtimeErrors = [];
+  page.on("console", (message) => {
+    const text = message.text();
+    if (message.type() === "error" && !text.startsWith("Failed to load resource")) runtimeErrors.push(text);
+  });
+  page.on("pageerror", (error) => runtimeErrors.push(formatError(error)));
+
+  try {
+    await page.goto(joinUrl(baseUrl, "/pages/systems/rarity.html"), { waitUntil: "load" });
+    await page.locator(".rarity-reference-table").waitFor({ state: "visible" });
+    const referenceText = (await page.locator(".rarity-reference-table").textContent()).trim();
+    for (const expected of ["Common", "Ascendant", "Bonus Stats", "Perk Chance", "Item Power", "x12"]) {
+      if (!referenceText.includes(expected)) {
+        throw new Error(`Rarity reference table missing "${expected}": "${referenceText}"`);
+      }
+    }
+    if (referenceText.includes("Normal")) {
+      throw new Error(`Rarity reference table still used Normal terminology: "${referenceText}"`);
+    }
+
+    const upgradeButton = page.locator("[data-rarity-upgrade]");
+    if (!(await upgradeButton.isDisabled())) {
+      throw new Error("Rarity upgrade button should be disabled before the first roll");
+    }
+
+    await page.evaluate(() => {
+      const values = [0.01, 0.99, 0.5, 0.25, 0.75, 0.4, 0.6, 0.3, 0.7];
+      let index = 0;
+      Math.random = () => values[index++] ?? 0.5;
+    });
+    await page.locator("[data-rarity-roll]").click();
+    await page.waitForFunction(() => document.querySelector("[data-rarity-result]")?.textContent?.includes("Common"));
+    const rolledText = (await page.locator("[data-rarity-result]").textContent()).trim();
+    for (const expected of ["Rarity", "Common", "Max Rarity", "Ascendant", "Bonus stats", "Item Power", "x1", "Split"]) {
+      if (!rolledText.includes(expected)) {
+        throw new Error(`Rarity roll result missing "${expected}": "${rolledText}"`);
+      }
+    }
+    if (await upgradeButton.isDisabled()) {
+      throw new Error(`Rarity upgrade button stayed disabled after Common roll with Ascendant max: "${rolledText}"`);
+    }
+
+    await upgradeButton.click();
+    await page.waitForFunction(() => document.querySelector("[data-rarity-result]")?.textContent?.includes("Uncommon"));
+    const upgradedText = (await page.locator("[data-rarity-result]").textContent()).trim();
+    for (const expected of ["Rarity", "Uncommon", "Max Rarity", "Ascendant", "Item Power", "x2"]) {
+      if (!upgradedText.includes(expected)) {
+        throw new Error(`Rarity upgrade result missing "${expected}": "${upgradedText}"`);
+      }
+    }
 
     if (runtimeErrors.length) {
       throw new Error(`browser errors: ${runtimeErrors.join("; ")}`);

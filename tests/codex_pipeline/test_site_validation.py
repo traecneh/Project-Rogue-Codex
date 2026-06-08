@@ -595,6 +595,63 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn("@media (max-width: 640px)", css)
         self.assertIn("width: min(320px, calc(100vw - 4rem));", css)
 
+    def test_rarity_page_has_compact_reference_and_upgrade_roll(self):
+        from tools.codex_pipeline import cli
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        html_path = REPO_ROOT / "pages" / "systems" / "rarity.html"
+        css_path = REPO_ROOT / "css" / "rarity.css"
+        script_path = REPO_ROOT / "js" / "rarity-roller.js"
+        html = html_path.read_text(encoding="utf-8")
+        css = css_path.read_text(encoding="utf-8") if css_path.exists() else ""
+        script = script_path.read_text(encoding="utf-8")
+
+        self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
+        self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
+        self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
+        self.assertIn('<link rel="stylesheet" href="css/rarity.css" />', html)
+        self.assertNotIn("<style>", html)
+        self.assertEqual(
+            [],
+            [
+                block.strip()
+                for block in re.findall(
+                    r"<script\b(?![^>]*\bsrc\s*=)[^>]*>([\s\S]*?)</script>",
+                    html,
+                    flags=re.IGNORECASE,
+                )
+                if block.strip()
+            ],
+        )
+
+        for expected in [
+            "What Rarity Affects",
+            "Bonus Stats",
+            "Perk Eligibility",
+            "Max Rarity",
+            "Item Power",
+            "Rarity Ladder",
+            "Upgrade Preview",
+            'class="rarity-reference-table"',
+            'data-rarity-upgrade',
+            "pages/items/weapons.html",
+            "pages/items/armors.html",
+            "pages/systems/perks.html",
+            "pages/systems/re-roll.html",
+            "pages/systems/crafting.html",
+        ]:
+            self.assertIn(expected, html)
+
+        self.assertIn("Common", html)
+        self.assertNotIn(">Normal<", html)
+        self.assertIn('{ name: "Common"', script)
+        self.assertNotIn('{ name: "Normal"', script)
+        self.assertIn("Upgrade +1", html)
+        self.assertIn("currentMaxIndex", script)
+        self.assertIn(".rarity-reference-table", css)
+        self.assertIn(".rarity-summary-grid", css)
+        self.assertIn(".rarity-link-grid", css)
+
     def test_armors_page_uses_linked_names_and_non_sortable_image_column(self):
         from tools.codex_pipeline.config import REPO_ROOT
 
