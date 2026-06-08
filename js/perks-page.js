@@ -315,6 +315,10 @@
 
     const activate = (event) => {
       if (event?.target?.closest?.("a")) return;
+      if (state.selectedCard === card) {
+        clearSelectedPerk({ updateUrl: true });
+        return;
+      }
       selectPerk(name, { updateUrl: true, scroll: false });
     };
     card.addEventListener("click", activate);
@@ -422,6 +426,26 @@
     }
   };
 
+  const clearRoute = () => {
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.delete(PERK_ROUTE_PARAM);
+      url.hash = "";
+      history.replaceState({ perk: null }, "", url);
+    } catch (error) {
+      /* noop */
+    }
+  };
+
+  const clearSelectedPerk = ({ updateUrl = false } = {}) => {
+    if (state.selectedCard) {
+      state.selectedCard.classList.remove("perk-selected");
+      state.selectedCard = null;
+    }
+    if (perkJump) perkJump.value = "";
+    if (updateUrl) clearRoute();
+  };
+
   const selectPerk = (value, { updateUrl = false, scroll = true } = {}) => {
     const record = findRecord(value);
     if (!record) return null;
@@ -493,11 +517,19 @@
     }
     window.addEventListener("popstate", () => {
       const value = getRouteValue();
-      if (value) selectPerk(value, { updateUrl: false, scroll: true });
+      if (value) {
+        selectPerk(value, { updateUrl: false, scroll: true });
+      } else {
+        clearSelectedPerk();
+      }
     });
     window.addEventListener("hashchange", () => {
       const value = getRouteValue();
-      if (value) selectPerk(value, { updateUrl: false, scroll: true });
+      if (value) {
+        selectPerk(value, { updateUrl: false, scroll: true });
+      } else {
+        clearSelectedPerk();
+      }
     });
   };
 

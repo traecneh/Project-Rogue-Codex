@@ -264,6 +264,13 @@ async function runPerksSpec(browser, baseUrl) {
     if (!new URL(page.url()).searchParams.has("perk")) {
       throw new Error("Perks page did not write selected perk query state");
     }
+    await page.locator('[data-perk-name="Runic"]').click();
+    await page.waitForFunction(() => {
+      const runic = document.querySelector('[data-perk-name="Runic"]');
+      const jump = document.querySelector("#perk-jump");
+      const params = new URL(window.location.href).searchParams;
+      return runic && !runic.classList.contains("perk-selected") && jump?.value === "" && !params.has("perk");
+    });
 
     if (runtimeErrors.length) {
       throw new Error(`browser errors: ${runtimeErrors.join("; ")}`);
