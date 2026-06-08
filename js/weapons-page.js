@@ -714,6 +714,7 @@
   });
   const updateWeaponDetailUrl = weaponRouteHelpers.updateDetailUrl;
   const updateWeaponListUrl = weaponRouteHelpers.updateListUrl;
+  const buildWeaponDetailUrl = weaponRouteHelpers.buildDetailStateUrl;
   const getWeaponRouteFromLocation = weaponRouteHelpers.getRouteFromLocation;
   const findWeaponByRoute = weaponRouteHelpers.findByRoute;
   const getSelectedWeaponFromLocation = (list = items) => weaponRouteHelpers.getSelectedFromLocation(list);
@@ -782,6 +783,66 @@
       tableHeadRow.appendChild(th);
     });
     updateSortIndicators();
+  };
+
+  const formatRequirement = (requirement) => {
+    if (requirement === null || requirement === undefined || requirement === "") return "None";
+    const numeric = Number(requirement);
+    if (numeric === 0) return "None";
+    return `Skill Level ${formatNumber(requirement)}`;
+  };
+
+  const getWeaponDropSourceNames = (item) => {
+    const uniqueMonsterIds =
+      typeof utils.getDropSourceMonsterIdsByItem === "function"
+        ? utils.getDropSourceMonsterIdsByItem(dropSources, "weapons", item.name)
+        : [];
+    if (!Array.isArray(uniqueMonsterIds) || !uniqueMonsterIds.length) return [];
+    const uniqueSet = new Set(uniqueMonsterIds.map((id) => normalizeMonsterId(id)));
+    return monsters
+      .filter(
+        (monster) =>
+          uniqueSet.has(normalizeMonsterId(monster.id)) ||
+          uniqueSet.has(normalizeMonsterId(monster.name))
+      )
+      .map((monster) => monster.name || monster.id)
+      .filter(Boolean);
+  };
+
+  const getWeaponSearchText = (item) => {
+    const res = item.resistances || {};
+    const stats = item.stats || {};
+    return [
+      ...COLUMNS.map((col) => formatValue(item[col.key])),
+      formatRange(item.minDamage, item.maxDamage),
+      formatNumber(item.attackSpeed),
+      formatNumber(item.procChance, { maximumFractionDigits: 2 }),
+      formatRequirement(item.skillRequirement),
+      formatValue(item.specialty),
+      formatNumber(item.specialtyAmount),
+      formatValue(item.rarity),
+      formatValue(item.maxRarityLabel),
+      formatNumber(item.weight),
+      formatNumber(item.toHit),
+      formatNumber(item.shardDecompositionAmount),
+      formatNumber(item.shardPromotionAmount),
+      formatNumber(item.sellValue, { maximumFractionDigits: 2 }),
+      formatNumber(item.value),
+      ...Object.values(STAT_LABELS),
+      formatNumber(stats.strength ?? 0),
+      formatNumber(stats.constitution ?? 0),
+      formatNumber(stats.dexterity ?? 0),
+      ...Object.values(RESISTANCE_LABELS),
+      formatNumber(res.fire ?? 0),
+      formatNumber(res.poison ?? 0),
+      formatNumber(res.cold ?? 0),
+      formatNumber(res.disease ?? 0),
+      formatNumber(res.acid ?? 0),
+      formatNumber(res.electric ?? 0),
+      ...getWeaponDropSourceNames(item),
+    ]
+      .join(" ")
+      .toLowerCase();
   };
 
   const tooltipPinning = itemUtils.createTooltipPinningController();
@@ -913,7 +974,7 @@
 
     addDivider();
 
-    addRow([["Requirement", `Skill Level ${formatNumber(item.skillRequirement)}`]], 1);
+    addRow([["Requirement", formatRequirement(item.skillRequirement)]], 1);
 
     addDivider();
 
@@ -976,7 +1037,18 @@
       COLUMNS.forEach((col) => {
         const td = document.createElement("td");
         const value = item[col.key];
-        if (col.render) {
+        if (col.key === "name") {
+          const nameLink = document.createElement("a");
+          nameLink.href = buildWeaponDetailUrl(item);
+          nameLink.className = "weapon-link";
+          nameLink.textContent = formatValue(value);
+          nameLink.addEventListener("click", (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            selectWeapon(item, { updateUrl: true });
+          });
+          td.appendChild(nameLink);
+        } else if (col.render) {
           const rendered = col.render(value, item);
           if (rendered instanceof Node) {
             td.appendChild(rendered);
@@ -1007,8 +1079,6 @@
       return;
     }
 
-    const searchableColumns = COLUMNS.map((c) => c.key);
-
     const filtered = items.filter((item) => {
       const matchesType = selectedTypes.size === 0 || selectedTypes.has(normalizeFilterValue(item.type));
       const matchesElement =
@@ -1018,11 +1088,7 @@
         selectedAttackSpeeds.has(normalizeFilterValue(item.attackSpeed));
       if (!matchesType || !matchesElement || !matchesAttackSpeed) return false;
       if (!searchTerm) return true;
-      const text = searchableColumns
-        .map((col) => formatValue(item[col]))
-        .join(" ")
-        .toLowerCase();
-      return text.includes(searchTerm.toLowerCase());
+      return getWeaponSearchText(item).includes(searchTerm.toLowerCase());
     });
 
     const sorted = filtered.sort((a, b) => {

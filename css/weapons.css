@@ -141,6 +141,18 @@
   cursor: pointer;
 }
 
+.weapon-link {
+  color: inherit;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.weapon-link:hover,
+.weapon-link:focus-visible {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
 .item-thumb {
   width: 32px;
   height: 32px;
