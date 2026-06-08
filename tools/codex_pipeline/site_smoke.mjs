@@ -171,6 +171,7 @@ async function runBuildPlannerSpec(browser, baseUrl) {
     await assertNoBuildPlannerSlotEditor(page);
 
     await assertBuildPlannerSuggestionLink(page, "Rune Sword");
+    await assertBuildPlannerSuggestionDeltas(page, "Rune Sword");
     await selectBuildPlannerItem(page, "Rune Sword");
     await assertBuildPlannerWeapon(page, "Rune Sword");
     await assertBuildPlannerItemLinks(page, "Rune Sword");
@@ -244,6 +245,20 @@ async function assertBuildPlannerSuggestionLink(page, itemName) {
   const href = await suggestionLink.getAttribute("href");
   if (href !== RUNE_SWORD_DETAIL_PATH) {
     throw new Error(`Build Planner suggestion link expected ${RUNE_SWORD_DETAIL_PATH}, got "${href}"`);
+  }
+}
+
+async function assertBuildPlannerSuggestionDeltas(page, itemName) {
+  const suggestion = page.locator("#gear-suggestions .suggestion").filter({ hasText: itemName }).first();
+  const deltaRow = suggestion.locator(".suggestion-deltas");
+  await deltaRow.waitFor({ state: "visible" });
+  const text = (await deltaRow.textContent()).trim();
+  if (!text.includes("DPS") || !text.includes("+")) {
+    throw new Error(`Build Planner suggestion deltas did not show positive DPS, got "${text}"`);
+  }
+  const direction = await deltaRow.locator("[data-delta-direction]").first().getAttribute("data-delta-direction");
+  if (!["up", "down"].includes(direction)) {
+    throw new Error(`Build Planner suggestion delta direction was "${direction}"`);
   }
 }
 

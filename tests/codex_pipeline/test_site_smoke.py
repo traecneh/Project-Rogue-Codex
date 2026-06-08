@@ -98,3 +98,6 @@ class SiteSmokeTests(unittest.TestCase):
         self.assertIn("assertBuildPlannerItemLinks", runner)
         self.assertIn(".suggestion-link", runner)
         self.assertIn("pages/items/weapons.html?weapon=Rune%20Sword", runner)
+        self.assertIn("assertBuildPlannerSuggestionDeltas", runner)
+        self.assertIn(".suggestion-deltas", runner)
+        self.assertIn("data-delta-direction", runner)

@@ -358,6 +358,24 @@ class SiteValidationTests(unittest.TestCase):
         self.assertNotIn(".slot-editor", css)
         self.assertIn(".formula-tip", css)
 
+    def test_build_planner_suggestions_include_compare_deltas(self):
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        script = (REPO_ROOT / "js" / "build-planner.js").read_text(encoding="utf-8")
+        css = (REPO_ROOT / "css" / "build-planner.css").read_text(encoding="utf-8")
+
+        self.assertIn("const COMPARE_STATS", script)
+        self.assertIn("const buildSuggestionDeltas", script)
+        self.assertIn("const buildSuggestionCompareTitle", script)
+        self.assertIn("const renderSuggestionDeltas", script)
+        self.assertIn('deltaRow.className = "suggestion-deltas";', script)
+        self.assertIn('chip.className = "suggestion-delta";', script)
+        self.assertIn("chip.dataset.deltaDirection = getDeltaDirection(entry);", script)
+        self.assertIn("div.title = buildSuggestionCompareTitle(item, deltas);", script)
+        self.assertIn(".suggestion-deltas", css)
+        self.assertIn(".suggestion-delta", css)
+        self.assertIn('[data-delta-direction="up"]', css)
+
     def test_armors_page_uses_linked_names_and_non_sortable_image_column(self):
         from tools.codex_pipeline.config import REPO_ROOT
 

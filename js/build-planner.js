@@ -1162,6 +1162,70 @@
           });
         });
 
+        const COMPARE_STATS = [
+          { key: "dps", label: "DPS", source: "dps" },
+          { key: "armor", label: "Armor", source: "armor" },
+          { key: "weight", label: "Wgt", source: "weight", lowerIsBetter: true },
+          { key: "strength", label: "STR", source: "strength", bonus: "bonusStr" },
+          { key: "constitution", label: "CON", source: "constitution", bonus: "bonusCon" },
+          { key: "dexterity", label: "DEX", source: "dexterity", bonus: "bonusDex" },
+        ];
+
+        const getCompareValue = (item, stat, { includeBonuses = false } = {}) => {
+          let value = toNumber(item?.[stat.source]);
+          if (includeBonuses && stat.key === "armor") value += toNumber(item?.bonusAC);
+          if (includeBonuses && stat.bonus) value += toNumber(item?.[stat.bonus]);
+          return value;
+        };
+
+        const formatDeltaValue = (value) => {
+          const rounded = Math.round(value * 100) / 100;
+          const text = Number.isInteger(rounded) ? String(rounded) : String(rounded.toFixed(2).replace(/0+$/, "").replace(/\.$/, ""));
+          return rounded > 0 ? `+${text}` : text;
+        };
+
+        const getDeltaDirection = (entry) => {
+          if (!entry || !entry.value) return "same";
+          const effectiveValue = entry.lowerIsBetter ? -entry.value : entry.value;
+          return effectiveValue > 0 ? "up" : "down";
+        };
+
+        const buildSuggestionDeltas = (item) => {
+          const targetSlot = item?.slot || "Weapon";
+          const current = selectedBySlot[targetSlot] || null;
+          return COMPARE_STATS.map((stat) => {
+            const value = getCompareValue(item, stat) - getCompareValue(current, stat, { includeBonuses: true });
+            return { ...stat, value };
+          }).filter((entry) => entry.value !== 0);
+        };
+
+        const buildSuggestionCompareTitle = (item, deltas) => {
+          const targetSlot = item?.slot || "Weapon";
+          const currentName = selectedBySlot[targetSlot]?.name || "empty slot";
+          const lines = [`Compare vs ${currentName}`];
+          if (!deltas.length) {
+            lines.push("No tracked stat change");
+          } else {
+            deltas.forEach((entry) => lines.push(`${entry.label}: ${formatDeltaValue(entry.value)}`));
+          }
+          return lines.join("\n");
+        };
+
+        const renderSuggestionDeltas = (deltas) => {
+          if (!deltas.length) return null;
+          const deltaRow = document.createElement("div");
+          deltaRow.className = "suggestion-deltas";
+          deltaRow.setAttribute("aria-label", "Compared with equipped slot");
+          deltas.forEach((entry) => {
+            const chip = document.createElement("span");
+            chip.className = "suggestion-delta";
+            chip.dataset.deltaDirection = getDeltaDirection(entry);
+            chip.textContent = `${entry.label} ${formatDeltaValue(entry.value)}`;
+            deltaRow.appendChild(chip);
+          });
+          return deltaRow;
+        };
+
         const buildSuggestions = (query) => {
           if (!suggestionsEl) return;
           suggestionsEl.innerHTML = "";
@@ -1186,6 +1250,9 @@
             div.setAttribute("role", "option");
             div.setAttribute("aria-selected", "false");
 
+            const deltas = buildSuggestionDeltas(item);
+            div.title = buildSuggestionCompareTitle(item, deltas);
+
             const title = document.createElement("a");
             title.className = "suggestion-title suggestion-link";
             title.textContent = item.name || "Unknown";
@@ -1199,6 +1266,8 @@
 
             div.appendChild(title);
             div.appendChild(meta);
+            const deltaRow = renderSuggestionDeltas(deltas);
+            if (deltaRow) div.appendChild(deltaRow);
 
             const handleSelect = () => {
               const targetSlot = item.slot || "Weapon";
