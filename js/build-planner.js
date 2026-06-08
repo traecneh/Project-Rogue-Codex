@@ -121,7 +121,6 @@
         };
 
         const selectedBySlot = {};
-        let selectedSlotName = "";
         const quickSummaryEls = {
           armor: document.querySelector('[data-quick-stat="armor"]'),
           dps: document.querySelector('[data-quick-stat="dps"]'),
@@ -272,7 +271,6 @@
 
           updateSlotRarityUI(slot);
           updateSlotPerkUI(slot);
-          selectSlot(slot);
           updatePlannerStatus();
           const sources = deriveImageCandidates(item, folder);
           if (!sources.length) {
@@ -329,7 +327,6 @@
           updateSlotRarityUI(slot);
           updateStatAdjustUI(slot);
           updateTotals();
-          if (selectedSlotName === slot) selectSlot("");
           updatePlannerStatus();
           schedulePersistState();
         };
@@ -347,153 +344,6 @@
           const remaining = baseStatLimit - baseStatSpent;
           const statText = remaining >= 0 ? `${remaining} stat pts open` : `${Math.abs(remaining)} stat pts over`;
           status.textContent = `${selectedCount} / ${slotEls.size} slots selected · ${statText}`;
-        };
-
-        const selectSlot = (slot) => {
-          selectedSlotName = slot || "";
-          slotEls.forEach((card, cardSlot) => {
-            card.classList.toggle("is-selected", Boolean(selectedSlotName && cardSlot === selectedSlotName));
-          });
-          updateSlotEditor();
-        };
-
-        const getBonusStatKey = (stat) => {
-          if (stat === "str") return "bonusStr";
-          if (stat === "dex") return "bonusDex";
-          if (stat === "con") return "bonusCon";
-          return "";
-        };
-
-        const escapeHtml = (value) =>
-          String(value ?? "")
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#39;");
-
-        const updateSlotEditor = () => {
-          const editor = document.getElementById("slot-editor");
-          if (!editor) return;
-          const slot = selectedSlotName;
-          const data = slot ? selectedBySlot[slot] : null;
-          if (!slot || !data) {
-            editor.innerHTML =
-              '<div class="slot-editor-empty">Select a filled slot to edit rarity, bonus stats, and extra perk.</div>';
-            return;
-          }
-
-          normalizeRarityBonuses(data);
-          const rarity = getRarityTier(data.rarityIndex);
-          const maxTier = getRarityTier(data.maxRarityIndex);
-          const cap = getRarityStatCap(data.rarityIndex);
-          const used = getBonusStatSum(data);
-          const showExtraPerk = data.rarityIndex >= 3;
-          const perkChoices = perkOptions
-            .map((name) => {
-              const selected = name === data.extraPerkName ? " selected" : "";
-              const safeName = escapeHtml(name);
-              return `<option value="${safeName}"${selected}>${safeName}</option>`;
-            })
-            .join("");
-          const tierChoices = [1, 2, 3]
-            .map((tier) => {
-              const selected = tier === toNumber(data.extraPerkTier || 1) ? " selected" : "";
-              return `<option value="${tier}"${selected}>T${tier}</option>`;
-            })
-            .join("");
-
-          editor.innerHTML = `
-            <div class="slot-editor-header">
-              <div>
-                <div class="slot-label">${escapeHtml(slot)}</div>
-                <a class="slot-name slot-item-link" href="${escapeHtml(getItemHref(data))}">${escapeHtml(
-                  data.name || "Unknown"
-                )}</a>
-              </div>
-              <button type="button" class="slot-clear is-visible" data-editor-clear>Clear</button>
-            </div>
-            <div class="slot-editor-row">
-              <span>Rarity</span>
-              <div class="slot-editor-controls">
-                <button type="button" class="rarity-btn" data-editor-rarity-dec>-</button>
-                <strong style="color: ${RARITY_COLORS[rarity.label] || "var(--text-main)"}">${rarity.label}</strong>
-                <button type="button" class="rarity-btn" data-editor-rarity-inc>+</button>
-              </div>
-            </div>
-            <div class="slot-editor-row">
-              <span>Max rarity</span>
-              <span>${maxTier.label}</span>
-            </div>
-            <div class="slot-editor-row">
-              <span>Bonus Stats</span>
-              <span>${used} / ${cap}</span>
-            </div>
-            <div class="slot-editor-stat-grid">
-              ${["str", "dex", "con"]
-                .map((stat) => {
-                  const key = getBonusStatKey(stat);
-                  return `
-                    <div class="stat-row" data-editor-stat="${stat}">
-                      <button type="button" class="rarity-btn" data-editor-stat-dec>-</button>
-                      <span class="stat-value">${toNumber(data[key])}</span>
-                      <button type="button" class="rarity-btn" data-editor-stat-inc>+</button>
-                      <span class="stat-label">${stat.toUpperCase()}</span>
-                    </div>
-                  `;
-                })
-                .join("")}
-            </div>
-            <div class="slot-editor-row slot-editor-perk-row">
-              <span>Extra Perk</span>
-              <div class="slot-editor-controls">
-                <select data-editor-perk ${showExtraPerk ? "" : "disabled"}>
-                  <option value="">None</option>
-                  ${perkChoices}
-                </select>
-                <select data-editor-perk-tier ${showExtraPerk ? "" : "disabled"}>
-                  ${tierChoices}
-                </select>
-              </div>
-            </div>
-          `;
-
-          editor.querySelector("[data-editor-clear]")?.addEventListener("click", () => clearSlot(slot));
-          editor.querySelector("[data-editor-rarity-dec]")?.addEventListener("click", () => adjustRarity(slot, -1));
-          editor.querySelector("[data-editor-rarity-inc]")?.addEventListener("click", () => adjustRarity(slot, 1));
-          editor.querySelector("[data-editor-rarity-dec]")?.toggleAttribute("disabled", data.rarityIndex <= 0);
-          editor
-            .querySelector("[data-editor-rarity-inc]")
-            ?.toggleAttribute("disabled", data.rarityIndex >= data.maxRarityIndex);
-
-          const remaining = Math.max(0, cap - used);
-          editor.querySelectorAll("[data-editor-stat]").forEach((row) => {
-            const stat = row.dataset.editorStat;
-            const key = getBonusStatKey(stat);
-            const current = toNumber(data[key]);
-            const decBtn = row.querySelector("[data-editor-stat-dec]");
-            const incBtn = row.querySelector("[data-editor-stat-inc]");
-            decBtn?.addEventListener("click", () => adjustStat(slot, stat, -1));
-            incBtn?.addEventListener("click", () => adjustStat(slot, stat, 1));
-            decBtn?.toggleAttribute("disabled", data.rarityIndex < 1 || current <= 0);
-            incBtn?.toggleAttribute("disabled", data.rarityIndex < 1 || remaining <= 0);
-          });
-
-          const perkSelect = editor.querySelector("[data-editor-perk]");
-          const perkTierSelect = editor.querySelector("[data-editor-perk-tier]");
-          perkSelect?.addEventListener("change", () => {
-            data.extraPerkName = perkSelect.value || null;
-            data.extraPerkTier = data.extraPerkName ? Number(perkTierSelect?.value || 1) || 1 : null;
-            updateSlotPerkUI(slot);
-            updateTotals();
-            schedulePersistState();
-          });
-          perkTierSelect?.addEventListener("change", () => {
-            data.extraPerkTier = data.extraPerkName ? Number(perkTierSelect.value) || 1 : null;
-            updateSlotPerkUI(slot);
-            updateTotals();
-            schedulePersistState();
-          });
         };
 
         const dataset = {
@@ -963,7 +813,6 @@
             if (decBtn) decBtn.disabled = current <= 0;
             if (incBtn) incBtn.disabled = remaining <= 0;
           });
-          if (selectedSlotName === slot) updateSlotEditor();
         };
 
         const updateSlotPerkUI = (slot, clearOnly = false) => {
@@ -1047,7 +896,6 @@
           if (decBtn) decBtn.disabled = data.rarityIndex <= 0;
           updateSlotPerkUI(slot);
           updateStatAdjustUI(slot);
-          if (selectedSlotName === slot) updateSlotEditor();
         };
 
         const updateTotals = () => {
@@ -1267,7 +1115,6 @@
           if (quickSummaryEls.health) quickSummaryEls.health.textContent = maxHealth;
           if (quickSummaryEls.dr) quickSummaryEls.dr.textContent = `${dr.toFixed(2)}%`;
           updatePlannerStatus();
-          updateSlotEditor();
         };
 
         const adjustRarity = (slot, delta) => {
@@ -1306,10 +1153,6 @@
           if (dec) dec.addEventListener("click", () => adjustRarity(slot, -1));
           const clearBtn = card.querySelector(".slot-clear");
           if (clearBtn) clearBtn.addEventListener("click", () => clearSlot(slot));
-          card.addEventListener("click", (event) => {
-            if (event.target.closest("a, button, select")) return;
-            if (selectedBySlot[slot]) selectSlot(slot);
-          });
           card.querySelectorAll(".stat-row").forEach((row) => {
             const stat = row.dataset.stat;
             const decBtn = row.querySelector("[data-stat-dec]");
@@ -1477,7 +1320,6 @@
             el.dispatchEvent(new Event("input", { bubbles: true }));
           });
           if (raceSelect) raceSelect.value = "";
-          selectSlot("");
           updateTotals();
           persistStateNow();
         };

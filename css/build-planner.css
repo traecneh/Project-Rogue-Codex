@@ -487,113 +487,9 @@
         line-height: 1.2;
       }
 
-      .planner-workspace {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(230px, 280px);
-        gap: 0.75rem;
-        align-items: start;
-      }
-
-      .planner-gear-panel {
-        min-width: 0;
-      }
-
-      .slot-editor {
-        position: sticky;
-        top: 0.75rem;
-        border: 1px solid var(--border-soft);
-        border-radius: 8px;
-        background: var(--bg-panel);
-        padding: 0.75rem;
-        min-height: 180px;
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
-      }
-
-      .slot-editor-empty {
-        color: var(--text-muted);
-        font-size: 0.9rem;
-        line-height: 1.4;
-      }
-
-      .slot-editor-header {
-        display: flex;
-        justify-content: space-between;
-        gap: 0.6rem;
-        align-items: start;
-        margin-bottom: 0.75rem;
-      }
-
-      .slot-editor-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 0.6rem;
-        padding: 0.45rem 0;
-        border-top: 1px solid var(--border-soft);
-        color: var(--text-main);
-      }
-
-      .slot-editor-controls {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.4rem;
-      }
-
-      .slot-editor-stat-grid {
-        display: grid;
-        gap: 0.35rem;
-        padding-top: 0.45rem;
-        border-top: 1px solid var(--border-soft);
-      }
-
-      .slot-editor .slot-clear {
-        position: static;
-        width: auto;
-        height: auto;
-        min-height: 30px;
-        padding: 0.25rem 0.55rem;
-        opacity: 1;
-        border-radius: 6px;
-      }
-
-      .slot-editor .slot-item-link {
-        display: inline-flex;
-        color: var(--text-main);
-      }
-
-      .slot-editor-stat-grid .stat-row {
-        display: grid;
-        grid-template-columns: auto minmax(28px, 1fr) auto auto;
-        align-items: center;
-        gap: 0.35rem;
-      }
-
-      .slot-editor .stat-value {
-        color: var(--text-main);
-        font-weight: 700;
-        text-align: center;
-      }
-
-      .slot-editor .stat-label {
-        color: var(--text-muted);
-        font-size: 0.8rem;
-        text-transform: uppercase;
-      }
-
-      .slot-editor select {
-        background: var(--bg-panel-dark);
-        color: var(--text-main);
-        border: 1px solid var(--border-soft);
-        border-radius: 6px;
-        padding: 0.3rem 0.45rem;
-        min-width: 0;
-      }
-
       .slot-card:not(.has-item) .slot-rarity,
       .slot-card:not(.has-item) .slot-stat-adjust,
-      .slot-card:not(.has-item) .slot-extra-perk,
-      .slot-card .slot-stat-adjust,
-      .slot-card .slot-extra-perk {
+      .slot-card:not(.has-item) .slot-extra-perk {
         display: none;
       }
 
@@ -614,11 +510,6 @@
 
       .slot-placeholder {
         min-height: 38px;
-      }
-
-      .slot-card.is-selected {
-        border-color: var(--accent);
-        box-shadow: 0 0 0 1px var(--accent), 0 8px 18px rgba(0, 0, 0, 0.35);
       }
 
       .formula-tip {
@@ -642,11 +533,4 @@
           text-align: left;
         }
 
-        .planner-workspace {
-          grid-template-columns: 1fr;
-        }
-
-        .slot-editor {
-          position: static;
-        }
       }
