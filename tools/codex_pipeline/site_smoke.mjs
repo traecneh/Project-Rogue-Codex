@@ -116,6 +116,12 @@ async function main() {
       failures.push(`SMOKE ERROR imbuements: ${formatError(error)}`);
     }
     try {
+      await runPurgeSpec(browser, baseUrl);
+      console.log("SMOKE OK purge: cleanup roles, recovery rules, related links");
+    } catch (error) {
+      failures.push(`SMOKE ERROR purge: ${formatError(error)}`);
+    }
+    try {
       await runCraftingSpec(browser, baseUrl);
       console.log("SMOKE OK crafting: armor reference, set preview, materials calculator");
     } catch (error) {
@@ -130,7 +136,7 @@ async function main() {
     failures.forEach((failure) => console.error(failure));
     process.exit(1);
   }
-  console.log(`SMOKE OK site: ${smokeSpecs.length + 9} page(s) checked at ${baseUrl}`);
+  console.log(`SMOKE OK site: ${smokeSpecs.length + 10} page(s) checked at ${baseUrl}`);
 }
 
 async function importPlaywright() {
@@ -665,6 +671,62 @@ async function runImbuementsSpec(browser, baseUrl) {
       const count = await page.locator(`.imbuement-link-grid a[href="${href}"]`).count();
       if (count !== 1) {
         throw new Error(`Imbuements related link expected one "${href}", found ${count}`);
+      }
+    }
+
+    if (runtimeErrors.length) {
+      throw new Error(`browser errors: ${runtimeErrors.join("; ")}`);
+    }
+  } finally {
+    await page.close();
+  }
+}
+
+async function runPurgeSpec(browser, baseUrl) {
+  const page = await browser.newPage();
+  page.setDefaultTimeout(timeoutMs);
+  const runtimeErrors = [];
+  page.on("console", (message) => {
+    const text = message.text();
+    if (message.type() === "error" && !text.startsWith("Failed to load resource")) runtimeErrors.push(text);
+  });
+  page.on("pageerror", (error) => runtimeErrors.push(formatError(error)));
+
+  try {
+    await page.goto(joinUrl(baseUrl, "/pages/systems/purge.html"), { waitUntil: "load" });
+    await page.locator(".purge-compare-grid").waitFor({ state: "visible" });
+    const pageText = (await page.locator("#purge-basics").textContent()).trim();
+    for (const expected of [
+      "Cleanup Roles",
+      "Purge or Cleanse",
+      "What Purge Removes",
+      "What Cleanse Removes",
+      "Recovery Rules",
+      "Cleanup Flow",
+      "Before You Confirm",
+      "Special Effect",
+      "Corrupted Innate",
+      "25 Tattered Imbuements",
+      "No Tier Refund",
+      "No Item Reset",
+      "Epic+ Item",
+    ]) {
+      if (!pageText.includes(expected)) {
+        throw new Error(`Purge page missing "${expected}": "${pageText}"`);
+      }
+    }
+
+    for (const href of [
+      "pages/systems/imbuements.html",
+      "pages/systems/corruption.html",
+      "pages/systems/craft.html",
+      "pages/systems/deconstruct.html",
+      "pages/items/weapons.html",
+      "pages/items/armors.html",
+    ]) {
+      const count = await page.locator(`.purge-link-grid a[href="${href}"]`).count();
+      if (count !== 1) {
+        throw new Error(`Purge related link expected one "${href}", found ${count}`);
       }
     }
 

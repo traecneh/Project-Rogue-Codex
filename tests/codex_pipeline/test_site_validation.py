@@ -922,6 +922,59 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(".imbuement-odds-grid", css)
         self.assertIn(".imbuement-link-grid", css)
 
+    def test_purge_page_has_compact_cleanup_reference(self):
+        from tools.codex_pipeline import cli
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        html_path = REPO_ROOT / "pages" / "systems" / "purge.html"
+        css_path = REPO_ROOT / "css" / "purge.css"
+        html = html_path.read_text(encoding="utf-8")
+        css = css_path.read_text(encoding="utf-8") if css_path.exists() else ""
+
+        self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
+        self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
+        self.assertIn('<link rel="stylesheet" href="css/purge.css" />', html)
+        self.assertNotIn("<style>", html)
+        self.assertEqual(
+            [],
+            [
+                block.strip()
+                for block in re.findall(
+                    r"<script\b(?![^>]*\bsrc\s*=)[^>]*>([\s\S]*?)</script>",
+                    html,
+                    flags=re.IGNORECASE,
+                )
+                if block.strip()
+            ],
+        )
+
+        for expected in [
+            "Purge or Cleanse",
+            "What Purge Removes",
+            "What Cleanse Removes",
+            "Cleanup Flow",
+            "Before You Confirm",
+            "Recovery Rules",
+            "Special Effect",
+            "Corrupted Innate",
+            "25 Tattered Imbuements",
+            "No Tier Refund",
+            "No Item Reset",
+            "Epic+ Item",
+            "pages/systems/imbuements.html",
+            "pages/systems/corruption.html",
+            "pages/systems/craft.html",
+            "pages/systems/deconstruct.html",
+            "pages/items/weapons.html",
+            "pages/items/armors.html",
+        ]:
+            self.assertIn(expected, html)
+
+        self.assertIn(".purge-summary-grid", css)
+        self.assertIn(".purge-compare-grid", css)
+        self.assertIn(".purge-flow", css)
+        self.assertIn(".purge-link-grid", css)
+
     def test_crafting_page_has_compact_armor_crafting_reference(self):
         from tools.codex_pipeline import cli
         from tools.codex_pipeline.config import REPO_ROOT

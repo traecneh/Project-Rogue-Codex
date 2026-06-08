@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Purge &mdash; Project Rogue Codex</title>
+    <title>Purge System &mdash; Project Rogue Codex</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <base href="../../" />
     <link rel="icon" type="image/x-icon" href="images/project-rogue-favicon.ico" />
@@ -11,6 +11,7 @@
     <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
     <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/purge.css" />
     <script src="js/site-search.js" defer></script>
     <script src="js/weapon-specialty.js" defer></script>
     <script src="js/stat-widgets.js" defer></script>
@@ -25,27 +26,143 @@
       <div id="sidebar-root"></div>
       <main class="main-content">
         <header class="content-header">
-          <h1 class="content-title">Purge</h1>
-          <p class="content-tagline">Remove special effects or cleanse corrupted innates from items.</p>
+          <h1 class="content-title">Purge System</h1>
+          <p class="content-tagline">
+            Remove applied special effects or cleanse corrupted innates without confusing the two cleanup paths.
+          </p>
         </header>
 
-        <article class="content-section">
-          <h2>Item Purging</h2>
-          <p>Select an item to purge or cleanse.</p>
-          <div class="stat-grid" role="list">
-            <section class="stat-card" role="listitem">
+        <article class="content-section" id="purge-basics">
+          <h2>Cleanup Roles</h2>
+          <div class="purge-summary-grid" role="list">
+            <section class="purge-summary-card" role="listitem">
               <p class="stat-label">Purge</p>
-              <h3>Remove Special Effect</h3>
-              <p>Purging removes a special effect from an item.</p>
-              <p>Purging special effects returns <strong>25 Tattered Imbuements</strong>.</p>
+              <h3>Special Effect</h3>
+              <p>Use Purge when the item has an applied special effect or imbuement you no longer want.</p>
             </section>
 
-            <section class="stat-card" role="listitem">
+            <section class="purge-summary-card" role="listitem">
               <p class="stat-label">Cleanse</p>
               <h3>Corrupted Innate</h3>
-              <p>Cleansing removes a corrupted innate effect.</p>
+              <p>Use Cleanse when a corrupted item needs its corrupted innate removed.</p>
+            </section>
+
+            <section class="purge-summary-card" role="listitem">
+              <p class="stat-label">Recovery</p>
+              <h3>25 Tattered Imbuements</h3>
+              <p>Purging a special effect returns <strong>25 Tattered Imbuements</strong> for that effect type.</p>
+            </section>
+
+            <section class="purge-summary-card" role="listitem">
+              <p class="stat-label">Finality</p>
+              <h3>No Item Reset</h3>
+              <p>The cleanup target is removed; the item does not reroll, ascend, or reset its other values.</p>
             </section>
           </div>
+
+          <section class="purge-compare-section">
+            <h2>Purge or Cleanse</h2>
+            <div class="purge-compare-grid">
+              <section class="purge-panel purge-panel-primary">
+                <p class="stat-label">What Purge Removes</p>
+                <h3>Applied Special Effects</h3>
+                <ul>
+                  <li>Targets the item's removable special effect slot.</li>
+                  <li>Best used when an imbuement no longer fits the build.</li>
+                  <li>Returns 25 Tattered Imbuements instead of the full Scroll of Imbuement cost.</li>
+                </ul>
+              </section>
+              <section class="purge-panel purge-panel-secondary">
+                <p class="stat-label">What Cleanse Removes</p>
+                <h3>Corrupted Innate</h3>
+                <ul>
+                  <li>Targets the corrupted innate effect on corrupted gear.</li>
+                  <li>Returns the item toward its normal innate identity.</li>
+                  <li>Does not act as a rarity, stat, or max-rarity reroll.</li>
+                </ul>
+              </section>
+            </div>
+          </section>
+
+          <section class="purge-rules-section">
+            <h2>Recovery Rules</h2>
+            <div class="purge-rules-grid" role="list">
+              <section class="purge-rule-card" role="listitem">
+                <p class="stat-label">Known Return</p>
+                <h3>25 Tattered Imbuements</h3>
+                <p>Purge returns the small tattered-material recovery shown by the system, not the original 250-tatter craft cost.</p>
+              </section>
+              <section class="purge-rule-card" role="listitem">
+                <p class="stat-label">Tier</p>
+                <h3>No Tier Refund</h3>
+                <p>Do not plan around recovering the original tier roll, scroll, or high-tier result after purging.</p>
+              </section>
+              <section class="purge-rule-card" role="listitem">
+                <p class="stat-label">Item State</p>
+                <h3>No Item Reset</h3>
+                <p>Purge and Cleanse are cleanup tools; use Re-Roll or Ascend when the item itself needs improvement.</p>
+              </section>
+              <section class="purge-rule-card" role="listitem">
+                <p class="stat-label">Eligibility</p>
+                <h3>Epic+ Item</h3>
+                <p>Imbuement planning still starts with an Epic+ item, since that is the gear tier that receives crafted imbuements.</p>
+              </section>
+            </div>
+          </section>
+
+          <section class="purge-flow-section">
+            <h2>Cleanup Flow</h2>
+            <ol class="purge-flow">
+              <li>
+                <span>1</span>
+                <div>
+                  <h3>Inspect the item</h3>
+                  <p>Check whether the unwanted line is a special effect, an imbuement, or a corrupted innate.</p>
+                </div>
+              </li>
+              <li>
+                <span>2</span>
+                <div>
+                  <h3>Choose the correct tool</h3>
+                  <p>Use Purge for special effects; use Cleanse for corrupted innates.</p>
+                </div>
+              </li>
+              <li>
+                <span>3</span>
+                <div>
+                  <h3>Confirm the loss</h3>
+                  <p>Make sure the item is worth keeping after the cleanup, because the removed effect is gone.</p>
+                </div>
+              </li>
+              <li>
+                <span>4</span>
+                <div>
+                  <h3>Rebuild if needed</h3>
+                  <p>Return to Imbuements, Craft, Re-Roll, or Ascend if the cleaned item still needs work.</p>
+                </div>
+              </li>
+            </ol>
+          </section>
+
+          <section class="purge-warning">
+            <h2>Before You Confirm</h2>
+            <p>
+              Purge is useful when a good item has the wrong special effect, but it is not a full undo. Check the
+              item's base value, rarity ceiling, and build fit before spending the cleanup.
+            </p>
+          </section>
+
+          <section class="purge-related">
+            <h2>Related Pages</h2>
+            <div class="purge-link-grid" aria-label="Related purge pages">
+              <a href="pages/systems/imbuements.html">Imbuements</a>
+              <a href="pages/systems/corruption.html">Corruption</a>
+              <a href="pages/systems/craft.html">Craft</a>
+              <a href="pages/systems/deconstruct.html">Deconstruct</a>
+              <a href="pages/items/weapons.html">Weapons</a>
+              <a href="pages/items/armors.html">Armors</a>
+            </div>
+          </section>
         </article>
       </main>
     </div>
