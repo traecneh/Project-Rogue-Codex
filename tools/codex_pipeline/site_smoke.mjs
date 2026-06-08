@@ -64,6 +64,12 @@ async function main() {
         failures.push(`SMOKE ERROR ${spec.label}: ${formatError(error)}`);
       }
     }
+    try {
+      await runBuildPlannerSpec(browser, baseUrl);
+      console.log("SMOKE OK build planner: search, rarity, share reload, reset");
+    } catch (error) {
+      failures.push(`SMOKE ERROR build planner: ${formatError(error)}`);
+    }
   } finally {
     await browser.close();
     if (server) await server.close();
@@ -73,7 +79,7 @@ async function main() {
     failures.forEach((failure) => console.error(failure));
     process.exit(1);
   }
-  console.log(`SMOKE OK site: ${smokeSpecs.length} page(s) checked at ${baseUrl}`);
+  console.log(`SMOKE OK site: ${smokeSpecs.length + 1} page(s) checked at ${baseUrl}`);
 }
 
 async function importPlaywright() {
@@ -145,6 +151,94 @@ async function runSpec(browser, baseUrl, spec) {
     }
   } finally {
     await page.close();
+  }
+}
+
+async function runBuildPlannerSpec(browser, baseUrl) {
+  const page = await browser.newPage();
+  page.setDefaultTimeout(timeoutMs);
+  const runtimeErrors = [];
+  page.on("console", (message) => {
+    const text = message.text();
+    if (message.type() === "error" && !text.startsWith("Failed to load resource")) runtimeErrors.push(text);
+  });
+  page.on("pageerror", (error) => runtimeErrors.push(formatError(error)));
+
+  try {
+    await page.goto(joinUrl(baseUrl, "/pages/General/build-planner.html"), { waitUntil: "load" });
+    await page.locator("#gear-search").waitFor({ state: "visible" });
+    await assertNoBuildPlannerSlotEditor(page);
+
+    await selectBuildPlannerItem(page, "Rune Sword");
+    await assertBuildPlannerWeapon(page, "Rune Sword");
+    await assertNumberGreaterThan(page, '[data-quick-stat="dps"]', 0, "quick DPS");
+
+    await page.locator('[data-slot="Weapon"] [data-rarity-inc]').click();
+    await page.waitForFunction(() => {
+      const label = document.querySelector('[data-slot="Weapon"] [data-rarity-label]');
+      return label && label.textContent.trim() !== "Common";
+    });
+    await assertNumberGreaterThan(page, '[data-quick-stat="str"]', 5, "quick Strength");
+
+    await page.locator("#share-build").click();
+    const sharedUrl = page.url();
+    if (!new URL(sharedUrl).searchParams.has("b")) {
+      throw new Error("Build Planner URL is missing compressed b state after sharing");
+    }
+
+    await page.reload({ waitUntil: "load" });
+    await assertBuildPlannerWeapon(page, "Rune Sword");
+    const restoredRarity = (await page.locator('[data-slot="Weapon"] [data-rarity-label]').textContent()).trim();
+    if (restoredRarity !== "Uncommon") {
+      throw new Error(`share reload restored weapon rarity "${restoredRarity}" instead of "Uncommon"`);
+    }
+
+    await page.locator("#reset-build").click();
+    await page.waitForFunction(() => !document.querySelector(".slot-card.has-item"));
+    const selectedCount = await page.locator(".slot-card.has-item").count();
+    if (selectedCount) throw new Error(`reset left ${selectedCount} selected slot(s)`);
+
+    if (runtimeErrors.length) {
+      throw new Error(`browser errors: ${runtimeErrors.join("; ")}`);
+    }
+  } finally {
+    await page.close();
+  }
+}
+
+async function selectBuildPlannerItem(page, itemName) {
+  await page.locator("#gear-search").fill(itemName);
+  const suggestion = page.locator("#gear-suggestions .suggestion").filter({ hasText: itemName }).first();
+  await suggestion.waitFor({ state: "visible" });
+  await suggestion.click();
+}
+
+async function assertBuildPlannerWeapon(page, expectedName) {
+  await page.waitForFunction(
+    (name) => {
+      const card = document.querySelector('[data-slot="Weapon"]');
+      const actualName = card?.querySelector("[data-slot-item]")?.textContent?.trim();
+      return card?.classList.contains("has-item") && actualName === name;
+    },
+    expectedName,
+    { timeout: timeoutMs }
+  );
+  const actualName = (await page.locator('[data-slot="Weapon"] [data-slot-item]').textContent()).trim();
+  if (actualName !== expectedName) {
+    throw new Error(`Build Planner weapon slot selected "${actualName}" instead of "${expectedName}"`);
+  }
+}
+
+async function assertNoBuildPlannerSlotEditor(page) {
+  const editorCount = await page.locator("#slot-editor").count();
+  if (editorCount) throw new Error("Build Planner rendered the removed selected-slot editor");
+}
+
+async function assertNumberGreaterThan(page, selector, minimum, label) {
+  const text = (await page.locator(selector).textContent()).trim();
+  const value = Number(text.replace(/[^\d.-]/g, ""));
+  if (!Number.isFinite(value) || value <= minimum) {
+    throw new Error(`${label} expected to be greater than ${minimum}, got "${text}"`);
   }
 }
 

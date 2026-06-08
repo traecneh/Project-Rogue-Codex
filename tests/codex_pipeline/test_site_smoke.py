@@ -83,3 +83,15 @@ class SiteSmokeTests(unittest.TestCase):
         args = run.call_args.args[0]
         self.assertIn("--base-url", args)
         self.assertIn("https://example.test/codex/", args)
+
+    def test_node_runner_includes_build_planner_flow(self):
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        runner = (REPO_ROOT / "tools" / "codex_pipeline" / "site_smoke.mjs").read_text(encoding="utf-8")
+
+        self.assertIn("runBuildPlannerSpec", runner)
+        self.assertIn("SMOKE OK build planner", runner)
+        self.assertIn("/pages/General/build-planner.html", runner)
+        self.assertIn("Rune Sword", runner)
+        self.assertIn("#reset-build", runner)
+        self.assertIn('[data-quick-stat="dps"]', runner)
