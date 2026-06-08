@@ -479,6 +479,7 @@ class SiteValidationTests(unittest.TestCase):
             'id="perk-type-filter"',
             'id="perk-group-filter"',
             'id="perk-speed-context"',
+            '<label for="perk-speed-context">Weapon Speed</label>',
             'id="perk-result-count"',
             'data-perk-results',
             'data-perk-empty',
@@ -514,6 +515,10 @@ class SiteValidationTests(unittest.TestCase):
             "const renderPerkMath",
         ]:
             self.assertIn(expected, calc_script)
+        self.assertEqual(
+            ["750", "1000", "1250", "1500"],
+            re.findall(r'\{\s*value:\s*"(\d+)",\s*label:\s*"\d+ms"\s*\}', calc_script),
+        )
 
         for expected in [
             ".perk-controls",

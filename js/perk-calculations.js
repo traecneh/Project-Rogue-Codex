@@ -1,12 +1,9 @@
 (() => {
   const DEFAULT_SPEED = "1000";
   const SPEED_OPTIONS = [
-    { value: "500", label: "500ms" },
     { value: "750", label: "750ms" },
     { value: "1000", label: "1000ms" },
-    { value: "1200", label: "1200ms" },
     { value: "1250", label: "1250ms" },
-    { value: "1400", label: "1400ms" },
     { value: "1500", label: "1500ms" },
   ];
   const STACK_SCENARIOS = [
