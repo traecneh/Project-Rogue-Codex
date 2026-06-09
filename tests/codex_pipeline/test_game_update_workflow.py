@@ -80,3 +80,38 @@ class GameUpdateWorkflowTests(unittest.TestCase):
             ],
             events,
         )
+
+    def test_cli_game_update_workflow_can_request_review_checklist(self):
+        from tools.codex_pipeline import cli
+
+        events = []
+
+        def record(name):
+            def inner(args):
+                events.append((name, getattr(args, "review_checklist", None), getattr(args, "dry_run", None)))
+                return 0
+
+            return inner
+
+        with (
+            patch.object(cli, "run_doctor", record("doctor")),
+            patch.object(cli, "run_game_update_report", record("game-update-report")),
+            patch.object(cli, "run_sync_generated", record("sync-generated")),
+            patch.object(cli, "run_sync_assets", record("sync-assets")),
+            patch.object(cli, "run_refresh_manifest", side_effect=AssertionError("refresh-manifest should not run")),
+            patch.object(cli, "run_validate", side_effect=AssertionError("validate should not run")),
+            patch.object(cli, "run_verify_live", side_effect=AssertionError("verify-live should not run")),
+            patch("sys.stdout", io.StringIO()),
+        ):
+            exit_code = cli.main(["game-update-workflow", "--review-checklist"])
+
+        self.assertEqual(0, exit_code)
+        self.assertEqual(
+            [
+                ("doctor", True, False),
+                ("game-update-report", True, False),
+                ("sync-generated", True, True),
+                ("sync-assets", True, True),
+            ],
+            events,
+        )

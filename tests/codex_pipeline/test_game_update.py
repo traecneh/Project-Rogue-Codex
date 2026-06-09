@@ -452,3 +452,73 @@ class GameUpdateReportTests(unittest.TestCase):
             self.assertIn("- Changed: Rune Sword.gif", markdown)
             self.assertIn("## Review Notes", markdown)
             self.assertIn("- WARNING: sample warning", markdown)
+
+    def test_cli_prints_game_update_review_checklist(self):
+        from tools.codex_pipeline import cli
+        from tools.codex_pipeline.game_update import GameUpdateReport
+
+        weapon_target = ExportTarget(
+            "weapons",
+            Path("extract_weapons.py"),
+            Path("data05.dat"),
+            "weapons.json",
+            Path("site/weapons.json"),
+        )
+        report = GameUpdateReport(
+            output_dir=Path("generated"),
+            source_checks=[],
+            export_results=[],
+            diff_reports=[
+                DataDiffReport(
+                    target=weapon_target,
+                    generated_path=Path("generated/weapons.json"),
+                    site_path=Path("site/weapons.json"),
+                    added=["New Sword (3)"],
+                    removed=[],
+                    changed=[
+                        RecordChange(
+                            key="id:1",
+                            label="Rune Sword (1)",
+                            field_changes=[FieldChange("fields.damage", 10, 11)],
+                        )
+                    ],
+                )
+            ],
+            unknown_reports=[],
+            asset_reports=[
+                AssetChangeReport(
+                    target_name="weapons",
+                    client_dir=Path("client/Weapons"),
+                    site_dir=Path("images/weapons"),
+                    client_count=2,
+                    site_count=1,
+                    manifest_count=1,
+                    added=["New Sword.gif"],
+                    removed=[],
+                    changed=[],
+                    issues=[],
+                )
+            ],
+            drop_report=None,
+            validation_issues=[ValidationIssue("warning", "sample warning")],
+            export_errors=[],
+            skipped_sections=["drop report requires generated weapons, armors, and monsters"],
+        )
+        output = io.StringIO()
+        with (
+            patch.object(cli, "resolve_targets", return_value=[]),
+            patch.object(cli, "build_game_update_report", return_value=report),
+            patch("sys.stdout", output),
+        ):
+            exit_code = cli.main(["game-update-report", "--review-checklist"])
+
+        self.assertEqual(0, exit_code)
+        printed = output.getvalue()
+        self.assertIn("GAME UPDATE CHECKLIST: BLOCKED", printed)
+        self.assertIn("CHECK DATA: +1 -0 ~1", printed)
+        self.assertIn("CHECK IMAGES: +1 -0 ~0", printed)
+        self.assertIn("CHECK REVIEW NOTES: 2", printed)
+        self.assertIn("[ ] Review player data changes", printed)
+        self.assertIn("[ ] Review image changes", printed)
+        self.assertIn("[ ] Review warnings or skipped sections", printed)
+        self.assertIn("[ ] Confirm --apply decision: blocked - review image changes before applying", printed)

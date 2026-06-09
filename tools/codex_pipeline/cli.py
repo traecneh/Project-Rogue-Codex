@@ -200,6 +200,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="For game-update-report, write a Markdown review summary artifact.",
     )
     parser.add_argument(
+        "--review-checklist",
+        action="store_true",
+        help="For game-update-report/game-update-workflow, print a short review checklist before applying changes.",
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="For sync-generated/export-sync/sync-assets, report site file changes without copying.",
@@ -517,6 +522,38 @@ def _print_player_change_summary(report, *, max_records: int = 5, max_fields: in
         _print_player_summary_values("added", asset.added, max_records=max_records)
         _print_player_summary_values("removed", asset.removed, max_records=max_records)
         _print_player_summary_values("changed", asset.changed, max_records=max_records)
+
+
+def _review_note_count(report) -> int:
+    count = len(report.validation_issues) + len(report.export_errors) + len(report.skipped_sections)
+    count += sum(1 for check in report.source_checks if not check.ok)
+    count += sum(len(asset.issues) for asset in report.asset_reports)
+    if report.drop_report is not None:
+        count += len(report.drop_report.validation_issues)
+    return count
+
+
+def _format_apply_decision(report) -> str:
+    if report.has_errors:
+        return "blocked - resolve errors before applying"
+    if any(asset.has_changes for asset in report.asset_reports):
+        return "blocked - review image changes before applying"
+    if report.has_changes:
+        return "safe after reviewing data changes"
+    return "safe - no player-facing changes detected"
+
+
+def _print_game_update_review_checklist(report) -> None:
+    data_added, data_removed, data_changed, image_added, image_removed, image_changed = _player_change_counts(report)
+    status = "READY" if report.safe_to_sync else "BLOCKED"
+    print(f"GAME UPDATE CHECKLIST: {status}")
+    print(f"CHECK DATA: +{data_added} -{data_removed} ~{data_changed}")
+    print(f"CHECK IMAGES: +{image_added} -{image_removed} ~{image_changed}")
+    print(f"CHECK REVIEW NOTES: {_review_note_count(report)}")
+    print("[ ] Review player data changes")
+    print("[ ] Review image changes")
+    print("[ ] Review warnings or skipped sections")
+    print(f"[ ] Confirm --apply decision: {_format_apply_decision(report)}")
 
 
 def _extend_markdown_values(lines: list[str], label: str, values: list[str], *, max_records: int) -> None:
@@ -901,6 +938,8 @@ def run_game_update_report(args: argparse.Namespace) -> int:
         print(f"ERROR: {exc}")
         return 1
     _print_game_update_report(report)
+    if args.review_checklist:
+        _print_game_update_review_checklist(report)
     if args.write_summary:
         summary_path = report.output_dir / "game_update_summary.md"
         written_path = _write_game_update_summary(report, summary_path)
