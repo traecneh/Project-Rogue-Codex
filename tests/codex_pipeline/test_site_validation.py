@@ -1145,6 +1145,77 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(".pvp-consequence-grid", css)
         self.assertIn(".pvp-link-grid", css)
 
+    def test_anti_zerg_page_has_compact_calculator_reference(self):
+        from tools.codex_pipeline import cli
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        html_path = REPO_ROOT / "pages" / "systems" / "anti-zerg.html"
+        css_path = REPO_ROOT / "css" / "anti-zerg.css"
+        script_path = REPO_ROOT / "js" / "anti-zerg.js"
+        html = html_path.read_text(encoding="utf-8")
+        css = css_path.read_text(encoding="utf-8") if css_path.exists() else ""
+        script = script_path.read_text(encoding="utf-8") if script_path.exists() else ""
+
+        self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
+        self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
+        self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
+        self.assertIn('<link rel="stylesheet" href="css/anti-zerg.css" />', html)
+        self.assertIn('<script src="js/anti-zerg.js" defer></script>', html)
+        self.assertNotIn("<style>", html)
+        self.assertEqual(
+            [],
+            [
+                block.strip()
+                for block in re.findall(
+                    r"<script\b(?![^>]*\bsrc\s*=)[^>]*>([\s\S]*?)</script>",
+                    html,
+                    flags=re.IGNORECASE,
+                )
+                if block.strip()
+            ],
+        )
+
+        for expected in [
+            "Anti-Zerg at a Glance",
+            "Mode and Sizing Rules",
+            "Focus Fire and Collaboration",
+            "Damage Reduction Calculator",
+            "Reduction Reference",
+            "Moderation Rules",
+            "Warfront Mode",
+            "Open-World Mode",
+            "3-Minute High-Water",
+            "128x128 Tiles",
+            "10+ direct attacks",
+            "66%",
+            "5-Minute Activity",
+            "10.0 EFFECTIVE",
+            "750 to 1500",
+            "10 chunks (160 tiles)",
+            "180 seconds",
+            "20%",
+            "30%",
+            "27.27%",
+            "Self-Heal Mirror",
+            "pages/systems/pvp-system.html",
+            "pages/systems/guild.html",
+            "pages/items/weapons.html",
+            "pages/items/armors.html",
+        ]:
+            self.assertIn(expected, html)
+
+        self.assertIn(".anti-zerg-summary-grid", css)
+        self.assertIn(".anti-zerg-mode-grid", css)
+        self.assertIn(".anti-zerg-flow", css)
+        self.assertIn(".anti-zerg-calculator", css)
+        self.assertIn(".anti-zerg-reference-grid", css)
+        self.assertIn(".anti-zerg-link-grid", css)
+
+        self.assertIn("const ANTI_ZERG_REDUCTION_TABLE", script)
+        self.assertIn("function evaluateAntiZergMatchup", script)
+        self.assertIn("function initAntiZergCalculator", script)
+        self.assertIn('document.addEventListener("DOMContentLoaded"', script)
+
     def test_crafting_page_has_compact_armor_crafting_reference(self):
         from tools.codex_pipeline import cli
         from tools.codex_pipeline.config import REPO_ROOT

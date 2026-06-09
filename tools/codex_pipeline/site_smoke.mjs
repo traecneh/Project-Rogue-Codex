@@ -134,6 +134,12 @@ async function main() {
       failures.push(`SMOKE ERROR pvp: ${formatError(error)}`);
     }
     try {
+      await runAntiZergSpec(browser, baseUrl);
+      console.log("SMOKE OK anti-zerg: rule reference, calculator, related links");
+    } catch (error) {
+      failures.push(`SMOKE ERROR anti-zerg: ${formatError(error)}`);
+    }
+    try {
       await runCorruptionSpec(browser, baseUrl);
       console.log("SMOKE OK corruption: corrupted innates, cleanse flow, related links");
     } catch (error) {
@@ -154,7 +160,7 @@ async function main() {
     failures.forEach((failure) => console.error(failure));
     process.exit(1);
   }
-  console.log(`SMOKE OK site: ${smokeSpecs.length + 13} page(s) checked at ${baseUrl}`);
+  console.log(`SMOKE OK site: ${smokeSpecs.length + 14} page(s) checked at ${baseUrl}`);
 }
 
 async function importPlaywright() {
@@ -887,6 +893,109 @@ async function runPvpSpec(browser, baseUrl) {
     }
   } finally {
     await page.close();
+  }
+}
+
+async function runAntiZergSpec(browser, baseUrl) {
+  const page = await browser.newPage();
+  page.setDefaultTimeout(timeoutMs);
+  const runtimeErrors = [];
+  page.on("console", (message) => {
+    const text = message.text();
+    if (message.type() === "error" && !text.startsWith("Failed to load resource")) runtimeErrors.push(text);
+  });
+  page.on("pageerror", (error) => runtimeErrors.push(formatError(error)));
+
+  try {
+    await page.goto(joinUrl(baseUrl, "/pages/systems/anti-zerg.html"), { waitUntil: "load" });
+    await page.locator(".anti-zerg-calculator").waitFor({ state: "visible" });
+    const pageText = (await page.locator("#anti-zerg-basics").textContent()).trim();
+    for (const expected of [
+      "Anti-Zerg at a Glance",
+      "Mode and Sizing Rules",
+      "Focus Fire and Collaboration",
+      "Damage Reduction Calculator",
+      "Reduction Reference",
+      "Moderation Rules",
+      "Warfront Mode",
+      "Open-World Mode",
+      "3-Minute High-Water",
+      "128x128 Tiles",
+      "10+ direct attacks",
+      "66%",
+      "5-Minute Activity",
+      "10.0 EFFECTIVE",
+      "750 to 1500",
+      "10 chunks (160 tiles)",
+      "180 seconds",
+      "20%",
+      "30%",
+      "27.27%",
+      "Self-Heal Mirror",
+    ]) {
+      if (!pageText.includes(expected)) {
+        throw new Error(`Anti-Zerg page missing "${expected}": "${pageText}"`);
+      }
+    }
+
+    for (const href of [
+      "pages/systems/pvp-system.html",
+      "pages/systems/guild.html",
+      "pages/items/weapons.html",
+      "pages/items/armors.html",
+      "pages/enemies/monsters.html",
+      "pages/General/play-the-game.html",
+    ]) {
+      const count = await page.locator(`.anti-zerg-link-grid a[href="${href}"]`).count();
+      if (count !== 1) {
+        throw new Error(`Anti-Zerg related link expected one "${href}", found ${count}`);
+      }
+    }
+
+    await assertAntiZergCalculator(page, 3, 8, "30%", "My guild receives the max 30% damage reduction.");
+    await assertAntiZergCalculator(page, 1, 2, "20%", "My guild receives 20% damage reduction in this matchup.");
+    await assertAntiZergCalculator(page, 8, 12, "27.27%", "My guild receives 27.27% damage reduction in this matchup.");
+    await assertAntiZergCalculator(page, 12, 14, "7.69%", "My guild receives 7.69% damage reduction in this matchup.");
+    await assertAntiZergCalculator(page, 8, 3, "30%", "Enemy guild receives the max 30% damage reduction.");
+    await assertAntiZergCalculator(page, 6, 6, "0%", "Both guilds are the same size");
+
+    await assertMobilePageFirstNavigation(page, baseUrl, "/pages/systems/anti-zerg.html");
+
+    if (runtimeErrors.length) {
+      throw new Error(`browser errors: ${runtimeErrors.join("; ")}`);
+    }
+  } finally {
+    await page.close();
+  }
+}
+
+async function assertAntiZergCalculator(page, myGuildSize, enemyGuildSize, expectedValue, expectedNote) {
+  await page.locator("[data-smaller-range]").evaluate((input, value) => {
+    input.value = String(value);
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  }, myGuildSize);
+  await page.locator("[data-bigger-range]").evaluate((input, value) => {
+    input.value = String(value);
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  }, enemyGuildSize);
+
+  await page.waitForFunction(
+    ({ expected }) => document.querySelector("[data-reduction-result]")?.textContent?.trim() === expected,
+    { expected: expectedValue },
+    { timeout: timeoutMs }
+  );
+
+  const resultText = (await page.locator("[data-reduction-result]").textContent()).trim();
+  const scenarioText = (await page.locator("[data-reduction-scenario]").textContent()).trim();
+  const noteText = (await page.locator("[data-reduction-note]").textContent()).trim();
+  if (resultText !== expectedValue) {
+    throw new Error(`Anti-Zerg calculator expected ${expectedValue}, got "${resultText}"`);
+  }
+  if (!noteText.includes(expectedNote)) {
+    throw new Error(`Anti-Zerg calculator note missing "${expectedNote}": "${noteText}"`);
+  }
+  if (!scenarioText.includes("guild")) {
+    throw new Error(`Anti-Zerg calculator scenario did not describe guild matchup: "${scenarioText}"`);
   }
 }
 

@@ -11,6 +11,7 @@
     <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
     <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/anti-zerg.css" />
     <script src="js/site-search.js" defer></script>
     <script src="js/weapon-specialty.js" defer></script>
     <script src="js/stat-widgets.js" defer></script>
@@ -18,6 +19,7 @@
     <script src="js/cursor-toggle.js" defer></script>
     <script src="js/perks.js" defer></script>
     <script src="js/rarity-roller.js" defer></script>
+    <script src="js/anti-zerg.js" defer></script>
     <script src="js/nav-core.js" defer></script>
   </head>
   <body>
@@ -27,523 +29,301 @@
         <header class="content-header">
           <h1 class="content-title">Anti-Zerg System</h1>
           <p class="content-tagline">
-            PvP scaling that reduces damage to smaller squads and mirrors that value as a self-heal penalty.
+            PvP scaling that protects smaller squads and mirrors that protection as an offensive self-heal penalty.
           </p>
         </header>
 
-        <article class="content-section">
-          <h2>Why Anti-Zerg Exists</h2>
-          <p>
-            Anti-Zerg reduces incoming PvP damage for the smaller squad based on Zerg size differences and applies the
-            same percentage as a penalty to offensive self-healing on protected targets.
-          </p>
+        <article class="content-section" id="anti-zerg-basics">
+          <h2>Anti-Zerg at a Glance</h2>
+          <div class="anti-zerg-summary-grid" role="list">
+            <section class="anti-zerg-summary-card" role="listitem">
+              <p class="stat-label">Purpose</p>
+              <h3>Smaller Squad Cushion</h3>
+              <p>Targets of PvP damage receive reduction when their guild size is smaller than the attacker&apos;s side.</p>
+            </section>
 
-          <section>
-            <h2>Anti-Zerg Overhaul</h2>
-            <div class="stat-grid" role="list">
-              <section class="stat-card" role="listitem">
-                <p class="stat-label">Modes</p>
-                <h3>Warfront & Open-World</h3>
-                <p>The system still runs in two modes: Warfront and Open-World.</p>
-              </section>
-              <section class="stat-card" role="listitem">
-                <p class="stat-label">Purpose</p>
-                <h3>Prep for Focus Fire</h3>
-                <p>Zerg sizing was overhauled to align with the new Focus Fire / collaborator rules below.</p>
-              </section>
-            </div>
-          </section>
+            <section class="anti-zerg-summary-card" role="listitem">
+              <p class="stat-label">Modes</p>
+              <h3>Warfront &amp; Open-World</h3>
+              <p>The system runs in Warfront zones and open-world range/hash checks.</p>
+            </section>
 
-          <section>
-            <h2>Open-World Mode</h2>
-            <div class="stat-grid" role="list">
-              <section class="stat-card" role="listitem">
-                <p class="stat-label">Lookback</p>
-                <h3>3-Minute High-Water</h3>
-                <p>Zerg size is the highest count of guild members in your area over the last <strong>3 minutes</strong>.</p>
-              </section>
-              <section class="stat-card" role="listitem">
-                <p class="stat-label">Hashes</p>
-                <h3>128x128 Tiles</h3>
-                <p>The world is split into <strong>128x128 tile</strong> hashes (8x8 chunks).</p>
-              </section>
-              <section class="stat-card" role="listitem">
-                <p class="stat-label">Neighbors</p>
-                <h3>Adjacency Counts</h3>
-                <p>Guildmates in your hash or any immediately surrounding hash count toward your Zerg.</p>
-              </section>
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Layers</p>
-              <h3>Above + Below</h3>
-              <p>Underground hashes are calculated together with the hashes directly above them.</p>
+            <section class="anti-zerg-summary-card" role="listitem">
+              <p class="stat-label">Penalty</p>
+              <h3>Self-Heal Mirror</h3>
+              <p>The same percentage is applied as a penalty to offensive self-healing against protected targets.</p>
+            </section>
+
+            <section class="anti-zerg-summary-card" role="listitem">
+              <p class="stat-label">Cap</p>
+              <h3>30% Maximum</h3>
+              <p>Published reduction ranges cap at <strong>30%</strong> for the smaller qualifying squad.</p>
             </section>
           </div>
-          </section>
 
-          <section>
-            <h2>Warfront Mode</h2>
-            <div class="stat-grid" role="list">
-              <section class="stat-card" role="listitem">
-                <p class="stat-label">Lookback</p>
+          <section class="anti-zerg-mode-section">
+            <h2>Mode and Sizing Rules</h2>
+            <div class="anti-zerg-mode-grid">
+              <section class="anti-zerg-panel anti-zerg-panel-world">
+                <p class="stat-label">Open-World Mode</p>
                 <h3>3-Minute High-Water</h3>
-                <p>Zerg size is the highest guild count inside the Warfront over the last <strong>3 minutes</strong>.</p>
-              </section>
-            </div>
-          </section>
-
-          <section>
-            <h2>Focus Fire &amp; Collaboration</h2>
-            <div class="stat-grid" role="list">
-              <section class="stat-card" role="listitem">
-                <p class="stat-label">Activation</p>
-                <h3>Active Participant</h3>
-                <p>After <strong>10+</strong> direct attacks in <strong>10 minutes</strong>, your guild is flagged as an active PvP participant.</p>
-              </section>
-              <section class="stat-card" role="listitem">
-                <p class="stat-label">Targeting</p>
-                <h3>Focus Target</h3>
-                <p>If over <strong>66%</strong> of your guild&apos;s damage goes into one guild, that guild becomes your focus target.</p>
-              </section>
-              <section class="stat-card" role="listitem">
-                <p class="stat-label">Collaboration</p>
-                <h3>Shared Zerg Value</h3>
-                <p>When multiple guilds focus the same target guild, they are flagged as collaborators and their Anti-Zerg values combine.</p>
-              </section>
-            </div>
-          </section>
-
-          <section>
-            <h2>Moderation</h2>
-            <div class="stat-grid" role="list">
-              <section class="stat-card" role="listitem">
-                <p class="stat-label">Collusion Rules</p>
-                <h3>Open Comms</h3>
-                <p>Teams may partner and communicate freely, but all combat is logged for review.</p>
-              </section>
-              <section class="stat-card" role="listitem">
-                <p class="stat-label">Enforcement</p>
-                <h3>Data-Driven</h3>
-                <p>Attempts to game the system will be investigated with empirical logs and punished.</p>
-              </section>
-            </div>
-          </section>
-
-          <section>
-            <h2>Focus Fire Updates</h2>
-            <div class="stat-grid" role="list">
-              <section class="stat-card" role="listitem">
-                <p class="stat-label">Window</p>
-                <h3>5-Minute Activity</h3>
-                <p>Focus Fire collaboration is processed using the previous <strong>5 minutes</strong> of activity.</p>
+                <ul>
+                  <li>Zerg size is the highest guild count in your area over the last <strong>3 minutes</strong>.</li>
+                  <li>The world is split into <strong>128x128 Tiles</strong> hashes, or 8x8 chunks.</li>
+                  <li>Range-based sizing groups guildmates within <strong>10 chunks (160 tiles)</strong>.</li>
+                  <li>Guildmates in your hash or immediately surrounding hashes count toward your Zerg.</li>
+                  <li>Underground hashes are calculated with the hashes directly above them.</li>
+                </ul>
               </section>
 
-              <section class="stat-card" role="listitem">
-                <p class="stat-label">Threshold</p>
-                <h3>Effective Attacks</h3>
-                <p>
-                  Minimum Attack Threshold is now <strong>10.0 EFFECTIVE</strong> attacks per Zerg member; attacks
-                  scale as <strong>0.75&ndash;1.50</strong> effective hits based on weapon speed.
-                </p>
-              </section>
-
-              <section class="stat-card" role="listitem">
-                <p class="stat-label">Damage Check</p>
-                <h3>Effective Hit</h3>
-                <p>
-                  An attack only counts as EFFECTIVE if it deals at least <strong>5&ndash;10%</strong> of the target&apos;s
-                  max health in unmitigated damage, scaled by weapon speed from <strong>750 to 1500</strong>.
-                </p>
-              </section>
-            </div>
-          </section>
-
-          <section>
-            <h2>How Zerg Size Is Determined</h2>
-            <div class="stat-grid" role="list">
-              <section class="stat-card" role="listitem">
-                <p class="stat-label">Warfront</p>
+              <section class="anti-zerg-panel anti-zerg-panel-warfront">
+                <p class="stat-label">Warfront Mode</p>
                 <h3>Bundled Zones</h3>
-                <p>A Warfront bundles marked PvP areas into one Anti-Zerg zone and displays on the minimap.</p>
-              </section>
-
-              <section class="stat-card" role="listitem">
-                <p class="stat-label">Warfront</p>
-                <h3>Inside Count</h3>
-                <p>While inside, the system counts every guildmate in the Warfront to set your Zerg size.</p>
-              </section>
-
-              <section class="stat-card" role="listitem">
-                <p class="stat-label">Warfront</p>
-                <h3>Exit Swap</h3>
-                <p>Leaving the Warfront boundary switches you to Range-Based Mode.</p>
-              </section>
-
-              <section class="stat-card" role="listitem">
-                <p class="stat-label">Range</p>
-                <h3>Range-Based Mode</h3>
-                <p>When not in a Warfront, you form a Zerg with any guildmate within 10 chunks (160 tiles).</p>
-              </section>
-
-              <section class="stat-card" role="listitem">
-                <p class="stat-label">Range</p>
-                <h3>Radius Grouping</h3>
-                <p>All qualifying guildmates within that radius are counted for your Zerg size.</p>
-              </section>
-
-              <section class="stat-card" role="listitem">
-                <p class="stat-label">Memory</p>
-                <h3>180-Second Link</h3>
-                <p>Qualifying in either mode links you for 180 seconds (3 minutes), even if spacing temporarily changes.</p>
+                <ul>
+                  <li>A Warfront bundles marked PvP areas into one Anti-Zerg zone.</li>
+                  <li>While inside, every guildmate in the Warfront counts toward your Zerg size.</li>
+                  <li>Leaving the Warfront boundary switches sizing back to range-based mode.</li>
+                  <li>Qualifying links persist for <strong>180 seconds</strong>, even if spacing changes.</li>
+                </ul>
               </section>
             </div>
           </section>
 
-          <section>
-            <h2>Damage Reduction &amp; Self-Healing</h2>
-            <div class="stat-grid" role="list">
-              <section class="stat-card" role="listitem">
-                <p class="stat-label">Comparison</p>
-                <h3>Zerg Size Check</h3>
-                <p>Anti-Zerg compares your Zerg size to the attacker&apos;s Zerg size.</p>
-              </section>
+          <section class="anti-zerg-flow-section">
+            <h2>Focus Fire and Collaboration</h2>
+            <ol class="anti-zerg-flow">
+              <li>
+                <span>1</span>
+                <div>
+                  <h3>Become active</h3>
+                  <p>After <strong>10+ direct attacks</strong> in <strong>10 minutes</strong>, your guild is an active PvP participant.</p>
+                </div>
+              </li>
+              <li>
+                <span>2</span>
+                <div>
+                  <h3>Pick a focus target</h3>
+                  <p>If over <strong>66%</strong> of your guild&apos;s damage hits one guild, that guild becomes your focus target.</p>
+                </div>
+              </li>
+              <li>
+                <span>3</span>
+                <div>
+                  <h3>Combine collaborators</h3>
+                  <p>Multiple guilds focusing the same target are collaborators and their Anti-Zerg values combine.</p>
+                </div>
+              </li>
+              <li>
+                <span>4</span>
+                <div>
+                  <h3>Validate effective hits</h3>
+                  <p>
+                    Collaboration uses a <strong>5-Minute Activity</strong> window, a <strong>10.0 EFFECTIVE</strong>
+                    attack threshold per Zerg member, and weapon-speed scaling from <strong>750 to 1500</strong>.
+                  </p>
+                </div>
+              </li>
+            </ol>
+          </section>
 
-              <section class="stat-card" role="listitem">
-                <p class="stat-label">Reduction</p>
-                <h3>Damage Cut</h3>
-                <p>Targets of PvP damage receive a reduction based on the size comparison.</p>
-              </section>
-
-              <section class="stat-card" role="listitem">
-                <p class="stat-label">Penalty</p>
-                <h3>Self-Heal Mirror</h3>
-                <p>The same percentage is applied as a penalty to offensive self-healing while protected.</p>
-              </section>
+          <section class="anti-zerg-calculator-section">
+            <div class="anti-zerg-section-heading">
+              <div>
+                <h2>Damage Reduction Calculator</h2>
+                <p>
+                  Pick squad sizes to see whether Anti-Zerg cushions the smaller team. The calculator mirrors the
+                  published range table below.
+                </p>
+              </div>
+              <p class="anti-zerg-cap-label">Only the smaller squad can receive reduction.</p>
             </div>
-            <h3>Matchup Calculator</h3>
-            <p>
-              Pick the squad sizes to see whether Anti-Zerg will cushion the smaller team and by how much.
-              The calculator mirrors the rules below, just without the manual lookup.
-            </p>
+
             <div class="stat-widget anti-zerg-calculator">
-              <div class="stat-control">
-                <label for="anti-zerg-smaller">My Guild &mdash; <span data-smaller-value>3 players</span></label>
-                <input
-                  type="range"
-                  id="anti-zerg-smaller"
-                  min="1"
-                  max="14"
-                  value="3"
-                  step="1"
-                  data-smaller-range
-                />
+              <div class="anti-zerg-controls">
+                <div class="stat-control">
+                  <label for="anti-zerg-smaller">My Guild &mdash; <span data-smaller-value>3 players</span></label>
+                  <input
+                    type="range"
+                    id="anti-zerg-smaller"
+                    min="1"
+                    max="14"
+                    value="3"
+                    step="1"
+                    data-smaller-range
+                  />
+                </div>
+                <div class="stat-control">
+                  <label for="anti-zerg-bigger">Enemy Guild &mdash; <span data-bigger-value>8 players</span></label>
+                  <input
+                    type="range"
+                    id="anti-zerg-bigger"
+                    min="1"
+                    max="14"
+                    value="8"
+                    step="1"
+                    data-bigger-range
+                  />
+                </div>
               </div>
-              <div class="stat-control">
-                <label for="anti-zerg-bigger">Enemy Guild &mdash; <span data-bigger-value>8 players</span></label>
-                <input
-                  type="range"
-                  id="anti-zerg-bigger"
-                  min="1"
-                  max="14"
-                  value="8"
-                  step="1"
-                  data-bigger-range
-                />
-              </div>
-              <div class="stat-output">
-                <span class="stat-output-label">Damage Reduction</span>
-                <span class="stat-output-value" data-reduction-result>30%</span>
-              </div>
-              <p class="calculator-scenario" data-reduction-scenario>
-                My guild is smaller (3 players); Enemy guild is larger (8 players)
-              </p>
-              <p class="calculator-note" data-reduction-note>My guild receives the max 30% reduction.</p>
-            </div>
 
-            <h3>Damage Reduction Cheat Sheet</h3>
-            <p>Only the smaller squad receives the reduction, capped at <strong>30%</strong>.</p>
-            <div class="stat-grid" aria-label="Anti-Zerg damage reduction examples">
-              <section class="stat-card">
+              <div class="anti-zerg-result-grid">
+                <div class="stat-output">
+                  <span class="stat-output-label">Damage Reduction</span>
+                  <span class="stat-output-value" data-reduction-result>30%</span>
+                </div>
+                <div class="anti-zerg-scenario-card">
+                  <p class="calculator-scenario" data-reduction-scenario>
+                    My guild is smaller (3 players); Enemy guild is larger (8 players)
+                  </p>
+                  <p class="calculator-note" data-reduction-note>My guild receives the max 30% damage reduction.</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="anti-zerg-reference-section">
+            <h2>Reduction Reference</h2>
+            <p>Only the smaller squad receives the reduction. Equal-size fights and larger-team targets receive no bonus.</p>
+            <div class="anti-zerg-reference-grid" aria-label="Anti-Zerg damage reduction examples">
+              <section class="anti-zerg-reference-card">
                 <h3>Solo Player</h3>
                 <ul>
-                  <li><strong>vs 2 players:</strong> 20% reduction</li>
-                  <li><strong>vs 3&ndash;14 players:</strong> 30% reduction (maximum)</li>
+                  <li><strong>vs 2 players:</strong> 20%</li>
+                  <li><strong>vs 3&ndash;14 players:</strong> 30%</li>
                 </ul>
               </section>
-              <section class="stat-card">
+              <section class="anti-zerg-reference-card">
                 <h3>Duo</h3>
                 <ul>
-                  <li><strong>vs 3 players:</strong> 0% reduction</li>
-                  <li><strong>vs 4&ndash;14 players:</strong> 30% reduction</li>
+                  <li><strong>vs 3 players:</strong> 0%</li>
+                  <li><strong>vs 4&ndash;14 players:</strong> 30%</li>
                 </ul>
               </section>
-              <section class="stat-card">
+              <section class="anti-zerg-reference-card">
                 <h3>Trio</h3>
                 <ul>
-                  <li><strong>vs 4 players:</strong> 0% reduction</li>
-                  <li><strong>vs 5 players:</strong> 25% reduction</li>
-                  <li><strong>vs 6&ndash;14 players:</strong> 30% reduction</li>
+                  <li><strong>vs 4 players:</strong> 0%</li>
+                  <li><strong>vs 5 players:</strong> 25%</li>
+                  <li><strong>vs 6&ndash;14 players:</strong> 30%</li>
                 </ul>
               </section>
-              <section class="stat-card">
+              <section class="anti-zerg-reference-card">
                 <h3>Team of 4</h3>
                 <ul>
-                  <li><strong>vs 5 players:</strong> 0% reduction</li>
-                  <li><strong>vs 6 players:</strong> 20% reduction</li>
-                  <li><strong>vs 7&ndash;14 players:</strong> 30% reduction</li>
+                  <li><strong>vs 5 players:</strong> 0%</li>
+                  <li><strong>vs 6 players:</strong> 20%</li>
+                  <li><strong>vs 7&ndash;14 players:</strong> 30%</li>
                 </ul>
               </section>
-              <section class="stat-card">
+              <section class="anti-zerg-reference-card">
                 <h3>Team of 5</h3>
                 <ul>
-                  <li><strong>vs 6 players:</strong> 0% reduction</li>
-                  <li><strong>vs 7 players:</strong> 16.67% reduction</li>
-                  <li><strong>vs 8 players:</strong> 28.57% reduction</li>
-                  <li><strong>vs 9&ndash;14 players:</strong> 30% reduction</li>
+                  <li><strong>vs 6 players:</strong> 0%</li>
+                  <li><strong>vs 7 players:</strong> 16.67%</li>
+                  <li><strong>vs 8 players:</strong> 28.57%</li>
+                  <li><strong>vs 9&ndash;14 players:</strong> 30%</li>
                 </ul>
               </section>
-              <section class="stat-card">
+              <section class="anti-zerg-reference-card">
                 <h3>Team of 6</h3>
                 <ul>
-                  <li><strong>vs 7 players:</strong> 0% reduction</li>
-                  <li><strong>vs 8 players:</strong> 14.29% reduction</li>
-                  <li><strong>vs 9 players:</strong> 25% reduction</li>
-                  <li><strong>vs 10&ndash;14 players:</strong> 30% reduction</li>
+                  <li><strong>vs 7 players:</strong> 0%</li>
+                  <li><strong>vs 8 players:</strong> 14.29%</li>
+                  <li><strong>vs 9 players:</strong> 25%</li>
+                  <li><strong>vs 10&ndash;14 players:</strong> 30%</li>
                 </ul>
               </section>
-              <section class="stat-card">
+              <section class="anti-zerg-reference-card">
                 <h3>Team of 7</h3>
                 <ul>
-                  <li><strong>vs 8 players:</strong> 0% reduction</li>
-                  <li><strong>vs 9 players:</strong> 12.50% reduction</li>
-                  <li><strong>vs 10 players:</strong> 22.22% reduction</li>
-                  <li><strong>vs 11&ndash;14 players:</strong> 30% reduction</li>
+                  <li><strong>vs 8 players:</strong> 0%</li>
+                  <li><strong>vs 9 players:</strong> 12.50%</li>
+                  <li><strong>vs 10 players:</strong> 22.22%</li>
+                  <li><strong>vs 11&ndash;14 players:</strong> 30%</li>
                 </ul>
               </section>
-              <section class="stat-card">
+              <section class="anti-zerg-reference-card">
                 <h3>Team of 8</h3>
                 <ul>
-                  <li><strong>vs 9 players:</strong> 0% reduction</li>
-                  <li><strong>vs 10 players:</strong> 11.11% reduction</li>
-                  <li><strong>vs 11 players:</strong> 20% reduction</li>
-                  <li><strong>vs 12 players:</strong> 27.27% reduction</li>
-                  <li><strong>vs 13&ndash;14 players:</strong> 30% reduction</li>
+                  <li><strong>vs 9 players:</strong> 0%</li>
+                  <li><strong>vs 10 players:</strong> 11.11%</li>
+                  <li><strong>vs 11 players:</strong> 20%</li>
+                  <li><strong>vs 12 players:</strong> 27.27%</li>
+                  <li><strong>vs 13&ndash;14 players:</strong> 30%</li>
                 </ul>
               </section>
-              <section class="stat-card">
+              <section class="anti-zerg-reference-card">
                 <h3>Team of 9</h3>
                 <ul>
-                  <li><strong>vs 10 players:</strong> 0% reduction</li>
-                  <li><strong>vs 11 players:</strong> 10% reduction</li>
-                  <li><strong>vs 12 players:</strong> 18.18% reduction</li>
-                  <li><strong>vs 13 players:</strong> 25% reduction</li>
-                  <li><strong>vs 14 players:</strong> 30% reduction</li>
+                  <li><strong>vs 10 players:</strong> 0%</li>
+                  <li><strong>vs 11 players:</strong> 10%</li>
+                  <li><strong>vs 12 players:</strong> 18.18%</li>
+                  <li><strong>vs 13 players:</strong> 25%</li>
+                  <li><strong>vs 14 players:</strong> 30%</li>
                 </ul>
               </section>
-              <section class="stat-card">
+              <section class="anti-zerg-reference-card">
                 <h3>Team of 10</h3>
                 <ul>
-                  <li><strong>vs 11 players:</strong> 0% reduction</li>
-                  <li><strong>vs 12 players:</strong> 9.09% reduction</li>
-                  <li><strong>vs 13 players:</strong> 16.67% reduction</li>
-                  <li><strong>vs 14 players:</strong> 23.08% reduction</li>
+                  <li><strong>vs 11 players:</strong> 0%</li>
+                  <li><strong>vs 12 players:</strong> 9.09%</li>
+                  <li><strong>vs 13 players:</strong> 16.67%</li>
+                  <li><strong>vs 14 players:</strong> 23.08%</li>
                 </ul>
               </section>
-              <section class="stat-card">
+              <section class="anti-zerg-reference-card">
                 <h3>Team of 11</h3>
                 <ul>
-                  <li><strong>vs 12 players:</strong> 0% reduction</li>
-                  <li><strong>vs 13 players:</strong> 8.33% reduction</li>
-                  <li><strong>vs 14 players:</strong> 15.38% reduction</li>
+                  <li><strong>vs 12 players:</strong> 0%</li>
+                  <li><strong>vs 13 players:</strong> 8.33%</li>
+                  <li><strong>vs 14 players:</strong> 15.38%</li>
                 </ul>
               </section>
-              <section class="stat-card">
+              <section class="anti-zerg-reference-card">
                 <h3>Team of 12</h3>
                 <ul>
-                  <li><strong>vs 13 players:</strong> 0% reduction</li>
-                  <li><strong>vs 14 players:</strong> 7.69% reduction</li>
+                  <li><strong>vs 13 players:</strong> 0%</li>
+                  <li><strong>vs 14 players:</strong> 7.69%</li>
                 </ul>
               </section>
-              <section class="stat-card">
+              <section class="anti-zerg-reference-card">
                 <h3>Team of 13</h3>
                 <ul>
-                  <li><strong>vs 14 players:</strong> 0% reduction</li>
+                  <li><strong>vs 14 players:</strong> 0%</li>
                 </ul>
               </section>
             </div>
-            <p>
-              Any matchup outside these ranges is effectively <em>N/A</em> for Anti-Zerg&mdash;no bonus damage reduction
-              applies when both squads are the same size or your team is larger.
-            </p>
+          </section>
+
+          <section class="anti-zerg-moderation">
+            <h2>Moderation Rules</h2>
+            <div class="anti-zerg-moderation-grid" role="list">
+              <section class="anti-zerg-moderation-card" role="listitem">
+                <p class="stat-label">Collusion Rules</p>
+                <h3>Open Comms</h3>
+                <p>Teams may partner and communicate freely, but combat is logged for review.</p>
+              </section>
+              <section class="anti-zerg-moderation-card" role="listitem">
+                <p class="stat-label">Enforcement</p>
+                <h3>Data-Driven</h3>
+                <p>Attempts to game the system are investigated with empirical logs and punished.</p>
+              </section>
+            </div>
+          </section>
+
+          <section class="anti-zerg-related">
+            <h2>Related Pages</h2>
+            <div class="anti-zerg-link-grid" aria-label="Related Anti-Zerg pages">
+              <a href="pages/systems/pvp-system.html">PVP System</a>
+              <a href="pages/systems/guild.html">Guilds</a>
+              <a href="pages/items/weapons.html">Weapons</a>
+              <a href="pages/items/armors.html">Armors</a>
+              <a href="pages/enemies/monsters.html">Monsters</a>
+              <a href="pages/General/play-the-game.html">Play the Game</a>
+            </div>
           </section>
         </article>
       </main>
     </div>
-    <script>
-      document.addEventListener("DOMContentLoaded", function () {
-        const reductionTable = {
-          1: [
-            { min: 2, max: 2, value: "20%" },
-            { min: 3, max: 14, value: "30%" }
-          ],
-          2: [
-            { min: 3, max: 3, value: "0%" },
-            { min: 4, max: 14, value: "30%" }
-          ],
-          3: [
-            { min: 4, max: 4, value: "0%" },
-            { min: 5, max: 5, value: "25%" },
-            { min: 6, max: 14, value: "30%" }
-          ],
-          4: [
-            { min: 5, max: 5, value: "0%" },
-            { min: 6, max: 6, value: "20%" },
-            { min: 7, max: 14, value: "30%" }
-          ],
-          5: [
-            { min: 6, max: 6, value: "0%" },
-            { min: 7, max: 7, value: "16.67%" },
-            { min: 8, max: 8, value: "28.57%" },
-            { min: 9, max: 14, value: "30%" }
-          ],
-          6: [
-            { min: 7, max: 7, value: "0%" },
-            { min: 8, max: 8, value: "14.29%" },
-            { min: 9, max: 9, value: "25%" },
-            { min: 10, max: 14, value: "30%" }
-          ],
-          7: [
-            { min: 8, max: 8, value: "0%" },
-            { min: 9, max: 9, value: "12.50%" },
-            { min: 10, max: 10, value: "22.22%" },
-            { min: 11, max: 14, value: "30%" }
-          ],
-          8: [
-            { min: 9, max: 9, value: "0%" },
-            { min: 10, max: 10, value: "11.11%" },
-            { min: 11, max: 11, value: "20%" },
-            { min: 12, max: 12, value: "27.27%" },
-            { min: 13, max: 14, value: "30%" }
-          ],
-          9: [
-            { min: 10, max: 10, value: "0%" },
-            { min: 11, max: 11, value: "10%" },
-            { min: 12, max: 12, value: "18.18%" },
-            { min: 13, max: 13, value: "25%" },
-            { min: 14, max: 14, value: "30%" }
-          ],
-          10: [
-            { min: 11, max: 11, value: "0%" },
-            { min: 12, max: 12, value: "9.09%" },
-            { min: 13, max: 13, value: "16.67%" },
-            { min: 14, max: 14, value: "23.08%" }
-          ],
-          11: [
-            { min: 12, max: 12, value: "0%" },
-            { min: 13, max: 13, value: "8.33%" },
-            { min: 14, max: 14, value: "15.38%" }
-          ],
-          12: [
-            { min: 13, max: 13, value: "0%" },
-            { min: 14, max: 14, value: "7.69%" }
-          ],
-          13: [{ min: 14, max: 14, value: "0%" }]
-        };
-
-        const smallerInput = document.querySelector("[data-smaller-range]");
-        const largerInput = document.querySelector("[data-bigger-range]");
-        if (!smallerInput || !largerInput) {
-          return;
-        }
-
-        const smallerValue = document.querySelector("[data-smaller-value]");
-        const largerValue = document.querySelector("[data-bigger-value]");
-        const scenarioText = document.querySelector("[data-reduction-scenario]");
-        const resultText = document.querySelector("[data-reduction-result]");
-        const noteText = document.querySelector("[data-reduction-note]");
-
-        const describePlayers = (count) => `${count} player${count === 1 ? "" : "s"}`;
-        const getRandomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
-        const randomizeMatchup = () => {
-          const myGuild = getRandomInt(1, 14);
-          const enemyGuild = getRandomInt(1, 14);
-          smallerInput.value = myGuild;
-          largerInput.value = enemyGuild;
-        };
-
-        const setResult = (message) => {
-          resultText.textContent = message;
-        };
-        const setNote = (message) => {
-          noteText.textContent = message;
-        };
-
-        function evaluateMatchup(myGuildSize, enemyGuildSize) {
-          const smaller = Math.min(myGuildSize, enemyGuildSize);
-          const larger = Math.max(myGuildSize, enemyGuildSize);
-          const smallerTeamName =
-            myGuildSize === enemyGuildSize
-              ? "Neither guild"
-              : myGuildSize < enemyGuildSize
-                ? "My guild"
-                : "Enemy guild";
-
-          if (larger === smaller) {
-            return { value: "0%", note: "Both guilds are the same size, so no one receives Anti-Zerg damage reduction." };
-          }
-
-          const entries = reductionTable[smaller];
-          if (!entries) {
-            return { value: "N/A", note: "No guild receives Anti-Zerg here because this matchup is outside the published ranges." };
-          }
-
-          const match = entries.find((entry) => larger >= entry.min && larger <= entry.max);
-          if (!match) {
-            return { value: "N/A", note: "No guild receives Anti-Zerg here because this matchup is outside the published ranges." };
-          }
-
-          let note;
-          if (match.value === "0%") {
-            note = `${smallerTeamName} doesn't qualify for Anti-Zerg because the size gap is too small.`;
-          } else if (match.value === "30%") {
-            note = `${smallerTeamName} receives the max ${match.value} damage reduction.`;
-          } else {
-            note = `${smallerTeamName} receives ${match.value} damage reduction in this matchup.`;
-          }
-
-          return { value: match.value, note };
-        }
-
-        function updateCalculator() {
-          const myGuildSize = Number(smallerInput.value);
-          const enemyGuildSize = Number(largerInput.value);
-
-          smallerValue.textContent = describePlayers(myGuildSize);
-          largerValue.textContent = describePlayers(enemyGuildSize);
-
-          if (myGuildSize === enemyGuildSize) {
-            scenarioText.textContent = `Both guilds match at ${describePlayers(myGuildSize)}.`;
-          } else {
-            const smaller = Math.min(myGuildSize, enemyGuildSize);
-            const larger = Math.max(myGuildSize, enemyGuildSize);
-            const smallerLabel = myGuildSize < enemyGuildSize ? "My guild" : "Enemy guild";
-            const largerLabel = myGuildSize < enemyGuildSize ? "Enemy guild" : "My guild";
-            scenarioText.textContent = `${smallerLabel} is smaller (${describePlayers(smaller)}); ${largerLabel} is larger (${describePlayers(larger)})`;
-          }
-
-          const result = evaluateMatchup(myGuildSize, enemyGuildSize);
-          setResult(result.value);
-          setNote(result.note);
-        }
-
-        const handleInput = () => {
-          updateCalculator();
-        };
-
-        randomizeMatchup();
-        updateCalculator();
-        smallerInput.addEventListener("input", handleInput);
-        largerInput.addEventListener("input", handleInput);
-      });
-    </script>
   </body>
 </html>

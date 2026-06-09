@@ -66,6 +66,7 @@ VALIDATED_HTML_PATHS = [
     REPO_ROOT / "pages" / "systems" / "purge.html",
     REPO_ROOT / "pages" / "systems" / "encounter.html",
     REPO_ROOT / "pages" / "systems" / "pvp-system.html",
+    REPO_ROOT / "pages" / "systems" / "anti-zerg.html",
     REPO_ROOT / "pages" / "systems" / "corruption.html",
     REPO_ROOT / "pages" / "systems" / "craft.html",
     REPO_ROOT / "pages" / "systems" / "imbuements.html",
@@ -85,6 +86,7 @@ VALIDATED_STYLE_PATHS = [
     REPO_ROOT / "css" / "purge.css",
     REPO_ROOT / "css" / "encounter.css",
     REPO_ROOT / "css" / "pvp.css",
+    REPO_ROOT / "css" / "anti-zerg.css",
     REPO_ROOT / "css" / "corruption.css",
     REPO_ROOT / "css" / "craft.css",
     REPO_ROOT / "css" / "imbuements.css",
@@ -100,6 +102,7 @@ VALIDATED_SCRIPT_PATHS = [
     REPO_ROOT / "js" / "perk-calculations.js",
     REPO_ROOT / "js" / "perks-page.js",
     REPO_ROOT / "js" / "rarity-roller.js",
+    REPO_ROOT / "js" / "anti-zerg.js",
     REPO_ROOT / "js" / "crafting-page.js",
 ]
 
