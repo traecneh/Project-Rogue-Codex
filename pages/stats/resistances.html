@@ -1,675 +1,190 @@
 <!DOCTYPE html>
-
 <html lang="en">
-<head>
-<meta charset="utf-8"/>
-<title>Resistances — Project Rogue Codex</title>
-<meta content="width=device-width, initial-scale=1" name="viewport"/>
-<base href="../../"/>
-<link href="images/project-rogue-favicon.ico" rel="icon" type="image/x-icon"/>
-<link href="images/project-rogue-favicon-32.png" rel="icon" sizes="32x32" type="image/png"/>
-<link href="images/project-rogue-favicon-64.png" rel="icon" sizes="64x64" type="image/png"/>
-<link href="images/project-rogue-favicon-180.png" rel="icon" sizes="180x180" type="image/png"/>
-<link href="images/project-rogue-favicon-512.png" rel="icon" sizes="512x512" type="image/png"/>
-<link href="css/styles.css" rel="stylesheet"/>
-<script src="js/utils.js"></script>
-<script src="js/site-search.js" defer></script>
-<script src="js/weapon-specialty.js" defer></script>
-<script src="js/stat-widgets.js" defer></script>
-<script src="js/keyword-links.js" defer></script>
-<script src="js/cursor-toggle.js" defer></script>
-<script src="js/perks.js" defer></script>
-<script src="js/rarity-roller.js" defer></script>
-<script src="js/nav-core.js" defer></script>
-<style>
-  .element-label {
-    font-weight: 700;
-    letter-spacing: 0.02em;
-  }
-
-  #monster-resistances ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.15rem;
-  }
-
-  #monster-resistances li {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    column-gap: 0.5rem;
-  }
-
-  #monster-resistances li[hidden],
-  #monster-resistances .resist-divider[hidden] {
-    display: none !important;
-  }
-
-  #monster-resistances .resist-group-header {
-    display: block;
-    margin: 0.45rem 0 0.1rem;
-    padding-top: 0.3rem;
-    border-top: 1px solid var(--border-soft);
-    color: var(--text-muted);
-    font-size: 0.74rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-
-  #monster-resistances .resist-group-header:first-child {
-    margin-top: 0;
-    padding-top: 0;
-    border-top: none;
-  }
-
-  #monster-resistances .resist-divider {
-    width: 100%;
-    margin: 0.25rem 0;
-    border: none;
-    border-top: 1px solid var(--border-soft);
-    opacity: 0.5;
-  }
-
-  .resistance-icons {
-    display: flex;
-    gap: 0.35rem;
-    justify-content: center;
-    align-items: center;
-    margin: 0.3rem 0 0.6rem;
-  }
-
-  .resistance-controls {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-    flex-wrap: wrap;
-    margin: 1rem 0 1.1rem;
-  }
-
-  .neutral-toggle {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.5rem 1rem;
-    border-radius: var(--radius-pill);
-    border: 1px solid var(--border-soft);
-    background: linear-gradient(135deg, rgba(50, 60, 75, 0.9), rgba(20, 24, 32, 0.9));
-    color: var(--text-main);
-    cursor: pointer;
-    font-weight: 700;
-    letter-spacing: 0.03em;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease, background 0.2s ease;
-  }
-
-  .neutral-toggle:hover,
-  .neutral-toggle:focus-visible {
-    border-color: var(--accent);
-    box-shadow: 0 0 12px rgba(75, 255, 75, 0.2);
-    outline: none;
-    transform: translateY(-1px);
-  }
-
-  .neutral-toggle[data-show-neutral="true"] {
-    border-color: var(--accent);
-    background: rgba(75, 255, 75, 0.12);
-    box-shadow:
-      inset 0 0 0 1px rgba(75, 255, 75, 0.4),
-      0 0 12px rgba(75, 255, 75, 0.12);
-  }
-
-  .neutral-toggle-note {
-    color: var(--text-muted);
-    font-size: 0.95rem;
-  }
-</style>
-</head>
-<body>
-<div class="layout">
-<div id="sidebar-root"></div>
-<main class="main-content">
-<header class="content-header">
-<h1 class="content-title">Resistances</h1>
-<p class="content-tagline">Elemental damage reductions for players and monsters.</p>
-</header>
-<article class="content-section" id="player-resistances">
-<h2>Players</h2>
-<p>
-            Player resistances to <strong>Fire, Electric, Poison, Cold, Acid,</strong> and <strong>Disease</strong> are
-            flat damage reductions capped at <strong>60%</strong>; excess over cap is ignored for that element.
+  <head>
+    <meta charset="UTF-8" />
+    <title>Resistances &mdash; Project Rogue Codex</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <base href="../../" />
+    <link rel="icon" type="image/x-icon" href="images/project-rogue-favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="images/project-rogue-favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="64x64" href="images/project-rogue-favicon-64.png" />
+    <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
+    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/resistances.css" />
+    <script src="js/utils.js"></script>
+    <script src="js/site-search.js" defer></script>
+    <script src="js/weapon-specialty.js" defer></script>
+    <script src="js/keyword-links.js" defer></script>
+    <script src="js/cursor-toggle.js" defer></script>
+    <script src="js/perks.js" defer></script>
+    <script src="js/rarity-roller.js" defer></script>
+    <script src="js/nav-core.js" defer></script>
+    <script src="js/resistances.js" defer></script>
+  </head>
+  <body>
+    <div class="layout">
+      <div id="sidebar-root"></div>
+      <main class="main-content">
+        <header class="content-header">
+          <h1 class="content-title">Resistances</h1>
+          <p class="content-tagline">
+            Player elemental mitigation, armor resistance caps, and monster type damage multipliers.
           </p>
-<div class="stat-grid" role="list">
+        </header>
+
+        <article class="content-section" id="resistance-basics">
+          <h2>Resistance at a Glance</h2>
+          <div class="resistance-summary-grid" role="list">
             <section class="stat-card" role="listitem">
-              <p class="stat-label">Per Element</p>
-              <h3>Independent Caps</h3>
-              <p>Each element tracks separately; only the capped element ignores excess.</p>
+              <p class="stat-label">Player Cap</p>
+              <h3>60%</h3>
+              <p>Fire, Electric, Poison, Cold, Acid, and Disease each cap independently.</p>
             </section>
+
             <section class="stat-card" role="listitem">
               <p class="stat-label">Stacking</p>
               <h3>Additive Sources</h3>
-              <p>Sources stack additively unless a perk specifies multiplicative.</p>
+              <p>Armor and perk sources add together before the per-element cap is checked.</p>
             </section>
+
             <section class="stat-card" role="listitem">
-              <p class="stat-label">Order</p>
-              <h3>Damage Step</h3>
-              <p>Applied after armor, before reactive perks and on-hit effects.</p>
+              <p class="stat-label">Damage Order</p>
+              <h3>Applied after armor</h3>
+              <p>Elemental resistance reduces the remaining elemental damage before reactive effects.</p>
+            </section>
+
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Monster Types</p>
+              <h3>Multiplier Table</h3>
+              <p>Values above <code>1x</code> are weaknesses; values below <code>1x</code> are resistances.</p>
             </section>
           </div>
-</article>
-<article class="content-section" id="monster-resistances">
-<h2>Monster Resistances</h2>
-<p>Values above <strong class="resist-value" data-resist-value="1.00">1.00x</strong> mean increased damage taken; below means reduced.</p>
-<div class="resistance-controls">
-<button type="button" class="neutral-toggle" id="neutral-toggle" aria-pressed="false" data-show-neutral="false">Show Neutral Matchups</button>
-<span class="neutral-toggle-note">Neutral matchups (<strong class="resist-value" data-resist-value="1.00">1.00x</strong>) are hidden by default.</span>
-</div>
-<div class="stat-grid">
-            <section class="stat-card">
-              <div class="stat-label">Humanoid</div>
-              <img
-                data-monster-type="humanoid"
-                alt="Humanoid example"
-                width="32"
-                height="32"
-                class="resistance-icon"
+        </article>
+
+        <article class="content-section" id="player-resistance-preview">
+          <h2>Player Damage Preview</h2>
+          <p>Set an incoming elemental hit and a player resistance value to see the capped damage result.</p>
+
+          <div class="resistance-calculator-widget">
+            <div class="resistance-control-grid">
+              <label for="resistance-value-slider">Resistance: <span data-resistance-value>35</span>%</label>
+              <input
+                type="range"
+                id="resistance-value-slider"
+                min="0"
+                max="100"
+                value="35"
+                step="1"
+                data-resistance-value-slider
               />
-              <ul>
-                <li>Poison: <strong class="resist-value" data-resist-value="1.25">1.25x</strong></li>
-                <li>Disease: <strong class="resist-value" data-resist-value="1.25">1.25x</strong></li>
-<li>Acid: <strong class="resist-value" data-resist-value="1.15">1.15x</strong></li>
-<hr class="resist-divider"/><li>Fire: <strong class="resist-value" data-resist-value="1.00">1.00x</strong></li>
-<li>Electric: <strong class="resist-value" data-resist-value="1.00">1.00x</strong></li><hr class="resist-divider"/>
-<li>Cold: <strong class="resist-value" data-resist-value="0.90">0.90x</strong></li>
-</ul>
-</section>
-            <section class="stat-card">
-              <div class="stat-label">Giant</div>
-              <img
-                data-monster-type="giant"
-                alt="Giant example"
-                width="32"
-                height="32"
-                class="resistance-icon"
+
+              <label for="resistance-incoming-slider">
+                Incoming Damage: <span data-resistance-incoming>1,000</span>
+              </label>
+              <input
+                type="range"
+                id="resistance-incoming-slider"
+                min="100"
+                max="5000"
+                value="1000"
+                step="50"
+                data-resistance-incoming-slider
               />
-              <ul>
-                <li>Electric: <strong class="resist-value" data-resist-value="1.25">1.25x</strong></li>
-                <li>Cold: <strong class="resist-value" data-resist-value="1.15">1.15x</strong></li>
-<hr class="resist-divider"/><li>Disease: <strong class="resist-value" data-resist-value="1.00">1.00x</strong></li><hr class="resist-divider"/>
-<li>Fire: <strong class="resist-value" data-resist-value="0.80">0.80x</strong></li>
-<li>Acid: <strong class="resist-value" data-resist-value="0.80">0.80x</strong></li>
-<li>Poison: <strong class="resist-value" data-resist-value="0.80">0.80x</strong></li>
-</ul>
-</section>
-            <section class="stat-card">
-              <div class="stat-label">Animal</div>
-              <img
-                data-monster-type="animal"
-                alt="Animal example"
-                width="32"
-                height="32"
-                class="resistance-icon"
-              />
-              <ul>
-                <li>Poison: <strong class="resist-value" data-resist-value="1.25">1.25x</strong></li>
-                <li>Disease: <strong class="resist-value" data-resist-value="1.25">1.25x</strong></li>
-<li>Fire: <strong class="resist-value" data-resist-value="1.10">1.10x</strong></li>
-<hr class="resist-divider"/><li>Cold: <strong class="resist-value" data-resist-value="1.00">1.00x</strong></li>
-<li>Electric: <strong class="resist-value" data-resist-value="1.00">1.00x</strong></li>
-<li>Acid: <strong class="resist-value" data-resist-value="1.00">1.00x</strong></li>
-</ul>
-</section>
-            <section class="stat-card">
-              <div class="stat-label">Beast</div>
-              <img
-                data-monster-type="beast"
-                alt="Beast example"
-                width="32"
-                height="32"
-                class="resistance-icon"
-              />
-              <ul>
-                <li>Cold: <strong class="resist-value" data-resist-value="1.10">1.10x</strong></li>
-                <li>Acid: <strong class="resist-value" data-resist-value="1.10">1.10x</strong></li>
-<li>Disease: <strong class="resist-value" data-resist-value="1.10">1.10x</strong></li>
-<hr class="resist-divider"/><li>Poison: <strong class="resist-value" data-resist-value="1.00">1.00x</strong></li><hr class="resist-divider"/>
-<li>Fire: <strong class="resist-value" data-resist-value="0.90">0.90x</strong></li>
-<li>Electric: <strong class="resist-value" data-resist-value="0.80">0.80x</strong></li>
-</ul>
-</section>
-            <section class="stat-card">
-              <div class="stat-label">Undead</div>
-              <img
-                data-monster-type="undead"
-                alt="Undead example"
-                width="32"
-                height="32"
-                class="resistance-icon"
-              />
-              <ul>
-                <li>Fire: <strong class="resist-value" data-resist-value="1.25">1.25x</strong></li>
-                <li>Electric: <strong class="resist-value" data-resist-value="1.15">1.15x</strong></li>
-<hr class="resist-divider"/><li>Cold: <strong class="resist-value" data-resist-value="1.00">1.00x</strong></li>
-<li>Disease: <strong class="resist-value" data-resist-value="1.00">1.00x</strong></li><hr class="resist-divider"/>
-<li>Acid: <strong class="resist-value" data-resist-value="0.80">0.80x</strong></li>
-<li>Poison: <strong class="resist-value" data-resist-value="0.80">0.80x</strong></li>
-</ul>
-</section>
-            <section class="stat-card">
-              <div class="stat-label">Demon</div>
-              <img
-                data-monster-type="demon"
-                alt="Demon example"
-                width="32"
-                height="32"
-                class="resistance-icon"
-              />
-              <ul>
-                <li>Cold: <strong class="resist-value" data-resist-value="1.30">1.30x</strong></li>
-<li>Electric: <strong class="resist-value" data-resist-value="1.15">1.15x</strong></li>
-<hr class="resist-divider"/><li>Acid: <strong class="resist-value" data-resist-value="1.00">1.00x</strong></li>
-<li>Poison: <strong class="resist-value" data-resist-value="1.00">1.00x</strong></li>
-<li>Disease: <strong class="resist-value" data-resist-value="1.00">1.00x</strong></li><hr class="resist-divider"/>
-<li>Fire: <strong class="resist-value" data-resist-value="0.70">0.70x</strong></li>
-</ul>
-</section>
-            <section class="stat-card">
-              <div class="stat-label">Fire Beast</div>
-              <img
-                data-monster-type="fire beast"
-                alt="Fire Beast example"
-                width="32"
-                height="32"
-                class="resistance-icon"
-              />
-              <ul>
-                <li>Cold: <strong class="resist-value" data-resist-value="1.30">1.30x</strong></li>
-                <hr class="resist-divider" />
-                <li>Electric: <strong class="resist-value" data-resist-value="1.00">1.00x</strong></li>
-                <li>Acid: <strong class="resist-value" data-resist-value="1.00">1.00x</strong></li>
-                <li>Poison: <strong class="resist-value" data-resist-value="1.00">1.00x</strong></li>
-                <li>Disease: <strong class="resist-value" data-resist-value="1.00">1.00x</strong></li>
-                <hr class="resist-divider" />
-                <li>Fire: <strong class="resist-value" data-resist-value="0.70">0.70x</strong></li>
-              </ul>
+            </div>
+
+            <div class="resistance-output-grid" aria-live="polite">
+              <div class="stat-output">
+                <span class="stat-output-label">Effective Resistance</span>
+                <span class="stat-output-value" data-resistance-effective>35.0%</span>
+              </div>
+              <div class="stat-output">
+                <span class="stat-output-label">Final Damage</span>
+                <span class="stat-output-value" data-resistance-final-damage>650 / 1,000</span>
+              </div>
+              <div class="stat-output">
+                <span class="stat-output-label">Damage Reduced</span>
+                <span class="stat-output-value" data-resistance-reduced-damage>350</span>
+              </div>
+              <div class="stat-output resistance-note">
+                <span class="stat-output-label">Cap Status</span>
+                <span class="stat-output-value" data-resistance-cap-warning>25% before the 60% cap.</span>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="content-section" id="monster-type-matchups">
+          <div class="resistance-section-heading">
+            <div>
+              <h2>Monster Type Matchups</h2>
+              <p>Monster type multipliers are loaded from the shared resistance data used by Weapons and Monsters.</p>
+            </div>
+            <button
+              type="button"
+              class="resistance-toggle"
+              aria-pressed="false"
+              data-neutral-toggle
+              data-show-neutral="false"
+            >
+              Show Neutral Matchups
+            </button>
+          </div>
+
+          <div class="resistance-legend" aria-label="Monster resistance legend">
+            <span><strong>Weak To</strong> &gt; 1x</span>
+            <span><strong>Neutral</strong> = 1x</span>
+            <span><strong>Resistant To</strong> &lt; 1x</span>
+          </div>
+
+          <div class="resistance-type-grid" data-resistance-type-grid>
+            <p class="resistance-loading">Loading monster type matchups...</p>
+          </div>
+        </article>
+
+        <article class="content-section" id="resistance-build-context">
+          <h2>Build Context</h2>
+          <div class="resistance-context-grid">
+            <section class="resistance-context-card">
+              <p class="stat-label">Player Sources</p>
+              <h3>Armor First</h3>
+              <p>Most player resistance comes from armor rolls, with resistance perks adding focused boosts.</p>
             </section>
-            <section class="stat-card">
-              <div class="stat-label">Ice Beast</div>
-              <img
-                data-monster-type="ice beast"
-                alt="Ice Beast example"
-                width="32"
-                height="32"
-                class="resistance-icon"
-              />
-              <ul>
-<li>Fire: <strong class="resist-value" data-resist-value="1.30">1.30x</strong></li>
-<li>Acid: <strong class="resist-value" data-resist-value="1.20">1.20x</strong></li>
-<hr class="resist-divider"/><li>Electric: <strong class="resist-value" data-resist-value="1.00">1.00x</strong></li>
-<li>Poison: <strong class="resist-value" data-resist-value="1.00">1.00x</strong></li>
-<li>Disease: <strong class="resist-value" data-resist-value="1.00">1.00x</strong></li><hr class="resist-divider"/>
-<li>Cold: <strong class="resist-value" data-resist-value="0.70">0.70x</strong></li>
-</ul>
-</section>
-            <section class="stat-card">
-              <div class="stat-label">Electric Beast</div>
-              <img
-                data-monster-type="electric beast"
-                alt="Electric Beast example"
-                width="32"
-                height="32"
-                class="resistance-icon"
-              />
-              <ul>
-<li>Acid: <strong class="resist-value" data-resist-value="1.30">1.30x</strong></li>
-<li>Cold: <strong class="resist-value" data-resist-value="1.15">1.15x</strong></li>
-<hr class="resist-divider"/><li>Fire: <strong class="resist-value" data-resist-value="1.00">1.00x</strong></li>
-<li>Poison: <strong class="resist-value" data-resist-value="1.00">1.00x</strong></li>
-<li>Disease: <strong class="resist-value" data-resist-value="1.00">1.00x</strong></li><hr class="resist-divider"/>
-<li>Electric: <strong class="resist-value" data-resist-value="0.70">0.70x</strong></li>
-</ul>
-</section>
-            <section class="stat-card">
-              <div class="stat-label">Poison Beast</div>
-              <img
-                data-monster-type="poison beast"
-                alt="Poison Beast example"
-                width="32"
-                height="32"
-                class="resistance-icon"
-              />
-              <ul>
-<li>Acid: <strong class="resist-value" data-resist-value="1.25">1.25x</strong></li>
-<li>Fire: <strong class="resist-value" data-resist-value="1.20">1.20x</strong></li>
-<hr class="resist-divider"/><li>Cold: <strong class="resist-value" data-resist-value="1.00">1.00x</strong></li>
-<li>Electric: <strong class="resist-value" data-resist-value="1.00">1.00x</strong></li>
-<li>Disease: <strong class="resist-value" data-resist-value="1.00">1.00x</strong></li><hr class="resist-divider"/>
-<li>Poison: <strong class="resist-value" data-resist-value="0.80">0.80x</strong></li>
-</ul>
-</section>
-            <section class="stat-card">
-              <div class="stat-label">Disease Beast</div>
-              <img
-                data-monster-type="disease beast"
-                alt="Disease Beast example"
-                width="32"
-                height="32"
-                class="resistance-icon"
-              />
-              <ul>
-<li>Fire: <strong class="resist-value" data-resist-value="1.25">1.25x</strong></li>
-<li>Electric: <strong class="resist-value" data-resist-value="1.10">1.10x</strong></li>
-<hr class="resist-divider"/><li>Cold: <strong class="resist-value" data-resist-value="1.00">1.00x</strong></li>
-<li>Acid: <strong class="resist-value" data-resist-value="1.00">1.00x</strong></li>
-<li>Poison: <strong class="resist-value" data-resist-value="1.00">1.00x</strong></li><hr class="resist-divider"/>
-<li>Disease: <strong class="resist-value" data-resist-value="0.80">0.80x</strong></li>
-</ul>
-</section>
-</div>
-</article>
-</main>
-</div>
-<script>
-  (function () {
-    const utils = window.RogueCodexUtils || {};
-    const fetchJsonCached =
-      utils.fetchJsonCached ||
-      ((targetUrl) =>
-        fetch(targetUrl)
-          .then((res) => (res.ok ? res.json() : null))
-          .catch(() => null));
-    const ELEMENT_COLORS = utils.ELEMENT_COLORS || {
-      fire: "#ff5a5a",
-      electric: "#b86bff",
-      poison: "#2f7a2f",
-      cold: "#7cc9ff",
-      acid: "#b38b00",
-      disease: "#ff9c42",
-    };
-    document.addEventListener("DOMContentLoaded", () => {
-      document.querySelectorAll(".resist-value").forEach((node) => {
-        const raw = node.getAttribute("data-resist-value") || node.textContent;
-        const value = parseFloat(raw);
-        if (Number.isNaN(value)) return;
-        node.textContent = formatResistanceValue(value);
-        node.style.color = getResistanceColor(value);
-      });
 
-      const listItems = document.querySelectorAll("#monster-resistances li");
-      const resistanceLists = document.querySelectorAll("#monster-resistances ul");
-      const neutralRows = [];
-      listItems.forEach((li) => {
-        const strong = li.querySelector("strong");
-        if (!strong) return;
-        const rawValue = strong.getAttribute("data-resist-value") || strong.textContent;
-        const value = parseFloat(rawValue);
-        if (Number.isNaN(value)) return;
-        const rawText = (li.textContent || "").split(":")[0] || "";
-        const elementName = rawText.trim();
-        if (!elementName) return;
-        const valueClone = strong.cloneNode(true);
-        const label = document.createElement("span");
-        label.className = "element-label";
-        label.textContent = elementName;
-        const color = ELEMENT_COLORS[elementName.toLowerCase()];
-        if (color) label.style.color = color;
-        const state = getResistanceState(value);
-        li.dataset.resistanceState = state;
-        if (state === "neutral") {
-          neutralRows.push(li);
-        }
+            <section class="resistance-context-card">
+              <p class="stat-label">Weapon Targeting</p>
+              <h3>Exploit Weaknesses</h3>
+              <p>Elemental weapon value depends heavily on the monster type you are farming.</p>
+            </section>
 
-        li.innerHTML = "";
-        li.appendChild(label);
-        li.appendChild(valueClone);
-      });
+            <section class="resistance-context-card">
+              <p class="stat-label">Planner</p>
+              <h3>Compare Whole Builds</h3>
+              <p>Use the Build Planner when resistance changes are tied to rarity, armor slots, and perks.</p>
+            </section>
+          </div>
+        </article>
 
-      const neutralToggle = document.getElementById("neutral-toggle");
-      let showNeutral = false;
+        <article class="content-section" id="resistance-perks">
+          <h2>Perks</h2>
+          <p class="content-tagline">
+            Resistance perks can be broad, such as all resistances, or targeted to a single element.
+          </p>
+          <div class="stat-grid perk-grid" data-perk-stats="resistances"></div>
+        </article>
 
-      const syncNeutralVisibility = () => {
-        neutralRows.forEach((li) => {
-          li.hidden = !showNeutral;
-        });
-        resistanceLists.forEach(updateResistanceGrouping);
-        if (neutralToggle) {
-          neutralToggle.textContent = showNeutral ? "Hide Neutral Matchups" : "Show Neutral Matchups";
-          neutralToggle.setAttribute("aria-pressed", String(showNeutral));
-          neutralToggle.dataset.showNeutral = String(showNeutral);
-        }
-      };
-
-      if (neutralToggle) {
-        neutralToggle.addEventListener("click", () => {
-          showNeutral = !showNeutral;
-          syncNeutralVisibility();
-        });
-      }
-
-      syncNeutralVisibility();
-    });
-
-    function getResistanceColor(value) {
-      if (value > 1) {
-        const ratio = Math.min((value - 1) / 0.3, 1);
-        const lightness = 50 + 20 * ratio;
-        const saturation = 65 + 15 * ratio;
-        return `hsl(120, ${saturation}%, ${lightness}%)`;
-      }
-      if (value < 1) {
-        const ratio = Math.min((1 - value) / 0.3, 1);
-        const lightness = 55 + 25 * ratio;
-        return `hsl(0, 80%, ${lightness}%)`;
-      }
-      return "#bbbbbb";
-    }
-
-    function formatResistanceValue(value) {
-      if (Number.isInteger(value)) return `${value}x`;
-      let text = value.toString();
-      if (text.startsWith("0.")) {
-        text = text.replace(/^0+/, "");
-      } else if (text.startsWith("-0.")) {
-        text = text.replace(/^-0+/, "-.");
-      }
-      text = text.replace(/(\.\d*?)0+$/, "$1"); // trim trailing zeros
-      if (text.endsWith(".")) text = text.slice(0, -1);
-      return `${text}x`;
-    }
-
-    function getResistanceState(value) {
-      if (value > 1) return "weakness";
-      if (value < 1) return "resistance";
-      return "neutral";
-    }
-
-    function updateResistanceGrouping(list) {
-      if (!list) return;
-      list.querySelectorAll(".resist-group-header").forEach((header) => header.remove());
-      list.querySelectorAll(".resist-divider").forEach((divider) => {
-        divider.hidden = true;
-      });
-
-      let previousState = "";
-      const stateCounts = Array.from(list.children).reduce((counts, child) => {
-        if (child.tagName !== "LI" || child.hidden) return counts;
-        const state = child.dataset.resistanceState || "";
-        if (state) {
-          counts[state] = (counts[state] || 0) + 1;
-        }
-        return counts;
-      }, {});
-
-      Array.from(list.children).forEach((child) => {
-        if (child.tagName !== "LI" || child.hidden) return;
-        const state = child.dataset.resistanceState || "";
-        if (state && state !== previousState) {
-          const header = document.createElement("li");
-          header.className = "resist-group-header";
-          header.textContent = getResistanceStateLabel(state, stateCounts[state] || 0);
-          list.insertBefore(header, child);
-        }
-        previousState = state || previousState;
-      });
-    }
-
-    function getResistanceStateLabel(state, count) {
-      if (state === "weakness") {
-        return "Weak to";
-      }
-      if (state === "resistance") {
-        return "Resistant to";
-      }
-      return "Neutral";
-    }
-
-    (function hydrateResistanceIcons() {
-      const icons = Array.from(document.querySelectorAll(".resistance-icon"));
-      if (!icons.length) return;
-
-        const dataUrl = new URL("../enemies/monsters_data03.json", window.location.href);
-      const TYPE_ALIAS = {
-        electricalbeast: "electric beast",
-        "electrical beast": "electric beast",
-        firebeast: "fire beast",
-        icebeast: "ice beast",
-        poisonbeast: "poison beast",
-        diseasebeast: "disease beast",
-        human: "humanoid",
-        humanoid: "humanoid",
-      };
-
-      const normalizeType = (value) => {
-        if (!value) return "";
-        const spaced = value
-          .replace(/([a-z])([A-Z])/g, "$1 $2")
-          .replace(/[_]+/g, " ")
-          .trim()
-          .toLowerCase();
-        return TYPE_ALIAS[spaced] || spaced;
-      };
-
-      const deriveImageCandidates = (monster) => {
-        const candidates = [];
-        const rawName = (monster && monster.name) || "";
-        const spacedName = rawName.replace(/\s+/g, " ").trim();
-        const safeName = spacedName.replace(/[\\/:*?"<>|]/g, "");
-
-        if (monster && monster.image) {
-          candidates.push(monster.image);
-        }
-
-        if (safeName) {
-          const bases = [
-            "../../images/monsters",
-            "/images/monsters",
-            "../images/monsters",
-            "images/monsters",
-          ];
-          bases.forEach((base) => {
-            const encoded = encodeURI(`${base}/${safeName}`);
-            candidates.push(`${encoded}.gif`, `${encoded}.GIF`, `${encoded}.png`, `${encoded}.PNG`);
-          });
-        }
-
-        return Array.from(new Set(candidates.filter(Boolean)));
-      };
-
-      const setImageSource = (imgEl, monster) => {
-        const sources = deriveImageCandidates(monster);
-        if (!sources.length) {
-          imgEl.removeAttribute("src");
-          imgEl.alt = "No image";
-          return;
-        }
-        let index = 0;
-        const trySet = () => {
-          imgEl.onerror = () => {
-            index += 1;
-            if (index < sources.length) {
-              trySet();
-            } else {
-              imgEl.onerror = null;
-              imgEl.removeAttribute("src");
-              imgEl.alt = "No image";
-            }
-          };
-          imgEl.onload = () => {
-            imgEl.onload = null;
-          };
-          imgEl.src = sources[index];
-        };
-        trySet();
-      };
-
-      const shuffle = (arr) => {
-        const a = arr.slice();
-        for (let i = a.length - 1; i > 0; i -= 1) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [a[i], a[j]] = [a[j], a[i]];
-        }
-        return a;
-      };
-
-      fetchJsonCached(dataUrl.toString())
-        .then((data) => {
-          if (!Array.isArray(data)) return;
-          const byType = data.reduce((acc, monster) => {
-            const fields = (monster && typeof monster.fields === "object" && monster.fields) || {};
-            const type =
-              monster.monsterType ||
-              monster.type ||
-              fields.type_label ||
-              fields.type ||
-              (fields.type_label === 0 ? "None" : "");
-            const key = normalizeType(type);
-            if (!key) return acc;
-            if (!acc[key]) acc[key] = [];
-            acc[key].push(monster);
-            return acc;
-          }, {});
-
-          icons.forEach((img) => {
-            const explicit = img.getAttribute("data-monster-type") || "";
-            const label = (img.closest(".stat-card")?.querySelector(".stat-label")?.textContent || "").trim();
-            const key = normalizeType(explicit || label);
-            const pool = byType[key] || [];
-            const picks = pool.length ? shuffle(pool).slice(0, Math.min(3, pool.length)) : [];
-
-            // ensure a container for multiple icons
-            let wrap = img.closest(".resistance-icons");
-            if (!wrap) {
-              wrap = document.createElement("div");
-              wrap.className = "resistance-icons";
-              img.parentNode.insertBefore(wrap, img);
-              wrap.appendChild(img);
-            }
-
-            wrap.innerHTML = "";
-            if (!picks.length) {
-              img.removeAttribute("src");
-              img.alt = "No matching monster";
-              wrap.appendChild(img);
-              return;
-            }
-
-            picks.forEach((monster) => {
-              const node = img.cloneNode(false);
-              node.removeAttribute("src");
-              node.alt = monster.name ? `${monster.name} example` : `${label} example`;
-              setImageSource(node, monster);
-              wrap.appendChild(node);
-            });
-          });
-        })
-        .catch(() => {
-          // swallow errors; fallback icons remain blank
-        });
-    })();
-  })();
-</script>
-</body>
+        <article class="content-section">
+          <h2>Related Pages</h2>
+          <div class="resistance-link-grid">
+            <a href="pages/items/armors.html">Armors</a>
+            <a href="pages/General/build-planner.html">Build Planner</a>
+            <a href="pages/enemies/monsters.html">Monsters</a>
+            <a href="pages/items/weapons.html">Weapons</a>
+            <a href="pages/systems/perks.html">Perks</a>
+            <a href="pages/systems/pvp-system.html">PVP System</a>
+          </div>
+        </article>
+      </main>
+    </div>
+  </body>
 </html>

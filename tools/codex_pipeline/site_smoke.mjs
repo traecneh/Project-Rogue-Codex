@@ -194,6 +194,12 @@ async function main() {
       failures.push(`SMOKE ERROR dexterity: ${formatError(error)}`);
     }
     try {
+      await runResistancesSpec(browser, baseUrl);
+      console.log("SMOKE OK resistances: player cap preview, monster type matchups, related links");
+    } catch (error) {
+      failures.push(`SMOKE ERROR resistances: ${formatError(error)}`);
+    }
+    try {
       await runGuildSpec(browser, baseUrl);
       console.log("SMOKE OK guild: management reference, party preview, related links");
     } catch (error) {
@@ -232,7 +238,7 @@ async function main() {
     failures.forEach((failure) => console.error(failure));
     process.exit(1);
   }
-  console.log(`SMOKE OK site: ${smokeSpecs.length + 26} page(s) checked at ${baseUrl}`);
+  console.log(`SMOKE OK site: ${smokeSpecs.length + 27} page(s) checked at ${baseUrl}`);
 }
 
 async function importPlaywright() {
@@ -2143,6 +2149,160 @@ async function readDexterityCalculatorState(page) {
     postDr: document.querySelector("[data-dexterity-post-dr]")?.textContent?.trim() || "",
     skill: document.querySelector("[data-dexterity-skill]")?.textContent?.trim() || "",
     strength: document.querySelector("[data-dexterity-str]")?.textContent?.trim() || "",
+  }));
+}
+
+async function runResistancesSpec(browser, baseUrl) {
+  const page = await browser.newPage();
+  page.setDefaultTimeout(timeoutMs);
+  const runtimeErrors = [];
+  page.on("console", (message) => {
+    const text = message.text();
+    if (message.type() === "error" && !text.startsWith("Failed to load resource")) runtimeErrors.push(text);
+  });
+  page.on("pageerror", (error) => runtimeErrors.push(formatError(error)));
+
+  try {
+    await page.goto(joinUrl(baseUrl, "/pages/stats/resistances.html"), { waitUntil: "load" });
+    await page.locator(".resistance-calculator-widget").waitFor({ state: "visible" });
+    const pageText = (await page.locator(".main-content").textContent()).trim();
+    for (const expected of [
+      "Resistance at a Glance",
+      "Player Damage Preview",
+      "Monster Type Matchups",
+      "Build Context",
+      "Perks",
+      "Related Pages",
+      "60%",
+      "Applied after armor",
+      "Weak To",
+      "Resistant To",
+    ]) {
+      if (!pageText.includes(expected)) {
+        throw new Error(`Resistances page missing "${expected}": "${pageText}"`);
+      }
+    }
+
+    for (const href of [
+      "pages/items/armors.html",
+      "pages/General/build-planner.html",
+      "pages/enemies/monsters.html",
+      "pages/items/weapons.html",
+      "pages/systems/perks.html",
+      "pages/systems/pvp-system.html",
+    ]) {
+      const count = await page.locator(`.resistance-link-grid a[href="${href}"]`).count();
+      if (count !== 1) {
+        throw new Error(`Resistances related link expected one "${href}", found ${count}`);
+      }
+    }
+
+    await assertResistanceCalculator(page);
+    await assertResistanceNeutralToggle(page);
+    await assertMobilePageFirstNavigation(page, baseUrl, "/pages/stats/resistances.html");
+
+    if (runtimeErrors.length) {
+      throw new Error(`browser errors: ${runtimeErrors.join("; ")}`);
+    }
+  } finally {
+    await page.close();
+  }
+}
+
+async function assertResistanceCalculator(page) {
+  await page.locator("[data-resistance-type-grid] [data-resistance-type-card]").first().waitFor({ state: "visible" });
+  const typeCardCount = await page.locator("[data-resistance-type-grid] [data-resistance-type-card]").count();
+  if (typeCardCount !== 11) {
+    throw new Error(`Resistances page expected 11 monster type cards, found ${typeCardCount}`);
+  }
+
+  const humanoidText = (await page.locator('[data-resistance-type-card="humanoid"]').textContent()).trim();
+  for (const expected of ["Humanoid", "Poison", "Disease", "Acid", "Cold"]) {
+    if (!humanoidText.includes(expected)) {
+      throw new Error(`Humanoid resistance card missing "${expected}": "${humanoidText}"`);
+    }
+  }
+
+  let state = await readResistanceCalculatorState(page);
+  for (const [key, expected] of Object.entries({
+    capWarning: "25% before the 60% cap.",
+    effective: "35.0%",
+    finalDamage: "650 / 1,000",
+    incoming: "1,000",
+    reducedDamage: "350",
+    resistance: "35",
+  })) {
+    if (state[key] !== expected) {
+      throw new Error(`Resistance calculator expected ${key}="${expected}", got "${state[key]}"`);
+    }
+  }
+
+  await setResistanceRange(page, "[data-resistance-value-slider]", 75);
+  await page.waitForFunction(
+    () => document.querySelector("[data-resistance-final-damage]")?.textContent?.trim() === "400 / 1,000",
+    undefined,
+    { timeout: timeoutMs }
+  );
+  state = await readResistanceCalculatorState(page);
+  if (
+    state.resistance !== "75" ||
+    state.effective !== "60.0%" ||
+    state.finalDamage !== "400 / 1,000" ||
+    !state.capWarning.includes("15% over cap ignored")
+  ) {
+    throw new Error(`Resistance capped state after 75% was unexpected: ${JSON.stringify(state)}`);
+  }
+
+  await setResistanceRange(page, "[data-resistance-incoming-slider]", 2000);
+  await page.waitForFunction(
+    () => document.querySelector("[data-resistance-final-damage]")?.textContent?.trim() === "800 / 2,000",
+    undefined,
+    { timeout: timeoutMs }
+  );
+  state = await readResistanceCalculatorState(page);
+  if (state.incoming !== "2,000" || state.finalDamage !== "800 / 2,000" || state.reducedDamage !== "1,200") {
+    throw new Error(`Resistance damage state after 2,000 incoming was unexpected: ${JSON.stringify(state)}`);
+  }
+}
+
+async function assertResistanceNeutralToggle(page) {
+  const neutralGroups = page.locator('[data-resistance-group="neutral"]');
+  const neutralGroupCount = await neutralGroups.count();
+  if (neutralGroupCount < 1) {
+    throw new Error("Resistances page expected neutral matchup groups");
+  }
+  const hiddenBefore = await page.locator('[data-resistance-group="neutral"][hidden]').count();
+  if (hiddenBefore !== neutralGroupCount) {
+    throw new Error(`Neutral groups should start hidden, hidden ${hiddenBefore} of ${neutralGroupCount}`);
+  }
+
+  await page.locator("[data-neutral-toggle]").click();
+  await page.waitForFunction(
+    () => document.querySelector("[data-neutral-toggle]")?.getAttribute("aria-pressed") === "true",
+    undefined,
+    { timeout: timeoutMs }
+  );
+  const hiddenAfter = await page.locator('[data-resistance-group="neutral"][hidden]').count();
+  if (hiddenAfter !== 0) {
+    throw new Error(`Neutral groups should be visible after toggle, still hidden ${hiddenAfter}`);
+  }
+}
+
+async function setResistanceRange(page, selector, value) {
+  await page.locator(selector).evaluate((input, nextValue) => {
+    input.value = String(nextValue);
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  }, value);
+}
+
+async function readResistanceCalculatorState(page) {
+  return await page.evaluate(() => ({
+    capWarning: document.querySelector("[data-resistance-cap-warning]")?.textContent?.trim() || "",
+    effective: document.querySelector("[data-resistance-effective]")?.textContent?.trim() || "",
+    finalDamage: document.querySelector("[data-resistance-final-damage]")?.textContent?.trim() || "",
+    incoming: document.querySelector("[data-resistance-incoming]")?.textContent?.trim() || "",
+    reducedDamage: document.querySelector("[data-resistance-reduced-damage]")?.textContent?.trim() || "",
+    resistance: document.querySelector("[data-resistance-value]")?.textContent?.trim() || "",
   }));
 }
 

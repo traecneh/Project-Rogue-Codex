@@ -4,6 +4,11 @@ const STAT_MATCHERS = [
   { name: "strength", regex: /\bstrength\b/i },
   { name: "dexterity", regex: /\bdexterity\b/i },
   { name: "constitution", regex: /\bconstitution\b/i },
+  {
+    name: "resistances",
+    regex:
+      /\b(?:resistances?|fire resistance|electric resistance|poison resistance|cold resistance|acid resistance|disease resistance)\b/i,
+  },
 ];
 
 const PERKS_INDEX_SCHEMA_VERSION = 3;
