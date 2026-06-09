@@ -79,6 +79,8 @@ class SiteCoverageTests(unittest.TestCase):
         self.assertNotIn("pages/General/play-the-game.html", unsmoked)
         self.assertNotIn("pages/stats/level.html", unvalidated)
         self.assertNotIn("pages/stats/level.html", unsmoked)
+        self.assertNotIn("pages/stats/skills.html", unvalidated)
+        self.assertNotIn("pages/stats/skills.html", unsmoked)
         self.assertNotIn("pages/General/endless-hunt.html", linked_pages)
         self.assertIn("pages/stats/strength.html", unvalidated)
         self.assertIn("pages/stats/strength.html", unsmoked)

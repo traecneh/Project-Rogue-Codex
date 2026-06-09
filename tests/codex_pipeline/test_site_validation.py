@@ -1716,6 +1716,80 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn("function renderLevelMilestones", script)
         self.assertIn('document.addEventListener("DOMContentLoaded"', script)
 
+    def test_skills_page_has_compact_melee_reference(self):
+        from tools.codex_pipeline import cli
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        html_path = REPO_ROOT / "pages" / "stats" / "skills.html"
+        css_path = REPO_ROOT / "css" / "skills.css"
+        script_path = REPO_ROOT / "js" / "skills.js"
+        html = html_path.read_text(encoding="utf-8")
+        css = css_path.read_text(encoding="utf-8") if css_path.exists() else ""
+        script = script_path.read_text(encoding="utf-8") if script_path.exists() else ""
+
+        self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
+        self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
+        self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
+        self.assertIn('<link rel="stylesheet" href="css/skills.css" />', html)
+        self.assertIn('<script src="js/skills.js" defer></script>', html)
+        self.assertNotIn("<style>", html)
+        self.assertEqual(
+            [],
+            [
+                block.strip()
+                for block in re.findall(
+                    r"<script\b(?![^>]*\bsrc\s*=)[^>]*>([\s\S]*?)</script>",
+                    html,
+                    flags=re.IGNORECASE,
+                )
+                if block.strip()
+            ],
+        )
+        self.assertNotRegex(html, r"\sstyle\s*=")
+
+        for expected in [
+            "Skills at a Glance",
+            "Melee Skill Set",
+            "Requirement Preview",
+            "Skill XP Requirements",
+            "Related Pages",
+            "Large Blades",
+            "Axes",
+            "Blunts",
+            "Polearms",
+            "Small Blades",
+            "Base Max",
+            "110",
+            "Race Bonus",
+            "+10 Above Cap",
+            "Equipment Requirements",
+            "Race bonuses do not count toward equipment requirements",
+            "data-skill-base-slider",
+            "data-skill-race-toggle",
+            "data-skill-effective",
+            "data-skill-requirement",
+            "data-skill-status",
+            "pages/stats/races.html",
+            "pages/General/build-planner.html",
+            "pages/items/weapons.html",
+            "pages/items/armors.html",
+            "pages/stats/level.html",
+            "pages/systems/experience.html",
+        ]:
+            self.assertIn(expected, html)
+
+        self.assertIn(".skills-summary-grid", css)
+        self.assertIn(".skills-list-grid", css)
+        self.assertIn(".skills-requirement-widget", css)
+        self.assertIn(".skills-chart-card", css)
+        self.assertIn(".skills-link-grid", css)
+
+        self.assertIn("const SKILL_XP_TOTALS", script)
+        self.assertIn("function initSkillRequirementWidget", script)
+        self.assertIn("function renderSkillChart", script)
+        self.assertIn("function renderSkillCurve", script)
+        self.assertIn('document.addEventListener("DOMContentLoaded"', script)
+
     def test_crafting_page_has_compact_armor_crafting_reference(self):
         from tools.codex_pipeline import cli
         from tools.codex_pipeline.config import REPO_ROOT

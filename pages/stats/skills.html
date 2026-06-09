@@ -11,6 +11,7 @@
     <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
     <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/skills.css" />
     <script src="js/site-search.js" defer></script>
     <script src="js/weapon-specialty.js" defer></script>
     <script src="js/stat-widgets.js" defer></script>
@@ -19,6 +20,7 @@
     <script src="js/perks.js" defer></script>
     <script src="js/rarity-roller.js" defer></script>
     <script src="js/nav-core.js" defer></script>
+    <script src="js/skills.js" defer></script>
   </head>
   <body>
     <div class="layout">
@@ -26,122 +28,142 @@
       <main class="main-content">
         <header class="content-header">
           <h1 class="content-title">Skills</h1>
-          <p class="content-tagline">Melee skills, caps, and race bonus rules.</p>
+          <p class="content-tagline">Melee skill set, caps, race bonus behavior, and XP requirements.</p>
         </header>
 
-        <article class="content-section">
-          <h2>Overview</h2>
-          <p>Project Rogue supports only five melee skills; mage and bow skills were removed for balance.</p>
-          <div class="stat-grid" role="list">
+        <article class="content-section" id="skills-basics">
+          <h2>Skills at a Glance</h2>
+          <div class="skills-summary-grid" role="list">
             <section class="stat-card" role="listitem">
-              <p class="stat-label">Skills</p>
-              <h3>Melee Set</h3>
-              <p>Large Blades, Axes, Blunts, Polearms, Small Blades.</p>
+              <p class="stat-label">Skill Set</p>
+              <h3>Five Melee Skills</h3>
+              <p>Project Rogue currently supports Large Blades, Axes, Blunts, Polearms, and Small Blades.</p>
             </section>
 
             <section class="stat-card" role="listitem">
-              <p class="stat-label">Cap</p>
-              <h3>Base Max</h3>
-              <p>Skills level up to <strong>110</strong>.</p>
+              <p class="stat-label">Base Max</p>
+              <h3>110</h3>
+              <p>Each melee skill can train to a base maximum of 110.</p>
             </section>
 
             <section class="stat-card" role="listitem">
               <p class="stat-label">Race Bonus</p>
               <h3>+10 Above Cap</h3>
-              <p>Race bonuses add up to +10 skill but do not count toward equipment requirements.</p>
+              <p>Race bonuses can push the displayed value above base cap.</p>
+            </section>
+
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Equipment Requirements</p>
+              <h3>Base Skill Only</h3>
+              <p>Race bonuses do not count toward equipment requirements.</p>
             </section>
           </div>
         </article>
 
-        <article class="content-section">
+        <article class="content-section" id="melee-skills">
+          <h2>Melee Skill Set</h2>
+          <div class="skills-list-grid">
+            <section class="skills-list-card">
+              <p class="stat-label">Weapon Family</p>
+              <h3>Large Blades</h3>
+              <p>Swords and heavier blade weapons that lean into direct melee scaling.</p>
+            </section>
+            <section class="skills-list-card">
+              <p class="stat-label">Weapon Family</p>
+              <h3>Axes</h3>
+              <p>Axe weapons with their own skill requirement checks and progression curve.</p>
+            </section>
+            <section class="skills-list-card">
+              <p class="stat-label">Weapon Family</p>
+              <h3>Blunts</h3>
+              <p>Maces, hammers, and other blunt melee options.</p>
+            </section>
+            <section class="skills-list-card">
+              <p class="stat-label">Weapon Family</p>
+              <h3>Polearms</h3>
+              <p>Long-reach melee weapons that still use the shared skill XP curve.</p>
+            </section>
+            <section class="skills-list-card">
+              <p class="stat-label">Weapon Family</p>
+              <h3>Small Blades</h3>
+              <p>Daggers and lighter blade weapons with separate skill requirements.</p>
+            </section>
+          </div>
+        </article>
+
+        <article class="content-section" id="skill-requirements">
+          <h2>Requirement Preview</h2>
+          <p>Compare base skill, race bonus, and an equipment requirement. The displayed effective skill can rise, but requirement checks use base skill.</p>
+
+          <div class="skills-requirement-widget">
+            <div class="skills-control-grid">
+              <label for="skill-base-slider">Base Skill: <span data-skill-base>80</span></label>
+              <input
+                type="range"
+                id="skill-base-slider"
+                min="0"
+                max="110"
+                value="80"
+                data-skill-base-slider
+              />
+
+              <label for="skill-requirement-slider">Requirement: <span data-skill-requirement>90</span></label>
+              <input
+                type="range"
+                id="skill-requirement-slider"
+                min="0"
+                max="120"
+                value="90"
+                data-skill-requirement-slider
+              />
+            </div>
+
+            <button class="skills-race-toggle" type="button" data-skill-race-toggle aria-pressed="false">
+              Apply Race Bonus +10
+            </button>
+
+            <div class="skills-output-grid" aria-live="polite">
+              <div class="stat-output">
+                <span class="stat-output-label">Effective Skill</span>
+                <span class="stat-output-value" data-skill-effective>80</span>
+              </div>
+              <div class="stat-output">
+                <span class="stat-output-label">Requirement Check</span>
+                <span class="stat-output-value" data-skill-status>Requirement unmet</span>
+              </div>
+              <div class="stat-output skills-note">
+                <span class="stat-output-label">Rule</span>
+                <span class="stat-output-value" data-skill-note>Base skill is checked.</span>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="content-section" id="skill-xp">
           <h2>Skill XP Requirements</h2>
-          <p>Levels start at 0. Bars show total XP to reach each level and the XP total for that level.</p>
-          <div class="stat-card" style="padding: 0.75rem;">
-            <canvas id="skill-xp-curve" width="800" height="140" aria-label="XP gain curve" style="width: 100%; height: 140px;"></canvas>
-            <div class="weight-chart" id="skill-xp-chart"></div>
+          <p>Levels start at 0. Bars show total XP to reach each skill level. Values in parentheses are XP from the previous level.</p>
+          <div class="skills-chart-card">
+            <canvas id="skill-xp-curve" class="skills-xp-canvas" width="800" height="140" aria-label="Skill XP curve"></canvas>
+            <div class="skills-chart-legend">
+              <span>Total XP to reach skill level</span>
+              <span>(XP needed from previous)</span>
+            </div>
+            <div class="weight-chart skills-xp-chart" id="skill-xp-chart"></div>
+          </div>
+        </article>
+
+        <article class="content-section">
+          <h2>Related Pages</h2>
+          <div class="skills-link-grid">
+            <a href="pages/stats/races.html">Races</a>
+            <a href="pages/General/build-planner.html">Build Planner</a>
+            <a href="pages/items/weapons.html">Weapons</a>
+            <a href="pages/items/armors.html">Armors</a>
+            <a href="pages/stats/level.html">Level</a>
+            <a href="pages/systems/experience.html">Experience Pool</a>
           </div>
         </article>
       </main>
     </div>
-    <script>
-      document.addEventListener("DOMContentLoaded", () => {
-        const totals = [
-          25, 62, 125, 250, 375, 500, 625, 750, 875, 1000, 1500, 2000, 2500, 3750, 5000, 6250, 7500, 8750, 10000, 11250,
-          12500, 15000, 17500, 20000, 22500, 25000, 37500, 50000, 62500, 75000, 87500, 100000, 112500, 125000, 150000,
-          175000, 200000, 225000, 250000, 312500, 375000, 437500, 500000, 562500, 625000, 687500, 750000, 812500,
-          875000, 1000000, 1125000, 1250000, 1375000, 1500000, 1625000, 1750000, 1875000, 2000000, 2125000, 2250000,
-          2375000, 2500000, 2625000, 2750000, 2875000, 3000000, 3125000, 3250000, 3375000, 3500000, 3625000, 3750000,
-          3875000, 4000000, 4250000, 4750000, 5000000, 5250000, 5500000, 5750000, 6000000, 6250000, 6500000, 6750000,
-          7000000, 7250000, 7500000, 7750000, 8000000, 8250000, 8500000, 8750000, 9000000, 9250000, 9500000, 9750000,
-          10000000, 10500000, 11250000, 12500000, 15000000, 17500000, 20000000, 22500000, 25000000, 27500000, 30000000,
-          32500000, 35000000, 40000000
-        ];
-        const chart = document.getElementById("skill-xp-chart");
-        if (!chart || !totals.length) return;
-        const withZero = [0, ...totals];
-        const max = withZero[withZero.length - 1];
-
-        const deltas = withZero.map((value, idx) => (idx === 0 ? 0 : value - withZero[idx - 1]));
-        const curve = document.getElementById("skill-xp-curve");
-        if (curve && curve.getContext) {
-          const ctx = curve.getContext("2d");
-          const padding = 8;
-          const w = curve.width - padding * 2;
-          const h = curve.height - padding * 2;
-          const maxTotal = Math.max(...withZero);
-          ctx.clearRect(0, 0, curve.width, curve.height);
-          ctx.strokeStyle = "#5ab0ff";
-          ctx.lineWidth = 2;
-          ctx.beginPath();
-          withZero.forEach((total, idx) => {
-            const x = padding + (w * idx) / (withZero.length - 1);
-            const y = padding + h - (total / maxTotal) * h;
-            if (idx === 0) ctx.moveTo(x, y);
-            else ctx.lineTo(x, y);
-          });
-          ctx.stroke();
-
-          ctx.fillStyle = "#a0a5b0";
-          ctx.font = "10px Tahoma, Verdana, sans-serif";
-          ctx.textBaseline = "top";
-          const clampY = (y) => Math.max(padding + 2, Math.min(padding + h - 12, y));
-          const startX = padding;
-          const startY = clampY(padding + h - (withZero[0] / maxTotal) * h - 4);
-          const endX = padding + (w * (withZero.length - 1)) / (withZero.length - 1);
-          const endY = clampY(padding + h - (withZero[withZero.length - 1] / maxTotal) * h - 4);
-          ctx.fillText("Lvl 0", startX, startY);
-          ctx.fillText("Lvl 110", endX - 36, endY);
-        }
-
-        withZero.forEach((total, idx) => {
-          const level = idx;
-          if (level > 110) return;
-          const delta = idx > 0 ? total - withZero[idx - 1] : null;
-
-          const row = document.createElement("div");
-          row.className = "weight-row";
-
-          const label = document.createElement("div");
-          label.className = "weight-label";
-          label.textContent = `Lvl ${level}`;
-
-          const bar = document.createElement("div");
-          bar.className = "weight-bar";
-          const fill = (total / max) * 100;
-          bar.style.setProperty("--fill", `${fill}%`);
-
-          const value = document.createElement("div");
-          value.className = "weight-value";
-          const totalLabel = total.toLocaleString();
-          const deltaLabel = delta !== null ? delta.toLocaleString() : "";
-          value.innerHTML = delta !== null ? `${totalLabel}<br/><span>(${deltaLabel})</span>` : `${totalLabel}`;
-
-          row.appendChild(label);
-          row.appendChild(bar);
-          row.appendChild(value);
-          chart.appendChild(row);
-        });
-      });
-    </script>
   </body>
 </html>

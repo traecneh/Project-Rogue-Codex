@@ -164,6 +164,12 @@ async function main() {
       failures.push(`SMOKE ERROR level: ${formatError(error)}`);
     }
     try {
+      await runSkillsSpec(browser, baseUrl);
+      console.log("SMOKE OK skills: melee reference, requirement preview, XP chart, related links");
+    } catch (error) {
+      failures.push(`SMOKE ERROR skills: ${formatError(error)}`);
+    }
+    try {
       await runGuildSpec(browser, baseUrl);
       console.log("SMOKE OK guild: management reference, party preview, related links");
     } catch (error) {
@@ -202,7 +208,7 @@ async function main() {
     failures.forEach((failure) => console.error(failure));
     process.exit(1);
   }
-  console.log(`SMOKE OK site: ${smokeSpecs.length + 21} page(s) checked at ${baseUrl}`);
+  console.log(`SMOKE OK site: ${smokeSpecs.length + 22} page(s) checked at ${baseUrl}`);
 }
 
 async function importPlaywright() {
@@ -1435,6 +1441,129 @@ async function readLevelXpState(page) {
     multiplier: document.querySelector("[data-level-multiplier]")?.textContent?.trim() || "",
     poolPressed: document.querySelector('[data-level-boost="pool"]')?.getAttribute("aria-pressed") || "",
     total: document.querySelector("[data-level-total-xp]")?.textContent?.trim() || "",
+  }));
+}
+
+async function runSkillsSpec(browser, baseUrl) {
+  const page = await browser.newPage();
+  page.setDefaultTimeout(timeoutMs);
+  const runtimeErrors = [];
+  page.on("console", (message) => {
+    const text = message.text();
+    if (message.type() === "error" && !text.startsWith("Failed to load resource")) runtimeErrors.push(text);
+  });
+  page.on("pageerror", (error) => runtimeErrors.push(formatError(error)));
+
+  try {
+    await page.goto(joinUrl(baseUrl, "/pages/stats/skills.html"), { waitUntil: "load" });
+    await page.locator(".skills-requirement-widget").waitFor({ state: "visible" });
+    const pageText = (await page.locator(".main-content").textContent()).trim();
+    for (const expected of [
+      "Skills at a Glance",
+      "Melee Skill Set",
+      "Requirement Preview",
+      "Skill XP Requirements",
+      "Related Pages",
+      "Large Blades",
+      "Axes",
+      "Blunts",
+      "Polearms",
+      "Small Blades",
+      "Race bonuses do not count toward equipment requirements",
+    ]) {
+      if (!pageText.includes(expected)) {
+        throw new Error(`Skills page missing "${expected}": "${pageText}"`);
+      }
+    }
+
+    for (const href of [
+      "pages/stats/races.html",
+      "pages/General/build-planner.html",
+      "pages/items/weapons.html",
+      "pages/items/armors.html",
+      "pages/stats/level.html",
+      "pages/systems/experience.html",
+    ]) {
+      const count = await page.locator(`.skills-link-grid a[href="${href}"]`).count();
+      if (count !== 1) {
+        throw new Error(`Skills related link expected one "${href}", found ${count}`);
+      }
+    }
+
+    await assertSkillsRequirementWidget(page);
+    await assertMobilePageFirstNavigation(page, baseUrl, "/pages/stats/skills.html");
+
+    if (runtimeErrors.length) {
+      throw new Error(`browser errors: ${runtimeErrors.join("; ")}`);
+    }
+  } finally {
+    await page.close();
+  }
+}
+
+async function assertSkillsRequirementWidget(page) {
+  const rowCount = await page.locator("#skill-xp-chart .weight-row").count();
+  if (rowCount !== 111) {
+    throw new Error(`Skills XP chart expected 111 rows, found ${rowCount}`);
+  }
+
+  let state = await readSkillsRequirementState(page);
+  for (const [key, expected] of Object.entries({
+    base: "80",
+    effective: "80",
+    requirement: "90",
+    status: "Requirement unmet",
+  })) {
+    if (state[key] !== expected) {
+      throw new Error(`Skills requirement widget expected ${key}="${expected}", got "${state[key]}"`);
+    }
+  }
+
+  await page.locator("[data-skill-race-toggle]").click();
+  await page.waitForFunction(
+    () => document.querySelector("[data-skill-effective]")?.textContent?.trim() === "90",
+    undefined,
+    { timeout: timeoutMs }
+  );
+  state = await readSkillsRequirementState(page);
+  if (state.status !== "Requirement unmet" || state.note !== "Race bonus is visible, but base skill is still short.") {
+    throw new Error(`Skills race bonus should not satisfy equipment requirements: ${JSON.stringify(state)}`);
+  }
+
+  await setSkillsRange(page, "[data-skill-base-slider]", 90);
+  await page.waitForFunction(
+    () => document.querySelector("[data-skill-status]")?.textContent?.trim() === "Meets requirement",
+    undefined,
+    { timeout: timeoutMs }
+  );
+  state = await readSkillsRequirementState(page);
+  if (state.base !== "90" || state.effective !== "100" || state.status !== "Meets requirement") {
+    throw new Error(`Skills base requirement check did not update correctly: ${JSON.stringify(state)}`);
+  }
+
+  await setSkillsRange(page, "[data-skill-requirement-slider]", 105);
+  await page.waitForFunction(
+    () => document.querySelector("[data-skill-status]")?.textContent?.trim() === "Requirement unmet",
+    undefined,
+    { timeout: timeoutMs }
+  );
+}
+
+async function setSkillsRange(page, selector, value) {
+  await page.locator(selector).evaluate((input, nextValue) => {
+    input.value = String(nextValue);
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  }, value);
+}
+
+async function readSkillsRequirementState(page) {
+  return await page.evaluate(() => ({
+    base: document.querySelector("[data-skill-base]")?.textContent?.trim() || "",
+    effective: document.querySelector("[data-skill-effective]")?.textContent?.trim() || "",
+    note: document.querySelector("[data-skill-note]")?.textContent?.trim() || "",
+    requirement: document.querySelector("[data-skill-requirement]")?.textContent?.trim() || "",
+    status: document.querySelector("[data-skill-status]")?.textContent?.trim() || "",
+    racePressed: document.querySelector("[data-skill-race-toggle]")?.getAttribute("aria-pressed") || "",
   }));
 }
 
