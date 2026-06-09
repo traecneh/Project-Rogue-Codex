@@ -39,6 +39,7 @@ from tools.codex_pipeline.game_update import build_game_update_report
 from tools.codex_pipeline.perks import load_perk_label_overrides
 from tools.codex_pipeline.sources import validate_export_sources
 from tools.codex_pipeline.site_smoke import run_site_smoke as run_site_smoke_command
+from tools.codex_pipeline.site_coverage import SiteCoverageReport, build_site_coverage_report
 from tools.codex_pipeline.unknowns import build_unknown_field_reports
 from tools.codex_pipeline.validators.site import (
     ValidationIssue,
@@ -144,6 +145,7 @@ def build_parser() -> argparse.ArgumentParser:
             "sync-assets",
             "game-update-workflow",
             "smoke-site",
+            "site-coverage",
         ],
     )
     parser.add_argument(
@@ -481,6 +483,31 @@ def run_smoke_site(args: argparse.Namespace) -> int:
     return result.returncode
 
 
+def _print_page_group(label: str, pages) -> None:
+    for page in pages:
+        print(f"{label} {page.path}: {page.title}")
+
+
+def _print_site_coverage_report(report: SiteCoverageReport) -> None:
+    print(
+        f"SITE COVERAGE: {report.linked_page_count} linked page(s), "
+        f"{report.validated_count} validated, {report.smoked_count} smoked, "
+        f"{len(report.missing_files)} missing file(s), "
+        f"{len(report.nav_only_pages)} nav-only, {len(report.search_only_pages)} search-only"
+    )
+    _print_page_group("MISSING", report.missing_files)
+    _print_page_group("NAV ONLY", report.nav_only_pages)
+    _print_page_group("SEARCH ONLY", report.search_only_pages)
+    _print_page_group("UNVALIDATED", report.unvalidated_pages)
+    _print_page_group("UNSMOKED", report.unsmoked_pages)
+
+
+def run_site_coverage() -> int:
+    report = build_site_coverage_report(REPO_ROOT, validated_html_paths=VALIDATED_HTML_PATHS)
+    _print_site_coverage_report(report)
+    return 1 if report.has_errors else 0
+
+
 def run_verify_deploy(args: argparse.Namespace) -> int:
     commit_sha = args.commit or resolve_git_commit()
     print(f"DEPLOY WAIT {args.github_repo}@{commit_sha[:7]} on {args.branch}")
@@ -751,6 +778,8 @@ def main(argv: list[str] | None = None) -> int:
         return run_verify_live(args)
     if args.command == "smoke-site":
         return run_smoke_site(args)
+    if args.command == "site-coverage":
+        return run_site_coverage()
     if args.command in {"doctor", "validate-sources"}:
         return run_doctor(args)
     if args.command == "unknown-fields":
