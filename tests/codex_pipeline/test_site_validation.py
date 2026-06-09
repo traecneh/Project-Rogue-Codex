@@ -1025,6 +1025,64 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(".corruption-flow", css)
         self.assertIn(".corruption-link-grid", css)
 
+    def test_encounter_page_has_compact_elite_reference(self):
+        from tools.codex_pipeline import cli
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        html_path = REPO_ROOT / "pages" / "systems" / "encounter.html"
+        css_path = REPO_ROOT / "css" / "encounter.css"
+        html = html_path.read_text(encoding="utf-8")
+        css = css_path.read_text(encoding="utf-8") if css_path.exists() else ""
+
+        self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
+        self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
+        self.assertIn('<link rel="stylesheet" href="css/encounter.css" />', html)
+        self.assertNotIn("<style>", html)
+        self.assertEqual(
+            [],
+            [
+                block.strip()
+                for block in re.findall(
+                    r"<script\b(?![^>]*\bsrc\s*=)[^>]*>([\s\S]*?)</script>",
+                    html,
+                    flags=re.IGNORECASE,
+                )
+                if block.strip()
+            ],
+        )
+
+        for expected in [
+            "Encounter Flow",
+            "Active vs Passive",
+            "Escalation Flow",
+            "Variant Rules",
+            "Despawns and Leashes",
+            "Prolonged Activity",
+            "10 chunks (160 tiles)",
+            "4+ minutes Passive",
+            "1 minute of continuous Active time",
+            "6-minute grace window",
+            "Purple Lightning",
+            "Green Lightning",
+            "Yellow Lightning",
+            "1 in 33",
+            "1 in 66",
+            "1 in 100",
+            "Night only",
+            "Corrupts loot",
+            "pages/systems/corruption.html",
+            "pages/enemies/monsters.html",
+            "pages/items/weapons.html",
+            "pages/items/armors.html",
+        ]:
+            self.assertIn(expected, html)
+
+        self.assertIn(".encounter-summary-grid", css)
+        self.assertIn(".encounter-state-grid", css)
+        self.assertIn(".encounter-flow", css)
+        self.assertIn(".encounter-variant-grid", css)
+        self.assertIn(".encounter-link-grid", css)
+
     def test_crafting_page_has_compact_armor_crafting_reference(self):
         from tools.codex_pipeline import cli
         from tools.codex_pipeline.config import REPO_ROOT

@@ -122,6 +122,12 @@ async function main() {
       failures.push(`SMOKE ERROR purge: ${formatError(error)}`);
     }
     try {
+      await runEncounterSpec(browser, baseUrl);
+      console.log("SMOKE OK encounter: state flow, elite variants, related links");
+    } catch (error) {
+      failures.push(`SMOKE ERROR encounter: ${formatError(error)}`);
+    }
+    try {
       await runCorruptionSpec(browser, baseUrl);
       console.log("SMOKE OK corruption: corrupted innates, cleanse flow, related links");
     } catch (error) {
@@ -142,7 +148,7 @@ async function main() {
     failures.forEach((failure) => console.error(failure));
     process.exit(1);
   }
-  console.log(`SMOKE OK site: ${smokeSpecs.length + 11} page(s) checked at ${baseUrl}`);
+  console.log(`SMOKE OK site: ${smokeSpecs.length + 12} page(s) checked at ${baseUrl}`);
 }
 
 async function importPlaywright() {
@@ -733,6 +739,74 @@ async function runPurgeSpec(browser, baseUrl) {
       const count = await page.locator(`.purge-link-grid a[href="${href}"]`).count();
       if (count !== 1) {
         throw new Error(`Purge related link expected one "${href}", found ${count}`);
+      }
+    }
+
+    if (runtimeErrors.length) {
+      throw new Error(`browser errors: ${runtimeErrors.join("; ")}`);
+    }
+  } finally {
+    await page.close();
+  }
+}
+
+async function runEncounterSpec(browser, baseUrl) {
+  const page = await browser.newPage();
+  page.setDefaultTimeout(timeoutMs);
+  const runtimeErrors = [];
+  page.on("console", (message) => {
+    const text = message.text();
+    if (message.type() === "error" && !text.startsWith("Failed to load resource")) runtimeErrors.push(text);
+  });
+  page.on("pageerror", (error) => runtimeErrors.push(formatError(error)));
+
+  try {
+    await page.goto(joinUrl(baseUrl, "/pages/systems/encounter.html"), { waitUntil: "load" });
+    await page.locator(".encounter-variant-grid").waitFor({ state: "visible" });
+    const pageText = (await page.locator("#encounter-basics").textContent()).trim();
+    for (const expected of [
+      "Encounter Flow",
+      "Active vs Passive",
+      "Escalation Flow",
+      "Variant Rules",
+      "Despawns and Leashes",
+      "Prolonged Activity",
+      "10 chunks (160 tiles)",
+      "4+ minutes Passive",
+      "1 minute of continuous Active time",
+      "6-minute grace window",
+      "Purple Lightning",
+      "Green Lightning",
+      "Yellow Lightning",
+      "1 in 33",
+      "1 in 66",
+      "1 in 100",
+      "Night only",
+      "Corrupts loot",
+    ]) {
+      if (!pageText.includes(expected)) {
+        throw new Error(`Encounter page missing "${expected}": "${pageText}"`);
+      }
+    }
+
+    for (const src of ["images/elite.gif", "images/corrupted.gif", "images/elite+.gif"]) {
+      const count = await page.locator(`.encounter-variant-grid img[src="${src}"]`).count();
+      if (count !== 1) {
+        throw new Error(`Encounter variant image expected one "${src}", found ${count}`);
+      }
+    }
+
+    for (const href of [
+      "pages/systems/corruption.html",
+      "pages/enemies/monsters.html",
+      "pages/items/weapons.html",
+      "pages/items/armors.html",
+      "pages/systems/rarity.html",
+      "pages/General/play-the-game.html",
+    ]) {
+      const count = await page.locator(`.encounter-link-grid a[href="${href}"]`).count();
+      if (count !== 1) {
+        throw new Error(`Encounter related link expected one "${href}", found ${count}`);
       }
     }
 

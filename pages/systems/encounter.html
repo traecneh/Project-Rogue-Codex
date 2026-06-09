@@ -11,6 +11,7 @@
     <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
     <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/encounter.css" />
     <script src="js/site-search.js" defer></script>
     <script src="js/weapon-specialty.js" defer></script>
     <script src="js/stat-widgets.js" defer></script>
@@ -31,238 +32,197 @@
           </p>
         </header>
 
-        <article class="content-section" id="core-rules">
-          <h2>Core Rules</h2>
-          <p>All open-world monster activity flows through pre-authored encounter nodes.</p>
-          <div class="stat-grid" role="list">
-            <section class="stat-card" role="listitem">
+        <article class="content-section" id="encounter-basics">
+          <h2>Encounter Flow</h2>
+          <div class="encounter-summary-grid" role="list">
+            <section class="encounter-summary-card" role="listitem">
               <p class="stat-label">Control</p>
               <h3>Spawn Source</h3>
-              <p>All monster spawns are controlled by the <strong>Encounter System</strong>.</p>
+              <p>Open-world monster spawns flow through pre-authored encounter nodes.</p>
             </section>
 
-            <section class="stat-card" role="listitem">
+            <section class="encounter-summary-card" role="listitem">
               <p class="stat-label">Layout</p>
               <h3>Chunk Painting</h3>
-              <p>An <strong>Encounter</strong> is a pre-built monster layout painted chunk-by-chunk across the map.</p>
+              <p>Each encounter paints a monster layout chunk-by-chunk across the map.</p>
             </section>
 
-            <section class="stat-card" role="listitem">
+            <section class="encounter-summary-card" role="listitem">
               <p class="stat-label">Sets</p>
-              <h3>Weighted Groups</h3>
-              <p>An encounter can define up to <strong>5 weighted monster sets</strong>, each with a unique weight.</p>
-              <p>Each set defines per-monster quantity ranges for minimum and maximum spawns.</p>
+              <h3>5 Weighted Groups</h3>
+              <p>Encounters can define up to five weighted monster sets with per-monster quantity ranges.</p>
             </section>
 
-            <section class="stat-card" role="listitem">
+            <section class="encounter-summary-card" role="listitem">
               <p class="stat-label">Tuning</p>
-              <h3>Respawn & Radius</h3>
-              <p>Knobs include respawn cadence and spawn radius.</p>
-            </section>
-          </div>
-        </article>
-
-        <article class="content-section" id="encounter-states">
-          <h2>Active vs. Passive States</h2>
-          <div class="stat-grid" role="list">
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Radius</p>
-              <h3>Active Range</h3>
-              <p>An encounter is Active when a player is within <strong>10 chunks (160 tiles)</strong> of its center.</p>
-            </section>
-
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Passive</p>
-              <h3>Out of Range</h3>
-              <p>If no player is in range, the encounter remains Passive.</p>
-            </section>
-
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Spawn Rate</p>
-              <h3>Active Boost</h3>
-              <p>While Active, most encounters increase their spawn rate.</p>
-            </section>
-
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Activation</p>
-              <h3>Just Activated</h3>
-              <p>Going Active after <strong>4+ minutes</strong> Passive triggers a Just Activated flag and an instant spawn pulse.</p>
-            </section>
-
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Timer</p>
-              <h3>Prolonged Activity</h3>
-              <p>A Prolonged Activity timer tracks continuous Active time and unlocks Elite eligibility.</p>
-            </section>
-          </div>
-        </article>
-
-        <article class="content-section" id="elite-system">
-          <h2>Monster Spawning &amp; the Elite System</h2>
-          <p>Elite escalation only begins once an encounter demonstrates sustained pressure.</p>
-          <div class="stat-grid" role="list">
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Flag</p>
-              <h3>Prolonged Activity</h3>
-              <p>After 1 minute of continuous Active time, the encounter is flagged for Prolonged Activity.</p>
-            </section>
-
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Eligibility</p>
-              <h3>Elite Unlock</h3>
-              <p>Flagged encounters can spawn Elite, Corrupted, and Elite+ monsters and keep that eligibility for a 6-minute grace window after going Passive.</p>
-            </section>
-
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Refresh</p>
-              <h3>Grace Reset</h3>
-              <p>Re-entering the 10-chunk radius during the grace period refreshes the timer.</p>
+              <h3>Respawn &amp; Radius</h3>
+              <p>Spawn radius, respawn cadence, active state, and despawn rules shape the pressure.</p>
             </section>
           </div>
 
-          <div class="stat-grid elite-grid">
-            <section class="stat-card">
-              <div class="stat-label">Elite</div>
-              <h3>
-                <span class="elite-icon-wrapper">
-                  <img class="elite-random" alt="" aria-hidden="true" width="32" height="32" />
-                  <img
-                    src="images/elite.gif"
-                    alt="Elite purple lightning effect"
-                    width="32"
-                    height="32"
-                    class="elite-icon"
-                  />
-                </span>
-                Purple Lightning
-              </h3>
-              <ul>
-                <li>Spawn chance: <strong>1 in 33</strong></li>
-                <li><strong>3× health</strong></li>
-                <li><strong>1.5× damage</strong></li>
-                <li><strong>3× drop rate</strong></li>
-                <li>Base Rarity: <strong>Uncommon</strong></li>
-              </ul>
-            </section>
-            <section class="stat-card">
-              <div class="stat-label">Corrupted</div>
-              <h3>
-                <span class="elite-icon-wrapper">
-                  <img class="elite-random" alt="" aria-hidden="true" width="32" height="32" />
-                  <img
-                    src="images/corrupted.gif"
-                    alt="Corrupted green corruption effect"
-                    width="32"
-                    height="32"
-                    class="elite-icon"
-                  />
-                </span>
-                Green Lightning
-              </h3>
-              <ul>
-                <li>Spawn chance: <strong>1 in 66</strong></li>
-                <li>Spawn time: <strong>Night only</strong></li>
-                <li><strong>5× health</strong></li>
-                <li><strong>1.75× damage</strong></li>
-                <li><strong>5× drop rate</strong></li>
-                <li>Base Rarity: <strong>Uncommon</strong></li>
-                <li><strong>Corrupts loot</strong></li>
-              </ul>
-            </section>
-            <section class="stat-card">
-              <div class="stat-label">Elite+</div>
-              <h3>
-                <span class="elite-icon-wrapper">
-                  <img class="elite-random" alt="" aria-hidden="true" width="32" height="32" />
-                  <img
-                    src="images/elite+.gif"
-                    alt="Elite+ yellow lightning effect"
-                    width="32"
-                    height="32"
-                    class="elite-icon"
-                  />
-                </span>
-                Yellow Lightning
-              </h3>
-              <ul>
-                <li>Spawn chance: <strong>1 in 100</strong></li>
-                <li><strong>10.0× health</strong></li>
-                <li><strong>2.0× damage</strong></li>
-                <li><strong>10.0× drop rate</strong></li>
-                <li>Base Rarity: <strong>Rare</strong></li>
-              </ul>
-            </section>
-          </div>
-        </article>
+          <section class="encounter-state-section">
+            <h2>Active vs Passive</h2>
+            <div class="encounter-state-grid">
+              <section class="encounter-panel encounter-panel-primary">
+                <p class="stat-label">Active State</p>
+                <h3>10 chunks (160 tiles)</h3>
+                <ul>
+                  <li>The encounter is Active while a player is within range of its center.</li>
+                  <li>Most encounters increase their spawn rate while Active.</li>
+                  <li>Going Active after <strong>4+ minutes Passive</strong> triggers a Just Activated spawn pulse.</li>
+                </ul>
+              </section>
 
-        <article class="content-section" id="monster-despawns">
-          <h2>Monster De-Spawns</h2>
-          <div class="stat-grid" role="list">
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Inactivity</p>
-              <h3>4-Minute Rule</h3>
-              <p>Monsters despawn after 4 continuous minutes without moving or attacking.</p>
-            </section>
+              <section class="encounter-panel encounter-panel-secondary">
+                <p class="stat-label">Passive State</p>
+                <h3>Out of Range</h3>
+                <ul>
+                  <li>If no player is in range, the encounter remains Passive.</li>
+                  <li>Leaving range starts the elite grace countdown when the encounter had Prolonged Activity.</li>
+                  <li>Re-entering the 10-chunk radius during grace refreshes the timer.</li>
+                </ul>
+              </section>
+            </div>
+          </section>
 
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Uptime</p>
-              <h3>1-Hour Cap</h3>
-              <p>Any monster exceeding 1 hour of uptime despawns regardless of activity.</p>
-            </section>
+          <section class="encounter-flow-section">
+            <h2>Escalation Flow</h2>
+            <ol class="encounter-flow">
+              <li>
+                <span>1</span>
+                <div>
+                  <h3>Enter range</h3>
+                  <p>A player moves within 10 chunks, making the encounter Active.</p>
+                </div>
+              </li>
+              <li>
+                <span>2</span>
+                <div>
+                  <h3>Hold pressure</h3>
+                  <p>After <strong>1 minute of continuous Active time</strong>, the encounter gains Prolonged Activity.</p>
+                </div>
+              </li>
+              <li>
+                <span>3</span>
+                <div>
+                  <h3>Unlock variants</h3>
+                  <p>Prolonged Activity allows Elite, Corrupted, and Elite+ monsters to spawn.</p>
+                </div>
+              </li>
+              <li>
+                <span>4</span>
+                <div>
+                  <h3>Leave or refresh</h3>
+                  <p>The encounter keeps eligibility through a <strong>6-minute grace window</strong> after going Passive.</p>
+                </div>
+              </li>
+            </ol>
+          </section>
 
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Exceptions</p>
-              <h3>Spires</h3>
-              <p>Demon Spires, Dragon Spires, and Master Spires ignore the 4-minute inactivity rule.</p>
-            </section>
-          </div>
-        </article>
+          <section class="encounter-variant-section">
+            <h2>Variant Rules</h2>
+            <div class="encounter-variant-grid" role="list">
+              <section class="encounter-variant-card encounter-variant-elite" role="listitem">
+                <div class="encounter-variant-heading">
+                  <img src="images/elite.gif" alt="Elite purple lightning effect" width="32" height="32" />
+                  <div>
+                    <p class="stat-label">Elite</p>
+                    <h3>Purple Lightning</h3>
+                  </div>
+                </div>
+                <ul>
+                  <li>Spawn chance: <strong>1 in 33</strong></li>
+                  <li><strong>3x health</strong> and <strong>1.5x damage</strong></li>
+                  <li><strong>3x drop rate</strong></li>
+                  <li>Base Rarity: <strong>Uncommon</strong></li>
+                </ul>
+              </section>
 
-        <article class="content-section" id="boss-leashing">
-          <h2>Leashing &amp; Boss Behavior</h2>
-          <div class="stat-grid" role="list">
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Locale</p>
-              <h3>Boundaries</h3>
-              <p>Bosses cannot be dragged outside the locale where they spawned.</p>
-            </section>
+              <section class="encounter-variant-card encounter-variant-corrupted" role="listitem">
+                <div class="encounter-variant-heading">
+                  <img src="images/corrupted.gif" alt="Corrupted green lightning effect" width="32" height="32" />
+                  <div>
+                    <p class="stat-label">Corrupted</p>
+                    <h3>Green Lightning</h3>
+                  </div>
+                </div>
+                <ul>
+                  <li>Spawn chance: <strong>1 in 66</strong></li>
+                  <li>Spawn time: <strong>Night only</strong></li>
+                  <li><strong>5x health</strong> and <strong>1.75x damage</strong></li>
+                  <li><strong>5x drop rate</strong> and <strong>Corrupts loot</strong></li>
+                  <li>Base Rarity: <strong>Uncommon</strong></li>
+                </ul>
+              </section>
 
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Leash</p>
-              <h3>Reset</h3>
-              <p>Crossing the locale boundary forces an instant leash, resetting the encounter and restoring full health.</p>
-            </section>
-          </div>
+              <section class="encounter-variant-card encounter-variant-plus" role="listitem">
+                <div class="encounter-variant-heading">
+                  <img src="images/elite+.gif" alt="Elite+ yellow lightning effect" width="32" height="32" />
+                  <div>
+                    <p class="stat-label">Elite+</p>
+                    <h3>Yellow Lightning</h3>
+                  </div>
+                </div>
+                <ul>
+                  <li>Spawn chance: <strong>1 in 100</strong></li>
+                  <li><strong>10x health</strong> and <strong>2x damage</strong></li>
+                  <li><strong>10x drop rate</strong></li>
+                  <li>Base Rarity: <strong>Rare</strong></li>
+                </ul>
+              </section>
+            </div>
+          </section>
+
+          <section class="encounter-rules-section">
+            <h2>Despawns and Leashes</h2>
+            <div class="encounter-rules-grid" role="list">
+              <section class="encounter-rule-card" role="listitem">
+                <p class="stat-label">Inactivity</p>
+                <h3>4-Minute Rule</h3>
+                <p>Monsters despawn after four continuous minutes without moving or attacking.</p>
+              </section>
+
+              <section class="encounter-rule-card" role="listitem">
+                <p class="stat-label">Uptime</p>
+                <h3>1-Hour Cap</h3>
+                <p>Any monster exceeding one hour of uptime despawns regardless of activity.</p>
+              </section>
+
+              <section class="encounter-rule-card" role="listitem">
+                <p class="stat-label">Exceptions</p>
+                <h3>Spires</h3>
+                <p>Demon Spires, Dragon Spires, and Master Spires ignore the 4-minute inactivity rule.</p>
+              </section>
+
+              <section class="encounter-rule-card" role="listitem">
+                <p class="stat-label">Bosses</p>
+                <h3>Locale Leash</h3>
+                <p>Dragging a boss outside its locale forces an instant leash, reset, and full health restore.</p>
+              </section>
+            </div>
+          </section>
+
+          <section class="encounter-warning">
+            <h2>Why It Matters</h2>
+            <p>
+              Encounter state controls more than spawn volume. It is also the path into elite variants, corrupted loot,
+              and higher drop-rate windows, so farming routes should account for uptime and range resets.
+            </p>
+          </section>
+
+          <section class="encounter-related">
+            <h2>Related Pages</h2>
+            <div class="encounter-link-grid" aria-label="Related encounter pages">
+              <a href="pages/systems/corruption.html">Corruption</a>
+              <a href="pages/enemies/monsters.html">Monsters</a>
+              <a href="pages/items/weapons.html">Weapons</a>
+              <a href="pages/items/armors.html">Armors</a>
+              <a href="pages/systems/rarity.html">Rarity</a>
+              <a href="pages/General/play-the-game.html">Play the Game</a>
+            </div>
+          </section>
         </article>
       </main>
     </div>
-    <script>
-      document.addEventListener("DOMContentLoaded", () => {
-        const randomTargets = Array.from(document.querySelectorAll(".elite-random"));
-        if (!randomTargets.length) return;
-        fetch("images/monsters/manifest.json")
-          .then((response) => {
-            if (!response.ok) throw new Error("no manifest");
-            return response.json();
-          })
-          .then((links) => {
-            if (!Array.isArray(links) || !links.length) return;
-            const filtered = links.filter((src) => !src.toLowerCase().includes("demon spire.gif"));
-            if (!filtered.length) return;
-            const bag = filtered.slice();
-            randomTargets.forEach((img) => {
-              if (!bag.length) {
-                bag.push(...filtered);
-              }
-              const idx = Math.floor(Math.random() * bag.length);
-              img.src = bag.splice(idx, 1)[0];
-            });
-          })
-          .catch(() => {});
-      });
-    </script>
   </body>
 </html>
-
-
-
