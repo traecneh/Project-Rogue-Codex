@@ -215,6 +215,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="For game-update-workflow, apply reviewed generated data and asset syncs after dry-run previews.",
     )
     parser.add_argument(
+        "--force-apply",
+        action="store_true",
+        help="For game-update-workflow, continue applying even when the game update report marks sync readiness as blocked.",
+    )
+    parser.add_argument(
         "--verify-live",
         action="store_true",
         help="For game-update-workflow, run verify-live after review/apply steps.",
@@ -938,6 +943,7 @@ def run_game_update_report(args: argparse.Namespace) -> int:
         print(f"ERROR: {exc}")
         return 1
     _print_game_update_report(report)
+    setattr(args, "_game_update_report_safe_to_sync", report.safe_to_sync)
     if args.review_checklist:
         _print_game_update_review_checklist(report)
     if args.write_summary:
@@ -989,6 +995,12 @@ def run_game_update_workflow(args: argparse.Namespace) -> int:
             return code
 
     if args.apply:
+        sync_ready = getattr(args, "_game_update_report_safe_to_sync", None)
+        if sync_ready is False and not args.force_apply:
+            print("WORKFLOW STOP apply: sync readiness BLOCKED; rerun with --force-apply to override")
+            return 1
+        if sync_ready is False:
+            print("WORKFLOW OVERRIDE apply: sync readiness BLOCKED; continuing because --force-apply was provided")
         apply_steps = [
             ("sync-generated", run_sync_generated, _args_with(args, dry_run=False)),
             ("sync-assets", run_sync_assets, _args_with(args, dry_run=False)),
