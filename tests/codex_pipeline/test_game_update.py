@@ -373,3 +373,82 @@ class GameUpdateReportTests(unittest.TestCase):
         self.assertIn("  added: New Sword.gif", printed)
         self.assertIn("  removed: Old Sword.gif", printed)
         self.assertIn("  changed: Rune Sword.gif", printed)
+
+    def test_cli_can_write_game_update_markdown_summary_artifact(self):
+        from tools.codex_pipeline import cli
+        from tools.codex_pipeline.game_update import GameUpdateReport
+
+        weapon_target = ExportTarget(
+            "weapons",
+            Path("extract_weapons.py"),
+            Path("data05.dat"),
+            "weapons.json",
+            Path("site/weapons.json"),
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            output_dir = Path(tmp) / "generated"
+            report = GameUpdateReport(
+                output_dir=output_dir,
+                source_checks=[],
+                export_results=[],
+                diff_reports=[
+                    DataDiffReport(
+                        target=weapon_target,
+                        generated_path=output_dir / "weapons.json",
+                        site_path=Path("site/weapons.json"),
+                        added=["New Sword (3)"],
+                        removed=[],
+                        changed=[
+                            RecordChange(
+                                key="id:1",
+                                label="Rune Sword (1)",
+                                field_changes=[FieldChange("fields.damage", 10, 11)],
+                            )
+                        ],
+                    )
+                ],
+                unknown_reports=[],
+                asset_reports=[
+                    AssetChangeReport(
+                        target_name="weapons",
+                        client_dir=Path("client/Weapons"),
+                        site_dir=Path("images/weapons"),
+                        client_count=2,
+                        site_count=2,
+                        manifest_count=2,
+                        added=[],
+                        removed=[],
+                        changed=["Rune Sword.gif"],
+                        issues=[],
+                    )
+                ],
+                drop_report=None,
+                validation_issues=[ValidationIssue("warning", "sample warning")],
+                export_errors=[],
+                skipped_sections=[],
+            )
+            output = io.StringIO()
+            with (
+                patch.object(cli, "resolve_targets", return_value=[]),
+                patch.object(cli, "build_game_update_report", return_value=report),
+                patch("sys.stdout", output),
+            ):
+                exit_code = cli.main(["game-update-report", "--write-summary", "--output-dir", str(output_dir)])
+
+            summary_path = output_dir / "game_update_summary.md"
+            self.assertEqual(0, exit_code)
+            self.assertTrue(summary_path.is_file())
+            printed = output.getvalue()
+            self.assertIn(f"WROTE SUMMARY: {summary_path}", printed)
+            markdown = summary_path.read_text(encoding="utf-8")
+            self.assertIn("# Project Rogue Codex Game Update Summary", markdown)
+            self.assertIn("- Data: +1 -0 ~1", markdown)
+            self.assertIn("- Images: +0 -0 ~1", markdown)
+            self.assertIn("## Data Changes", markdown)
+            self.assertIn("### Weapons", markdown)
+            self.assertIn("- Added: New Sword (3)", markdown)
+            self.assertIn("- Changed: Rune Sword (1): fields.damage", markdown)
+            self.assertIn("## Image Changes", markdown)
+            self.assertIn("- Changed: Rune Sword.gif", markdown)
+            self.assertIn("## Review Notes", markdown)
+            self.assertIn("- WARNING: sample warning", markdown)

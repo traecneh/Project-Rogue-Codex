@@ -195,6 +195,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Intermediate generated-output directory.",
     )
     parser.add_argument(
+        "--write-summary",
+        action="store_true",
+        help="For game-update-report, write a Markdown review summary artifact.",
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="For sync-generated/export-sync/sync-assets, report site file changes without copying.",
@@ -469,13 +474,19 @@ def _format_player_field_paths(record, *, max_fields: int) -> str:
     return f"{', '.join(visible)}{suffix}"
 
 
+def _player_change_counts(report) -> tuple[int, int, int, int, int, int]:
+    return (
+        sum(len(diff.added) for diff in report.diff_reports),
+        sum(len(diff.removed) for diff in report.diff_reports),
+        sum(len(diff.changed) for diff in report.diff_reports),
+        sum(len(asset.added) for asset in report.asset_reports),
+        sum(len(asset.removed) for asset in report.asset_reports),
+        sum(len(asset.changed) for asset in report.asset_reports),
+    )
+
+
 def _print_player_change_summary(report, *, max_records: int = 5, max_fields: int = 5) -> None:
-    data_added = sum(len(diff.added) for diff in report.diff_reports)
-    data_removed = sum(len(diff.removed) for diff in report.diff_reports)
-    data_changed = sum(len(diff.changed) for diff in report.diff_reports)
-    image_added = sum(len(asset.added) for asset in report.asset_reports)
-    image_removed = sum(len(asset.removed) for asset in report.asset_reports)
-    image_changed = sum(len(asset.changed) for asset in report.asset_reports)
+    data_added, data_removed, data_changed, image_added, image_removed, image_changed = _player_change_counts(report)
 
     if not any([data_added, data_removed, data_changed, image_added, image_removed, image_changed]):
         print("PLAYER CHANGE SUMMARY: no player-facing data or image changes")
@@ -506,6 +517,88 @@ def _print_player_change_summary(report, *, max_records: int = 5, max_fields: in
         _print_player_summary_values("added", asset.added, max_records=max_records)
         _print_player_summary_values("removed", asset.removed, max_records=max_records)
         _print_player_summary_values("changed", asset.changed, max_records=max_records)
+
+
+def _extend_markdown_values(lines: list[str], label: str, values: list[str], *, max_records: int) -> None:
+    for value in values[:max_records]:
+        lines.append(f"- {label}: {value}")
+    if len(values) > max_records:
+        lines.append(f"- {label}: ... {len(values) - max_records} more")
+
+
+def _target_heading(name: str) -> str:
+    return name[:1].upper() + name[1:]
+
+
+def build_game_update_summary_markdown(report, *, max_records: int = 12, max_fields: int = 8) -> str:
+    data_added, data_removed, data_changed, image_added, image_removed, image_changed = _player_change_counts(report)
+    lines = [
+        "# Project Rogue Codex Game Update Summary",
+        "",
+        "## Overview",
+        f"- Data: +{data_added} -{data_removed} ~{data_changed}",
+        f"- Images: +{image_added} -{image_removed} ~{image_changed}",
+        f"- Review status: {'changes detected' if report.has_changes else 'no generated data changes'}",
+        f"- Sync readiness: {'OK' if report.safe_to_sync else 'BLOCKED'}",
+        "",
+        "## Data Changes",
+    ]
+
+    data_sections = [diff for diff in report.diff_reports if diff.has_changes]
+    if not data_sections:
+        lines.append("- No player-facing data changes.")
+    for diff in data_sections:
+        lines.extend(
+            [
+                "",
+                f"### {_target_heading(diff.target.name)}",
+                f"- Totals: +{len(diff.added)} -{len(diff.removed)} ~{len(diff.changed)}",
+            ]
+        )
+        _extend_markdown_values(lines, "Added", diff.added, max_records=max_records)
+        _extend_markdown_values(lines, "Removed", diff.removed, max_records=max_records)
+        for record in diff.changed[:max_records]:
+            fields = _format_player_field_paths(record, max_fields=max_fields)
+            lines.append(f"- Changed: {record.label}: {fields}")
+        if len(diff.changed) > max_records:
+            lines.append(f"- Changed: ... {len(diff.changed) - max_records} more")
+
+    lines.extend(["", "## Image Changes"])
+    image_sections = [asset for asset in report.asset_reports if asset.has_changes]
+    if not image_sections:
+        lines.append("- No image changes.")
+    for asset in image_sections:
+        lines.extend(
+            [
+                "",
+                f"### {_target_heading(asset.target_name)}",
+                f"- Totals: +{len(asset.added)} -{len(asset.removed)} ~{len(asset.changed)}",
+            ]
+        )
+        _extend_markdown_values(lines, "Added", asset.added, max_records=max_records)
+        _extend_markdown_values(lines, "Removed", asset.removed, max_records=max_records)
+        _extend_markdown_values(lines, "Changed", asset.changed, max_records=max_records)
+
+    review_notes = [
+        f"{issue.severity.upper()}: {issue.message}"
+        for issue in report.validation_issues
+    ]
+    review_notes.extend(f"EXPORT ERROR: {error}" for error in report.export_errors)
+    review_notes.extend(f"SKIPPED: {section}" for section in report.skipped_sections)
+
+    lines.extend(["", "## Review Notes"])
+    if review_notes:
+        lines.extend(f"- {note}" for note in review_notes)
+    else:
+        lines.append("- No warnings or skipped review sections.")
+
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def _write_game_update_summary(report, path: Path) -> Path:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(build_game_update_summary_markdown(report), encoding="utf-8", newline="\n")
+    return path
 
 
 def run_export_client_data(args: argparse.Namespace) -> int:
@@ -808,6 +901,10 @@ def run_game_update_report(args: argparse.Namespace) -> int:
         print(f"ERROR: {exc}")
         return 1
     _print_game_update_report(report)
+    if args.write_summary:
+        summary_path = report.output_dir / "game_update_summary.md"
+        written_path = _write_game_update_summary(report, summary_path)
+        print(f"WROTE SUMMARY: {written_path}")
     return 0 if not report.has_errors else 1
 
 
