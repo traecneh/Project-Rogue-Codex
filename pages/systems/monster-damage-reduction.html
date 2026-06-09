@@ -11,6 +11,7 @@
     <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
     <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/monster-damage-reduction.css" />
     <script src="js/site-search.js" defer></script>
     <script src="js/weapon-specialty.js" defer></script>
     <script src="js/stat-widgets.js" defer></script>
@@ -19,6 +20,7 @@
     <script src="js/perks.js" defer></script>
     <script src="js/rarity-roller.js" defer></script>
     <script src="js/nav-core.js" defer></script>
+    <script src="js/monster-damage-reduction.js" defer></script>
   </head>
   <body>
     <div class="layout">
@@ -27,204 +29,182 @@
         <header class="content-header">
           <h1 class="content-title">Monster Damage Reduction</h1>
           <p class="content-tagline">
-            Current in-game scaling: starts at +20, caps at +30, monsters hit harder and take less damage (up to 25%, monsters 100+ count as 100).
+            Current in-game scaling for high-level monsters: starts at +20, caps at +30, and tops out at a 25% shift.
           </p>
         </header>
 
-        <article class="content-section">
-          <h2>Key Points</h2>
-          <ul>
-            <li>No change until the monster is at least 20 levels above you.</li>
-            <li>From +20 to +30 gap, the effect ramps linearly.</li>
-            <li>Max shift is 25%: monsters deal up to 25% more damage and take up to 25% less damage.</li>
-            <li>Gaps above +30 stay capped; gaps below +20 (or negative) stay at 0%.</li>
-            <li>The same thresholds apply to every player level (no per-level bands).</li>
-            <li>Monster levels above 100 are treated as level 100 for this calculation.</li>
-          </ul>
+        <article class="content-section" id="monster-dr-basics">
+          <h2>Monster Damage Reduction at a Glance</h2>
+          <div class="monster-dr-summary-grid" role="list">
+            <section class="monster-dr-summary-card" role="listitem">
+              <p class="stat-label">Start Threshold</p>
+              <h3>+20 level gap</h3>
+              <p>No monster scaling applies until the monster is more than 20 levels above you.</p>
+            </section>
 
-          <section>
-            <h2>Current Scaling</h2>
-            <div class="stat-grid" role="list" aria-label="Current monster damage reduction rules">
-              <section class="stat-card" role="listitem">
-                <p class="stat-label">Start Threshold</p>
-                <h3>+20 level gap</h3>
-                <p>No change until the monster is 20+ levels above you.</p>
+            <section class="monster-dr-summary-card" role="listitem">
+              <p class="stat-label">Full Effect</p>
+              <h3>+30 level gap</h3>
+              <p>At +30 or higher, the monster scaling is fully capped.</p>
+            </section>
+
+            <section class="monster-dr-summary-card" role="listitem">
+              <p class="stat-label">Max Shift</p>
+              <h3>25%</h3>
+              <p>Monsters can deal up to 25% more damage and take up to 25% less damage.</p>
+            </section>
+
+            <section class="monster-dr-summary-card" role="listitem">
+              <p class="stat-label">Level 100 Cap</p>
+              <h3>Monsters 100+</h3>
+              <p>For this calculation, monsters 100+ count as 100 before the level gap is checked.</p>
+            </section>
+          </div>
+
+          <section class="monster-dr-rule-section">
+            <h2>Scaling Rules</h2>
+            <div class="monster-dr-rule-grid" role="list">
+              <section class="monster-dr-rule-card" role="listitem">
+                <p class="stat-label">Below Start</p>
+                <h3>0%</h3>
+                <p>Gaps at +20 or lower have no damage shift.</p>
               </section>
-              <section class="stat-card" role="listitem">
-                <p class="stat-label">Full Effect</p>
-                <h3>+30 level gap</h3>
-                <p>At +30 or more, scaling is fully capped.</p>
+
+              <section class="monster-dr-rule-card" role="listitem">
+                <p class="stat-label">Ramp</p>
+                <h3>Linear +20 to +30</h3>
+                <p>Each level inside the +20 to +30 window increases the shift toward the 25% cap.</p>
               </section>
-              <section class="stat-card" role="listitem">
-                <p class="stat-label">Max Shift</p>
-                <h3>25%</h3>
-                <p>Monsters deal more and take less; both capped at 25%.</p>
+
+              <section class="monster-dr-rule-card" role="listitem">
+                <p class="stat-label">Capped</p>
+                <h3>+30 and above</h3>
+                <p>The same thresholds apply at every player level, and gaps above +30 stay capped.</p>
               </section>
             </div>
           </section>
 
-          <section>
-            <h2>Calculator</h2>
-            <p>
-              Adjust levels to see the current in-game scaling (linear from +20 to +30, capped at 25%).
-              Monster levels above 100 are treated as 100 for this calculation.
-            </p>
-            <div class="stat-widget" data-monster-dr-widget>
-              <div class="stat-control">
-                <label for="player-level">Player Level &mdash; <span data-player-value>25</span></label>
-                <input
-                  type="range"
-                  id="player-level"
-                  min="1"
-                  max="105"
-                  value="25"
-                  step="1"
-                  data-player-input
-                />
+          <section class="monster-dr-calculator-section">
+            <div class="monster-dr-section-heading">
+              <div>
+                <h2>Damage Reduction Calculator</h2>
+                <p>Adjust the levels to see monster damage dealt and your outgoing damage after their reduction.</p>
               </div>
-              <div class="stat-control">
-                <label for="monster-level">
-                  Monster Level &mdash; <span data-monster-value>50</span><span data-monster-cap></span>
+              <p class="monster-dr-note">Monster levels above 100 are treated as 100.</p>
+            </div>
+
+            <div class="stat-widget monster-dr-calculator" data-monster-dr-widget>
+              <div class="monster-dr-controls">
+                <label class="monster-dr-control" for="player-level">
+                  <span>Player Level</span>
+                  <strong data-player-value>25</strong>
+                  <input type="range" id="player-level" min="1" max="105" value="25" step="1" data-player-input />
                 </label>
-                <input
-                  type="range"
-                  id="monster-level"
-                  min="5"
-                  max="120"
-                  value="50"
-                  step="5"
-                  data-monster-input
-                />
+
+                <label class="monster-dr-control" for="monster-level">
+                  <span>Monster Level</span>
+                  <strong><span data-monster-value>50</span><span data-monster-cap></span></strong>
+                  <input type="range" id="monster-level" min="5" max="120" value="50" step="5" data-monster-input />
+                </label>
               </div>
-              <div class="stat-grid" aria-label="Monster damage reduction results">
-                <section class="stat-card">
+
+              <div class="monster-dr-result-grid" aria-label="Monster damage reduction results">
+                <section class="monster-dr-result-card">
                   <p class="stat-label">Level Difference</p>
                   <h3 data-level-gap>+25</h3>
-                  <p data-gap-note>Scaling starts at +20 and caps at +30.</p>
+                  <p data-gap-note>5 levels into the +20 to +30 window.</p>
                 </section>
-                <section class="stat-card">
+
+                <section class="monster-dr-result-card">
                   <p class="stat-label">Scaling Amount</p>
                   <h3 data-scaling-value>12.5%</h3>
-                  <p>Applied equally to monster damage boost and their damage reduction.</p>
+                  <p>Applied to both monster damage boost and their damage reduction.</p>
                 </section>
-                <section class="stat-card">
+
+                <section class="monster-dr-result-card">
                   <p class="stat-label">Monster Damage Dealt</p>
                   <h3 data-monster-damage>112.5%</h3>
-                  <p>What you receive after their bonus.</p>
+                  <p>Damage you receive after the monster's bonus.</p>
                 </section>
-                <section class="stat-card">
+
+                <section class="monster-dr-result-card">
                   <p class="stat-label">Your Damage vs Monster</p>
                   <h3 data-player-damage>87.5%</h3>
-                  <p>Your outgoing damage after their reduction.</p>
+                  <p>Your outgoing damage after the monster's reduction.</p>
                 </section>
               </div>
-              <p class="calculator-note" data-result-note>
-                At +25, monsters deal 12.5% more damage and take 12.5% less damage.
+
+              <p class="monster-dr-result-note" data-result-note>
+                At +25, monsters deal 12.5% more damage and take 12.5% less from you.
               </p>
+            </div>
+          </section>
+
+          <section class="monster-dr-reference-section">
+            <h2>Threshold Reference</h2>
+            <div class="monster-dr-reference-grid" role="list">
+              <section class="monster-dr-reference-card" role="listitem">
+                <p class="stat-label">+20 or less</p>
+                <h3>0%</h3>
+                <p>No monster bonus and no reduction against your damage.</p>
+              </section>
+
+              <section class="monster-dr-reference-card" role="listitem">
+                <p class="stat-label">+25</p>
+                <h3>12.5%</h3>
+                <p>Monster damage dealt is 112.5%; your damage vs monster is 87.5%.</p>
+              </section>
+
+              <section class="monster-dr-reference-card" role="listitem">
+                <p class="stat-label">+30 or more</p>
+                <h3>25%</h3>
+                <p>Monster damage dealt is 125%; your damage vs monster is 75%.</p>
+              </section>
+
+              <section class="monster-dr-reference-card" role="listitem">
+                <p class="stat-label">Level 100 Cap</p>
+                <h3>100</h3>
+                <p>Monsters above level 100 use treated level 100 for this calculation.</p>
+              </section>
+            </div>
+          </section>
+
+          <section class="monster-dr-example-section">
+            <h2>Example Outcomes</h2>
+            <div class="monster-dr-example-grid" role="list">
+              <section class="monster-dr-example-card" role="listitem">
+                <p class="stat-label">Even or Lower</p>
+                <h3>No scaling</h3>
+                <p>A monster at or below your level does not trigger this system.</p>
+              </section>
+
+              <section class="monster-dr-example-card" role="listitem">
+                <p class="stat-label">Player 25 vs Monster 50</p>
+                <h3>12.5% shift</h3>
+                <p>A +25 gap is halfway through the ramp, so monster damage is 112.5% and your damage is 87.5%.</p>
+              </section>
+
+              <section class="monster-dr-example-card" role="listitem">
+                <p class="stat-label">Player 25 vs Monster 120</p>
+                <h3>25% cap</h3>
+                <p>Monster 120 is treated as 100, producing a capped result of 125% monster damage and 75% player damage.</p>
+              </section>
+            </div>
+          </section>
+
+          <section class="monster-dr-related">
+            <h2>Related Pages</h2>
+            <div class="monster-dr-link-grid" aria-label="Related Monster Damage Reduction pages">
+              <a href="pages/enemies/monsters.html">Monsters</a>
+              <a href="pages/items/weapons.html">Weapons</a>
+              <a href="pages/items/armors.html">Armors</a>
+              <a href="pages/systems/anti-zerg.html">Anti-Zerg</a>
+              <a href="pages/systems/pvp-system.html">PVP System</a>
+              <a href="pages/General/build-planner.html">Build Planner</a>
             </div>
           </section>
         </article>
       </main>
     </div>
-    <script>
-      document.addEventListener("DOMContentLoaded", function () {
-        const widget = document.querySelector("[data-monster-dr-widget]");
-        if (!widget) return;
-
-        const playerInput = widget.querySelector("[data-player-input]");
-        const monsterInput = widget.querySelector("[data-monster-input]");
-        const playerValue = widget.querySelector("[data-player-value]");
-        const monsterValue = widget.querySelector("[data-monster-value]");
-        const monsterCap = widget.querySelector("[data-monster-cap]");
-        const gapValue = widget.querySelector("[data-level-gap]");
-        const gapNote = widget.querySelector("[data-gap-note]");
-        const scalingValue = widget.querySelector("[data-scaling-value]");
-        const monsterDamageValue = widget.querySelector("[data-monster-damage]");
-        const playerDamageValue = widget.querySelector("[data-player-damage]");
-        const resultNote = widget.querySelector("[data-result-note]");
-
-        const startGap = 20;
-        const capGap = 30;
-        const maxEffect = 25;
-        const monsterLevelCap = 100;
-
-        const formatPercent = (value) => {
-          const rounded = Math.round(value * 10) / 10;
-          const text = Number.isInteger(rounded) ? rounded.toString() : rounded.toFixed(1);
-          return `${text}%`;
-        };
-
-        const formatGap = (gap) => (gap === 0 ? "Even level" : `${gap > 0 ? "+" : ""}${gap}`);
-
-        function calculateEffect(playerLevel, monsterLevel) {
-          const gap = monsterLevel - playerLevel;
-
-          if (gap <= 0) {
-            return {
-              effect: 0,
-              note: "Monster is at or below your level; no scaling applies.",
-              gap
-            };
-          }
-
-          if (gap <= startGap) {
-            return {
-              effect: 0,
-              note: `Scaling begins at +${startGap}; current gap is ${formatGap(gap)}.`,
-              gap
-            };
-          }
-
-          const clampedGap = Math.min(gap, capGap);
-          const scalingWindow = capGap - startGap;
-          const gapIntoWindow = clampedGap - startGap;
-          const effect = (gapIntoWindow / scalingWindow) * maxEffect;
-          const note =
-            gap >= capGap
-              ? `Gap is +${capGap} or higher; effect is capped at ${formatPercent(maxEffect)}.`
-              : `${gapIntoWindow} levels into the +${startGap} to +${capGap} window.`;
-
-          return { effect, note, gap };
-        }
-
-        function update() {
-          const playerLevel = Number(playerInput.value);
-          const rawMonsterLevel = Number(monsterInput.value);
-          const monsterLevel = Math.min(rawMonsterLevel, monsterLevelCap);
-          const { effect, note, gap } = calculateEffect(playerLevel, monsterLevel);
-
-          const monsterDamage = 100 + effect;
-          const playerDamage = Math.max(0, 100 - effect);
-
-          playerValue.textContent = playerLevel;
-          monsterValue.textContent = rawMonsterLevel;
-          monsterCap.textContent = rawMonsterLevel > monsterLevelCap ? ` (treated as ${monsterLevelCap})` : "";
-          gapValue.textContent = formatGap(gap);
-          gapNote.textContent = note;
-          scalingValue.textContent = formatPercent(effect);
-          monsterDamageValue.textContent = formatPercent(monsterDamage);
-          playerDamageValue.textContent = formatPercent(playerDamage);
-
-          if (effect === 0) {
-            resultNote.textContent =
-              gap <= 0
-                ? "Monster is not high enough level to trigger any scaling."
-                : `Gap is ${formatGap(gap)}; scaling starts at +${startGap}.`;
-          } else {
-            const capNote =
-              rawMonsterLevel > monsterLevelCap
-                ? ` Using treated level ${monsterLevelCap} for scaling.`
-                : "";
-            resultNote.textContent = `At ${formatGap(gap)}, monsters deal ${formatPercent(
-              effect
-            )} more damage and take ${formatPercent(effect)} less from you.${capNote}`;
-          }
-        }
-
-        playerInput.addEventListener("input", update);
-        monsterInput.addEventListener("input", update);
-        update();
-      });
-    </script>
   </body>
 </html>

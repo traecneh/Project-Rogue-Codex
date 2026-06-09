@@ -140,6 +140,12 @@ async function main() {
       failures.push(`SMOKE ERROR anti-zerg: ${formatError(error)}`);
     }
     try {
+      await runMonsterDamageReductionSpec(browser, baseUrl);
+      console.log("SMOKE OK monster damage reduction: scaling reference, calculator, related links");
+    } catch (error) {
+      failures.push(`SMOKE ERROR monster damage reduction: ${formatError(error)}`);
+    }
+    try {
       await runGuildSpec(browser, baseUrl);
       console.log("SMOKE OK guild: management reference, party preview, related links");
     } catch (error) {
@@ -178,7 +184,7 @@ async function main() {
     failures.forEach((failure) => console.error(failure));
     process.exit(1);
   }
-  console.log(`SMOKE OK site: ${smokeSpecs.length + 17} page(s) checked at ${baseUrl}`);
+  console.log(`SMOKE OK site: ${smokeSpecs.length + 18} page(s) checked at ${baseUrl}`);
 }
 
 async function importPlaywright() {
@@ -1014,6 +1020,136 @@ async function assertAntiZergCalculator(page, myGuildSize, enemyGuildSize, expec
   }
   if (!scenarioText.includes("guild")) {
     throw new Error(`Anti-Zerg calculator scenario did not describe guild matchup: "${scenarioText}"`);
+  }
+}
+
+async function runMonsterDamageReductionSpec(browser, baseUrl) {
+  const page = await browser.newPage();
+  page.setDefaultTimeout(timeoutMs);
+  const runtimeErrors = [];
+  page.on("console", (message) => {
+    const text = message.text();
+    if (message.type() === "error" && !text.startsWith("Failed to load resource")) runtimeErrors.push(text);
+  });
+  page.on("pageerror", (error) => runtimeErrors.push(formatError(error)));
+
+  try {
+    await page.goto(joinUrl(baseUrl, "/pages/systems/monster-damage-reduction.html"), { waitUntil: "load" });
+    await page.locator(".monster-dr-calculator").waitFor({ state: "visible" });
+    const pageText = (await page.locator("#monster-dr-basics").textContent()).trim();
+    for (const expected of [
+      "Monster Damage Reduction at a Glance",
+      "Scaling Rules",
+      "Damage Reduction Calculator",
+      "Threshold Reference",
+      "Example Outcomes",
+      "Related Pages",
+      "+20 level gap",
+      "+30 level gap",
+      "25%",
+      "Level 100 Cap",
+      "monsters 100+ count as 100",
+      "Player Level",
+      "Monster Level",
+      "Level Difference",
+      "Monster Damage Dealt",
+      "Your Damage vs Monster",
+      "12.5%",
+      "112.5%",
+      "87.5%",
+    ]) {
+      if (!pageText.includes(expected)) {
+        throw new Error(`Monster Damage Reduction page missing "${expected}": "${pageText}"`);
+      }
+    }
+
+    for (const href of [
+      "pages/enemies/monsters.html",
+      "pages/items/weapons.html",
+      "pages/items/armors.html",
+      "pages/systems/anti-zerg.html",
+      "pages/systems/pvp-system.html",
+      "pages/General/build-planner.html",
+    ]) {
+      const count = await page.locator(`.monster-dr-link-grid a[href="${href}"]`).count();
+      if (count !== 1) {
+        throw new Error(`Monster Damage Reduction related link expected one "${href}", found ${count}`);
+      }
+    }
+
+    await assertMonsterDamageReductionCalculator(page, 25, 50, {
+      gap: "+25",
+      scaling: "12.5%",
+      monsterDamage: "112.5%",
+      playerDamage: "87.5%",
+      note: "monsters deal 12.5% more damage",
+    });
+    await assertMonsterDamageReductionCalculator(page, 50, 60, {
+      gap: "+10",
+      scaling: "0%",
+      monsterDamage: "100%",
+      playerDamage: "100%",
+      note: "scaling starts at +20",
+    });
+    await assertMonsterDamageReductionCalculator(page, 25, 55, {
+      gap: "+30",
+      scaling: "25%",
+      monsterDamage: "125%",
+      playerDamage: "75%",
+      note: "monsters deal 25% more damage",
+    });
+    await assertMonsterDamageReductionCalculator(page, 25, 120, {
+      gap: "+75",
+      scaling: "25%",
+      monsterDamage: "125%",
+      playerDamage: "75%",
+      note: "Using treated level 100 for scaling.",
+      cap: "(treated as 100)",
+    });
+
+    await assertMobilePageFirstNavigation(page, baseUrl, "/pages/systems/monster-damage-reduction.html");
+
+    if (runtimeErrors.length) {
+      throw new Error(`browser errors: ${runtimeErrors.join("; ")}`);
+    }
+  } finally {
+    await page.close();
+  }
+}
+
+async function assertMonsterDamageReductionCalculator(page, playerLevel, monsterLevel, expected) {
+  await page.locator("[data-player-input]").evaluate((input, value) => {
+    input.value = String(value);
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  }, playerLevel);
+  await page.locator("[data-monster-input]").evaluate((input, value) => {
+    input.value = String(value);
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  }, monsterLevel);
+
+  await page.waitForFunction(
+    ({ scaling }) => document.querySelector("[data-scaling-value]")?.textContent?.trim() === scaling,
+    { scaling: expected.scaling },
+    { timeout: timeoutMs }
+  );
+
+  const state = await page.evaluate(() => ({
+    cap: document.querySelector("[data-monster-cap]")?.textContent?.trim() || "",
+    gap: document.querySelector("[data-level-gap]")?.textContent?.trim() || "",
+    monsterDamage: document.querySelector("[data-monster-damage]")?.textContent?.trim() || "",
+    note: document.querySelector("[data-result-note]")?.textContent?.trim() || "",
+    playerDamage: document.querySelector("[data-player-damage]")?.textContent?.trim() || "",
+    scaling: document.querySelector("[data-scaling-value]")?.textContent?.trim() || "",
+  }));
+
+  for (const [key, value] of Object.entries(expected)) {
+    if (key === "note") {
+      if (!state.note.includes(value)) {
+        throw new Error(`Monster DR calculator note missing "${value}": "${state.note}"`);
+      }
+    } else if (state[key] !== value) {
+      throw new Error(`Monster DR calculator expected ${key}="${value}", got "${state[key]}"`);
+    }
   }
 }
 
