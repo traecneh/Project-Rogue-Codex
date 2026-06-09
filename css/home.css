@@ -145,6 +145,79 @@
   color: var(--text-muted);
 }
 
+.home-freshness-panel {
+  margin-top: 0.85rem;
+  padding: 0.9rem;
+  border: 1px solid rgba(90, 176, 255, 0.3);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(90, 176, 255, 0.1), rgba(255, 214, 90, 0.05)),
+    var(--bg-panel-dark);
+}
+
+.home-freshness-heading {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.home-freshness-heading h3 {
+  margin: 0.15rem 0 0;
+  color: var(--text-main);
+}
+
+.home-freshness-status {
+  flex: 0 0 auto;
+  padding: 0.25rem 0.55rem;
+  border: 1px solid rgba(75, 255, 75, 0.3);
+  border-radius: 999px;
+  background: rgba(75, 255, 75, 0.08);
+  color: #dcffe2;
+  font-size: 0.74rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.home-freshness-status.is-error {
+  border-color: rgba(255, 99, 99, 0.45);
+  background: rgba(255, 99, 99, 0.1);
+  color: #ffd0d0;
+}
+
+.home-freshness-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+  gap: 0.6rem;
+  margin-top: 0.8rem;
+}
+
+.home-freshness-metric {
+  min-width: 0;
+  padding: 0.65rem 0.7rem;
+  border: 1px solid rgba(120, 128, 140, 0.28);
+  border-radius: 8px;
+  background: rgba(11, 15, 22, 0.36);
+}
+
+.home-freshness-metric span {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.74rem;
+  line-height: 1.25;
+}
+
+.home-freshness-metric strong {
+  display: block;
+  min-width: 0;
+  margin-top: 0.2rem;
+  overflow-wrap: anywhere;
+  color: #ffffff;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.9rem;
+  line-height: 1.25;
+}
+
 .home-section-heading {
   display: flex;
   gap: 1rem;
@@ -623,6 +696,14 @@
 
   .home-filter-summary {
     min-width: 0;
+  }
+
+  .home-freshness-heading {
+    flex-direction: column;
+  }
+
+  .home-freshness-status {
+    align-self: flex-start;
   }
 }
 

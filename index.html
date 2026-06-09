@@ -209,6 +209,43 @@
               <p>Modern pages have validation and browser smoke checks so updates can be pushed with evidence.</p>
             </section>
           </div>
+
+          <section
+            class="home-freshness-panel"
+            data-freshness-panel
+            data-manifest-url="data/codex_manifest.json"
+            aria-live="polite"
+          >
+            <div class="home-freshness-heading">
+              <div>
+                <p class="stat-label">Data Freshness</p>
+                <h3>Current exported snapshot</h3>
+              </div>
+              <span class="home-freshness-status" data-freshness-status>Loading manifest</span>
+            </div>
+            <div class="home-freshness-grid" role="list">
+              <div class="home-freshness-metric" role="listitem">
+                <span>Generated</span>
+                <strong data-freshness-generated>--</strong>
+              </div>
+              <div class="home-freshness-metric" role="listitem">
+                <span>Records</span>
+                <strong data-freshness-total-records>--</strong>
+              </div>
+              <div class="home-freshness-metric" role="listitem">
+                <span>Image entries</span>
+                <strong data-freshness-total-assets>--</strong>
+              </div>
+              <div class="home-freshness-metric" role="listitem">
+                <span>Content hash</span>
+                <strong data-freshness-content-hash>--</strong>
+              </div>
+              <div class="home-freshness-metric" role="listitem">
+                <span>Source commit</span>
+                <strong data-freshness-commit>--</strong>
+              </div>
+            </div>
+          </section>
         </article>
 
         <article class="content-section" id="overview">

@@ -7,6 +7,7 @@ from pathlib import Path
 from tools.codex_pipeline.config import (
     ARMOR_IMAGES_DIR,
     ARMORS_DATA_PATH,
+    CODEX_MANIFEST_PATH,
     DROP_SOURCES_PATH,
     GENERATED_OUTPUT_DIR,
     MONSTER_IMAGES_DIR,
@@ -36,6 +37,7 @@ from tools.codex_pipeline.exports import (
     sync_generated_outputs,
 )
 from tools.codex_pipeline.game_update import build_game_update_report
+from tools.codex_pipeline.freshness import build_codex_manifest, validate_codex_manifest, write_codex_manifest
 from tools.codex_pipeline.perks import load_perk_label_overrides
 from tools.codex_pipeline.sources import validate_export_sources
 from tools.codex_pipeline.site_smoke import run_site_smoke as run_site_smoke_command
@@ -173,6 +175,7 @@ def build_parser() -> argparse.ArgumentParser:
             "drop-report",
             "game-update-report",
             "sync-assets",
+            "refresh-manifest",
             "game-update-workflow",
             "smoke-site",
             "site-coverage",
@@ -396,6 +399,7 @@ def collect_validation_issues() -> list[ValidationIssue]:
         except ValueError:
             label = str(path)
         issues.extend(validate_javascript_file(label, path))
+    issues.extend(validate_codex_manifest(manifest_path=CODEX_MANIFEST_PATH))
     return issues
 
 
@@ -472,6 +476,9 @@ def run_sync_generated(args: argparse.Namespace) -> int:
     if args.dry_run:
         _print_diff_reports(diff_reports)
         return 0
+    refresh_code = run_refresh_manifest()
+    if refresh_code != 0:
+        return refresh_code
     return run_validate()
 
 
@@ -559,6 +566,22 @@ def run_verify_deploy(args: argparse.Namespace) -> int:
     if verify_code != 0:
         return verify_code
     return _run_workflow_step("smoke-site --live", run_smoke_site, _args_with(args, live=True))
+
+
+def run_refresh_manifest(args: argparse.Namespace | None = None) -> int:
+    try:
+        manifest = build_codex_manifest()
+        write_codex_manifest(manifest, CODEX_MANIFEST_PATH)
+    except (OSError, ValueError, json.JSONDecodeError) as exc:
+        print(f"ERROR: failed to refresh codex manifest: {exc}")
+        return 1
+    summary = manifest["summary"]
+    print(
+        "MANIFEST OK data/codex_manifest.json: "
+        f"records={summary['data_records']} assets={summary['asset_entries']} "
+        f"content={str(summary['content_sha256'])[:12]}"
+    )
+    return 0
 
 
 def run_doctor(args: argparse.Namespace) -> int:
@@ -740,7 +763,11 @@ def run_sync_assets(args: argparse.Namespace) -> int:
         return 1
     reports = sync_asset_targets(targets, dry_run=args.dry_run)
     _print_asset_sync_reports(reports)
-    return 0 if not any(report.has_errors for report in reports) else 1
+    if any(report.has_errors for report in reports):
+        return 1
+    if not args.dry_run:
+        return run_refresh_manifest()
+    return 0
 
 
 def _args_with(args: argparse.Namespace, **overrides) -> argparse.Namespace:
@@ -773,9 +800,10 @@ def run_game_update_workflow(args: argparse.Namespace) -> int:
         apply_steps = [
             ("sync-generated", run_sync_generated, _args_with(args, dry_run=False)),
             ("sync-assets", run_sync_assets, _args_with(args, dry_run=False)),
+            ("refresh-manifest", run_refresh_manifest, None),
         ]
         for label, runner, step_args in apply_steps:
-            code = _run_workflow_step(label, runner, step_args)
+            code = _run_workflow_step(label, runner, step_args) if step_args is not None else _run_workflow_step(label, runner)
             if code != 0:
                 return code
 
@@ -820,6 +848,8 @@ def main(argv: list[str] | None = None) -> int:
         return run_game_update_report(args)
     if args.command == "sync-assets":
         return run_sync_assets(args)
+    if args.command == "refresh-manifest":
+        return run_refresh_manifest(args)
     if args.command == "game-update-workflow":
         return run_game_update_workflow(args)
     parser.error(f"Unsupported command: {args.command}")

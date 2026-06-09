@@ -29,6 +29,7 @@ class LiveDeploymentTests(unittest.TestCase):
                 "https://example.test/codex",
                 targets=[target],
                 asset_targets=[],
+                freshness_target=None,
                 fetch_text=fetch_text,
                 timeout_seconds=3,
             )
@@ -60,6 +61,7 @@ class LiveDeploymentTests(unittest.TestCase):
                 "https://example.test/codex/",
                 targets=[target],
                 asset_targets=[],
+                freshness_target=None,
                 fetch_text=fetch_text,
             )
 
@@ -112,6 +114,7 @@ class LiveDeploymentTests(unittest.TestCase):
                 "https://example.test/codex",
                 targets=[],
                 asset_targets=[target],
+                freshness_target=None,
                 fetch_text=fetch_text,
                 fetch_bytes=fetch_bytes,
                 timeout_seconds=5,
@@ -159,12 +162,86 @@ class LiveDeploymentTests(unittest.TestCase):
                 "https://example.test/codex/",
                 targets=[],
                 asset_targets=[target],
+                freshness_target=None,
                 fetch_text=fetch_text,
                 fetch_bytes=fetch_bytes,
             )
 
         messages = "\n".join(result.message for result in results if not result.ok)
         self.assertIn("armors live image differs from images/armors/Iceburst Amulet.gif", messages)
+
+    def test_verify_live_site_compares_codex_manifest_bytes(self):
+        from tools.codex_pipeline.deploy import LiveFreshnessTarget, verify_live_site
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            manifest_path = root / "data" / "codex_manifest.json"
+            manifest_path.parent.mkdir(parents=True)
+            manifest_path.write_bytes(b'{"schema":"project-rogue-codex-manifest"}\n')
+            target = LiveFreshnessTarget(
+                "codex manifest",
+                manifest_path,
+                "data/codex_manifest.json",
+            )
+            seen_binary_urls = []
+
+            def fetch_text(url, timeout_seconds):
+                if url == "https://example.test/codex/":
+                    return "<title>Project Rogue Codex</title>"
+                raise OSError(f"unexpected text URL: {url}")
+
+            def fetch_bytes(url, timeout_seconds):
+                seen_binary_urls.append((url, timeout_seconds))
+                if url == "https://example.test/codex/data/codex_manifest.json":
+                    return manifest_path.read_bytes()
+                raise OSError(f"unexpected binary URL: {url}")
+
+            results = verify_live_site(
+                "https://example.test/codex",
+                targets=[],
+                asset_targets=[],
+                freshness_target=target,
+                fetch_text=fetch_text,
+                fetch_bytes=fetch_bytes,
+                timeout_seconds=7,
+            )
+
+        self.assertTrue(all(result.ok for result in results), results)
+        self.assertEqual(
+            [("https://example.test/codex/data/codex_manifest.json", 7)],
+            seen_binary_urls,
+        )
+        self.assertIn("codex manifest matches data/codex_manifest.json", results[-1].message)
+
+    def test_verify_live_site_reports_mismatched_codex_manifest(self):
+        from tools.codex_pipeline.deploy import LiveFreshnessTarget, verify_live_site
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            manifest_path = root / "data" / "codex_manifest.json"
+            manifest_path.parent.mkdir(parents=True)
+            manifest_path.write_bytes(b'{"local":true}\n')
+            target = LiveFreshnessTarget("codex manifest", manifest_path, "data/codex_manifest.json")
+
+            def fetch_text(url, timeout_seconds):
+                if url.endswith("/"):
+                    return "<title>Project Rogue Codex</title>"
+                raise OSError(f"unexpected text URL: {url}")
+
+            def fetch_bytes(url, timeout_seconds):
+                return b'{"live":true}\n'
+
+            results = verify_live_site(
+                "https://example.test/codex/",
+                targets=[],
+                asset_targets=[],
+                freshness_target=target,
+                fetch_text=fetch_text,
+                fetch_bytes=fetch_bytes,
+            )
+
+        messages = "\n".join(result.message for result in results if not result.ok)
+        self.assertIn("codex manifest live bytes differ from data/codex_manifest.json", messages)
 
     def test_cli_verify_live_prints_results_and_returns_failure_for_errors(self):
         from tools.codex_pipeline import cli

@@ -70,7 +70,7 @@ async function main() {
     }
     try {
       await runHomeSpec(browser, baseUrl);
-      console.log("SMOKE OK home: gateway links, countdown, timeline filter");
+      console.log("SMOKE OK home: gateway links, freshness, countdown, timeline filter");
     } catch (error) {
       failures.push(`SMOKE ERROR home: ${formatError(error)}`);
     }
@@ -380,6 +380,7 @@ async function runHomeSpec(browser, baseUrl) {
       }
     }
 
+    await assertHomeFreshness(page);
     await assertHomeTimelineFilter(page, "all", 10, ["Dransik Classic", "Fresh Wipes & Live Upkeep"], []);
     await page.locator(PROJECT_ROGUE_FILTER_SELECTOR).waitFor({ state: "visible" });
     await assertHomeTimelineFilter(page, "project-rogue", 2, ["Project Rogue Begins", "Fresh Wipes & Live Upkeep"], [
@@ -395,6 +396,36 @@ async function runHomeSpec(browser, baseUrl) {
     }
   } finally {
     await page.close();
+  }
+}
+
+async function assertHomeFreshness(page) {
+  await page.locator(".home-freshness-panel").waitFor({ state: "visible" });
+  await page.waitForFunction(
+    () => {
+      const hash = document.querySelector("[data-freshness-content-hash]")?.textContent?.trim() || "";
+      return hash.length >= 12 && hash !== "Unavailable";
+    },
+    {},
+    { timeout: timeoutMs }
+  );
+
+  const status = (await page.locator("[data-freshness-status]").textContent()).trim();
+  if (status !== "Current") {
+    throw new Error(`Home freshness status expected Current, got "${status}"`);
+  }
+
+  for (const [selector, label] of [
+    ["[data-freshness-generated]", "generated"],
+    ["[data-freshness-total-records]", "records"],
+    ["[data-freshness-total-assets]", "assets"],
+    ["[data-freshness-content-hash]", "content hash"],
+    ["[data-freshness-commit]", "source commit"],
+  ]) {
+    const text = (await page.locator(selector).textContent()).trim();
+    if (!text || text === "--" || text === "Unavailable") {
+      throw new Error(`Home freshness ${label} did not populate: "${text}"`);
+    }
   }
 }
 

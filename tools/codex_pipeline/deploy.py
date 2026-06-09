@@ -13,6 +13,7 @@ from urllib.parse import quote, urljoin
 from tools.codex_pipeline.config import (
     ARMOR_IMAGES_DIR,
     ARMORS_DATA_PATH,
+    CODEX_MANIFEST_PATH,
     MONSTER_IMAGES_DIR,
     MONSTERS_DATA_PATH,
     REPO_ROOT,
@@ -40,6 +41,13 @@ class LiveAssetTarget:
     local_dir: Path
     manifest_path: Path
     site_manifest_relative_path: str
+
+
+@dataclass(frozen=True)
+class LiveFreshnessTarget:
+    name: str
+    local_path: Path
+    site_relative_path: str
 
 
 @dataclass(frozen=True)
@@ -77,6 +85,12 @@ DEFAULT_LIVE_ASSET_TARGETS = [
     LiveAssetTarget("armors", ARMOR_IMAGES_DIR, ARMOR_IMAGES_DIR / "manifest.json", "images/armors/manifest.json"),
     LiveAssetTarget("monsters", MONSTER_IMAGES_DIR, MONSTER_IMAGES_DIR / "manifest.json", "images/monsters/manifest.json"),
 ]
+
+DEFAULT_LIVE_FRESHNESS_TARGET = LiveFreshnessTarget(
+    "codex manifest",
+    CODEX_MANIFEST_PATH,
+    "data/codex_manifest.json",
+)
 
 
 FetchText = Callable[[str, float], str]
@@ -323,17 +337,45 @@ def _check_asset_target(
     )
 
 
+def _check_freshness_target(
+    site_url: str,
+    target: LiveFreshnessTarget,
+    fetch_bytes: FetchBytes,
+    timeout_seconds: float,
+) -> LiveCheckResult:
+    url = urljoin(site_url, target.site_relative_path)
+    try:
+        local_bytes = target.local_path.read_bytes()
+    except OSError as exc:
+        return LiveCheckResult(target.name, url, False, f"{target.name} local bytes failed to read: {exc}")
+    try:
+        live_bytes = fetch_bytes(url, timeout_seconds)
+    except Exception as exc:
+        return LiveCheckResult(target.name, url, False, f"{target.name} live bytes failed to load: {exc}")
+    if live_bytes != local_bytes:
+        return LiveCheckResult(
+            target.name,
+            url,
+            False,
+            f"{target.name} live bytes differ from {target.site_relative_path}",
+        )
+    return LiveCheckResult(target.name, url, True, f"{target.name} matches {target.site_relative_path}")
+
+
 def verify_live_site(
     site_url: str = DEFAULT_LIVE_SITE_URL,
     *,
     targets: Iterable[LiveDataTarget] = DEFAULT_LIVE_DATA_TARGETS,
     asset_targets: Iterable[LiveAssetTarget] = DEFAULT_LIVE_ASSET_TARGETS,
+    freshness_target: LiveFreshnessTarget | None = DEFAULT_LIVE_FRESHNESS_TARGET,
     fetch_text: FetchText = fetch_url_text,
     fetch_bytes: FetchBytes = fetch_url_bytes,
     timeout_seconds: float = 20,
 ) -> list[LiveCheckResult]:
     normalized_site_url = _normalize_site_url(site_url)
     results = [_check_index(normalized_site_url, fetch_text, timeout_seconds)]
+    if freshness_target is not None:
+        results.append(_check_freshness_target(normalized_site_url, freshness_target, fetch_bytes, timeout_seconds))
     results.extend(
         _check_data_target(normalized_site_url, target, fetch_text, timeout_seconds)
         for target in targets

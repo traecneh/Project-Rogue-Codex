@@ -16,6 +16,7 @@ EXTRACTORS_DIR = REPO_ROOT / "tools" / "codex_pipeline" / "extractors"
 DROP_SOURCES_PATH = REPO_ROOT / "data" / "codex-overrides" / "drop_sources.json"
 PERK_LABEL_OVERRIDES_PATH = REPO_ROOT / "data" / "codex-overrides" / "perk_labels.json"
 GENERATED_OUTPUT_DIR = REPO_ROOT / "generated-output" / "codex-data"
+CODEX_MANIFEST_PATH = REPO_ROOT / "data" / "codex_manifest.json"
 
 WEAPONS_DATA_PATH = REPO_ROOT / "pages" / "items" / "weapons_data05.json"
 ARMORS_DATA_PATH = REPO_ROOT / "pages" / "items" / "armors_data06.json"
