@@ -1291,6 +1291,79 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn("function initGuildPartyPreview", script)
         self.assertIn('document.addEventListener("DOMContentLoaded"', script)
 
+    def test_chat_page_has_compact_channel_reference(self):
+        from tools.codex_pipeline import cli
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        html_path = REPO_ROOT / "pages" / "systems" / "chat.html"
+        css_path = REPO_ROOT / "css" / "chat.css"
+        script_path = REPO_ROOT / "js" / "chat.js"
+        html = html_path.read_text(encoding="utf-8")
+        css = css_path.read_text(encoding="utf-8") if css_path.exists() else ""
+        script = script_path.read_text(encoding="utf-8") if script_path.exists() else ""
+
+        self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
+        self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
+        self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
+        self.assertIn('<link rel="stylesheet" href="css/chat.css" />', html)
+        self.assertIn('<script src="js/chat.js" defer></script>', html)
+        self.assertNotIn("<style>", html)
+        self.assertEqual(
+            [],
+            [
+                block.strip()
+                for block in re.findall(
+                    r"<script\b(?![^>]*\bsrc\s*=)[^>]*>([\s\S]*?)</script>",
+                    html,
+                    flags=re.IGNORECASE,
+                )
+                if block.strip()
+            ],
+        )
+
+        for expected in [
+            "Chat at a Glance",
+            "Viewing Channels",
+            "Send Mode Preview",
+            "Hotkeys and Input Flow",
+            "Scope Reference",
+            "Related Pages",
+            "All",
+            "Local",
+            "Global",
+            "Guild",
+            "T",
+            "Tab",
+            "Hold E",
+            "Say",
+            "Whisper",
+            "Safe Zone Only",
+            "World Channel",
+            "Nearby Only",
+            "Visible Area",
+            "8 surrounding tiles",
+            "server-wide messages sent from safe zones",
+            "global-chat",
+            "Discord",
+            "pages/systems/guild.html",
+            "pages/systems/pvp-system.html",
+            "pages/systems/anti-zerg.html",
+            "pages/General/play-the-game.html",
+        ]:
+            self.assertIn(expected, html)
+
+        self.assertIn(".chat-summary-grid", css)
+        self.assertIn(".chat-channel-grid", css)
+        self.assertIn(".chat-flow", css)
+        self.assertIn(".chat-mode-preview", css)
+        self.assertIn(".chat-scope-grid", css)
+        self.assertIn(".chat-link-grid", css)
+
+        self.assertIn("const CHAT_MODE_REFERENCE", script)
+        self.assertIn("function setChatMode", script)
+        self.assertIn("function initChatModePreview", script)
+        self.assertIn('document.addEventListener("DOMContentLoaded"', script)
+
     def test_crafting_page_has_compact_armor_crafting_reference(self):
         from tools.codex_pipeline import cli
         from tools.codex_pipeline.config import REPO_ROOT

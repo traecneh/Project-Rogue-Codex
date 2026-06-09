@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Chat System - Project Rogue Codex</title>
+    <title>Chat System &mdash; Project Rogue Codex</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <base href="../../" />
     <link rel="icon" type="image/x-icon" href="images/project-rogue-favicon.ico" />
@@ -11,6 +11,7 @@
     <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
     <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/chat.css" />
     <script src="js/site-search.js" defer></script>
     <script src="js/weapon-specialty.js" defer></script>
     <script src="js/stat-widgets.js" defer></script>
@@ -19,6 +20,7 @@
     <script src="js/perks.js" defer></script>
     <script src="js/rarity-roller.js" defer></script>
     <script src="js/nav-core.js" defer></script>
+    <script src="js/chat.js" defer></script>
   </head>
   <body>
     <div class="layout">
@@ -26,78 +28,176 @@
       <main class="main-content">
         <header class="content-header">
           <h1 class="content-title">Chat System</h1>
-          <p class="content-tagline">Filter views, quick-send hotkeys, and channel visibility rules.</p>
+          <p class="content-tagline">Channel filters, send-mode scope, and quick input controls in one reference.</p>
         </header>
 
-        <article class="content-section" id="chat-views">
-          <h2>Viewing Chat</h2>
-          <p>Switch the feed to focus on what matters.</p>
-          <div class="stat-grid" role="list">
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">All</p>
-              <h3>Everything</h3>
-              <p>Shows every channel in one scroll.</p>
+        <article class="content-section" id="chat-basics">
+          <h2>Chat at a Glance</h2>
+          <div class="chat-summary-grid" role="list">
+            <section class="chat-summary-card" role="listitem">
+              <p class="stat-label">Open</p>
+              <h3>Press T</h3>
+              <p>Opens chat for sending messages.</p>
             </section>
 
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Local</p>
-              <h3>Nearby Only</h3>
-              <p>Limits to messages from players in your visible area.</p>
+            <section class="chat-summary-card" role="listitem">
+              <p class="stat-label">Cycle</p>
+              <h3>Press Tab</h3>
+              <p>Cycles the active view through Local, Global, Guild, and All.</p>
             </section>
 
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Global</p>
-              <h3>World Channel</h3>
-              <p>Shows server-wide messages sent from safe zones.</p>
+            <section class="chat-summary-card" role="listitem">
+              <p class="stat-label">Expand</p>
+              <h3>Hold E</h3>
+              <p>Temporarily expands chat to full screen while the key is held.</p>
             </section>
 
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Guild</p>
-              <h3>Team Channel</h3>
-              <p>Only messages from members of your guild.</p>
-            </section>
-          </div>
-        </article>
-
-        <article class="content-section" id="chat-input">
-          <h2>Sending Messages</h2>
-          <div class="stat-grid" role="list">
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Hotkey</p>
-              <h3>Open + Cycle</h3>
-              <p>Press <strong>T</strong> to open chat; press <strong>Tab</strong> to cycle Local, Global, Guild, or All.</p>
-            </section>
-
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Fullscreen</p>
-              <h3>Hold to Expand</h3>
-              <p>Press and hold <strong>E</strong> to temporarily make chat full screen while the key is held.</p>
-            </section>
-
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Say</p>
-              <h3>Local Range</h3>
-              <p>Posts to Local; only players within your visible area see it.</p>
-            </section>
-
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Whisper</p>
-              <h3>Tile Tight</h3>
-              <p>Posts to Local; only players on your tile or the 8 surrounding tiles see it.</p>
-            </section>
-
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Global</p>
+            <section class="chat-summary-card" role="listitem">
+              <p class="stat-label">Global Send</p>
               <h3>Safe Zone Only</h3>
-              <p>Posts to Global; can only be sent while you are in a safe zone.</p>
-            </section>
-
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Guild</p>
-              <h3>Guildmates</h3>
-              <p>Posts to Guild; only members of your guild see it.</p>
+              <p>Global messages can only be sent from safe zones.</p>
             </section>
           </div>
+
+          <section class="chat-channel-section">
+            <h2>Viewing Channels</h2>
+            <div class="chat-channel-grid" role="list">
+              <section class="chat-panel chat-panel-all" role="listitem">
+                <p class="stat-label">All</p>
+                <h3>Everything</h3>
+                <p>Shows every channel in one scroll.</p>
+              </section>
+
+              <section class="chat-panel chat-panel-local" role="listitem">
+                <p class="stat-label">Local</p>
+                <h3>Nearby Only</h3>
+                <p>Limits the feed to players in your visible area.</p>
+              </section>
+
+              <section class="chat-panel chat-panel-global" role="listitem">
+                <p class="stat-label">Global</p>
+                <h3>World Channel</h3>
+                <p>Shows server-wide messages sent from safe zones.</p>
+              </section>
+
+              <section class="chat-panel chat-panel-guild" role="listitem">
+                <p class="stat-label">Guild</p>
+                <h3>Guildmates</h3>
+                <p>Shows only messages from members of your guild.</p>
+              </section>
+            </div>
+          </section>
+
+          <section class="chat-preview-section">
+            <div class="chat-section-heading">
+              <div>
+                <h2>Send Mode Preview</h2>
+                <p>Pick a send mode to compare audience, channel, and restrictions.</p>
+              </div>
+              <p class="chat-preview-note">Viewing filters decide what you see; send modes decide who receives your message.</p>
+            </div>
+
+            <div class="stat-widget chat-mode-preview" data-chat-preview data-current-chat-mode="Say">
+              <div class="chat-mode-options" role="group" aria-label="Chat send mode preview">
+                <button type="button" class="chat-mode-option is-active" data-chat-mode="Say" aria-pressed="true">
+                  Say
+                </button>
+                <button type="button" class="chat-mode-option" data-chat-mode="Whisper" aria-pressed="false">
+                  Whisper
+                </button>
+                <button type="button" class="chat-mode-option" data-chat-mode="Global" aria-pressed="false">
+                  Global
+                </button>
+                <button type="button" class="chat-mode-option" data-chat-mode="Guild" aria-pressed="false">
+                  Guild
+                </button>
+              </div>
+
+              <div class="chat-mode-output">
+                <span class="stat-output-label">Current Mode</span>
+                <strong data-chat-mode-current>Say</strong>
+                <p data-chat-mode-audience>Audience: players within your visible area.</p>
+                <p data-chat-mode-restriction>Restriction: posts to Local.</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="chat-flow-section">
+            <h2>Hotkeys and Input Flow</h2>
+            <ol class="chat-flow">
+              <li>
+                <span>1</span>
+                <div>
+                  <h3>Open chat</h3>
+                  <p>Press <strong>T</strong> to start sending a message.</p>
+                </div>
+              </li>
+              <li>
+                <span>2</span>
+                <div>
+                  <h3>Choose visibility</h3>
+                  <p>Press <strong>Tab</strong> to cycle Local, Global, Guild, or All.</p>
+                </div>
+              </li>
+              <li>
+                <span>3</span>
+                <div>
+                  <h3>Read more context</h3>
+                  <p>Press and hold <strong>E</strong> to make chat full screen while the key is held.</p>
+                </div>
+              </li>
+            </ol>
+          </section>
+
+          <section class="chat-scope-section">
+            <h2>Scope Reference</h2>
+            <div class="chat-scope-grid" role="list">
+              <section class="chat-scope-card" role="listitem">
+                <p class="stat-label">Say</p>
+                <h3>Visible Area</h3>
+                <p>Posts to Local; only players within your visible area see it.</p>
+              </section>
+
+              <section class="chat-scope-card" role="listitem">
+                <p class="stat-label">Whisper</p>
+                <h3>Tile Tight</h3>
+                <p>Posts to Local; only players on your tile or the 8 surrounding tiles see it.</p>
+              </section>
+
+              <section class="chat-scope-card" role="listitem">
+                <p class="stat-label">Global</p>
+                <h3>Safe Zone Only</h3>
+                <p>Posts to Global; only server-wide messages sent from safe zones can be sent here.</p>
+              </section>
+
+              <section class="chat-scope-card" role="listitem">
+                <p class="stat-label">Guild</p>
+                <h3>Guildmates</h3>
+                <p>Posts to Guild; only members of your guild see it.</p>
+              </section>
+            </div>
+          </section>
+
+          <section class="chat-feed-section">
+            <h2>External Feed Context</h2>
+            <div class="chat-feed-card">
+              <p class="stat-label">Project Rogue Feeds</p>
+              <h3>global-chat</h3>
+              <p>Mirrors in-game global chat live into Discord.</p>
+            </div>
+          </section>
+
+          <section class="chat-related">
+            <h2>Related Pages</h2>
+            <div class="chat-link-grid" aria-label="Related Chat pages">
+              <a href="pages/systems/guild.html">Guilds</a>
+              <a href="pages/systems/pvp-system.html">PVP System</a>
+              <a href="pages/systems/anti-zerg.html">Anti-Zerg</a>
+              <a href="pages/General/play-the-game.html">Play the Game</a>
+              <a href="pages/items/weapons.html">Weapons</a>
+              <a href="pages/items/armors.html">Armors</a>
+            </div>
+          </section>
         </article>
       </main>
     </div>

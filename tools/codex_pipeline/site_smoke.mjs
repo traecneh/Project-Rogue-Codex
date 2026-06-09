@@ -146,6 +146,12 @@ async function main() {
       failures.push(`SMOKE ERROR guild: ${formatError(error)}`);
     }
     try {
+      await runChatSpec(browser, baseUrl);
+      console.log("SMOKE OK chat: channel reference, send preview, related links");
+    } catch (error) {
+      failures.push(`SMOKE ERROR chat: ${formatError(error)}`);
+    }
+    try {
       await runCorruptionSpec(browser, baseUrl);
       console.log("SMOKE OK corruption: corrupted innates, cleanse flow, related links");
     } catch (error) {
@@ -166,7 +172,7 @@ async function main() {
     failures.forEach((failure) => console.error(failure));
     process.exit(1);
   }
-  console.log(`SMOKE OK site: ${smokeSpecs.length + 15} page(s) checked at ${baseUrl}`);
+  console.log(`SMOKE OK site: ${smokeSpecs.length + 16} page(s) checked at ${baseUrl}`);
 }
 
 async function importPlaywright() {
@@ -1112,6 +1118,121 @@ async function assertGuildPartyPreview(page) {
     undefined,
     { timeout: timeoutMs }
   );
+}
+
+async function runChatSpec(browser, baseUrl) {
+  const page = await browser.newPage();
+  page.setDefaultTimeout(timeoutMs);
+  const runtimeErrors = [];
+  page.on("console", (message) => {
+    const text = message.text();
+    if (message.type() === "error" && !text.startsWith("Failed to load resource")) runtimeErrors.push(text);
+  });
+  page.on("pageerror", (error) => runtimeErrors.push(formatError(error)));
+
+  try {
+    await page.goto(joinUrl(baseUrl, "/pages/systems/chat.html"), { waitUntil: "load" });
+    await page.locator(".chat-mode-preview").waitFor({ state: "visible" });
+    const pageText = (await page.locator("#chat-basics").textContent()).trim();
+    for (const expected of [
+      "Chat at a Glance",
+      "Viewing Channels",
+      "Send Mode Preview",
+      "Hotkeys and Input Flow",
+      "Scope Reference",
+      "All",
+      "Local",
+      "Global",
+      "Guild",
+      "T",
+      "Tab",
+      "Hold E",
+      "Say",
+      "Whisper",
+      "Safe Zone Only",
+      "World Channel",
+      "Nearby Only",
+      "Visible Area",
+      "8 surrounding tiles",
+      "server-wide messages sent from safe zones",
+      "global-chat",
+      "Discord",
+    ]) {
+      if (!pageText.includes(expected)) {
+        throw new Error(`Chat page missing "${expected}": "${pageText}"`);
+      }
+    }
+
+    for (const href of [
+      "pages/systems/guild.html",
+      "pages/systems/pvp-system.html",
+      "pages/systems/anti-zerg.html",
+      "pages/General/play-the-game.html",
+      "pages/items/weapons.html",
+      "pages/items/armors.html",
+    ]) {
+      const count = await page.locator(`.chat-link-grid a[href="${href}"]`).count();
+      if (count !== 1) {
+        throw new Error(`Chat related link expected one "${href}", found ${count}`);
+      }
+    }
+
+    await assertChatModePreview(page);
+    await assertMobilePageFirstNavigation(page, baseUrl, "/pages/systems/chat.html");
+
+    if (runtimeErrors.length) {
+      throw new Error(`browser errors: ${runtimeErrors.join("; ")}`);
+    }
+  } finally {
+    await page.close();
+  }
+}
+
+async function assertChatModePreview(page) {
+  const currentMode = page.locator("[data-chat-mode-current]");
+  await currentMode.waitFor({ state: "visible" });
+
+  const initialText = (await currentMode.textContent()).trim();
+  if (initialText !== "Say") {
+    throw new Error(`Chat mode preview expected Say initially, got "${initialText}"`);
+  }
+
+  await page.locator('[data-chat-mode="Global"]').click();
+  await page.waitForFunction(
+    () => document.querySelector("[data-chat-mode-current]")?.textContent?.trim() === "Global",
+    undefined,
+    { timeout: timeoutMs }
+  );
+  const globalPressed = await page.locator('[data-chat-mode="Global"]').getAttribute("aria-pressed");
+  if (globalPressed !== "true") {
+    throw new Error(`Chat mode preview did not mark Global active, got aria-pressed="${globalPressed}"`);
+  }
+  const globalText = (await page.locator(".chat-mode-output").textContent()).trim();
+  if (!globalText.includes("server-wide messages sent from safe zones") || !globalText.includes("Safe Zone Only")) {
+    throw new Error(`Chat Global mode did not show audience and safe-zone restriction: "${globalText}"`);
+  }
+
+  await page.locator('[data-chat-mode="Whisper"]').click();
+  await page.waitForFunction(
+    () => document.querySelector("[data-chat-mode-current]")?.textContent?.trim() === "Whisper",
+    undefined,
+    { timeout: timeoutMs }
+  );
+  const whisperText = (await page.locator(".chat-mode-output").textContent()).trim();
+  if (!whisperText.includes("8 surrounding tiles") || !whisperText.includes("posts to Local")) {
+    throw new Error(`Chat Whisper mode did not show tile-local scope: "${whisperText}"`);
+  }
+
+  await page.locator('[data-chat-mode="Guild"]').click();
+  await page.waitForFunction(
+    () => document.querySelector("[data-chat-mode-current]")?.textContent?.trim() === "Guild",
+    undefined,
+    { timeout: timeoutMs }
+  );
+  const guildText = (await page.locator(".chat-mode-output").textContent()).trim();
+  if (!guildText.includes("members of your guild") || !guildText.includes("posts to Guild")) {
+    throw new Error(`Chat Guild mode did not show guild scope: "${guildText}"`);
+  }
 }
 
 async function runCorruptionSpec(browser, baseUrl) {
