@@ -1947,6 +1947,82 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn("function updateStrengthCalculator", script)
         self.assertIn('document.addEventListener("DOMContentLoaded"', script)
 
+    def test_constitution_page_has_compact_health_regen_reference(self):
+        from tools.codex_pipeline import cli
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        html_path = REPO_ROOT / "pages" / "stats" / "constitution.html"
+        css_path = REPO_ROOT / "css" / "constitution.css"
+        script_path = REPO_ROOT / "js" / "constitution.js"
+        html = html_path.read_text(encoding="utf-8")
+        css = css_path.read_text(encoding="utf-8") if css_path.exists() else ""
+        script = script_path.read_text(encoding="utf-8") if script_path.exists() else ""
+
+        self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
+        self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
+        self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
+        self.assertIn('<link rel="stylesheet" href="css/constitution.css" />', html)
+        self.assertIn('<script src="js/constitution.js" defer></script>', html)
+        self.assertNotIn("<style>", html)
+        self.assertEqual(
+            [],
+            [
+                block.strip()
+                for block in re.findall(
+                    r"<script\b(?![^>]*\bsrc\s*=)[^>]*>([\s\S]*?)</script>",
+                    html,
+                    flags=re.IGNORECASE,
+                )
+                if block.strip()
+            ],
+        )
+        self.assertNotRegex(html, r"\sstyle\s*=")
+
+        for expected in [
+            "Constitution at a Glance",
+            "Constitution Calculator",
+            "Regeneration Benchmarks",
+            "Race Context",
+            "Perks",
+            "Equipment Reference",
+            "Related Pages",
+            "Max Health",
+            "Baseline Regen",
+            "Con / 3",
+            "HP every 2 seconds",
+            "data-constitution-level-slider",
+            "data-constitution-con-slider",
+            "data-constitution-str-slider",
+            "data-constitution-regen-bonus-slider",
+            "data-constitution-max-health",
+            "data-constitution-regen-tick",
+            "data-constitution-regen-per-sec",
+            "data-constitution-effective-regen",
+            "data-constitution-regen-chart",
+            "data-perk-stats=\"constitution\"",
+            "data-weapon-specialty=\"Constitution\"",
+            "pages/stats/races.html",
+            "pages/stats/strength.html",
+            "pages/stats/dexterity.html",
+            "pages/General/build-planner.html",
+            "pages/items/armors.html",
+            "pages/systems/perks.html",
+        ]:
+            self.assertIn(expected, html)
+
+        self.assertIn(".constitution-summary-grid", css)
+        self.assertIn(".constitution-calculator-widget", css)
+        self.assertIn(".constitution-output-grid", css)
+        self.assertIn(".constitution-benchmark-grid", css)
+        self.assertIn(".constitution-context-grid", css)
+        self.assertIn(".constitution-link-grid", css)
+
+        self.assertIn("const CONSTITUTION_REGEN_BENCHMARKS", script)
+        self.assertIn("function initConstitutionCalculator", script)
+        self.assertIn("function renderRegenBenchmarks", script)
+        self.assertIn("function updateConstitutionCalculator", script)
+        self.assertIn('document.addEventListener("DOMContentLoaded"', script)
+
     def test_crafting_page_has_compact_armor_crafting_reference(self):
         from tools.codex_pipeline import cli
         from tools.codex_pipeline.config import REPO_ROOT

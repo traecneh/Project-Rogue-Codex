@@ -1,0 +1,112 @@
+.constitution-summary-grid,
+.constitution-output-grid,
+.constitution-benchmark-grid,
+.constitution-context-grid,
+.constitution-link-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.constitution-summary-grid,
+.constitution-context-grid {
+  grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
+}
+
+.constitution-calculator-widget,
+.constitution-benchmark-card,
+.constitution-context-card {
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  background: var(--bg-panel-dark);
+}
+
+.constitution-calculator-widget {
+  display: grid;
+  gap: 0.95rem;
+  padding: 1rem;
+}
+
+.constitution-control-grid {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.constitution-control-grid > * {
+  min-width: 0;
+}
+
+.constitution-control-grid label {
+  color: var(--text-main);
+  font-weight: 700;
+}
+
+.constitution-control-grid input[type="range"] {
+  box-sizing: border-box;
+  margin: 0;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+}
+
+.constitution-output-grid {
+  grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+}
+
+.constitution-output-grid .stat-output {
+  margin-top: 0;
+}
+
+.constitution-benchmark-grid {
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+}
+
+.constitution-benchmark-card,
+.constitution-context-card {
+  padding: 0.85rem;
+}
+
+.constitution-benchmark-card h3,
+.constitution-context-card h3 {
+  margin: 0.15rem 0 0.35rem;
+}
+
+.constitution-benchmark-card p,
+.constitution-context-card p {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.constitution-bar-track {
+  height: 0.55rem;
+  margin-top: 0.65rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.constitution-bar-fill {
+  display: block;
+  height: 100%;
+  width: var(--fill, 0%);
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--accent), var(--accent-blue));
+}
+
+.constitution-link-grid {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.constitution-link-grid a {
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  background: var(--bg-panel-dark);
+  color: var(--text-main);
+  padding: 0.65rem 0.75rem;
+  text-decoration: none;
+}
+
+.constitution-link-grid a:hover,
+.constitution-link-grid a:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent);
+}

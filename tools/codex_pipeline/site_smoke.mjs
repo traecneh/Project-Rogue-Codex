@@ -182,6 +182,12 @@ async function main() {
       failures.push(`SMOKE ERROR strength: ${formatError(error)}`);
     }
     try {
+      await runConstitutionSpec(browser, baseUrl);
+      console.log("SMOKE OK constitution: health, regen, benchmarks, related links");
+    } catch (error) {
+      failures.push(`SMOKE ERROR constitution: ${formatError(error)}`);
+    }
+    try {
       await runGuildSpec(browser, baseUrl);
       console.log("SMOKE OK guild: management reference, party preview, related links");
     } catch (error) {
@@ -220,7 +226,7 @@ async function main() {
     failures.forEach((failure) => console.error(failure));
     process.exit(1);
   }
-  console.log(`SMOKE OK site: ${smokeSpecs.length + 24} page(s) checked at ${baseUrl}`);
+  console.log(`SMOKE OK site: ${smokeSpecs.length + 25} page(s) checked at ${baseUrl}`);
 }
 
 async function importPlaywright() {
@@ -1848,6 +1854,148 @@ async function readStrengthCalculatorState(page) {
     note: document.querySelector("[data-strength-bleed-note]")?.textContent?.trim() || "",
     skill: document.querySelector("[data-strength-skill]")?.textContent?.trim() || "",
     strength: document.querySelector("[data-strength-str]")?.textContent?.trim() || "",
+  }));
+}
+
+async function runConstitutionSpec(browser, baseUrl) {
+  const page = await browser.newPage();
+  page.setDefaultTimeout(timeoutMs);
+  const runtimeErrors = [];
+  page.on("console", (message) => {
+    const text = message.text();
+    if (message.type() === "error" && !text.startsWith("Failed to load resource")) runtimeErrors.push(text);
+  });
+  page.on("pageerror", (error) => runtimeErrors.push(formatError(error)));
+
+  try {
+    await page.goto(joinUrl(baseUrl, "/pages/stats/constitution.html"), { waitUntil: "load" });
+    await page.locator(".constitution-calculator-widget").waitFor({ state: "visible" });
+    const pageText = (await page.locator(".main-content").textContent()).trim();
+    for (const expected of [
+      "Constitution at a Glance",
+      "Constitution Calculator",
+      "Regeneration Benchmarks",
+      "Race Context",
+      "Perks",
+      "Equipment Reference",
+      "Related Pages",
+      "Max Health",
+      "Baseline Regen",
+      "Con / 3",
+      "HP every 2 seconds",
+    ]) {
+      if (!pageText.includes(expected)) {
+        throw new Error(`Constitution page missing "${expected}": "${pageText}"`);
+      }
+    }
+
+    for (const href of [
+      "pages/stats/races.html",
+      "pages/stats/strength.html",
+      "pages/stats/dexterity.html",
+      "pages/General/build-planner.html",
+      "pages/items/armors.html",
+      "pages/systems/perks.html",
+    ]) {
+      const count = await page.locator(`.constitution-link-grid a[href="${href}"]`).count();
+      if (count !== 1) {
+        throw new Error(`Constitution related link expected one "${href}", found ${count}`);
+      }
+    }
+
+    await assertConstitutionCalculator(page);
+    await assertMobilePageFirstNavigation(page, baseUrl, "/pages/stats/constitution.html");
+
+    if (runtimeErrors.length) {
+      throw new Error(`browser errors: ${runtimeErrors.join("; ")}`);
+    }
+  } finally {
+    await page.close();
+  }
+}
+
+async function assertConstitutionCalculator(page) {
+  await page.locator("[data-constitution-regen-chart] .constitution-benchmark-card").first().waitFor({ state: "visible" });
+  const benchmarkCount = await page.locator("[data-constitution-regen-chart] .constitution-benchmark-card").count();
+  if (benchmarkCount !== 6) {
+    throw new Error(`Constitution page expected 6 regen benchmark cards, found ${benchmarkCount}`);
+  }
+
+  let state = await readConstitutionCalculatorState(page);
+  for (const [key, expected] of Object.entries({
+    bonus: "0%",
+    constitution: "150",
+    effectiveRegen: "50.0 HP / 2s",
+    level: "50",
+    maxHealth: "2,370",
+    regenPerSec: "25.0 HP/s",
+    regenTick: "50.0 HP / 2s",
+    strength: "50",
+  })) {
+    if (state[key] !== expected) {
+      throw new Error(`Constitution calculator expected ${key}="${expected}", got "${state[key]}"`);
+    }
+  }
+
+  await setConstitutionRange(page, "[data-constitution-con-slider]", 180);
+  await page.waitForFunction(
+    () => document.querySelector("[data-constitution-max-health]")?.textContent?.trim() === "2,670",
+    undefined,
+    { timeout: timeoutMs }
+  );
+  state = await readConstitutionCalculatorState(page);
+  for (const [key, expected] of Object.entries({
+    constitution: "180",
+    effectiveRegen: "60.0 HP / 2s",
+    maxHealth: "2,670",
+    regenPerSec: "30.0 HP/s",
+    regenTick: "60.0 HP / 2s",
+  })) {
+    if (state[key] !== expected) {
+      throw new Error(`Constitution calculator after CON 180 expected ${key}="${expected}", got "${state[key]}"`);
+    }
+  }
+
+  await setConstitutionRange(page, "[data-constitution-regen-bonus-slider]", 50);
+  await page.waitForFunction(
+    () => document.querySelector("[data-constitution-effective-regen]")?.textContent?.trim() === "90.0 HP / 2s",
+    undefined,
+    { timeout: timeoutMs }
+  );
+  state = await readConstitutionCalculatorState(page);
+  if (state.bonus !== "50%" || state.effectiveRegen !== "90.0 HP / 2s") {
+    throw new Error(`Constitution bonus regen state was unexpected: ${JSON.stringify(state)}`);
+  }
+
+  await setConstitutionRange(page, "[data-constitution-str-slider]", 120);
+  await page.waitForFunction(
+    () => document.querySelector("[data-constitution-max-health]")?.textContent?.trim() === "2,810",
+    undefined,
+    { timeout: timeoutMs }
+  );
+  state = await readConstitutionCalculatorState(page);
+  if (state.strength !== "120" || state.maxHealth !== "2,810") {
+    throw new Error(`Constitution Strength contribution was unexpected: ${JSON.stringify(state)}`);
+  }
+}
+
+async function setConstitutionRange(page, selector, value) {
+  await page.locator(selector).evaluate((input, nextValue) => {
+    input.value = String(nextValue);
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  }, value);
+}
+
+async function readConstitutionCalculatorState(page) {
+  return await page.evaluate(() => ({
+    bonus: document.querySelector("[data-constitution-regen-bonus]")?.textContent?.trim() || "",
+    constitution: document.querySelector("[data-constitution-con]")?.textContent?.trim() || "",
+    effectiveRegen: document.querySelector("[data-constitution-effective-regen]")?.textContent?.trim() || "",
+    level: document.querySelector("[data-constitution-level]")?.textContent?.trim() || "",
+    maxHealth: document.querySelector("[data-constitution-max-health]")?.textContent?.trim() || "",
+    regenPerSec: document.querySelector("[data-constitution-regen-per-sec]")?.textContent?.trim() || "",
+    regenTick: document.querySelector("[data-constitution-regen-tick]")?.textContent?.trim() || "",
+    strength: document.querySelector("[data-constitution-str]")?.textContent?.trim() || "",
   }));
 }
 
