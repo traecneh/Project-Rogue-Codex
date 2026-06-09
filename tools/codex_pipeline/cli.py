@@ -453,6 +453,61 @@ def _print_diff_reports(reports, *, max_records: int = 12, max_fields: int = 8) 
             print(f"  ~ ... {len(report.changed) - max_records} more changed record(s)")
 
 
+def _print_player_summary_values(label: str, values: list[str], *, max_records: int) -> None:
+    for value in values[:max_records]:
+        print(f"  {label}: {value}")
+    if len(values) > max_records:
+        print(f"  {label}: ... {len(values) - max_records} more")
+
+
+def _format_player_field_paths(record, *, max_fields: int) -> str:
+    paths = [change.path for change in record.field_changes]
+    if not paths:
+        return "record changed"
+    visible = paths[:max_fields]
+    suffix = f", ... {len(paths) - max_fields} more" if len(paths) > max_fields else ""
+    return f"{', '.join(visible)}{suffix}"
+
+
+def _print_player_change_summary(report, *, max_records: int = 5, max_fields: int = 5) -> None:
+    data_added = sum(len(diff.added) for diff in report.diff_reports)
+    data_removed = sum(len(diff.removed) for diff in report.diff_reports)
+    data_changed = sum(len(diff.changed) for diff in report.diff_reports)
+    image_added = sum(len(asset.added) for asset in report.asset_reports)
+    image_removed = sum(len(asset.removed) for asset in report.asset_reports)
+    image_changed = sum(len(asset.changed) for asset in report.asset_reports)
+
+    if not any([data_added, data_removed, data_changed, image_added, image_removed, image_changed]):
+        print("PLAYER CHANGE SUMMARY: no player-facing data or image changes")
+        return
+
+    print(
+        "PLAYER CHANGE SUMMARY: "
+        f"data +{data_added} -{data_removed} ~{data_changed}, "
+        f"images +{image_added} -{image_removed} ~{image_changed}"
+    )
+
+    for diff in report.diff_reports:
+        if not diff.has_changes:
+            continue
+        print(f"PLAYER DATA {diff.target.name}: +{len(diff.added)} -{len(diff.removed)} ~{len(diff.changed)}")
+        _print_player_summary_values("added", diff.added, max_records=max_records)
+        _print_player_summary_values("removed", diff.removed, max_records=max_records)
+        for record in diff.changed[:max_records]:
+            fields = _format_player_field_paths(record, max_fields=max_fields)
+            print(f"  changed: {record.label}: {fields}")
+        if len(diff.changed) > max_records:
+            print(f"  changed: ... {len(diff.changed) - max_records} more")
+
+    for asset in report.asset_reports:
+        if not asset.has_changes:
+            continue
+        print(f"PLAYER IMAGES {asset.target_name}: +{len(asset.added)} -{len(asset.removed)} ~{len(asset.changed)}")
+        _print_player_summary_values("added", asset.added, max_records=max_records)
+        _print_player_summary_values("removed", asset.removed, max_records=max_records)
+        _print_player_summary_values("changed", asset.changed, max_records=max_records)
+
+
 def run_export_client_data(args: argparse.Namespace) -> int:
     try:
         targets = resolve_targets(args.targets)
@@ -724,6 +779,7 @@ def _print_game_update_report(report) -> None:
 
     if report.export_results:
         _print_export_results(report.export_results)
+    _print_player_change_summary(report)
     if report.diff_reports:
         _print_diff_reports(report.diff_reports)
     if report.unknown_reports:

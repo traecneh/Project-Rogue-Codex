@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from tools.codex_pipeline.exports import ExportTarget
+from tools.codex_pipeline.exports import DataDiffReport, ExportTarget, FieldChange, RecordChange
 from tools.codex_pipeline.assets import AssetChangeReport, AssetTarget
 from tools.codex_pipeline.drop_audit import DropSourceAuditReport, DropSourceItemReport
 from tools.codex_pipeline.sources import SourceCheckResult
@@ -276,3 +276,100 @@ class GameUpdateReportTests(unittest.TestCase):
         self.assertIn("UPDATE ISSUE WARNING: sample warning", printed)
         self.assertIn("SKIPPED: drop report requires generated weapons, armors, and monsters", printed)
         self.assertIn("SYNC READINESS: BLOCKED", printed)
+
+    def test_cli_prints_player_facing_game_update_summary(self):
+        from tools.codex_pipeline import cli
+        from tools.codex_pipeline.game_update import GameUpdateReport
+
+        weapon_target = ExportTarget(
+            "weapons",
+            Path("extract_weapons.py"),
+            Path("data05.dat"),
+            "weapons.json",
+            Path("site/weapons.json"),
+        )
+        armor_target = ExportTarget(
+            "armors",
+            Path("extract_armors.py"),
+            Path("data06.dat"),
+            "armors.json",
+            Path("site/armors.json"),
+        )
+        report = GameUpdateReport(
+            output_dir=Path("generated"),
+            source_checks=[],
+            export_results=[],
+            diff_reports=[
+                DataDiffReport(
+                    target=weapon_target,
+                    generated_path=Path("generated/weapons.json"),
+                    site_path=Path("site/weapons.json"),
+                    added=["New Sword (3)"],
+                    removed=["Old Sword (2)"],
+                    changed=[
+                        RecordChange(
+                            key="id:1",
+                            label="Rune Sword (1)",
+                            field_changes=[
+                                FieldChange("fields.damage", 10, 11),
+                                FieldChange("fields.speed", 1250, 1000),
+                            ],
+                        )
+                    ],
+                ),
+                DataDiffReport(
+                    target=armor_target,
+                    generated_path=Path("generated/armors.json"),
+                    site_path=Path("site/armors.json"),
+                    added=[],
+                    removed=[],
+                    changed=[
+                        RecordChange(
+                            key="id:7",
+                            label="Iceburst Amulet (7)",
+                            field_changes=[FieldChange("fields.armor", 4, 5)],
+                        )
+                    ],
+                ),
+            ],
+            unknown_reports=[],
+            asset_reports=[
+                AssetChangeReport(
+                    target_name="weapons",
+                    client_dir=Path("client/Weapons"),
+                    site_dir=Path("images/weapons"),
+                    client_count=3,
+                    site_count=3,
+                    manifest_count=3,
+                    added=["New Sword.gif"],
+                    removed=["Old Sword.gif"],
+                    changed=["Rune Sword.gif"],
+                    issues=[],
+                )
+            ],
+            drop_report=None,
+            validation_issues=[],
+            export_errors=[],
+            skipped_sections=[],
+        )
+        output = io.StringIO()
+        with (
+            patch.object(cli, "resolve_targets", return_value=[]),
+            patch.object(cli, "build_game_update_report", return_value=report),
+            patch("sys.stdout", output),
+        ):
+            exit_code = cli.main(["game-update-report"])
+
+        self.assertEqual(0, exit_code)
+        printed = output.getvalue()
+        self.assertIn("PLAYER CHANGE SUMMARY: data +1 -1 ~2, images +1 -1 ~1", printed)
+        self.assertIn("PLAYER DATA weapons: +1 -1 ~1", printed)
+        self.assertIn("  added: New Sword (3)", printed)
+        self.assertIn("  removed: Old Sword (2)", printed)
+        self.assertIn("  changed: Rune Sword (1): fields.damage, fields.speed", printed)
+        self.assertIn("PLAYER DATA armors: +0 -0 ~1", printed)
+        self.assertIn("  changed: Iceburst Amulet (7): fields.armor", printed)
+        self.assertIn("PLAYER IMAGES weapons: +1 -1 ~1", printed)
+        self.assertIn("  added: New Sword.gif", printed)
+        self.assertIn("  removed: Old Sword.gif", printed)
+        self.assertIn("  changed: Rune Sword.gif", printed)
