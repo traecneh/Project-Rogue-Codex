@@ -73,6 +73,7 @@ class SiteCoverageTests(unittest.TestCase):
         self.assertEqual([], report.missing_files)
         self.assertNotIn("pages/systems/experience.html", unvalidated)
         self.assertNotIn("pages/systems/experience.html", unsmoked)
+        self.assertNotIn("pages/General/build-planner.html", unvalidated)
         self.assertIn("pages/stats/strength.html", unvalidated)
         self.assertIn("pages/stats/strength.html", unsmoked)
         self.assertIn("pages/General/play-the-game.html", unvalidated)

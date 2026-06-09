@@ -220,6 +220,10 @@
         overflow: auto;
       }
 
+      .search-suggestions.is-hidden {
+        display: none;
+      }
+
       .share-button {
         padding: 0.65rem 0.9rem;
         border-radius: 10px;

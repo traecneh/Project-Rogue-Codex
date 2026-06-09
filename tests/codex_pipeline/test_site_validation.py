@@ -326,12 +326,17 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn("[\"Requirement\", formatRequirement(item.skillRequirement)]", script)
 
     def test_build_planner_uses_external_assets(self):
+        from tools.codex_pipeline import cli
         from tools.codex_pipeline.config import REPO_ROOT
 
-        html = (REPO_ROOT / "pages" / "General" / "build-planner.html").read_text(encoding="utf-8")
+        html_path = REPO_ROOT / "pages" / "General" / "build-planner.html"
+        html = html_path.read_text(encoding="utf-8")
         css_path = REPO_ROOT / "css" / "build-planner.css"
         script_path = REPO_ROOT / "js" / "build-planner.js"
 
+        self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
+        self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
+        self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
         self.assertTrue(css_path.exists())
         self.assertTrue(script_path.exists())
         self.assertIn('<link rel="stylesheet" href="css/build-planner.css" />', html)
