@@ -89,6 +89,10 @@ def _stable_hash(value: object) -> str:
     return _sha256_bytes(payload.encode("utf-8"))
 
 
+def _stable_json_hash(value: object) -> str:
+    return _stable_hash(value)
+
+
 def _read_json_list(path: Path, label: str) -> list[object]:
     data = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(data, list):
@@ -114,7 +118,7 @@ def _build_data_section(targets: Iterable[ManifestDataTarget]) -> dict[str, dict
         section[target.name] = {
             "path": target.relative_path,
             "records": len(records),
-            "sha256": _sha256_file(target.path),
+            "sha256": _stable_json_hash(records),
         }
     return section
 
@@ -133,7 +137,7 @@ def _build_asset_section(targets: Iterable[ManifestAssetTarget]) -> dict[str, di
         section[target.name] = {
             "manifest_path": target.relative_manifest_path,
             "entries": len(entries),
-            "manifest_sha256": _sha256_file(target.manifest_path),
+            "manifest_sha256": _stable_json_hash(entries),
             "files_sha256": _stable_hash(file_hashes),
         }
     return section

@@ -111,6 +111,48 @@ class CodexFreshnessTests(unittest.TestCase):
         self.assertIn("data/codex_manifest.json is stale", issues[0].message)
         self.assertIn("refresh-manifest", issues[0].message)
 
+    def test_codex_manifest_json_hashes_are_line_ending_stable(self):
+        from tools.codex_pipeline.freshness import (
+            ManifestAssetTarget,
+            ManifestDataTarget,
+            build_codex_manifest,
+        )
+
+        def make_manifest(root: Path, newline: str):
+            data_path = root / "pages" / "items" / "weapons.json"
+            data_path.parent.mkdir(parents=True)
+            data_path.write_text('[\n  {"name": "Rune Sword"}\n]\n'.replace("\n", newline), encoding="utf-8")
+
+            image_dir = root / "images" / "weapons"
+            image_dir.mkdir(parents=True)
+            (image_dir / "Rune Sword.gif").write_bytes(b"rune sword")
+            manifest_path = image_dir / "manifest.json"
+            manifest_path.write_text(
+                '[\n  "images/weapons/Rune Sword.gif"\n]\n'.replace("\n", newline),
+                encoding="utf-8",
+            )
+
+            return build_codex_manifest(
+                repo_root=root,
+                generated_at_utc="2026-06-09T12:00:00Z",
+                source_commit="abc123",
+                data_targets=[ManifestDataTarget("weapons", data_path, "pages/items/weapons.json")],
+                asset_targets=[
+                    ManifestAssetTarget("weapons", image_dir, manifest_path, "images/weapons/manifest.json"),
+                ],
+            )
+
+        with tempfile.TemporaryDirectory() as left_tmp, tempfile.TemporaryDirectory() as right_tmp:
+            lf_manifest = make_manifest(Path(left_tmp), "\n")
+            crlf_manifest = make_manifest(Path(right_tmp), "\r\n")
+
+        self.assertEqual(lf_manifest["data"]["weapons"]["sha256"], crlf_manifest["data"]["weapons"]["sha256"])
+        self.assertEqual(
+            lf_manifest["assets"]["weapons"]["manifest_sha256"],
+            crlf_manifest["assets"]["weapons"]["manifest_sha256"],
+        )
+        self.assertEqual(lf_manifest["summary"]["content_sha256"], crlf_manifest["summary"]["content_sha256"])
+
     def test_cli_refresh_manifest_writes_current_site_manifest(self):
         from tools.codex_pipeline import cli
 
