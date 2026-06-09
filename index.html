@@ -1,257 +1,372 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Project Rogue Codex</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="icon" type="image/x-icon" href="images/project-rogue-favicon.ico" />
-  <link rel="icon" type="image/png" sizes="32x32" href="images/project-rogue-favicon-32.png" />
-  <link rel="icon" type="image/png" sizes="64x64" href="images/project-rogue-favicon-64.png" />
-  <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
-  <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
+  <head>
+    <meta charset="UTF-8" />
+    <title>Project Rogue Codex</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/x-icon" href="images/project-rogue-favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="images/project-rogue-favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="64x64" href="images/project-rogue-favicon-64.png" />
+    <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
+    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/home.css" />
+    <script src="js/release-countdown.js" defer></script>
+    <script src="js/site-search.js" defer></script>
+    <script src="js/weapon-specialty.js" defer></script>
+    <script src="js/stat-widgets.js" defer></script>
+    <script src="js/keyword-links.js" defer></script>
+    <script src="js/cursor-toggle.js" defer></script>
+    <script src="js/perks.js" defer></script>
+    <script src="js/rarity-roller.js" defer></script>
+    <script src="js/home.js" defer></script>
+    <script src="js/nav-core.js" defer></script>
+  </head>
+  <body>
+    <div class="layout">
+      <div id="sidebar-root"></div>
 
-  <link rel="stylesheet" href="css/styles.css" />
-  <script src="js/release-countdown.js" defer></script>
-  <script src="js/site-search.js" defer></script>
-  <script src="js/weapon-specialty.js" defer></script>
-  <script src="js/stat-widgets.js" defer></script>
-  <script src="js/keyword-links.js" defer></script>
-  <script src="js/cursor-toggle.js" defer></script>
-  <script src="js/perks.js" defer></script>
-  <script src="js/rarity-roller.js" defer></script>
-  <script src="js/nav-core.js" defer></script>
-</head>
-<body>
-  <div class="layout">
-    <!-- LEFT: NAVIGATION -->
-    <div id="sidebar-root"></div>
+      <main class="main-content">
+        <header class="content-header">
+          <h1 class="content-title">Project Rogue Codex</h1>
+          <p class="content-tagline">
+            Compact game reference for gear, monsters, systems, character stats, and update-safe Codex data.
+          </p>
+        </header>
 
-    <!-- RIGHT: CONTENT -->
-    <main class="main-content">
-      <header class="content-header">
-        <h1 class="content-title">Project Rogue Codex</h1>
-      </header>
+        <section class="home-hero" aria-labelledby="home-overview-title">
+          <div class="home-hero-copy">
+            <p class="stat-label">Codex Command Center</p>
+            <h2 id="home-overview-title">Start with the live reference, then branch into the details.</h2>
+            <p>
+              The Codex is organized around the pages players open during a wipe: how to get in, what to farm,
+              what gear does, and which systems change the math.
+            </p>
 
-      <section class="content-section release-countdown" aria-labelledby="release-countdown-title">
-        <div
-          class="countdown-panel"
-          data-release-countdown
-          data-target-utc="2026-01-15T19:00:00Z"
-          data-live-kicker="LIVE!"
-          data-live-subtitle="Released on January 15th 2 PM ET"
-          data-live-prefix="Live for:"
-          data-live-aria-label="Time since release"
-        >
-          <div class="countdown-meta">
-            <div class="countdown-heading">
-              <div class="countdown-kicker">Project Rogue</div>
-              <h2 id="release-countdown-title" class="countdown-title">Nocturne Blight</h2>
-              <p class="countdown-subtitle">
-                Releases January 15th 2 PM ET <span class="countdown-accent">(This is a placeholder date)</span>
-              </p>
+            <div class="home-summary-grid" role="list">
+              <section class="home-summary-card" role="listitem">
+                <span class="home-summary-value">31</span>
+                <span class="home-summary-label">smoked pages</span>
+              </section>
+              <section class="home-summary-card" role="listitem">
+                <span class="home-summary-value">3</span>
+                <span class="home-summary-label">core data exports</span>
+              </section>
+              <section class="home-summary-card" role="listitem">
+                <span class="home-summary-value">646</span>
+                <span class="home-summary-label">image assets checked</span>
+              </section>
             </div>
           </div>
 
-          <div class="countdown-flip" aria-label="Time until release">
-            <div class="flip-unit flip-unit-days" data-flip-unit="days">
-              <div class="flip-digits flip-digits-days" aria-hidden="true">
-                <div class="flip-digit flip-digit-wide" data-flip-digit="days">
-                  <div class="flip-digit-top"><span class="flip-digit-value">--</span></div>
-                  <div class="flip-digit-bottom"><span class="flip-digit-value">--</span></div>
-                </div>
+          <div class="home-hero-media">
+            <img src="images/project_rogue_today.png" alt="Project Rogue gameplay" loading="eager" />
+          </div>
+        </section>
+
+        <section class="content-section release-countdown" aria-labelledby="release-countdown-title">
+          <div
+            class="countdown-panel"
+            data-release-countdown
+            data-target-utc="2026-01-15T19:00:00Z"
+            data-live-kicker="LIVE!"
+            data-live-subtitle="Released on January 15th 2 PM ET"
+            data-live-prefix="Live for:"
+            data-live-aria-label="Time since release"
+          >
+            <div class="countdown-meta">
+              <div class="countdown-heading">
+                <div class="countdown-kicker">Project Rogue</div>
+                <h2 id="release-countdown-title" class="countdown-title">Nocturne Blight</h2>
+                <p class="countdown-subtitle">
+                  Releases January 15th 2 PM ET <span class="countdown-accent">(This is a placeholder date)</span>
+                </p>
               </div>
-              <div class="flip-unit-label">Days</div>
             </div>
 
-            <div class="flip-separator" aria-hidden="true">:</div>
-
-            <div class="flip-clock" role="group" aria-label="Hours minutes seconds remaining">
-              <div class="flip-unit" data-flip-unit="hours">
-                <div class="flip-digits" aria-hidden="true">
-                  <div class="flip-digit" data-flip-digit="hours-tens">
-                    <div class="flip-digit-top"><span class="flip-digit-value">0</span></div>
-                    <div class="flip-digit-bottom"><span class="flip-digit-value">0</span></div>
-                  </div>
-                  <div class="flip-digit" data-flip-digit="hours-ones">
-                    <div class="flip-digit-top"><span class="flip-digit-value">0</span></div>
-                    <div class="flip-digit-bottom"><span class="flip-digit-value">0</span></div>
+            <div class="countdown-flip" aria-label="Time until release">
+              <div class="flip-unit flip-unit-days" data-flip-unit="days">
+                <div class="flip-digits flip-digits-days" aria-hidden="true">
+                  <div class="flip-digit flip-digit-wide" data-flip-digit="days">
+                    <div class="flip-digit-top"><span class="flip-digit-value">--</span></div>
+                    <div class="flip-digit-bottom"><span class="flip-digit-value">--</span></div>
                   </div>
                 </div>
-                <div class="flip-unit-label">Hours</div>
+                <div class="flip-unit-label">Days</div>
               </div>
 
               <div class="flip-separator" aria-hidden="true">:</div>
 
-              <div class="flip-unit" data-flip-unit="minutes">
-                <div class="flip-digits" aria-hidden="true">
-                  <div class="flip-digit" data-flip-digit="minutes-tens">
-                    <div class="flip-digit-top"><span class="flip-digit-value">0</span></div>
-                    <div class="flip-digit-bottom"><span class="flip-digit-value">0</span></div>
+              <div class="flip-clock" role="group" aria-label="Hours minutes seconds remaining">
+                <div class="flip-unit" data-flip-unit="hours">
+                  <div class="flip-digits" aria-hidden="true">
+                    <div class="flip-digit" data-flip-digit="hours-tens">
+                      <div class="flip-digit-top"><span class="flip-digit-value">0</span></div>
+                      <div class="flip-digit-bottom"><span class="flip-digit-value">0</span></div>
+                    </div>
+                    <div class="flip-digit" data-flip-digit="hours-ones">
+                      <div class="flip-digit-top"><span class="flip-digit-value">0</span></div>
+                      <div class="flip-digit-bottom"><span class="flip-digit-value">0</span></div>
+                    </div>
                   </div>
-                  <div class="flip-digit" data-flip-digit="minutes-ones">
-                    <div class="flip-digit-top"><span class="flip-digit-value">0</span></div>
-                    <div class="flip-digit-bottom"><span class="flip-digit-value">0</span></div>
-                  </div>
+                  <div class="flip-unit-label">Hours</div>
                 </div>
-                <div class="flip-unit-label">Minutes</div>
-              </div>
 
-              <div class="flip-separator" aria-hidden="true">:</div>
+                <div class="flip-separator" aria-hidden="true">:</div>
 
-              <div class="flip-unit" data-flip-unit="seconds">
-                <div class="flip-digits" aria-hidden="true">
-                  <div class="flip-digit" data-flip-digit="seconds-tens">
-                    <div class="flip-digit-top"><span class="flip-digit-value">0</span></div>
-                    <div class="flip-digit-bottom"><span class="flip-digit-value">0</span></div>
+                <div class="flip-unit" data-flip-unit="minutes">
+                  <div class="flip-digits" aria-hidden="true">
+                    <div class="flip-digit" data-flip-digit="minutes-tens">
+                      <div class="flip-digit-top"><span class="flip-digit-value">0</span></div>
+                      <div class="flip-digit-bottom"><span class="flip-digit-value">0</span></div>
+                    </div>
+                    <div class="flip-digit" data-flip-digit="minutes-ones">
+                      <div class="flip-digit-top"><span class="flip-digit-value">0</span></div>
+                      <div class="flip-digit-bottom"><span class="flip-digit-value">0</span></div>
+                    </div>
                   </div>
-                  <div class="flip-digit" data-flip-digit="seconds-ones">
-                    <div class="flip-digit-top"><span class="flip-digit-value">0</span></div>
-                    <div class="flip-digit-bottom"><span class="flip-digit-value">0</span></div>
-                  </div>
+                  <div class="flip-unit-label">Minutes</div>
                 </div>
-                <div class="flip-unit-label">Seconds</div>
+
+                <div class="flip-separator" aria-hidden="true">:</div>
+
+                <div class="flip-unit" data-flip-unit="seconds">
+                  <div class="flip-digits" aria-hidden="true">
+                    <div class="flip-digit" data-flip-digit="seconds-tens">
+                      <div class="flip-digit-top"><span class="flip-digit-value">0</span></div>
+                      <div class="flip-digit-bottom"><span class="flip-digit-value">0</span></div>
+                    </div>
+                    <div class="flip-digit" data-flip-digit="seconds-ones">
+                      <div class="flip-digit-top"><span class="flip-digit-value">0</span></div>
+                      <div class="flip-digit-bottom"><span class="flip-digit-value">0</span></div>
+                    </div>
+                  </div>
+                  <div class="flip-unit-label">Seconds</div>
+                </div>
               </div>
-            </div>
 
-            <div class="sr-only">
-              <span data-countdown-prefix>Remaining:</span> <span data-countdown-days>--</span> days
-              <span data-countdown-hours>--</span> hours
-              <span data-countdown-minutes>--</span> minutes <span data-countdown-seconds>--</span> seconds.
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <article class="content-section" id="overview">
-        <h2>Project Rogue Timeline</h2>
-        <p>
-          Project Rogue grows from the Dransik/Ashen Empires lineage of 2D sandbox PvP. The timeline below packs the
-          milestones that carried that old-school feel into the current server.
-        </p>
-
-        <div class="timeline">
-          <div class="timeline-item">
-            <div class="timeline-marker"></div>
-            <div class="timeline-date">1998&nbsp;&ndash;&nbsp;1999</div>
-            <div class="timeline-card">
-              <h3>Dransik Classic</h3>
-              <p>
-                Ultima-style 2D MMO launches and sparks the community that chases every successor.
-              </p>
-              <div class="timeline-media">
-                <img src="images/dransik.png" alt="Dransik Classic screenshot" loading="lazy" />
+              <div class="sr-only">
+                <span data-countdown-prefix>Remaining:</span> <span data-countdown-days>--</span> days
+                <span data-countdown-hours>--</span> hours <span data-countdown-minutes>--</span> minutes
+                <span data-countdown-seconds>--</span> seconds.
               </div>
             </div>
           </div>
+        </section>
 
-          <div class="timeline-item">
-            <div class="timeline-marker"></div>
-            <div class="timeline-date">2002&nbsp;&ndash;&nbsp;2003</div>
-            <div class="timeline-card">
-              <h3>Ashen Empires Era</h3>
+        <article class="content-section" id="entry-points">
+          <h2>Codex Entry Points</h2>
+          <div class="home-entry-grid" role="list">
+            <a class="home-entry-card" href="pages/General/play-the-game.html" role="listitem">
+              <span class="stat-label">Start</span>
+              <strong>Play the Game</strong>
+              <span>Discord-first setup, account flow, and launch path.</span>
+            </a>
+            <a class="home-entry-card" href="pages/General/build-planner.html" role="listitem">
+              <span class="stat-label">Plan</span>
+              <strong>Build Planner</strong>
+              <span>Compare gear, requirements, bonuses, and shareable builds.</span>
+            </a>
+            <a class="home-entry-card" href="pages/items/weapons.html" role="listitem">
+              <span class="stat-label">Items</span>
+              <strong>Weapons</strong>
+              <span>Speed, DPS, requirements, perks, and drop sources.</span>
+            </a>
+            <a class="home-entry-card" href="pages/items/armors.html" role="listitem">
+              <span class="stat-label">Items</span>
+              <strong>Armors</strong>
+              <span>Armor value, resistances, slots, perks, and drops.</span>
+            </a>
+            <a class="home-entry-card" href="pages/enemies/monsters.html" role="listitem">
+              <span class="stat-label">Enemies</span>
+              <strong>Monsters</strong>
+              <span>Stats, damage types, deep links, and loot tables.</span>
+            </a>
+            <a class="home-entry-card" href="pages/systems/perks.html" role="listitem">
+              <span class="stat-label">Systems</span>
+              <strong>Perks</strong>
+              <span>Found-on references, stacking examples, and speed context.</span>
+            </a>
+          </div>
+        </article>
+
+        <article class="content-section" id="data-pipeline">
+          <h2>Data Pipeline Snapshot</h2>
+          <div class="home-pipeline-grid" role="list">
+            <section class="home-pipeline-card" role="listitem">
+              <p class="stat-label">Exports</p>
+              <h3>Game Data Pull</h3>
+              <p>Weapons, armors, and monsters are covered by the Codex export workflow and live verification.</p>
+            </section>
+            <section class="home-pipeline-card" role="listitem">
+              <p class="stat-label">Assets</p>
+              <h3>Image Manifests</h3>
+              <p>Weapon, armor, and monster image manifests are checked against the published site.</p>
+            </section>
+            <section class="home-pipeline-card" role="listitem">
+              <p class="stat-label">Pages</p>
+              <h3>Smoke Coverage</h3>
+              <p>Modern pages have validation and browser smoke checks so updates can be pushed with evidence.</p>
+            </section>
+          </div>
+        </article>
+
+        <article class="content-section" id="overview">
+          <div class="home-section-heading">
+            <div>
+              <h2>Project Rogue Timeline</h2>
               <p>
-                Upgraded Dransik enters open beta in September 2002 and rebrands as Ashen Empires with pay servers in March 2003.
+                Project Rogue grows from the Dransik/Ashen Empires lineage of 2D sandbox PvP. Filter the timeline
+                when you only want the pre-history, community forks, or Project Rogue era.
               </p>
+            </div>
+            <div class="home-filter-summary" aria-live="polite">
+              <span class="stat-label">Timeline Filter</span>
+              <strong data-home-result-count>10 shown</strong>
             </div>
           </div>
 
-          <div class="timeline-item">
-            <div class="timeline-marker"></div>
-            <div class="timeline-date">2004&nbsp;&ndash;&nbsp;2006</div>
-            <div class="timeline-card">
-              <h3>Classic Goes Dark &amp; Returns</h3>
-              <p>
-                Dransik Classic shuts down, then resurfaces in April 2006 under Iron Will / Pixel Mine.
-              </p>
-            </div>
+          <div class="home-filter-bar" aria-label="Timeline filter">
+            <button class="home-filter-chip is-active" type="button" aria-pressed="true" data-era-filter="all">
+              All
+            </button>
+            <button class="home-filter-chip" type="button" aria-pressed="false" data-era-filter="origins">
+              Origins
+            </button>
+            <button class="home-filter-chip" type="button" aria-pressed="false" data-era-filter="forks">
+              Community Forks
+            </button>
+            <button class="home-filter-chip" type="button" aria-pressed="false" data-era-filter="project-rogue">
+              Project Rogue
+            </button>
           </div>
 
-          <div class="timeline-item">
-            <div class="timeline-marker"></div>
-            <div class="timeline-date">2005</div>
-            <div class="timeline-card">
-              <h3>Lothgar Online v1</h3>
-              <p>
-                Jason Ely leaves the Dransik team and ships Lothgar Online as a spiritual clone.
-              </p>
+          <div class="home-timeline" data-home-timeline>
+            <div class="home-timeline-item" data-home-timeline-item data-era="origins">
+              <div class="home-timeline-marker"></div>
+              <div class="home-timeline-date">1998&nbsp;&ndash;&nbsp;1999</div>
+              <div class="home-timeline-card">
+                <h3>Dransik Classic</h3>
+                <p>Ultima-style 2D MMO launches and sparks the community that chases every successor.</p>
+                <div class="home-timeline-media">
+                  <img src="images/dransik.png" alt="Dransik Classic screenshot" loading="lazy" />
+                </div>
+              </div>
             </div>
-          </div>
 
-          <div class="timeline-item">
-            <div class="timeline-marker"></div>
-            <div class="timeline-date">Mid-2000s</div>
-            <div class="timeline-card">
-              <h3>Vorlia Online</h3>
-              <p>
-                Fans spin up Vorlia Online, a grassroots Dransik-like MMO that later becomes the foundation for Project Rogue.
-              </p>
+            <div class="home-timeline-item" data-home-timeline-item data-era="origins">
+              <div class="home-timeline-marker"></div>
+              <div class="home-timeline-date">2002&nbsp;&ndash;&nbsp;2003</div>
+              <div class="home-timeline-card">
+                <h3>Ashen Empires Era</h3>
+                <p>
+                  Upgraded Dransik enters open beta in September 2002 and rebrands as Ashen Empires with pay servers
+                  in March 2003.
+                </p>
+              </div>
             </div>
-          </div>
 
-          <div class="timeline-item">
-            <div class="timeline-marker"></div>
-            <div class="timeline-date">2013</div>
-            <div class="timeline-card">
-              <h3>Elderlands Alpha</h3>
-              <p>
-                Ely's new 2D engine enters open alpha, fusing retro combat with modern tech.
-              </p>
+            <div class="home-timeline-item" data-home-timeline-item data-era="origins">
+              <div class="home-timeline-marker"></div>
+              <div class="home-timeline-date">2004&nbsp;&ndash;&nbsp;2006</div>
+              <div class="home-timeline-card">
+                <h3>Classic Goes Dark &amp; Returns</h3>
+                <p>Dransik Classic shuts down, then resurfaces in April 2006 under Iron Will / Pixel Mine.</p>
+              </div>
             </div>
-          </div>
 
-          <div class="timeline-item">
-            <div class="timeline-marker"></div>
-            <div class="timeline-date">2016</div>
-            <div class="timeline-card">
-              <h3>Lothgar Reboot Plans</h3>
-              <p>
-                While leading Asylumsoft on Elderlands, Ely announces a return of Lothgar Online styled after classic Dransik.
-              </p>
+            <div class="home-timeline-item" data-home-timeline-item data-era="forks">
+              <div class="home-timeline-marker"></div>
+              <div class="home-timeline-date">2005</div>
+              <div class="home-timeline-card">
+                <h3>Lothgar Online v1</h3>
+                <p>Jason Ely leaves the Dransik team and ships Lothgar Online as a spiritual clone.</p>
+              </div>
             </div>
-          </div>
 
-          <div class="timeline-item">
-            <div class="timeline-marker"></div>
-            <div class="timeline-date">Mar 20&nbsp;2017</div>
-            <div class="timeline-card">
-              <h3>Lothgar Relaunch Falters</h3>
-              <p>
-                Relaunch arrives with hype but fizzles; players cite direction issues and look elsewhere.
-              </p>
+            <div class="home-timeline-item" data-home-timeline-item data-era="forks">
+              <div class="home-timeline-marker"></div>
+              <div class="home-timeline-date">Mid-2000s</div>
+              <div class="home-timeline-card">
+                <h3>Vorlia Online</h3>
+                <p>Fans spin up Vorlia Online, a grassroots Dransik-like MMO that later becomes the foundation for Project Rogue.</p>
+              </div>
             </div>
-          </div>
 
-          <div class="timeline-item">
-            <div class="timeline-marker"></div>
-            <div class="timeline-date">Jul&nbsp;2017</div>
-            <div class="timeline-card">
-              <h3>Project Rogue Begins</h3>
-              <p>
-                Arakard and Acry reboot Vorlia as Project Rogue: 100-level cap, revamped stat math, Dransik-era systems, and a PvP logout timer.
-              </p>
-              <div class="timeline-media">
-                <img src="images/project_rogue.png" alt="Project Rogue gameplay" loading="lazy" />
+            <div class="home-timeline-item" data-home-timeline-item data-era="forks">
+              <div class="home-timeline-marker"></div>
+              <div class="home-timeline-date">2013</div>
+              <div class="home-timeline-card">
+                <h3>Elderlands Alpha</h3>
+                <p>Ely's new 2D engine enters open alpha, fusing retro combat with modern tech.</p>
+              </div>
+            </div>
+
+            <div class="home-timeline-item" data-home-timeline-item data-era="forks">
+              <div class="home-timeline-marker"></div>
+              <div class="home-timeline-date">2016</div>
+              <div class="home-timeline-card">
+                <h3>Lothgar Reboot Plans</h3>
+                <p>
+                  While leading Asylumsoft on Elderlands, Ely announces a return of Lothgar Online styled after classic
+                  Dransik.
+                </p>
+              </div>
+            </div>
+
+            <div class="home-timeline-item" data-home-timeline-item data-era="forks">
+              <div class="home-timeline-marker"></div>
+              <div class="home-timeline-date">Mar 20&nbsp;2017</div>
+              <div class="home-timeline-card">
+                <h3>Lothgar Relaunch Falters</h3>
+                <p>Relaunch arrives with hype but fizzles; players cite direction issues and look elsewhere.</p>
+              </div>
+            </div>
+
+            <div class="home-timeline-item" data-home-timeline-item data-era="project-rogue">
+              <div class="home-timeline-marker"></div>
+              <div class="home-timeline-date">Jul&nbsp;2017</div>
+              <div class="home-timeline-card">
+                <h3>Project Rogue Begins</h3>
+                <p>
+                  Arakard and Acry reboot Vorlia as Project Rogue: 100-level cap, revamped stat math, Dransik-era
+                  systems, and a PvP logout timer.
+                </p>
+                <div class="home-timeline-media">
+                  <img src="images/project_rogue.png" alt="Project Rogue gameplay" loading="lazy" />
+                </div>
+              </div>
+            </div>
+
+            <div class="home-timeline-item home-timeline-current" data-home-timeline-item data-era="project-rogue">
+              <div class="home-timeline-marker"></div>
+              <div class="home-timeline-date">2017&nbsp;&ndash;&nbsp;Today</div>
+              <div class="home-timeline-card">
+                <h3>Fresh Wipes &amp; Live Upkeep</h3>
+                <p>
+                  Regular wipes, balance passes, and content drops keep the server active; each fresh start echoes the
+                  early days.
+                </p>
+                <div class="home-timeline-media">
+                  <img src="images/project_rogue_today.png" alt="Modern Project Rogue moments" loading="lazy" />
+                </div>
               </div>
             </div>
           </div>
+        </article>
 
-          <div class="timeline-item timeline-current">
-            <div class="timeline-marker"></div>
-            <div class="timeline-date">2017&nbsp;&ndash;&nbsp;Today</div>
-            <div class="timeline-card">
-              <h3>Fresh Wipes &amp; Live Upkeep</h3>
-              <p>
-                Regular wipes, balance passes, and content drops keep the server active; each fresh start echoes the early days.
-              </p>
-              <div class="timeline-media">
-                <img src="images/project_rogue_today.png" alt="Modern Project Rogue moments" loading="lazy" />
-              </div>
-            </div>
+        <article class="content-section">
+          <h2>Related Codex Tools</h2>
+          <div class="home-link-grid">
+            <a href="https://traecneh.github.io/Project-Rogue-Map/" target="_blank" rel="noreferrer noopener">Interactive Map</a>
+            <a href="pages/stats/resistances.html">Resistances</a>
+            <a href="pages/systems/rarity.html">Rarity</a>
+            <a href="pages/systems/crafting.html">Crafting</a>
+            <a href="pages/systems/corruption.html">Corruption</a>
+            <a href="pages/systems/experience.html">Experience Pool</a>
           </div>
-        </div>
-      </article>
-
-    </main>
-  </div>
-</body>
+        </article>
+      </main>
+    </div>
+  </body>
 </html>

@@ -70,8 +70,12 @@ class SiteCoverageTests(unittest.TestCase):
         unvalidated = {page.path for page in report.unvalidated_pages}
         unsmoked = {page.path for page in report.unsmoked_pages}
         linked_pages = {page.path for page in report.pages}
+        search_only = {page.path for page in report.search_only_pages}
 
         self.assertEqual([], report.missing_files)
+        self.assertNotIn("index.html", search_only)
+        self.assertNotIn("index.html", unvalidated)
+        self.assertNotIn("index.html", unsmoked)
         self.assertNotIn("pages/systems/experience.html", unvalidated)
         self.assertNotIn("pages/systems/experience.html", unsmoked)
         self.assertNotIn("pages/General/build-planner.html", unvalidated)

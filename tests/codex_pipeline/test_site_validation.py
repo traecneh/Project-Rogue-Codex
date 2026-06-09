@@ -195,6 +195,81 @@ class SiteValidationTests(unittest.TestCase):
                 self.assertNotIn("function attachTooltipPinning", script)
                 self.assertNotIn("function unpinTooltip", script)
 
+    def test_home_page_has_compact_gateway_and_timeline_filters(self):
+        from tools.codex_pipeline import cli
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        html_path = REPO_ROOT / "index.html"
+        css_path = REPO_ROOT / "css" / "home.css"
+        script_path = REPO_ROOT / "js" / "home.js"
+        html = html_path.read_text(encoding="utf-8")
+        css = css_path.read_text(encoding="utf-8") if css_path.exists() else ""
+        script = script_path.read_text(encoding="utf-8") if script_path.exists() else ""
+
+        self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
+        self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
+        self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
+        self.assertIn('<link rel="stylesheet" href="css/home.css" />', html)
+        self.assertIn('<script src="js/home.js" defer></script>', html)
+        self.assertNotIn("<style>", html)
+        self.assertEqual(
+            [],
+            [
+                block.strip()
+                for block in re.findall(
+                    r"<script\b(?![^>]*\bsrc\s*=)[^>]*>([\s\S]*?)</script>",
+                    html,
+                    flags=re.IGNORECASE,
+                )
+                if block.strip()
+            ],
+        )
+        self.assertNotRegex(html, r"\sstyle\s*=")
+
+        for expected in [
+            "Codex Command Center",
+            "Codex Entry Points",
+            "Data Pipeline Snapshot",
+            "Project Rogue Timeline",
+            "Timeline Filter",
+            "data-home-timeline",
+            "data-home-timeline-item",
+            "data-era-filter=\"project-rogue\"",
+            "data-home-result-count",
+            "Dransik Classic",
+            "Project Rogue Begins",
+            "Fresh Wipes &amp; Live Upkeep",
+            "pages/General/play-the-game.html",
+            "pages/General/build-planner.html",
+            "pages/items/weapons.html",
+            "pages/items/armors.html",
+            "pages/enemies/monsters.html",
+            "pages/systems/perks.html",
+            "pages/stats/resistances.html",
+            "https://traecneh.github.io/Project-Rogue-Map/",
+        ]:
+            self.assertIn(expected, html)
+
+        for expected in [
+            ".home-hero",
+            ".home-entry-grid",
+            ".home-pipeline-grid",
+            ".home-filter-bar",
+            ".home-timeline",
+            ".home-link-grid",
+        ]:
+            self.assertIn(expected, css)
+
+        for expected in [
+            "const HOME_TIMELINE_FILTERS",
+            "function initHomeTimelineFilters",
+            "function updateHomeTimelineFilter",
+            "data-era-filter",
+            "data-home-result-count",
+            'document.addEventListener("DOMContentLoaded"',
+        ]:
+            self.assertIn(expected, script)
+
     def test_monsters_page_script_supports_detail_deep_links(self):
         from tools.codex_pipeline.config import REPO_ROOT
 

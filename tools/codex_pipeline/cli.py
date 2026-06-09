@@ -56,6 +56,7 @@ from tools.codex_pipeline.validators.site import (
 
 
 VALIDATED_HTML_PATHS = [
+    REPO_ROOT / "index.html",
     REPO_ROOT / "pages" / "General" / "build-planner.html",
     REPO_ROOT / "pages" / "General" / "play-the-game.html",
     REPO_ROOT / "pages" / "items" / "weapons.html",
@@ -90,6 +91,7 @@ VALIDATED_HTML_PATHS = [
 
 VALIDATED_STYLE_PATHS = [
     REPO_ROOT / "css" / "styles.css",
+    REPO_ROOT / "css" / "home.css",
     REPO_ROOT / "css" / "build-planner.css",
     REPO_ROOT / "css" / "play-the-game.css",
     REPO_ROOT / "css" / "weapons.css",
@@ -124,6 +126,7 @@ VALIDATED_STYLE_PATHS = [
 
 VALIDATED_SCRIPT_PATHS = [
     REPO_ROOT / "js" / "utils.js",
+    REPO_ROOT / "js" / "home.js",
     REPO_ROOT / "js" / "items-page-utils.js",
     REPO_ROOT / "js" / "build-planner.js",
     REPO_ROOT / "js" / "play-the-game.js",

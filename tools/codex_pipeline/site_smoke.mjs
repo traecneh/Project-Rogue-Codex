@@ -10,6 +10,7 @@ const timeoutMs = Number(args.timeoutMs || 20000);
 const configuredBaseUrl = args.baseUrl ? normalizeBaseUrl(args.baseUrl) : null;
 const RUNE_SWORD_DETAIL_PATH = "pages/items/weapons.html?weapon=Rune%20Sword";
 const PERKS_RUNIC_PATH = "/pages/systems/perks.html?perk=Runic";
+const PROJECT_ROGUE_FILTER_SELECTOR = '[data-era-filter="project-rogue"]';
 
 const smokeSpecs = [
   {
@@ -66,6 +67,12 @@ async function main() {
       } catch (error) {
         failures.push(`SMOKE ERROR ${spec.label}: ${formatError(error)}`);
       }
+    }
+    try {
+      await runHomeSpec(browser, baseUrl);
+      console.log("SMOKE OK home: gateway links, countdown, timeline filter");
+    } catch (error) {
+      failures.push(`SMOKE ERROR home: ${formatError(error)}`);
     }
     try {
       await runBuildPlannerSpec(browser, baseUrl);
@@ -238,7 +245,7 @@ async function main() {
     failures.forEach((failure) => console.error(failure));
     process.exit(1);
   }
-  console.log(`SMOKE OK site: ${smokeSpecs.length + 27} page(s) checked at ${baseUrl}`);
+  console.log(`SMOKE OK site: ${smokeSpecs.length + 28} page(s) checked at ${baseUrl}`);
 }
 
 async function importPlaywright() {
@@ -313,6 +320,113 @@ async function runSpec(browser, baseUrl, spec) {
     }
   } finally {
     await page.close();
+  }
+}
+
+async function runHomeSpec(browser, baseUrl) {
+  const page = await browser.newPage();
+  page.setDefaultTimeout(timeoutMs);
+  const runtimeErrors = [];
+  page.on("console", (message) => {
+    const text = message.text();
+    if (message.type() === "error" && !text.startsWith("Failed to load resource")) runtimeErrors.push(text);
+  });
+  page.on("pageerror", (error) => runtimeErrors.push(formatError(error)));
+
+  try {
+    await page.goto(joinUrl(baseUrl, "/index.html"), { waitUntil: "load" });
+    await page.locator(".home-entry-grid").waitFor({ state: "visible" });
+    await page.locator(".countdown-panel").waitFor({ state: "visible" });
+    const pageText = (await page.locator(".main-content").textContent()).trim();
+    for (const expected of [
+      "Codex Command Center",
+      "Codex Entry Points",
+      "Data Pipeline Snapshot",
+      "Project Rogue Timeline",
+      "Dransik Classic",
+      "Project Rogue Begins",
+      "Fresh Wipes & Live Upkeep",
+    ]) {
+      if (!pageText.includes(expected)) {
+        throw new Error(`Home page missing "${expected}": "${pageText}"`);
+      }
+    }
+
+    for (const href of [
+      "pages/General/play-the-game.html",
+      "pages/General/build-planner.html",
+      "pages/items/weapons.html",
+      "pages/items/armors.html",
+      "pages/enemies/monsters.html",
+      "pages/systems/perks.html",
+    ]) {
+      const count = await page.locator(`.home-entry-grid a[href="${href}"]`).count();
+      if (count !== 1) {
+        throw new Error(`Home entry link expected one "${href}", found ${count}`);
+      }
+    }
+
+    for (const href of [
+      "https://traecneh.github.io/Project-Rogue-Map/",
+      "pages/stats/resistances.html",
+      "pages/systems/rarity.html",
+      "pages/systems/crafting.html",
+      "pages/systems/corruption.html",
+      "pages/systems/experience.html",
+    ]) {
+      const count = await page.locator(`.home-link-grid a[href="${href}"]`).count();
+      if (count !== 1) {
+        throw new Error(`Home related link expected one "${href}", found ${count}`);
+      }
+    }
+
+    await assertHomeTimelineFilter(page, "all", 10, ["Dransik Classic", "Fresh Wipes & Live Upkeep"], []);
+    await page.locator(PROJECT_ROGUE_FILTER_SELECTOR).waitFor({ state: "visible" });
+    await assertHomeTimelineFilter(page, "project-rogue", 2, ["Project Rogue Begins", "Fresh Wipes & Live Upkeep"], [
+      "Dransik Classic",
+    ]);
+    await assertHomeTimelineFilter(page, "origins", 3, ["Dransik Classic", "Ashen Empires Era"], [
+      "Project Rogue Begins",
+    ]);
+    await assertMobilePageFirstNavigation(page, baseUrl, "/index.html");
+
+    if (runtimeErrors.length) {
+      throw new Error(`browser errors: ${runtimeErrors.join("; ")}`);
+    }
+  } finally {
+    await page.close();
+  }
+}
+
+async function assertHomeTimelineFilter(page, filterName, expectedCount, visibleText, hiddenText) {
+  await page.locator(`[data-era-filter="${filterName}"]`).click();
+  await page.waitForFunction(
+    ({ count }) => document.querySelectorAll("[data-home-timeline-item]:not([hidden])").length === count,
+    { count: expectedCount },
+    { timeout: timeoutMs }
+  );
+  const pressed = await page.locator(`[data-era-filter="${filterName}"]`).getAttribute("aria-pressed");
+  if (pressed !== "true") {
+    throw new Error(`Home filter "${filterName}" should be aria-pressed=true, got "${pressed}"`);
+  }
+  const countText = (await page.locator("[data-home-result-count]").textContent()).trim();
+  if (!countText.startsWith(String(expectedCount))) {
+    throw new Error(`Home filter "${filterName}" count expected ${expectedCount}, got "${countText}"`);
+  }
+  const visibleTimelineText = (await page.locator(".home-timeline").textContent()).trim();
+  for (const expected of visibleText) {
+    if (!visibleTimelineText.includes(expected)) {
+      throw new Error(`Home filter "${filterName}" hidden expected visible text "${expected}": "${visibleTimelineText}"`);
+    }
+  }
+  for (const unexpected of hiddenText) {
+    const stillVisible = await page
+      .locator(`[data-home-timeline-item]:not([hidden])`)
+      .filter({ hasText: unexpected })
+      .count();
+    if (stillVisible) {
+      throw new Error(`Home filter "${filterName}" should hide "${unexpected}"`);
+    }
   }
 }
 
