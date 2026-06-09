@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Floor Cleanup System (Creeper) - Project Rogue Codex</title>
+    <title>Floor Cleanup System (Creeper) &mdash; Project Rogue Codex</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <base href="../../" />
     <link rel="icon" type="image/x-icon" href="images/project-rogue-favicon.ico" />
@@ -11,6 +11,7 @@
     <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
     <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/floor-cleanup.css" />
     <script src="js/site-search.js" defer></script>
     <script src="js/weapon-specialty.js" defer></script>
     <script src="js/stat-widgets.js" defer></script>
@@ -19,6 +20,7 @@
     <script src="js/perks.js" defer></script>
     <script src="js/rarity-roller.js" defer></script>
     <script src="js/nav-core.js" defer></script>
+    <script src="js/floor-cleanup.js" defer></script>
   </head>
   <body>
     <div class="layout">
@@ -27,52 +29,154 @@
         <header class="content-header">
           <h1 class="content-title">Floor Cleanup System (Creeper)</h1>
           <p class="content-tagline">
-            Understand how long dropped loot can remain on the ground before the Creeper removes it.
+            A compact reference for how long abandoned loot can stay on the ground before the Creeper removes it.
           </p>
         </header>
 
-        <article class="content-section" id="creeper-timing">
-          <h2>Creeper Timing</h2>
-          <p>The <strong>Creeper</strong> is the automated sweep that removes abandoned loot.</p>
-          <div class="stat-grid" role="list">
-            <section class="stat-card" role="listitem">
+        <article class="content-section" id="floor-cleanup-basics">
+          <h2>Floor Cleanup at a Glance</h2>
+          <div class="floor-cleanup-summary-grid" role="list">
+            <section class="floor-cleanup-summary-card" role="listitem">
+              <p class="stat-label">System</p>
+              <h3>Creeper</h3>
+              <p>The Creeper is the automated sweep that removes abandoned loot from the floor.</p>
+            </section>
+
+            <section class="floor-cleanup-summary-card" role="listitem">
               <p class="stat-label">Cycle</p>
-              <h3>Sweep Interval</h3>
-              <p>Cleanup runs every <strong>3 minutes</strong>.</p>
+              <h3>3 minutes</h3>
+              <p>Cleanup runs on a recurring 3 minutes sweep interval.</p>
             </section>
 
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Check</p>
-              <h3>Undisturbed Timer</h3>
-              <p>Each ground item is checked for its undisturbed time during the sweep.</p>
+            <section class="floor-cleanup-summary-card" role="listitem">
+              <p class="stat-label">Threshold</p>
+              <h3>More than 8 minutes</h3>
+              <p>Ground items are removed when their undisturbed time is more than 8 minutes during a sweep.</p>
             </section>
 
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Removal</p>
-              <h3>Deletion Threshold</h3>
-              <p>Items untouched for more than <strong>8 minutes</strong> when the sweep occurs are deleted.</p>
+            <section class="floor-cleanup-summary-card" role="listitem">
+              <p class="stat-label">Lifetime</p>
+              <h3>8-11 minutes</h3>
+              <p>Untouched loot normally remains on the floor for 8-11 minutes, with best-case timing up to 11 minutes.</p>
             </section>
           </div>
 
-          <div class="stat-grid" role="list">
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Lifetime</p>
-              <h3>Worst Case</h3>
-              <p>Item reaches 8 minutes just before a sweep: survives about <strong>8 minutes</strong>.</p>
-            </section>
+          <section class="floor-cleanup-rule-section">
+            <h2>Creeper Timing Rules</h2>
+            <div class="floor-cleanup-rule-grid" role="list">
+              <section class="floor-cleanup-rule-card" role="listitem">
+                <p class="stat-label">1</p>
+                <h3>Item Drops</h3>
+                <p>A dropped item starts accumulating undisturbed time while it remains on the floor.</p>
+              </section>
 
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Lifetime</p>
-              <h3>Best Case</h3>
-              <p>Item reaches 8 minutes just after a sweep: lasts to the next pass, up to <strong>11 minutes</strong>.</p>
-            </section>
+              <section class="floor-cleanup-rule-card" role="listitem">
+                <p class="stat-label">2</p>
+                <h3>Sweep Checks</h3>
+                <p>Every 3 minutes, the cleanup pass checks each ground item against its undisturbed time.</p>
+              </section>
 
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Lifetime</p>
-              <h3>Typical Window</h3>
-              <p>Untouched loot remains on the floor for <strong>8&ndash;11 minutes</strong>.</p>
-            </section>
-          </div>
+              <section class="floor-cleanup-rule-card" role="listitem">
+                <p class="stat-label">3</p>
+                <h3>Creeper Removes</h3>
+                <p>If the item has been untouched for more than 8 minutes when the sweep occurs, it is deleted.</p>
+              </section>
+            </div>
+          </section>
+
+          <section class="floor-cleanup-preview-section">
+            <div class="floor-cleanup-section-heading">
+              <div>
+                <h2>Sweep Timing Preview</h2>
+                <p>Select a timing case to see why the practical loot lifetime lands between 8 and 11 minutes.</p>
+              </div>
+              <p class="floor-cleanup-preview-note">Cleanup runs every 3 minutes.</p>
+            </div>
+
+            <div class="stat-widget floor-cleanup-preview" data-cleanup-preview data-current-cleanup-scenario="before">
+              <div class="floor-cleanup-options" role="group" aria-label="Floor cleanup timing preview">
+                <button type="button" class="floor-cleanup-option is-active" data-cleanup-scenario="before" aria-pressed="true">
+                  Just Before 8m
+                </button>
+                <button type="button" class="floor-cleanup-option" data-cleanup-scenario="after" aria-pressed="false">
+                  Just After Sweep
+                </button>
+                <button type="button" class="floor-cleanup-option" data-cleanup-scenario="typical" aria-pressed="false">
+                  Typical Window
+                </button>
+              </div>
+
+              <div class="floor-cleanup-output">
+                <span class="stat-output-label">Selected Case</span>
+                <strong data-cleanup-scenario-title>Worst Case</strong>
+                <p data-cleanup-scenario-window>Item survives about 8 minutes.</p>
+                <p data-cleanup-scenario-detail>Item reaches 8 minutes just before a sweep, then is eligible when that sweep checks it.</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="floor-cleanup-flow-section">
+            <h2>Loot Lifetime Flow</h2>
+            <ol class="floor-cleanup-flow">
+              <li>
+                <span>1</span>
+                <div>
+                  <h3>Loot lands</h3>
+                  <p>The item sits on the floor and begins tracking undisturbed time.</p>
+                </div>
+              </li>
+              <li>
+                <span>2</span>
+                <div>
+                  <h3>Sweeps pass</h3>
+                  <p>Each 3 minutes cleanup pass checks whether the item has crossed the removal threshold.</p>
+                </div>
+              </li>
+              <li>
+                <span>3</span>
+                <div>
+                  <h3>Threshold is reached</h3>
+                  <p>Once the item is more than 8 minutes old and still undisturbed, the next sweep can remove it.</p>
+                </div>
+              </li>
+            </ol>
+          </section>
+
+          <section class="floor-cleanup-reset-section">
+            <h2>What Resets the Risk</h2>
+            <div class="floor-cleanup-reset-grid" role="list">
+              <section class="floor-cleanup-reset-card" role="listitem">
+                <p class="stat-label">Pickup</p>
+                <h3>Claim the item</h3>
+                <p>Picking up loot removes it from the floor, so it is no longer exposed to Creeper cleanup.</p>
+              </section>
+
+              <section class="floor-cleanup-reset-card" role="listitem">
+                <p class="stat-label">Fresh Drop</p>
+                <h3>New floor item</h3>
+                <p>Newly dropped loot starts its own undisturbed time and follows the same 8-11 minutes window.</p>
+              </section>
+
+              <section class="floor-cleanup-reset-card" role="listitem">
+                <p class="stat-label">Planning</p>
+                <h3>Do not wait</h3>
+                <p>If loot matters, treat 8 minutes as the practical deadline and the remaining sweep window as buffer.</p>
+              </section>
+            </div>
+          </section>
+
+          <section class="floor-cleanup-related">
+            <h2>Related Pages</h2>
+            <div class="floor-cleanup-link-grid" aria-label="Related Floor Cleanup pages">
+              <a href="pages/systems/pvp-system.html">PVP System</a>
+              <a href="pages/systems/corruption.html">Corruption</a>
+              <a href="pages/systems/purge.html">Purge</a>
+              <a href="pages/items/weapons.html">Weapons</a>
+              <a href="pages/items/armors.html">Armors</a>
+              <a href="pages/enemies/monsters.html">Monsters</a>
+              <a href="pages/General/play-the-game.html">Play the Game</a>
+            </div>
+          </section>
         </article>
       </main>
     </div>

@@ -152,6 +152,12 @@ async function main() {
       failures.push(`SMOKE ERROR chat: ${formatError(error)}`);
     }
     try {
+      await runFloorCleanupSpec(browser, baseUrl);
+      console.log("SMOKE OK floor cleanup: timing reference, preview, related links");
+    } catch (error) {
+      failures.push(`SMOKE ERROR floor cleanup: ${formatError(error)}`);
+    }
+    try {
       await runCorruptionSpec(browser, baseUrl);
       console.log("SMOKE OK corruption: corrupted innates, cleanse flow, related links");
     } catch (error) {
@@ -172,7 +178,7 @@ async function main() {
     failures.forEach((failure) => console.error(failure));
     process.exit(1);
   }
-  console.log(`SMOKE OK site: ${smokeSpecs.length + 16} page(s) checked at ${baseUrl}`);
+  console.log(`SMOKE OK site: ${smokeSpecs.length + 17} page(s) checked at ${baseUrl}`);
 }
 
 async function importPlaywright() {
@@ -1232,6 +1238,115 @@ async function assertChatModePreview(page) {
   const guildText = (await page.locator(".chat-mode-output").textContent()).trim();
   if (!guildText.includes("members of your guild") || !guildText.includes("posts to Guild")) {
     throw new Error(`Chat Guild mode did not show guild scope: "${guildText}"`);
+  }
+}
+
+async function runFloorCleanupSpec(browser, baseUrl) {
+  const page = await browser.newPage();
+  page.setDefaultTimeout(timeoutMs);
+  const runtimeErrors = [];
+  page.on("console", (message) => {
+    const text = message.text();
+    if (message.type() === "error" && !text.startsWith("Failed to load resource")) runtimeErrors.push(text);
+  });
+  page.on("pageerror", (error) => runtimeErrors.push(formatError(error)));
+
+  try {
+    await page.goto(joinUrl(baseUrl, "/pages/systems/floor-cleanup.html"), { waitUntil: "load" });
+    await page.locator(".floor-cleanup-preview").waitFor({ state: "visible" });
+    const pageText = (await page.locator("#floor-cleanup-basics").textContent()).trim();
+    for (const expected of [
+      "Floor Cleanup at a Glance",
+      "Creeper Timing Rules",
+      "Sweep Timing Preview",
+      "Loot Lifetime Flow",
+      "What Resets the Risk",
+      "Related Pages",
+      "Creeper",
+      "3 minutes",
+      "8 minutes",
+      "8-11 minutes",
+      "abandoned loot",
+      "undisturbed time",
+      "more than 8 minutes",
+      "about 8 minutes",
+      "up to 11 minutes",
+    ]) {
+      if (!pageText.includes(expected)) {
+        throw new Error(`Floor Cleanup page missing "${expected}": "${pageText}"`);
+      }
+    }
+
+    for (const href of [
+      "pages/systems/pvp-system.html",
+      "pages/systems/corruption.html",
+      "pages/systems/purge.html",
+      "pages/items/weapons.html",
+      "pages/items/armors.html",
+      "pages/enemies/monsters.html",
+      "pages/General/play-the-game.html",
+    ]) {
+      const count = await page.locator(`.floor-cleanup-link-grid a[href="${href}"]`).count();
+      if (count !== 1) {
+        throw new Error(`Floor Cleanup related link expected one "${href}", found ${count}`);
+      }
+    }
+
+    await assertFloorCleanupPreview(page);
+    await assertMobilePageFirstNavigation(page, baseUrl, "/pages/systems/floor-cleanup.html");
+
+    if (runtimeErrors.length) {
+      throw new Error(`browser errors: ${runtimeErrors.join("; ")}`);
+    }
+  } finally {
+    await page.close();
+  }
+}
+
+async function assertFloorCleanupPreview(page) {
+  const title = page.locator("[data-cleanup-scenario-title]");
+  await title.waitFor({ state: "visible" });
+
+  const initialText = (await page.locator(".floor-cleanup-output").textContent()).trim();
+  if (!initialText.includes("Worst Case") || !initialText.includes("about 8 minutes")) {
+    throw new Error(`Floor Cleanup preview expected worst case initially, got "${initialText}"`);
+  }
+
+  await page.locator('[data-cleanup-scenario="after"]').click();
+  await page.waitForFunction(
+    () => document.querySelector("[data-cleanup-scenario-title]")?.textContent?.trim() === "Best Case",
+    undefined,
+    { timeout: timeoutMs }
+  );
+  const afterPressed = await page.locator('[data-cleanup-scenario="after"]').getAttribute("aria-pressed");
+  if (afterPressed !== "true") {
+    throw new Error(`Floor Cleanup preview did not mark after scenario active, got aria-pressed="${afterPressed}"`);
+  }
+  const afterText = (await page.locator(".floor-cleanup-output").textContent()).trim();
+  if (!afterText.includes("up to 11 minutes") || !afterText.includes("next 3 minutes cleanup pass")) {
+    throw new Error(`Floor Cleanup after scenario missing best-case timing: "${afterText}"`);
+  }
+
+  await page.locator('[data-cleanup-scenario="typical"]').click();
+  await page.waitForFunction(
+    () => document.querySelector("[data-cleanup-scenario-title]")?.textContent?.trim() === "Typical Window",
+    undefined,
+    { timeout: timeoutMs }
+  );
+  const typicalText = (await page.locator(".floor-cleanup-output").textContent()).trim();
+  if (!typicalText.includes("8-11 minutes") || !typicalText.includes("3 minutes sweep cycle")) {
+    throw new Error(`Floor Cleanup typical scenario missing lifetime window: "${typicalText}"`);
+  }
+
+  await page.locator('[data-cleanup-scenario="before"]').click();
+  await page.waitForFunction(
+    () => document.querySelector("[data-cleanup-scenario-title]")?.textContent?.trim() === "Worst Case",
+    undefined,
+    { timeout: timeoutMs }
+  );
+  const beforeText = (await page.locator(".floor-cleanup-output").textContent()).trim();
+  if (!beforeText.includes("about 8 minutes") || !beforeText.includes("eligible when that sweep checks it")) {
+    throw new Error(`Floor Cleanup before scenario missing threshold timing: "${beforeText}"`);
   }
 }
 

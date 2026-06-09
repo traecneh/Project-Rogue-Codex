@@ -1364,6 +1364,74 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn("function initChatModePreview", script)
         self.assertIn('document.addEventListener("DOMContentLoaded"', script)
 
+    def test_floor_cleanup_page_has_compact_timing_reference(self):
+        from tools.codex_pipeline import cli
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        html_path = REPO_ROOT / "pages" / "systems" / "floor-cleanup.html"
+        css_path = REPO_ROOT / "css" / "floor-cleanup.css"
+        script_path = REPO_ROOT / "js" / "floor-cleanup.js"
+        html = html_path.read_text(encoding="utf-8")
+        css = css_path.read_text(encoding="utf-8") if css_path.exists() else ""
+        script = script_path.read_text(encoding="utf-8") if script_path.exists() else ""
+
+        self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
+        self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
+        self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
+        self.assertIn('<link rel="stylesheet" href="css/floor-cleanup.css" />', html)
+        self.assertIn('<script src="js/floor-cleanup.js" defer></script>', html)
+        self.assertNotIn("<style>", html)
+        self.assertEqual(
+            [],
+            [
+                block.strip()
+                for block in re.findall(
+                    r"<script\b(?![^>]*\bsrc\s*=)[^>]*>([\s\S]*?)</script>",
+                    html,
+                    flags=re.IGNORECASE,
+                )
+                if block.strip()
+            ],
+        )
+
+        for expected in [
+            "Floor Cleanup at a Glance",
+            "Creeper Timing Rules",
+            "Sweep Timing Preview",
+            "Loot Lifetime Flow",
+            "What Resets the Risk",
+            "Related Pages",
+            "Creeper",
+            "3 minutes",
+            "8 minutes",
+            "8-11 minutes",
+            "abandoned loot",
+            "undisturbed time",
+            "more than 8 minutes",
+            "about 8 minutes",
+            "up to 11 minutes",
+            "pages/systems/pvp-system.html",
+            "pages/systems/corruption.html",
+            "pages/systems/purge.html",
+            "pages/items/weapons.html",
+            "pages/items/armors.html",
+            "pages/enemies/monsters.html",
+            "pages/General/play-the-game.html",
+        ]:
+            self.assertIn(expected, html)
+
+        self.assertIn(".floor-cleanup-summary-grid", css)
+        self.assertIn(".floor-cleanup-rule-grid", css)
+        self.assertIn(".floor-cleanup-preview", css)
+        self.assertIn(".floor-cleanup-flow", css)
+        self.assertIn(".floor-cleanup-reset-grid", css)
+        self.assertIn(".floor-cleanup-link-grid", css)
+
+        self.assertIn("const FLOOR_CLEANUP_SCENARIOS", script)
+        self.assertIn("function setFloorCleanupScenario", script)
+        self.assertIn("function initFloorCleanupPreview", script)
+        self.assertIn('document.addEventListener("DOMContentLoaded"', script)
+
     def test_crafting_page_has_compact_armor_crafting_reference(self):
         from tools.codex_pipeline import cli
         from tools.codex_pipeline.config import REPO_ROOT
