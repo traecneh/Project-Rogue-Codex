@@ -1585,6 +1585,71 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn("function initFloorCleanupPreview", script)
         self.assertIn('document.addEventListener("DOMContentLoaded"', script)
 
+    def test_play_the_game_page_has_discord_first_reference(self):
+        from tools.codex_pipeline import cli
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        html_path = REPO_ROOT / "pages" / "General" / "play-the-game.html"
+        css_path = REPO_ROOT / "css" / "play-the-game.css"
+        script_path = REPO_ROOT / "js" / "play-the-game.js"
+        endless_page_path = REPO_ROOT / "pages" / "General" / "endless-hunt.html"
+        endless_script_path = REPO_ROOT / "js" / "endless-hunt-idler.js"
+        html = html_path.read_text(encoding="utf-8")
+        css = css_path.read_text(encoding="utf-8") if css_path.exists() else ""
+        script = script_path.read_text(encoding="utf-8") if script_path.exists() else ""
+
+        self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
+        self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
+        self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
+        self.assertFalse(endless_page_path.exists())
+        self.assertFalse(endless_script_path.exists())
+        self.assertIn('<link rel="stylesheet" href="css/play-the-game.css" />', html)
+        self.assertIn('<script src="js/play-the-game.js" defer></script>', html)
+        self.assertNotIn("<style>", html)
+        self.assertEqual(
+            [],
+            [
+                block.strip()
+                for block in re.findall(
+                    r"<script\b(?![^>]*\bsrc\s*=)[^>]*>([\s\S]*?)</script>",
+                    html,
+                    flags=re.IGNORECASE,
+                )
+                if block.strip()
+            ],
+        )
+        self.assertNotRegex(html, r"\sstyle\s*=")
+        self.assertNotIn("discord-icon", html)
+        self.assertNotIn("Endless Hunt", html)
+
+        for expected in [
+            "Play the Game",
+            "Discord-first setup",
+            "Join the Discord",
+            "#welcome",
+            "Create Your Account",
+            "Log In and Play",
+            "https://discord.gg/DW6zcWy",
+            "data-play-monster",
+            "data-play-elite",
+            "Related Pages",
+            "pages/General/build-planner.html",
+            "pages/items/weapons.html",
+            "pages/items/armors.html",
+            "pages/enemies/monsters.html",
+        ]:
+            self.assertIn(expected, html)
+
+        self.assertIn(".play-step-grid", css)
+        self.assertIn(".play-discord-panel", css)
+        self.assertIn(".play-link-grid", css)
+        self.assertIn(".discord-cta", css)
+        self.assertIn("function initPlayMonsterEscort", script)
+        self.assertIn("images/monsters/manifest.json", script)
+        self.assertIn("wrap.clientWidth", script)
+        self.assertIn("wrap.clientHeight", script)
+        self.assertIn('document.addEventListener("DOMContentLoaded"', script)
+
     def test_crafting_page_has_compact_armor_crafting_reference(self):
         from tools.codex_pipeline import cli
         from tools.codex_pipeline.config import REPO_ROOT

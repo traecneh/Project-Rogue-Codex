@@ -11,6 +11,7 @@
     <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
     <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/play-the-game.css" />
     <script src="js/site-search.js" defer></script>
     <script src="js/weapon-specialty.js" defer></script>
     <script src="js/stat-widgets.js" defer></script>
@@ -19,6 +20,7 @@
     <script src="js/perks.js" defer></script>
     <script src="js/rarity-roller.js" defer></script>
     <script src="js/nav-core.js" defer></script>
+    <script src="js/play-the-game.js" defer></script>
   </head>
   <body>
     <div class="layout">
@@ -26,191 +28,73 @@
       <main class="main-content">
         <header class="content-header">
           <h1 class="content-title">Play the Game</h1>
-          <p class="content-tagline">Hop into the Discord, grab the download, and start playing.</p>
+          <p class="content-tagline">Discord-first setup for downloading the client, creating an account, and getting in.</p>
         </header>
 
-        <section class="stat-grid">
-          <article class="stat-card">
-            <h3>Join the Discord</h3>
-            <p>Use the permanent invite to enter the server and get plugged in.</p>
-            <p style="margin: 0.5rem 0 0; font-size: 0.95rem;">Invite: https://discord.gg/DW6zcWy</p>
-          </article>
+        <article class="content-section" id="play-basics">
+          <h2>Discord-First Setup</h2>
+          <div class="play-step-grid" role="list">
+            <section class="play-step-card" role="listitem">
+              <p class="stat-label">Step 1</p>
+              <h3>Join the Discord</h3>
+              <p>Use the permanent invite to enter the server where the current download and account steps live.</p>
+            </section>
 
-          <article class="stat-card">
-            <h3>#welcome Channel</h3>
-            <p>Download links live in #welcome alongside the steps to DM the bot that makes your game account.</p>
-          </article>
+            <section class="play-step-card" role="listitem">
+              <p class="stat-label">Step 2</p>
+              <h3>Open #welcome</h3>
+              <p>The #welcome channel has the client download links and the bot instructions for creating your game account.</p>
+            </section>
 
-          <article class="stat-card">
-            <h3>Log In and Play</h3>
-            <p>Open the game client, sign in with the Discord-created account, and jump in.</p>
-          </article>
-        </section>
+            <section class="play-step-card" role="listitem">
+              <p class="stat-label">Step 3</p>
+              <h3>Create Your Account</h3>
+              <p>DM the Discord bot from the welcome flow, then use that account in the game client.</p>
+            </section>
 
-        <div class="discord-cta-wrap">
-          <a
-            class="discord-cta"
-            href="https://discord.gg/DW6zcWy"
-            target="_blank"
-            rel="noreferrer noopener"
-          >
-            <span class="discord-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" focusable="false">
-                <path
-                  d="M20.5 4.5a17.2 17.2 0 0 0-4.3-1.4l-.2.4c1 .3 1.8.7 2.7 1.2a9.7 9.7 0 0 0-10 0c.9-.5 1.8-.9 2.7-1.2l-.2-.4a17.2 17.2 0 0 0-4.3 1.4 15.7 15.7 0 0 0-2.6 11c1 1.2 2.2 2 3.5 2.7a12.3 12.3 0 0 0 1.6.7l.7-1.1c-.4-.2-.9-.4-1.3-.7l.3-.3c2.6 1.2 5.5 1.2 8.2 0l.3.3c-.4.3-.9.5-1.3.7l.7 1.1c.6-.2 1.1-.4 1.6-.7a9.7 9.7 0 0 0 3.5-2.7 15.7 15.7 0 0 0-2.6-11Zm-9.5 9c-.7 0-1.3-.7-1.3-1.6s.6-1.6 1.3-1.6c.7 0 1.3.7 1.3 1.6s-.6 1.6-1.3 1.6Zm5 0c-.7 0-1.3-.7-1.3-1.6s.6-1.6 1.3-1.6c.7 0 1.3.7 1.3 1.6s-.6 1.6-1.3 1.6Z"
-                ></path>
-              </svg>
-            </span>
-            <span>Enter the Discord</span>
-          </a>
-        </div>
+            <section class="play-step-card" role="listitem">
+              <p class="stat-label">Step 4</p>
+              <h3>Log In and Play</h3>
+              <p>Open the client, sign in, and use the Codex while you learn gear, monsters, and systems.</p>
+            </section>
+          </div>
+
+          <section class="play-discord-panel">
+            <div>
+              <p class="stat-label">Permanent Invite</p>
+              <h2>https://discord.gg/DW6zcWy</h2>
+              <p class="play-discord-copy">The Discord stays the source of truth for current download links and account setup details.</p>
+            </div>
+
+            <div class="discord-cta-wrap" data-play-escort-wrap>
+              <a
+                class="discord-cta"
+                data-discord-cta
+                href="https://discord.gg/DW6zcWy"
+                target="_blank"
+                rel="noreferrer noopener"
+              >
+                <span class="discord-cta-mark" aria-hidden="true">#</span>
+                <span>Enter the Discord</span>
+              </a>
+              <img class="discord-monster" data-play-monster width="32" height="32" alt="" hidden />
+              <img class="discord-elite" data-play-elite width="32" height="32" alt="" hidden />
+            </div>
+          </section>
+
+          <section class="play-reference-section">
+            <h2>Related Pages</h2>
+            <div class="play-link-grid">
+              <a href="pages/General/build-planner.html">Build Planner</a>
+              <a href="pages/items/weapons.html">Weapons</a>
+              <a href="pages/items/armors.html">Armors</a>
+              <a href="pages/enemies/monsters.html">Monsters</a>
+              <a href="pages/systems/chat.html">Chat</a>
+              <a href="pages/systems/experience.html">Experience Pool</a>
+            </div>
+          </section>
+        </article>
       </main>
     </div>
-
-    <script>
-      document.addEventListener("DOMContentLoaded", () => {
-        const wrap = document.querySelector(".discord-cta-wrap");
-        if (!wrap) return;
-        const prefersReducedMotion =
-          window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-        const sprite = document.createElement("img");
-        sprite.className = "discord-monster";
-        sprite.width = 32;
-        sprite.height = 32;
-        sprite.alt = "Monster escort";
-        wrap.appendChild(sprite);
-
-        const eliteBadge = document.createElement("img");
-        eliteBadge.className = "discord-elite";
-        eliteBadge.width = 32;
-        eliteBadge.height = 32;
-        eliteBadge.alt = "Elite aura";
-        wrap.appendChild(eliteBadge);
-
-        const cta = wrap.querySelector(".discord-cta");
-        const step = 32;
-        const quantize = (value) => Math.max(step, Math.round(value / step) * step);
-
-        const buildPath = () => {
-          if (!cta) return [];
-          const halfW = quantize(cta.offsetWidth / 2 + step * 2);
-          const halfH = quantize(cta.offsetHeight / 2 + step);
-          const path = [];
-
-          for (let x = -halfW; x <= halfW; x += step) path.push([x, -halfH]);
-          for (let y = -halfH + step; y <= halfH; y += step) path.push([halfW, y]);
-          for (let x = halfW - step; x >= -halfW; x -= step) path.push([x, halfH]);
-          for (let y = halfH - step; y > -halfH; y -= step) path.push([-halfW, y]);
-
-          return path;
-        };
-
-        let pathOffsets = buildPath();
-
-        const fallback = [
-          "images/monsters/Bee.gif",
-          "images/monsters/Bat.gif",
-          "images/monsters/Imp.gif",
-          "images/monsters/Skeleton.gif",
-          "images/monsters/Wolf.gif",
-        ];
-
-        const pickRandom = (exclude) => {
-          const list = monsters && monsters.length ? monsters : fallback;
-          if (!list.length) return null;
-          if (list.length === 1) return list[0];
-          let candidate = list[Math.floor(Math.random() * list.length)];
-          if (candidate === exclude) {
-            candidate = list[(list.indexOf(candidate) + 1) % list.length];
-          }
-          return candidate;
-        };
-
-        let monsters = [];
-        let currentSrc = null;
-
-        const setSprite = (src) => {
-          if (!src) return;
-          currentSrc = src;
-          sprite.src = src;
-        };
-
-        fetch("images/monsters/manifest.json")
-          .then((res) => (res.ok ? res.json() : Promise.reject()))
-          .then((list) => {
-            monsters = Array.isArray(list) ? list : [];
-            return pickRandom();
-          })
-          .catch(() => pickRandom())
-          .then((src) => setSprite(src));
-
-        let idx = 0;
-        let lastWidth = window.innerWidth;
-
-        const applyPosition = (dx, dy) => {
-          const transform = `translate(-50%, -50%) translate(${dx}px, ${dy}px)`;
-          sprite.style.transform = transform;
-          eliteBadge.style.transform = transform;
-        };
-
-        const stepMove = () => {
-          if (!pathOffsets.length) {
-            pathOffsets = buildPath();
-            idx = 0;
-          }
-          const [dx, dy] = pathOffsets[idx];
-          applyPosition(dx, dy);
-          idx = (idx + 1) % pathOffsets.length;
-        };
-
-        sprite.addEventListener("load", () => {
-          sprite.style.opacity = 1;
-        });
-
-        const swapMonster = () => {
-          const next = pickRandom(currentSrc);
-          if (!next) return;
-          sprite.style.opacity = 0;
-          setTimeout(() => setSprite(next), 200);
-        };
-
-        const setEliteState = () => {
-          const roll = Math.random();
-          let badge = null;
-          if (roll <= 0.05) {
-            badge = "elite+.gif";
-          } else if (roll <= 0.20) {
-            badge = "elite.gif";
-          }
-
-          if (badge) {
-            eliteBadge.src = `images/${badge}`;
-            eliteBadge.style.opacity = 1;
-          } else {
-            eliteBadge.style.opacity = 0;
-          }
-        };
-
-        if (prefersReducedMotion) {
-          applyPosition(0, 0);
-          eliteBadge.style.opacity = 0;
-        } else {
-          stepMove();
-          setInterval(stepMove, 300);
-          setInterval(swapMonster, 5000);
-          setInterval(setEliteState, 5000);
-          setEliteState();
-
-          window.addEventListener("resize", () => {
-            const currentWidth = window.innerWidth;
-            if (Math.abs(currentWidth - lastWidth) < 1) return;
-            lastWidth = currentWidth;
-            pathOffsets = buildPath();
-            idx = 0;
-          });
-        }
-      });
-    </script>
   </body>
 </html>

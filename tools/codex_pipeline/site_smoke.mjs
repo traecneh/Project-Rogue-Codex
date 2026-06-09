@@ -74,6 +74,12 @@ async function main() {
       failures.push(`SMOKE ERROR build planner: ${formatError(error)}`);
     }
     try {
+      await runPlayTheGameSpec(browser, baseUrl);
+      console.log("SMOKE OK play the game: Discord setup, CTA, related links");
+    } catch (error) {
+      failures.push(`SMOKE ERROR play the game: ${formatError(error)}`);
+    }
+    try {
       await runPerksSpec(browser, baseUrl);
       console.log("SMOKE OK perks: deep link, search, filters, source links, tooltips");
     } catch (error) {
@@ -190,7 +196,7 @@ async function main() {
     failures.forEach((failure) => console.error(failure));
     process.exit(1);
   }
-  console.log(`SMOKE OK site: ${smokeSpecs.length + 19} page(s) checked at ${baseUrl}`);
+  console.log(`SMOKE OK site: ${smokeSpecs.length + 20} page(s) checked at ${baseUrl}`);
 }
 
 async function importPlaywright() {
@@ -316,6 +322,69 @@ async function runBuildPlannerSpec(browser, baseUrl) {
     await page.waitForFunction(() => !document.querySelector(".slot-card.has-item"));
     const selectedCount = await page.locator(".slot-card.has-item").count();
     if (selectedCount) throw new Error(`reset left ${selectedCount} selected slot(s)`);
+
+    if (runtimeErrors.length) {
+      throw new Error(`browser errors: ${runtimeErrors.join("; ")}`);
+    }
+  } finally {
+    await page.close();
+  }
+}
+
+async function runPlayTheGameSpec(browser, baseUrl) {
+  const page = await browser.newPage();
+  page.setDefaultTimeout(timeoutMs);
+  const runtimeErrors = [];
+  page.on("console", (message) => {
+    const text = message.text();
+    if (message.type() === "error" && !text.startsWith("Failed to load resource")) runtimeErrors.push(text);
+  });
+  page.on("pageerror", (error) => runtimeErrors.push(formatError(error)));
+
+  try {
+    await page.goto(joinUrl(baseUrl, "/pages/General/play-the-game.html"), { waitUntil: "load" });
+    await page.locator(".play-discord-panel").waitFor({ state: "visible" });
+    const pageText = (await page.locator("#play-basics").textContent()).trim();
+    for (const expected of [
+      "Discord-First Setup",
+      "Join the Discord",
+      "#welcome",
+      "Create Your Account",
+      "Log In and Play",
+      "https://discord.gg/DW6zcWy",
+      "Related Pages",
+    ]) {
+      if (!pageText.includes(expected)) {
+        throw new Error(`Play the Game page missing "${expected}": "${pageText}"`);
+      }
+    }
+
+    const discordLinkCount = await page.locator('a[href="https://discord.gg/DW6zcWy"]').count();
+    if (discordLinkCount !== 1) {
+      throw new Error(`Play the Game expected one Discord CTA, found ${discordLinkCount}`);
+    }
+
+    const monsterCount = await page.locator("[data-play-monster]").count();
+    const eliteCount = await page.locator("[data-play-elite]").count();
+    if (monsterCount !== 1 || eliteCount !== 1) {
+      throw new Error(`Play the Game escort assets missing: monster=${monsterCount}, elite=${eliteCount}`);
+    }
+
+    for (const href of [
+      "pages/General/build-planner.html",
+      "pages/items/weapons.html",
+      "pages/items/armors.html",
+      "pages/enemies/monsters.html",
+      "pages/systems/chat.html",
+      "pages/systems/experience.html",
+    ]) {
+      const count = await page.locator(`.play-link-grid a[href="${href}"]`).count();
+      if (count !== 1) {
+        throw new Error(`Play the Game related link expected one "${href}", found ${count}`);
+      }
+    }
+
+    await assertMobilePageFirstNavigation(page, baseUrl, "/pages/General/play-the-game.html");
 
     if (runtimeErrors.length) {
       throw new Error(`browser errors: ${runtimeErrors.join("; ")}`);

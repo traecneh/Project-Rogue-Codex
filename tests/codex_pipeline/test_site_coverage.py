@@ -69,15 +69,17 @@ class SiteCoverageTests(unittest.TestCase):
         report = build_site_coverage_report(REPO_ROOT, validated_html_paths=cli.VALIDATED_HTML_PATHS)
         unvalidated = {page.path for page in report.unvalidated_pages}
         unsmoked = {page.path for page in report.unsmoked_pages}
+        linked_pages = {page.path for page in report.pages}
 
         self.assertEqual([], report.missing_files)
         self.assertNotIn("pages/systems/experience.html", unvalidated)
         self.assertNotIn("pages/systems/experience.html", unsmoked)
         self.assertNotIn("pages/General/build-planner.html", unvalidated)
+        self.assertNotIn("pages/General/play-the-game.html", unvalidated)
+        self.assertNotIn("pages/General/play-the-game.html", unsmoked)
+        self.assertNotIn("pages/General/endless-hunt.html", linked_pages)
         self.assertIn("pages/stats/strength.html", unvalidated)
         self.assertIn("pages/stats/strength.html", unsmoked)
-        self.assertIn("pages/General/play-the-game.html", unvalidated)
-        self.assertIn("pages/General/endless-hunt.html", unsmoked)
 
     def test_cli_prints_site_coverage_report(self):
         from tools.codex_pipeline import cli
