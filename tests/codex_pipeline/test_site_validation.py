@@ -2023,6 +2023,87 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn("function updateConstitutionCalculator", script)
         self.assertIn('document.addEventListener("DOMContentLoaded"', script)
 
+    def test_dexterity_page_has_compact_combat_reference(self):
+        from tools.codex_pipeline import cli
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        html_path = REPO_ROOT / "pages" / "stats" / "dexterity.html"
+        css_path = REPO_ROOT / "css" / "dexterity.css"
+        script_path = REPO_ROOT / "js" / "dexterity.js"
+        html = html_path.read_text(encoding="utf-8")
+        css = css_path.read_text(encoding="utf-8") if css_path.exists() else ""
+        script = script_path.read_text(encoding="utf-8") if script_path.exists() else ""
+
+        self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
+        self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
+        self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
+        self.assertIn('<link rel="stylesheet" href="css/dexterity.css" />', html)
+        self.assertIn('<script src="js/dexterity.js" defer></script>', html)
+        self.assertNotIn("<style>", html)
+        self.assertEqual(
+            [],
+            [
+                block.strip()
+                for block in re.findall(
+                    r"<script\b(?![^>]*\bsrc\s*=)[^>]*>([\s\S]*?)</script>",
+                    html,
+                    flags=re.IGNORECASE,
+                )
+                if block.strip()
+            ],
+        )
+        self.assertNotRegex(html, r"\sstyle\s*=")
+
+        for expected in [
+            "Dexterity at a Glance",
+            "Dexterity Calculator",
+            "Damage Reduction Benchmarks",
+            "Race Context",
+            "Build Context",
+            "Perks",
+            "Equipment Reference",
+            "Related Pages",
+            "Melee Multiplier",
+            "Crit Chance",
+            "Damage Reduction",
+            "1.35x",
+            "Base Dex / 2.5",
+            "Total Dex * 0.00125",
+            "data-dexterity-skill-slider",
+            "data-dexterity-str-slider",
+            "data-dexterity-dex-slider",
+            "data-dexterity-crit-dex-slider",
+            "data-dexterity-dr-slider",
+            "data-dexterity-multiplier",
+            "data-dexterity-crit-chance",
+            "data-dexterity-crit-multiplier",
+            "data-dexterity-dr",
+            "data-dexterity-post-dr",
+            "data-dexterity-dr-chart",
+            "data-perk-stats=\"dexterity\"",
+            "data-weapon-specialty=\"Dexterity\"",
+            "pages/stats/races.html",
+            "pages/stats/strength.html",
+            "pages/stats/constitution.html",
+            "pages/General/build-planner.html",
+            "pages/items/weapons.html",
+            "pages/systems/perks.html",
+        ]:
+            self.assertIn(expected, html)
+
+        self.assertIn(".dexterity-summary-grid", css)
+        self.assertIn(".dexterity-calculator-widget", css)
+        self.assertIn(".dexterity-output-grid", css)
+        self.assertIn(".dexterity-benchmark-grid", css)
+        self.assertIn(".dexterity-context-grid", css)
+        self.assertIn(".dexterity-link-grid", css)
+
+        self.assertIn("const DEXTERITY_DR_BENCHMARKS", script)
+        self.assertIn("function initDexterityCalculator", script)
+        self.assertIn("function renderDamageReductionBenchmarks", script)
+        self.assertIn("function updateDexterityCalculator", script)
+        self.assertIn('document.addEventListener("DOMContentLoaded"', script)
+
     def test_crafting_page_has_compact_armor_crafting_reference(self):
         from tools.codex_pipeline import cli
         from tools.codex_pipeline.config import REPO_ROOT

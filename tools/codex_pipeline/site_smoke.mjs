@@ -188,6 +188,12 @@ async function main() {
       failures.push(`SMOKE ERROR constitution: ${formatError(error)}`);
     }
     try {
+      await runDexteritySpec(browser, baseUrl);
+      console.log("SMOKE OK dexterity: multiplier, crit, damage reduction, related links");
+    } catch (error) {
+      failures.push(`SMOKE ERROR dexterity: ${formatError(error)}`);
+    }
+    try {
       await runGuildSpec(browser, baseUrl);
       console.log("SMOKE OK guild: management reference, party preview, related links");
     } catch (error) {
@@ -226,7 +232,7 @@ async function main() {
     failures.forEach((failure) => console.error(failure));
     process.exit(1);
   }
-  console.log(`SMOKE OK site: ${smokeSpecs.length + 25} page(s) checked at ${baseUrl}`);
+  console.log(`SMOKE OK site: ${smokeSpecs.length + 26} page(s) checked at ${baseUrl}`);
 }
 
 async function importPlaywright() {
@@ -1996,6 +2002,147 @@ async function readConstitutionCalculatorState(page) {
     regenPerSec: document.querySelector("[data-constitution-regen-per-sec]")?.textContent?.trim() || "",
     regenTick: document.querySelector("[data-constitution-regen-tick]")?.textContent?.trim() || "",
     strength: document.querySelector("[data-constitution-str]")?.textContent?.trim() || "",
+  }));
+}
+
+async function runDexteritySpec(browser, baseUrl) {
+  const page = await browser.newPage();
+  page.setDefaultTimeout(timeoutMs);
+  const runtimeErrors = [];
+  page.on("console", (message) => {
+    const text = message.text();
+    if (message.type() === "error" && !text.startsWith("Failed to load resource")) runtimeErrors.push(text);
+  });
+  page.on("pageerror", (error) => runtimeErrors.push(formatError(error)));
+
+  try {
+    await page.goto(joinUrl(baseUrl, "/pages/stats/dexterity.html"), { waitUntil: "load" });
+    await page.locator(".dexterity-calculator-widget").waitFor({ state: "visible" });
+    const pageText = (await page.locator(".main-content").textContent()).trim();
+    for (const expected of [
+      "Dexterity at a Glance",
+      "Dexterity Calculator",
+      "Damage Reduction Benchmarks",
+      "Race Context",
+      "Build Context",
+      "Perks",
+      "Equipment Reference",
+      "Related Pages",
+      "Melee Multiplier",
+      "Crit Chance",
+      "Damage Reduction",
+      "1.35x",
+      "Base Dex / 2.5",
+      "Total Dex * 0.00125",
+    ]) {
+      if (!pageText.includes(expected)) {
+        throw new Error(`Dexterity page missing "${expected}": "${pageText}"`);
+      }
+    }
+
+    for (const href of [
+      "pages/stats/races.html",
+      "pages/stats/strength.html",
+      "pages/stats/constitution.html",
+      "pages/General/build-planner.html",
+      "pages/items/weapons.html",
+      "pages/systems/perks.html",
+    ]) {
+      const count = await page.locator(`.dexterity-link-grid a[href="${href}"]`).count();
+      if (count !== 1) {
+        throw new Error(`Dexterity related link expected one "${href}", found ${count}`);
+      }
+    }
+
+    await assertDexterityCalculator(page);
+    await assertMobilePageFirstNavigation(page, baseUrl, "/pages/stats/dexterity.html");
+
+    if (runtimeErrors.length) {
+      throw new Error(`browser errors: ${runtimeErrors.join("; ")}`);
+    }
+  } finally {
+    await page.close();
+  }
+}
+
+async function assertDexterityCalculator(page) {
+  await page.locator("[data-dexterity-dr-chart] .dexterity-benchmark-card").first().waitFor({ state: "visible" });
+  const benchmarkCount = await page.locator("[data-dexterity-dr-chart] .dexterity-benchmark-card").count();
+  if (benchmarkCount !== 5) {
+    throw new Error(`Dexterity page expected 5 damage reduction benchmark cards, found ${benchmarkCount}`);
+  }
+
+  let state = await readDexterityCalculatorState(page);
+  for (const [key, expected] of Object.entries({
+    critChance: "60.0%",
+    critDexterity: "150",
+    critMultiplier: "1.35x",
+    dexterity: "50",
+    dr: "13.04% DR",
+    drDexterity: "120",
+    multiplier: "2.75x",
+    postDr: "869.6 / 1,000",
+    skill: "50",
+    strength: "50",
+  })) {
+    if (state[key] !== expected) {
+      throw new Error(`Dexterity calculator expected ${key}="${expected}", got "${state[key]}"`);
+    }
+  }
+
+  await setDexterityRange(page, "[data-dexterity-dex-slider]", 150);
+  await page.waitForFunction(
+    () => document.querySelector("[data-dexterity-multiplier]")?.textContent?.trim() === "3.25x",
+    undefined,
+    { timeout: timeoutMs }
+  );
+  state = await readDexterityCalculatorState(page);
+  if (state.dexterity !== "150" || state.multiplier !== "3.25x") {
+    throw new Error(`Dexterity multiplier state after DEX 150 was unexpected: ${JSON.stringify(state)}`);
+  }
+
+  await setDexterityRange(page, "[data-dexterity-crit-dex-slider]", 200);
+  await page.waitForFunction(
+    () => document.querySelector("[data-dexterity-crit-chance]")?.textContent?.trim() === "80.0%",
+    undefined,
+    { timeout: timeoutMs }
+  );
+  state = await readDexterityCalculatorState(page);
+  if (state.critDexterity !== "200" || state.critChance !== "80.0%") {
+    throw new Error(`Dexterity crit state after base DEX 200 was unexpected: ${JSON.stringify(state)}`);
+  }
+
+  await setDexterityRange(page, "[data-dexterity-dr-slider]", 200);
+  await page.waitForFunction(
+    () => document.querySelector("[data-dexterity-dr]")?.textContent?.trim() === "20.00% DR",
+    undefined,
+    { timeout: timeoutMs }
+  );
+  state = await readDexterityCalculatorState(page);
+  if (state.drDexterity !== "200" || state.dr !== "20.00% DR" || state.postDr !== "800 / 1,000") {
+    throw new Error(`Dexterity DR state after total DEX 200 was unexpected: ${JSON.stringify(state)}`);
+  }
+}
+
+async function setDexterityRange(page, selector, value) {
+  await page.locator(selector).evaluate((input, nextValue) => {
+    input.value = String(nextValue);
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  }, value);
+}
+
+async function readDexterityCalculatorState(page) {
+  return await page.evaluate(() => ({
+    critChance: document.querySelector("[data-dexterity-crit-chance]")?.textContent?.trim() || "",
+    critDexterity: document.querySelector("[data-dexterity-crit-dex]")?.textContent?.trim() || "",
+    critMultiplier: document.querySelector("[data-dexterity-crit-multiplier]")?.textContent?.trim() || "",
+    dexterity: document.querySelector("[data-dexterity-dex]")?.textContent?.trim() || "",
+    dr: document.querySelector("[data-dexterity-dr]")?.textContent?.trim() || "",
+    drDexterity: document.querySelector("[data-dexterity-dr-dex]")?.textContent?.trim() || "",
+    multiplier: document.querySelector("[data-dexterity-multiplier]")?.textContent?.trim() || "",
+    postDr: document.querySelector("[data-dexterity-post-dr]")?.textContent?.trim() || "",
+    skill: document.querySelector("[data-dexterity-skill]")?.textContent?.trim() || "",
+    strength: document.querySelector("[data-dexterity-str]")?.textContent?.trim() || "",
   }));
 }
 
