@@ -1083,6 +1083,68 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(".encounter-variant-grid", css)
         self.assertIn(".encounter-link-grid", css)
 
+    def test_pvp_page_has_compact_rule_reference(self):
+        from tools.codex_pipeline import cli
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        html_path = REPO_ROOT / "pages" / "systems" / "pvp-system.html"
+        css_path = REPO_ROOT / "css" / "pvp.css"
+        html = html_path.read_text(encoding="utf-8")
+        css = css_path.read_text(encoding="utf-8") if css_path.exists() else ""
+
+        self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
+        self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
+        self.assertIn('<link rel="stylesheet" href="css/pvp.css" />', html)
+        self.assertNotIn("<style>", html)
+        self.assertEqual(
+            [],
+            [
+                block.strip()
+                for block in re.findall(
+                    r"<script\b(?![^>]*\bsrc\s*=)[^>]*>([\s\S]*?)</script>",
+                    html,
+                    flags=re.IGNORECASE,
+                )
+                if block.strip()
+            ],
+        )
+
+        for expected in [
+            "PVP at a Glance",
+            "Safe Zones and Flagging",
+            "Death and Loot Flow",
+            "Criminal Consequences",
+            "Tracking and Community",
+            "Safe Zone Dove",
+            "Open Combat",
+            "Body Timers",
+            "4 minutes",
+            "10 minutes",
+            "Looted Item Flag",
+            "Clean Ground Drop",
+            "Criminal Status",
+            "5 minutes out of sight",
+            "2 counts",
+            "1 count",
+            "50+ Counts",
+            "criminal gate",
+            "global-chat",
+            "kill-feed",
+            "leaderboard-levels",
+            "pages/systems/anti-zerg.html",
+            "pages/systems/guild.html",
+            "pages/items/weapons.html",
+            "pages/items/armors.html",
+            "pages/enemies/monsters.html",
+        ]:
+            self.assertIn(expected, html)
+
+        self.assertIn(".pvp-summary-grid", css)
+        self.assertIn(".pvp-rule-grid", css)
+        self.assertIn(".pvp-flow", css)
+        self.assertIn(".pvp-consequence-grid", css)
+        self.assertIn(".pvp-link-grid", css)
+
     def test_crafting_page_has_compact_armor_crafting_reference(self):
         from tools.codex_pipeline import cli
         from tools.codex_pipeline.config import REPO_ROOT

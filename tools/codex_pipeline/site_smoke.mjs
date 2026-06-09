@@ -128,6 +128,12 @@ async function main() {
       failures.push(`SMOKE ERROR encounter: ${formatError(error)}`);
     }
     try {
+      await runPvpSpec(browser, baseUrl);
+      console.log("SMOKE OK pvp: rule reference, loot flow, related links");
+    } catch (error) {
+      failures.push(`SMOKE ERROR pvp: ${formatError(error)}`);
+    }
+    try {
       await runCorruptionSpec(browser, baseUrl);
       console.log("SMOKE OK corruption: corrupted innates, cleanse flow, related links");
     } catch (error) {
@@ -148,7 +154,7 @@ async function main() {
     failures.forEach((failure) => console.error(failure));
     process.exit(1);
   }
-  console.log(`SMOKE OK site: ${smokeSpecs.length + 12} page(s) checked at ${baseUrl}`);
+  console.log(`SMOKE OK site: ${smokeSpecs.length + 13} page(s) checked at ${baseUrl}`);
 }
 
 async function importPlaywright() {
@@ -809,6 +815,72 @@ async function runEncounterSpec(browser, baseUrl) {
         throw new Error(`Encounter related link expected one "${href}", found ${count}`);
       }
     }
+
+    if (runtimeErrors.length) {
+      throw new Error(`browser errors: ${runtimeErrors.join("; ")}`);
+    }
+  } finally {
+    await page.close();
+  }
+}
+
+async function runPvpSpec(browser, baseUrl) {
+  const page = await browser.newPage();
+  page.setDefaultTimeout(timeoutMs);
+  const runtimeErrors = [];
+  page.on("console", (message) => {
+    const text = message.text();
+    if (message.type() === "error" && !text.startsWith("Failed to load resource")) runtimeErrors.push(text);
+  });
+  page.on("pageerror", (error) => runtimeErrors.push(formatError(error)));
+
+  try {
+    await page.goto(joinUrl(baseUrl, "/pages/systems/pvp-system.html"), { waitUntil: "load" });
+    await page.locator(".pvp-flow").waitFor({ state: "visible" });
+    const pageText = (await page.locator("#pvp-basics").textContent()).trim();
+    for (const expected of [
+      "PVP at a Glance",
+      "Safe Zones and Flagging",
+      "Death and Loot Flow",
+      "Criminal Consequences",
+      "Tracking and Community",
+      "Safe Zone Dove",
+      "Open Combat",
+      "Body Timers",
+      "4 minutes",
+      "10 minutes",
+      "Looted Item Flag",
+      "Clean Ground Drop",
+      "Criminal Status",
+      "5 minutes out of sight",
+      "2 counts",
+      "1 count",
+      "50+ Counts",
+      "criminal gate",
+      "global-chat",
+      "kill-feed",
+      "leaderboard-levels",
+    ]) {
+      if (!pageText.includes(expected)) {
+        throw new Error(`PVP page missing "${expected}": "${pageText}"`);
+      }
+    }
+
+    for (const href of [
+      "pages/systems/anti-zerg.html",
+      "pages/systems/guild.html",
+      "pages/items/weapons.html",
+      "pages/items/armors.html",
+      "pages/enemies/monsters.html",
+      "pages/General/play-the-game.html",
+    ]) {
+      const count = await page.locator(`.pvp-link-grid a[href="${href}"]`).count();
+      if (count !== 1) {
+        throw new Error(`PVP related link expected one "${href}", found ${count}`);
+      }
+    }
+
+    await assertMobilePageFirstNavigation(page, baseUrl, "/pages/systems/pvp-system.html");
 
     if (runtimeErrors.length) {
       throw new Error(`browser errors: ${runtimeErrors.join("; ")}`);

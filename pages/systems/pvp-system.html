@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>PVP System — Project Rogue Codex</title>
+    <title>PVP System &mdash; Project Rogue Codex</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <base href="../../" />
     <link rel="icon" type="image/x-icon" href="images/project-rogue-favicon.ico" />
@@ -11,6 +11,7 @@
     <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
     <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/pvp.css" />
     <script src="js/site-search.js" defer></script>
     <script src="js/weapon-specialty.js" defer></script>
     <script src="js/stat-widgets.js" defer></script>
@@ -30,103 +31,187 @@
         </header>
 
         <article class="content-section" id="pvp-basics">
-          <h2>PVP Systems and Restrictions</h2>
-          <p>Project Rogue keeps world PVP lethal but readable with safe zones, decay timers, and criminal rules.</p>
-          <div class="stat-grid" role="list">
-            <section class="stat-card" role="listitem">
+          <h2>PVP at a Glance</h2>
+          <div class="pvp-summary-grid" role="list">
+            <section class="pvp-summary-card" role="listitem">
               <p class="stat-label">World</p>
               <h3>Open Combat</h3>
-              <p>Fight anywhere outside towns. Safe zones show a dove icon on the bottom-right HUD.</p>
+              <p>Players can fight anywhere outside protected towns and marked safe areas.</p>
             </section>
 
-            <section class="stat-card" role="listitem">
+            <section class="pvp-summary-card" role="listitem">
+              <p class="stat-label">Safe Zone</p>
+              <h3>Safe Zone Dove</h3>
+              <p>Safe zones show a dove icon on the bottom-right HUD so risk state is readable in-game.</p>
+            </section>
+
+            <section class="pvp-summary-card" role="listitem">
               <p class="stat-label">Death</p>
-              <h3>Respawn + Drops</h3>
-              <p>
-                On death you return to your marked spawn, drop your backpack, and normally drop one equipped item. If a
-                weapon only works while a full armor set is worn, losing any set piece makes you drop that weapon too.
-              </p>
+              <h3>Backpack + Gear</h3>
+              <p>Death returns you to your marked spawn, drops your backpack, and normally drops one equipped item.</p>
             </section>
 
-            <section class="stat-card" role="listitem">
+            <section class="pvp-summary-card" role="listitem">
               <p class="stat-label">Decay</p>
               <h3>Body Timers</h3>
-              <p>Bodies become lootable after <strong>4 minutes</strong> and fully drop to the ground after <strong>10 minutes</strong>.</p>
+              <p>Bodies become lootable after <strong>4 minutes</strong> and fully drop after <strong>10 minutes</strong>.</p>
             </section>
           </div>
-        </article>
 
-        <article class="content-section" id="loot-rules">
-          <h2>Loot Windows</h2>
-          <div class="stat-grid" role="list">
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">4-Minute Loot</p>
-              <h3>Marked Items</h3>
-              <p>Anything taken at 4 minutes is flagged as looted, drops on every death, and needs trading back to cleanse.</p>
-            </section>
+          <section class="pvp-rule-section">
+            <h2>Safe Zones and Flagging</h2>
+            <div class="pvp-rule-grid">
+              <section class="pvp-panel pvp-panel-safe">
+                <p class="stat-label">Protected Areas</p>
+                <h3>Read the HUD</h3>
+                <ul>
+                  <li>Town safety is communicated by the dove icon.</li>
+                  <li>Outside safe zones, PVP is open-world and lethal.</li>
+                  <li>Safe-zone status matters before duels, escorts, and gear swaps.</li>
+                </ul>
+              </section>
 
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">10-Minute Drop</p>
-              <h3>Clean Reset</h3>
-              <p>If untouched until 10 minutes, the body falls and items become clean—no loot flag carried forward.</p>
-            </section>
+              <section class="pvp-panel pvp-panel-criminal">
+                <p class="stat-label">Criminal Status</p>
+                <h3>Grey Name Flag</h3>
+                <ul>
+                  <li>Attacking any player or NPC turns your name grey.</li>
+                  <li>Status clears after <strong>5 minutes out of sight</strong> of players and NPCs.</li>
+                  <li>Temporary criminals can be killed or looted without adding offense counts.</li>
+                </ul>
+              </section>
+            </div>
+          </section>
 
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Criminal Death</p>
-              <h3>No Early Loot</h3>
-              <p>When you die criminal, items are not flagged looted at 4 minutes; they can be taken clean, and you respawn at the nearest criminal gate.</p>
-            </section>
-          </div>
-        </article>
+          <section class="pvp-flow-section">
+            <h2>Death and Loot Flow</h2>
+            <ol class="pvp-flow">
+              <li>
+                <span>1</span>
+                <div>
+                  <h3>Death resolves</h3>
+                  <p>You respawn at your marked spawn, or at the nearest criminal gate if you died criminal.</p>
+                </div>
+              </li>
+              <li>
+                <span>2</span>
+                <div>
+                  <h3>Gear drops</h3>
+                  <p>Your backpack drops, plus one equipped item in normal death rules.</p>
+                </div>
+              </li>
+              <li>
+                <span>3</span>
+                <div>
+                  <h3>Looted Item Flag</h3>
+                  <p>Items taken from the body at <strong>4 minutes</strong> are flagged looted and drop on every death.</p>
+                </div>
+              </li>
+              <li>
+                <span>4</span>
+                <div>
+                  <h3>Clean Ground Drop</h3>
+                  <p>If untouched until <strong>10 minutes</strong>, the body drops items clean with no carried loot flag.</p>
+                </div>
+              </li>
+            </ol>
+          </section>
 
-        <article class="content-section" id="criminal-system">
-          <h2>Criminal Status</h2>
-          <div class="stat-grid" role="list">
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Flag</p>
-              <h3>Going Crim</h3>
-              <p>Attacking any player or NPC turns your name grey. Status ends after 5 minutes out of sight of players/NPCs.</p>
-            </section>
+          <section class="pvp-consequence-section">
+            <h2>Criminal Consequences</h2>
+            <div class="pvp-consequence-grid" role="list">
+              <section class="pvp-consequence-card" role="listitem">
+                <p class="stat-label">Kills</p>
+                <h3>2 counts</h3>
+                <p>The last hit on a kill grants two offense counts.</p>
+              </section>
 
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Counts</p>
-              <h3>Offense Tracking</h3>
-              <p>Last-hit kill grants 2 counts; looting a non-criminal item adds 1. No counts for killing/looting temporary criminals.</p>
-            </section>
+              <section class="pvp-consequence-card" role="listitem">
+                <p class="stat-label">Looting</p>
+                <h3>1 count</h3>
+                <p>Looting a non-criminal item adds one offense count.</p>
+              </section>
 
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Jail</p>
-              <h3>50+ Counts</h3>
-              <p>
-                Guards jail you at 50 counts. If your temporary criminal flag has expired they drag you to jail; if you
-                still have an active criminal status they execute you on sight. Wait it out or smash rocks and dump them
-                in the crusher to work counts down.
-              </p>
-            </section>
-          </div>
-        </article>
+              <section class="pvp-consequence-card" role="listitem">
+                <p class="stat-label">Guards</p>
+                <h3>50+ Counts</h3>
+                <p>Guards jail you once you reach 50 counts.</p>
+              </section>
 
-        <article class="content-section" id="pvp-tracking">
-          <h2>Tracking & Community</h2>
-          <div class="stat-grid" role="list">
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Feed</p>
-              <h3>Live Calls</h3>
-              <p>
-                In Discord &gt; Project Rogue Feeds: <strong>global-chat</strong> mirrors in-game global chat live; <strong>kill-feed</strong>
-                posts kills, sprees, and kill/assist ratios for both killer and victim.
-              </p>
-            </section>
+              <section class="pvp-consequence-card" role="listitem">
+                <p class="stat-label">Active Crim</p>
+                <h3>Execute on Sight</h3>
+                <p>If your criminal status is still active, guards execute you instead of dragging you to jail.</p>
+              </section>
 
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Leaderboard</p>
-              <h3>Discord Feeds</h3>
-              <p>
-                <strong>leaderboard-levels</strong> (top 20), <strong>leaderboard-kills</strong> (top 40), and <strong>leaderboard-shards</strong>
-                (top 40) update every 24 hours with ladder-style rankings.
-              </p>
-            </section>
-          </div>
+              <section class="pvp-consequence-card" role="listitem">
+                <p class="stat-label">Sentence</p>
+                <h3>Work Counts Down</h3>
+                <p>Wait it out, or smash rocks and dump them in the crusher to reduce offense counts.</p>
+              </section>
+
+              <section class="pvp-consequence-card" role="listitem">
+                <p class="stat-label">Set Gear</p>
+                <h3>Set Weapon Check</h3>
+                <p>If a weapon only works with a full armor set, losing any set piece makes that weapon drop too.</p>
+              </section>
+            </div>
+          </section>
+
+          <section class="pvp-tracking-section">
+            <h2>Tracking and Community</h2>
+            <div class="pvp-feed-grid" role="list">
+              <section class="pvp-feed-card" role="listitem">
+                <p class="stat-label">Project Rogue Feeds</p>
+                <h3>global-chat</h3>
+                <p>Mirrors in-game global chat live into Discord.</p>
+              </section>
+
+              <section class="pvp-feed-card" role="listitem">
+                <p class="stat-label">Project Rogue Feeds</p>
+                <h3>kill-feed</h3>
+                <p>Posts kills, sprees, and kill/assist ratios for killer and victim.</p>
+              </section>
+
+              <section class="pvp-feed-card" role="listitem">
+                <p class="stat-label">Daily Boards</p>
+                <h3>leaderboard-levels</h3>
+                <p>Top 20 level ladder updated every 24 hours.</p>
+              </section>
+
+              <section class="pvp-feed-card" role="listitem">
+                <p class="stat-label">Daily Boards</p>
+                <h3>leaderboard-kills</h3>
+                <p>Top 40 kill ladder updated every 24 hours.</p>
+              </section>
+
+              <section class="pvp-feed-card" role="listitem">
+                <p class="stat-label">Daily Boards</p>
+                <h3>leaderboard-shards</h3>
+                <p>Top 40 shard ladder updated every 24 hours.</p>
+              </section>
+            </div>
+          </section>
+
+          <section class="pvp-warning">
+            <h2>What to Watch</h2>
+            <p>
+              Loot windows and criminal status change the value of a kill. A clean 10-minute drop is different from a
+              4-minute looted item, and criminal deaths route through the criminal gate instead of normal spawn rules.
+            </p>
+          </section>
+
+          <section class="pvp-related">
+            <h2>Related Pages</h2>
+            <div class="pvp-link-grid" aria-label="Related PVP pages">
+              <a href="pages/systems/anti-zerg.html">Anti-Zerg</a>
+              <a href="pages/systems/guild.html">Guilds</a>
+              <a href="pages/items/weapons.html">Weapons</a>
+              <a href="pages/items/armors.html">Armors</a>
+              <a href="pages/enemies/monsters.html">Monsters</a>
+              <a href="pages/General/play-the-game.html">Play the Game</a>
+            </div>
+          </section>
         </article>
       </main>
     </div>

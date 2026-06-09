@@ -1,0 +1,227 @@
+.pvp-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
+  gap: 0.75rem;
+  margin: 1rem 0 1.5rem;
+}
+
+.pvp-summary-card,
+.pvp-consequence-card,
+.pvp-feed-card {
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 0.85rem;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.045), rgba(0, 0, 0, 0.24)),
+    rgba(14, 18, 25, 0.74);
+}
+
+.pvp-summary-card {
+  min-height: 132px;
+}
+
+.pvp-summary-card h3,
+.pvp-consequence-card h3,
+.pvp-feed-card h3 {
+  margin: 0.25rem 0 0.4rem;
+  font-size: 1rem;
+  color: var(--text-main);
+}
+
+.pvp-summary-card p:last-child,
+.pvp-consequence-card p:last-child,
+.pvp-feed-card p:last-child,
+.pvp-panel p:last-child,
+.pvp-warning p {
+  margin-bottom: 0;
+}
+
+.pvp-rule-section,
+.pvp-flow-section,
+.pvp-consequence-section,
+.pvp-tracking-section,
+.pvp-warning,
+.pvp-related {
+  margin-top: 1.5rem;
+}
+
+.pvp-rule-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 0.85rem;
+  margin-top: 0.85rem;
+}
+
+.pvp-panel {
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 0.95rem;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.pvp-panel h3 {
+  margin: 0.2rem 0 0.65rem;
+  font-size: 1rem;
+}
+
+.pvp-panel ul {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+  padding-left: 1.15rem;
+}
+
+.pvp-panel-safe {
+  border-color: rgba(142, 225, 177, 0.42);
+}
+
+.pvp-panel-safe h3 {
+  color: #9ee8bd;
+}
+
+.pvp-panel-criminal {
+  border-color: rgba(255, 151, 151, 0.44);
+}
+
+.pvp-panel-criminal h3 {
+  color: #ffa5a5;
+}
+
+.pvp-flow {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0.85rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pvp-flow li {
+  display: grid;
+  grid-template-columns: 2.2rem 1fr;
+  gap: 0.75rem;
+  align-items: start;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 0.85rem;
+  background: rgba(5, 8, 12, 0.34);
+}
+
+.pvp-flow span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  border: 1px solid rgba(126, 206, 255, 0.5);
+  border-radius: 999px;
+  color: #ffffff;
+  font-weight: 800;
+  background: rgba(126, 206, 255, 0.12);
+}
+
+.pvp-flow h3 {
+  margin: 0 0 0.2rem;
+  font-size: 1rem;
+}
+
+.pvp-flow p {
+  margin: 0;
+}
+
+.pvp-consequence-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.85rem;
+}
+
+.pvp-consequence-card:nth-child(1) h3,
+.pvp-consequence-card:nth-child(2) h3,
+.pvp-consequence-card:nth-child(3) h3 {
+  color: #ffd979;
+}
+
+.pvp-consequence-card:nth-child(4) h3 {
+  color: #ffa5a5;
+}
+
+.pvp-consequence-card:nth-child(5) h3 {
+  color: #9ee8bd;
+}
+
+.pvp-consequence-card:nth-child(6) h3 {
+  color: #8bd4ff;
+}
+
+.pvp-feed-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.85rem;
+}
+
+.pvp-feed-card h3 {
+  color: #c6b7ff;
+  word-break: break-word;
+}
+
+.pvp-warning {
+  border: 1px solid rgba(255, 179, 71, 0.42);
+  border-radius: 8px;
+  padding: 0.95rem;
+  background: rgba(255, 179, 71, 0.07);
+}
+
+.pvp-warning h2 {
+  margin-top: 0;
+}
+
+.pvp-link-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.65rem;
+  margin-top: 0.8rem;
+}
+
+.pvp-link-grid a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.6rem;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  color: var(--text-main);
+  text-decoration: none;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.pvp-link-grid a:hover,
+.pvp-link-grid a:focus-visible {
+  border-color: var(--accent-blue);
+  color: #ffffff;
+  outline: none;
+}
+
+@media (max-width: 640px) {
+  .content-header {
+    padding-left: 2.25rem;
+  }
+
+  .pvp-summary-grid,
+  .pvp-rule-grid,
+  .pvp-consequence-grid,
+  .pvp-feed-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pvp-flow li {
+    grid-template-columns: 1.9rem 1fr;
+    gap: 0.65rem;
+  }
+
+  .pvp-flow span {
+    width: 1.9rem;
+    height: 1.9rem;
+  }
+}
