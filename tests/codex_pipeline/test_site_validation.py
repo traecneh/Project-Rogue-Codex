@@ -1216,6 +1216,81 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn("function initAntiZergCalculator", script)
         self.assertIn('document.addEventListener("DOMContentLoaded"', script)
 
+    def test_guild_page_has_compact_management_reference(self):
+        from tools.codex_pipeline import cli
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        html_path = REPO_ROOT / "pages" / "systems" / "guild.html"
+        css_path = REPO_ROOT / "css" / "guild.css"
+        script_path = REPO_ROOT / "js" / "guild.js"
+        html = html_path.read_text(encoding="utf-8")
+        css = css_path.read_text(encoding="utf-8") if css_path.exists() else ""
+        script = script_path.read_text(encoding="utf-8") if script_path.exists() else ""
+
+        self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
+        self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
+        self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
+        self.assertIn('<link rel="stylesheet" href="css/guild.css" />', html)
+        self.assertIn('<script src="js/guild.js" defer></script>', html)
+        self.assertNotIn("<style>", html)
+        self.assertEqual(
+            [],
+            [
+                block.strip()
+                for block in re.findall(
+                    r"<script\b(?![^>]*\bsrc\s*=)[^>]*>([\s\S]*?)</script>",
+                    html,
+                    flags=re.IGNORECASE,
+                )
+                if block.strip()
+            ],
+        )
+
+        for expected in [
+            "Guild at a Glance",
+            "Identity and Roster",
+            "Rank and Management Flow",
+            "Party Cycle Preview",
+            "Operations Reference",
+            "PVP and Group Context",
+            "Related Pages",
+            "G",
+            "50 members",
+            "[Rank] Character Name",
+            "Member",
+            "Elder",
+            "Council",
+            "Leader",
+            "Add Member",
+            "Kick Member",
+            "Promote",
+            "Demote",
+            "Guild Party",
+            "Party A",
+            "Party B",
+            "Party C",
+            "Leave",
+            "Anti-Zerg sizing",
+            "pages/systems/anti-zerg.html",
+            "pages/systems/pvp-system.html",
+            "pages/systems/chat.html",
+            "pages/items/weapons.html",
+            "pages/items/armors.html",
+        ]:
+            self.assertIn(expected, html)
+
+        self.assertIn(".guild-summary-grid", css)
+        self.assertIn(".guild-roster-grid", css)
+        self.assertIn(".guild-flow", css)
+        self.assertIn(".guild-party-preview", css)
+        self.assertIn(".guild-action-grid", css)
+        self.assertIn(".guild-link-grid", css)
+
+        self.assertIn("const GUILD_PARTY_SEQUENCE", script)
+        self.assertIn("function setGuildParty", script)
+        self.assertIn("function initGuildPartyPreview", script)
+        self.assertIn('document.addEventListener("DOMContentLoaded"', script)
+
     def test_crafting_page_has_compact_armor_crafting_reference(self):
         from tools.codex_pipeline import cli
         from tools.codex_pipeline.config import REPO_ROOT

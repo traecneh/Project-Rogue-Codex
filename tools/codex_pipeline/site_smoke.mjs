@@ -140,6 +140,12 @@ async function main() {
       failures.push(`SMOKE ERROR anti-zerg: ${formatError(error)}`);
     }
     try {
+      await runGuildSpec(browser, baseUrl);
+      console.log("SMOKE OK guild: management reference, party preview, related links");
+    } catch (error) {
+      failures.push(`SMOKE ERROR guild: ${formatError(error)}`);
+    }
+    try {
       await runCorruptionSpec(browser, baseUrl);
       console.log("SMOKE OK corruption: corrupted innates, cleanse flow, related links");
     } catch (error) {
@@ -160,7 +166,7 @@ async function main() {
     failures.forEach((failure) => console.error(failure));
     process.exit(1);
   }
-  console.log(`SMOKE OK site: ${smokeSpecs.length + 14} page(s) checked at ${baseUrl}`);
+  console.log(`SMOKE OK site: ${smokeSpecs.length + 15} page(s) checked at ${baseUrl}`);
 }
 
 async function importPlaywright() {
@@ -997,6 +1003,115 @@ async function assertAntiZergCalculator(page, myGuildSize, enemyGuildSize, expec
   if (!scenarioText.includes("guild")) {
     throw new Error(`Anti-Zerg calculator scenario did not describe guild matchup: "${scenarioText}"`);
   }
+}
+
+async function runGuildSpec(browser, baseUrl) {
+  const page = await browser.newPage();
+  page.setDefaultTimeout(timeoutMs);
+  const runtimeErrors = [];
+  page.on("console", (message) => {
+    const text = message.text();
+    if (message.type() === "error" && !text.startsWith("Failed to load resource")) runtimeErrors.push(text);
+  });
+  page.on("pageerror", (error) => runtimeErrors.push(formatError(error)));
+
+  try {
+    await page.goto(joinUrl(baseUrl, "/pages/systems/guild.html"), { waitUntil: "load" });
+    await page.locator(".guild-party-preview").waitFor({ state: "visible" });
+    const pageText = (await page.locator("#guild-basics").textContent()).trim();
+    for (const expected of [
+      "Guild at a Glance",
+      "Identity and Roster",
+      "Rank and Management Flow",
+      "Party Cycle Preview",
+      "Operations Reference",
+      "PVP and Group Context",
+      "G",
+      "50 members",
+      "[Rank] Character Name",
+      "Member",
+      "Elder",
+      "Council",
+      "Leader",
+      "Add Member",
+      "Kick Member",
+      "Promote",
+      "Demote",
+      "Guild Party",
+      "Party A",
+      "Party B",
+      "Party C",
+      "Leave",
+      "Anti-Zerg sizing",
+    ]) {
+      if (!pageText.includes(expected)) {
+        throw new Error(`Guild page missing "${expected}": "${pageText}"`);
+      }
+    }
+
+    for (const href of [
+      "pages/systems/anti-zerg.html",
+      "pages/systems/pvp-system.html",
+      "pages/systems/chat.html",
+      "pages/items/weapons.html",
+      "pages/items/armors.html",
+      "pages/enemies/monsters.html",
+      "pages/General/play-the-game.html",
+    ]) {
+      const count = await page.locator(`.guild-link-grid a[href="${href}"]`).count();
+      if (count !== 1) {
+        throw new Error(`Guild related link expected one "${href}", found ${count}`);
+      }
+    }
+
+    await assertGuildPartyPreview(page);
+    await assertMobilePageFirstNavigation(page, baseUrl, "/pages/systems/guild.html");
+
+    if (runtimeErrors.length) {
+      throw new Error(`browser errors: ${runtimeErrors.join("; ")}`);
+    }
+  } finally {
+    await page.close();
+  }
+}
+
+async function assertGuildPartyPreview(page) {
+  const currentParty = page.locator("[data-party-current]");
+  await currentParty.waitFor({ state: "visible" });
+
+  const initialText = (await currentParty.textContent()).trim();
+  if (initialText !== "Party A") {
+    throw new Error(`Guild party preview expected Party A initially, got "${initialText}"`);
+  }
+
+  await page.locator('[data-party-option="B"]').click();
+  await page.waitForFunction(
+    () => document.querySelector("[data-party-current]")?.textContent?.trim() === "Party B",
+    undefined,
+    { timeout: timeoutMs }
+  );
+  const selectedB = await page.locator('[data-party-option="B"]').getAttribute("aria-pressed");
+  if (selectedB !== "true") {
+    throw new Error(`Guild party preview did not mark Party B active, got aria-pressed="${selectedB}"`);
+  }
+
+  await page.locator("[data-party-cycle]").click();
+  await page.waitForFunction(
+    () => document.querySelector("[data-party-current]")?.textContent?.trim() === "Party C",
+    undefined,
+    { timeout: timeoutMs }
+  );
+  const partyCDescription = (await page.locator("[data-party-description]").textContent()).trim();
+  if (!partyCDescription.includes("third guild party slot")) {
+    throw new Error(`Guild party preview did not describe Party C: "${partyCDescription}"`);
+  }
+
+  await page.locator("[data-party-cycle]").click();
+  await page.waitForFunction(
+    () => document.querySelector("[data-party-current]")?.textContent?.trim() === "Party A",
+    undefined,
+    { timeout: timeoutMs }
+  );
 }
 
 async function runCorruptionSpec(browser, baseUrl) {

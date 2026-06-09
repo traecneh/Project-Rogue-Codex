@@ -11,6 +11,7 @@
     <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
     <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/guild.css" />
     <script src="js/site-search.js" defer></script>
     <script src="js/weapon-specialty.js" defer></script>
     <script src="js/stat-widgets.js" defer></script>
@@ -19,6 +20,7 @@
     <script src="js/perks.js" defer></script>
     <script src="js/rarity-roller.js" defer></script>
     <script src="js/nav-core.js" defer></script>
+    <script src="js/guild.js" defer></script>
   </head>
   <body>
     <div class="layout">
@@ -26,90 +28,205 @@
       <main class="main-content">
         <header class="content-header">
           <h1 class="content-title">Guild System</h1>
-          <p class="content-tagline">Open the guild panel with <strong>G</strong> and manage your clan at a glance.</p>
+          <p class="content-tagline">Clan identity, roster management, ranks, and party assignment at a glance.</p>
         </header>
 
-        <article class="content-section" id="guild-overview">
-          <h2>Guild Panel Overview</h2>
-          <p>Press <strong>G</strong> in-game to open the guild panel and view these details.</p>
-          <div class="stat-grid" role="list">
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Identity</p>
-              <h3>Clan Name &amp; Tag</h3>
-              <p>Shows the clan name and tag; the tag appears in front of your character name in-game.</p>
+        <article class="content-section" id="guild-basics">
+          <h2>Guild at a Glance</h2>
+          <div class="guild-summary-grid" role="list">
+            <section class="guild-summary-card" role="listitem">
+              <p class="stat-label">Hotkey</p>
+              <h3>Press G</h3>
+              <p>Opens the guild panel so you can inspect identity, roster, rank, and management controls.</p>
             </section>
 
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Roster</p>
-              <h3>Member Count</h3>
-              <p>Displays current members as <strong>## / 50</strong> maximum.</p>
+            <section class="guild-summary-card" role="listitem">
+              <p class="stat-label">Roster Cap</p>
+              <h3>50 members</h3>
+              <p>The panel shows the active member count as <strong>## / 50</strong>.</p>
             </section>
 
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Rank</p>
-              <h3>Your Role</h3>
-              <p>Shows your rank: Member, Elder, Council, or Leader.</p>
+            <section class="guild-summary-card" role="listitem">
+              <p class="stat-label">Ranks</p>
+              <h3>Member to Leader</h3>
+              <p>Guild roles display as Member, Elder, Council, or Leader.</p>
             </section>
 
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Leadership</p>
-              <h3>Leader Name</h3>
-              <p>Displays the current leader of the clan.</p>
+            <section class="guild-summary-card" role="listitem">
+              <p class="stat-label">Parties</p>
+              <h3>Party A/B/C</h3>
+              <p>The Guild Party control cycles selected members through Party A, Party B, and Party C.</p>
             </section>
           </div>
-        </article>
 
-        <article class="content-section" id="guild-roster">
-          <h2>Roster List</h2>
-          <div class="stat-grid" role="list">
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Scroll List</p>
-              <h3>Member Rows</h3>
-              <p>Scrollable list shows each member as <strong>[Rank] Character Name</strong>.</p>
-            </section>
-          </div>
-        </article>
+          <section class="guild-roster-section">
+            <h2>Identity and Roster</h2>
+            <div class="guild-roster-grid" role="list">
+              <section class="guild-panel guild-panel-identity" role="listitem">
+                <p class="stat-label">Clan Identity</p>
+                <h3>Name and Tag</h3>
+                <p>The clan name and tag identify the guild. The tag appears in front of your character name in-game.</p>
+              </section>
 
-        <article class="content-section" id="guild-actions">
-          <h2>Guild Actions</h2>
-          <p>Controls sit beneath the roster for quick management.</p>
-          <div class="stat-grid" role="list">
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Invite</p>
-              <h3>Add Member</h3>
-              <p>Add a player to the guild.</p>
-            </section>
+              <section class="guild-panel" role="listitem">
+                <p class="stat-label">Roster Rows</p>
+                <h3>[Rank] Character Name</h3>
+                <p>Each roster line shows the member rank beside the character name in a scrollable list.</p>
+              </section>
 
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Remove</p>
-              <h3>Kick Member</h3>
-              <p>Remove a selected member.</p>
-            </section>
+              <section class="guild-panel" role="listitem">
+                <p class="stat-label">Leader</p>
+                <h3>Leader Name</h3>
+                <p>The panel lists the current leader separately so ownership is easy to confirm.</p>
+              </section>
 
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Rank Up</p>
-              <h3>Promote</h3>
-              <p>Raise a member's rank.</p>
-            </section>
+              <section class="guild-panel guild-panel-cap" role="listitem">
+                <p class="stat-label">Capacity</p>
+                <h3>## / 50</h3>
+                <p>Use the member count to understand whether the guild has room for another invite.</p>
+              </section>
+            </div>
+          </section>
 
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Rank Down</p>
-              <h3>Demote</h3>
-              <p>Lower a member's rank.</p>
-            </section>
+          <section class="guild-flow-section">
+            <h2>Rank and Management Flow</h2>
+            <ol class="guild-flow">
+              <li>
+                <span>1</span>
+                <div>
+                  <h3>Open the panel</h3>
+                  <p>Press <strong>G</strong> to view clan identity, roster, rank, and leader details.</p>
+                </div>
+              </li>
+              <li>
+                <span>2</span>
+                <div>
+                  <h3>Select a member</h3>
+                  <p>Roster actions work from the selected member row when a target is required.</p>
+                </div>
+              </li>
+              <li>
+                <span>3</span>
+                <div>
+                  <h3>Adjust standing</h3>
+                  <p>Promote and Demote move members through the displayed rank ladder.</p>
+                </div>
+              </li>
+              <li>
+                <span>4</span>
+                <div>
+                  <h3>Assign parties</h3>
+                  <p>Guild Party cycles selected members through Party A, Party B, and Party C.</p>
+                </div>
+              </li>
+            </ol>
+          </section>
 
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Party</p>
-              <h3>Guild Party A/B/C</h3>
-              <p>Guild Party button cycles through parties A, B, and C.</p>
-            </section>
+          <section class="guild-party-section">
+            <div class="guild-section-heading">
+              <div>
+                <h2>Party Cycle Preview</h2>
+                <p>Use the preview to see the same A/B/C cycle described by the in-game Guild Party control.</p>
+              </div>
+              <p class="guild-party-note">Party assignment is an organization tool; combat scaling still follows combat rules.</p>
+            </div>
 
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Exit</p>
-              <h3>Leave</h3>
-              <p>Leave the guild.</p>
-            </section>
-          </div>
+            <div class="stat-widget guild-party-preview" data-party-preview data-current-party="A">
+              <div class="guild-party-options" role="group" aria-label="Guild party selection preview">
+                <button type="button" class="guild-party-option is-active" data-party-option="A" aria-pressed="true">
+                  Party A
+                </button>
+                <button type="button" class="guild-party-option" data-party-option="B" aria-pressed="false">
+                  Party B
+                </button>
+                <button type="button" class="guild-party-option" data-party-option="C" aria-pressed="false">
+                  Party C
+                </button>
+              </div>
+
+              <div class="guild-party-output">
+                <span class="stat-output-label">Current Assignment</span>
+                <strong data-party-current>Party A</strong>
+                <p data-party-description>Party A is selected as the active guild party slot.</p>
+              </div>
+
+              <button type="button" class="guild-cycle-button" data-party-cycle>Cycle Party</button>
+            </div>
+          </section>
+
+          <section class="guild-actions-section">
+            <h2>Operations Reference</h2>
+            <div class="guild-action-grid" role="list">
+              <section class="guild-action-card" role="listitem">
+                <p class="stat-label">Invite</p>
+                <h3>Add Member</h3>
+                <p>Add a player to the guild when the roster has open capacity.</p>
+              </section>
+
+              <section class="guild-action-card" role="listitem">
+                <p class="stat-label">Remove</p>
+                <h3>Kick Member</h3>
+                <p>Remove the selected member from the guild roster.</p>
+              </section>
+
+              <section class="guild-action-card" role="listitem">
+                <p class="stat-label">Rank Up</p>
+                <h3>Promote</h3>
+                <p>Raise the selected member&apos;s rank.</p>
+              </section>
+
+              <section class="guild-action-card" role="listitem">
+                <p class="stat-label">Rank Down</p>
+                <h3>Demote</h3>
+                <p>Lower the selected member&apos;s rank.</p>
+              </section>
+
+              <section class="guild-action-card" role="listitem">
+                <p class="stat-label">Party</p>
+                <h3>Guild Party</h3>
+                <p>Cycles selected members through Party A, Party B, and Party C.</p>
+              </section>
+
+              <section class="guild-action-card" role="listitem">
+                <p class="stat-label">Exit</p>
+                <h3>Leave</h3>
+                <p>Leave the current guild.</p>
+              </section>
+            </div>
+          </section>
+
+          <section class="guild-context-section">
+            <h2>PVP and Group Context</h2>
+            <div class="guild-context-grid">
+              <section class="guild-panel guild-panel-context">
+                <p class="stat-label">Anti-Zerg sizing</p>
+                <h3>Guild Counts Matter</h3>
+                <p>
+                  Anti-Zerg compares guild participation during PvP. Party A/B/C helps organize players, while the
+                  Anti-Zerg page covers the actual combat sizing rules.
+                </p>
+              </section>
+
+              <section class="guild-panel guild-panel-context">
+                <p class="stat-label">Communication</p>
+                <h3>Guild Chat</h3>
+                <p>Guild chat messages are visible only to members of your guild.</p>
+              </section>
+            </div>
+          </section>
+
+          <section class="guild-related">
+            <h2>Related Pages</h2>
+            <div class="guild-link-grid" aria-label="Related Guild pages">
+              <a href="pages/systems/anti-zerg.html">Anti-Zerg</a>
+              <a href="pages/systems/pvp-system.html">PVP System</a>
+              <a href="pages/systems/chat.html">Chat</a>
+              <a href="pages/items/weapons.html">Weapons</a>
+              <a href="pages/items/armors.html">Armors</a>
+              <a href="pages/enemies/monsters.html">Monsters</a>
+              <a href="pages/General/play-the-game.html">Play the Game</a>
+            </div>
+          </section>
         </article>
       </main>
     </div>
