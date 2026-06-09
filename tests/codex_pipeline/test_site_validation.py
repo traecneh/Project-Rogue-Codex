@@ -1650,6 +1650,72 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn("wrap.clientHeight", script)
         self.assertIn('document.addEventListener("DOMContentLoaded"', script)
 
+    def test_level_page_has_compact_xp_reference(self):
+        from tools.codex_pipeline import cli
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        html_path = REPO_ROOT / "pages" / "stats" / "level.html"
+        css_path = REPO_ROOT / "css" / "level.css"
+        script_path = REPO_ROOT / "js" / "level.js"
+        html = html_path.read_text(encoding="utf-8")
+        css = css_path.read_text(encoding="utf-8") if css_path.exists() else ""
+        script = script_path.read_text(encoding="utf-8") if script_path.exists() else ""
+
+        self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
+        self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
+        self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
+        self.assertIn('<link rel="stylesheet" href="css/level.css" />', html)
+        self.assertIn('<script src="js/level.js" defer></script>', html)
+        self.assertNotIn("<style>", html)
+        self.assertEqual(
+            [],
+            [
+                block.strip()
+                for block in re.findall(
+                    r"<script\b(?![^>]*\bsrc\s*=)[^>]*>([\s\S]*?)</script>",
+                    html,
+                    flags=re.IGNORECASE,
+                )
+                if block.strip()
+            ],
+        )
+        self.assertNotRegex(html, r"\sstyle\s*=")
+
+        for expected in [
+            "Level at a Glance",
+            "Damage to XP Preview",
+            "Milestone Reference",
+            "Level XP Requirements",
+            "Related Pages",
+            "Level 105",
+            "1:1 Damage",
+            "Experience Pool",
+            "Catch-Up",
+            "Weekend / Event",
+            "data-level-damage-slider",
+            "data-level-total-xp",
+            "data-level-multiplier",
+            "pages/systems/experience.html",
+            "pages/General/build-planner.html",
+            "pages/systems/monster-damage-reduction.html",
+            "pages/items/weapons.html",
+            "pages/items/armors.html",
+            "pages/enemies/monsters.html",
+        ]:
+            self.assertIn(expected, html)
+
+        self.assertIn(".level-summary-grid", css)
+        self.assertIn(".level-xp-widget", css)
+        self.assertIn(".level-milestone-grid", css)
+        self.assertIn(".level-chart-card", css)
+        self.assertIn(".level-link-grid", css)
+
+        self.assertIn("const LEVEL_XP_TOTALS", script)
+        self.assertIn("function initLevelXpWidget", script)
+        self.assertIn("function renderLevelChart", script)
+        self.assertIn("function renderLevelMilestones", script)
+        self.assertIn('document.addEventListener("DOMContentLoaded"', script)
+
     def test_crafting_page_has_compact_armor_crafting_reference(self):
         from tools.codex_pipeline import cli
         from tools.codex_pipeline.config import REPO_ROOT

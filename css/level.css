@@ -1,0 +1,132 @@
+.level-summary-grid,
+.level-output-grid,
+.level-milestone-grid,
+.level-link-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.level-summary-grid {
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+}
+
+.level-xp-widget,
+.level-chart-card {
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  background: var(--bg-panel-dark);
+}
+
+.level-xp-widget {
+  display: grid;
+  gap: 0.9rem;
+  padding: 1rem;
+}
+
+.level-control-row {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.level-control-row label {
+  color: var(--text-main);
+  font-weight: 700;
+}
+
+.level-control-row input[type="range"] {
+  width: 100%;
+}
+
+.level-boost-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.level-boost-button {
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-main);
+  cursor: pointer;
+  font-weight: 700;
+  padding: 0.55rem 0.75rem;
+  transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+}
+
+.level-boost-button:hover,
+.level-boost-button:focus-visible,
+.level-boost-button[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: rgba(75, 255, 75, 0.12);
+  color: var(--accent);
+}
+
+.level-output-grid {
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+}
+
+.level-milestone-grid {
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+
+.level-milestone-card {
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  background: var(--bg-panel-dark);
+  padding: 0.8rem;
+}
+
+.level-milestone-card h3 {
+  margin: 0.2rem 0 0.45rem;
+}
+
+.level-milestone-card p {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.level-chart-card {
+  padding: 0.75rem;
+}
+
+.level-xp-canvas {
+  display: block;
+  width: 100%;
+  height: 140px;
+}
+
+.level-chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: space-between;
+  margin: 0.35rem 0 0.65rem;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.level-link-grid {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.level-link-grid a {
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  background: var(--bg-panel-dark);
+  color: var(--text-main);
+  padding: 0.65rem 0.75rem;
+  text-decoration: none;
+}
+
+.level-link-grid a:hover,
+.level-link-grid a:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+@media (max-width: 560px) {
+  .level-boost-button {
+    width: 100%;
+  }
+}

@@ -158,6 +158,12 @@ async function main() {
       failures.push(`SMOKE ERROR experience: ${formatError(error)}`);
     }
     try {
+      await runLevelSpec(browser, baseUrl);
+      console.log("SMOKE OK level: XP rules, calculator, milestones, related links");
+    } catch (error) {
+      failures.push(`SMOKE ERROR level: ${formatError(error)}`);
+    }
+    try {
       await runGuildSpec(browser, baseUrl);
       console.log("SMOKE OK guild: management reference, party preview, related links");
     } catch (error) {
@@ -196,7 +202,7 @@ async function main() {
     failures.forEach((failure) => console.error(failure));
     process.exit(1);
   }
-  console.log(`SMOKE OK site: ${smokeSpecs.length + 20} page(s) checked at ${baseUrl}`);
+  console.log(`SMOKE OK site: ${smokeSpecs.length + 21} page(s) checked at ${baseUrl}`);
 }
 
 async function importPlaywright() {
@@ -1293,6 +1299,143 @@ async function runExperienceSpec(browser, baseUrl) {
   } finally {
     await page.close();
   }
+}
+
+async function runLevelSpec(browser, baseUrl) {
+  const page = await browser.newPage();
+  page.setDefaultTimeout(timeoutMs);
+  const runtimeErrors = [];
+  page.on("console", (message) => {
+    const text = message.text();
+    if (message.type() === "error" && !text.startsWith("Failed to load resource")) runtimeErrors.push(text);
+  });
+  page.on("pageerror", (error) => runtimeErrors.push(formatError(error)));
+
+  try {
+    await page.goto(joinUrl(baseUrl, "/pages/stats/level.html"), { waitUntil: "load" });
+    await page.locator(".level-xp-widget").waitFor({ state: "visible" });
+    const pageText = (await page.locator(".main-content").textContent()).trim();
+    for (const expected of [
+      "Level at a Glance",
+      "Damage to XP Preview",
+      "Milestone Reference",
+      "Level XP Requirements",
+      "Related Pages",
+      "Level 105",
+      "1:1 Damage",
+      "Experience Pool",
+      "Catch-Up",
+      "Weekend / Event",
+    ]) {
+      if (!pageText.includes(expected)) {
+        throw new Error(`Level page missing "${expected}": "${pageText}"`);
+      }
+    }
+
+    for (const href of [
+      "pages/systems/experience.html",
+      "pages/General/build-planner.html",
+      "pages/systems/monster-damage-reduction.html",
+      "pages/items/weapons.html",
+      "pages/items/armors.html",
+      "pages/enemies/monsters.html",
+    ]) {
+      const count = await page.locator(`.level-link-grid a[href="${href}"]`).count();
+      if (count !== 1) {
+        throw new Error(`Level related link expected one "${href}", found ${count}`);
+      }
+    }
+
+    await assertLevelXpWidget(page);
+    await assertMobilePageFirstNavigation(page, baseUrl, "/pages/stats/level.html");
+
+    if (runtimeErrors.length) {
+      throw new Error(`browser errors: ${runtimeErrors.join("; ")}`);
+    }
+  } finally {
+    await page.close();
+  }
+}
+
+async function assertLevelXpWidget(page) {
+  await page.locator(".level-milestone-card").first().waitFor({ state: "visible" });
+  const milestoneCount = await page.locator(".level-milestone-card").count();
+  if (milestoneCount !== 7) {
+    throw new Error(`Level page expected 7 milestone cards, found ${milestoneCount}`);
+  }
+
+  const rowCount = await page.locator("#level-xp-chart .weight-row").count();
+  if (rowCount !== 105) {
+    throw new Error(`Level XP chart expected 105 rows, found ${rowCount}`);
+  }
+
+  let state = await readLevelXpState(page);
+  for (const [key, expected] of Object.entries({
+    damage: "100",
+    base: "100",
+    boosts: "0",
+    multiplier: "1x",
+    total: "100",
+  })) {
+    if (state[key] !== expected) {
+      throw new Error(`Level XP widget expected ${key}="${expected}", got "${state[key]}"`);
+    }
+  }
+
+  await setLevelDamage(page, 250);
+  await page.waitForFunction(
+    () => document.querySelector("[data-level-total-xp]")?.textContent?.trim() === "250",
+    undefined,
+    { timeout: timeoutMs }
+  );
+
+  await page.locator('[data-level-boost="pool"]').click();
+  await page.waitForFunction(
+    () => document.querySelector("[data-level-total-xp]")?.textContent?.trim() === "500",
+    undefined,
+    { timeout: timeoutMs }
+  );
+  state = await readLevelXpState(page);
+  if (state.multiplier !== "2x" || state.boosts !== "1") {
+    throw new Error(`Level XP widget expected one active boost after pool click: ${JSON.stringify(state)}`);
+  }
+
+  await page.locator('[data-level-boost="catchup"]').click();
+  await page.waitForFunction(
+    () => document.querySelector("[data-level-total-xp]")?.textContent?.trim() === "750",
+    undefined,
+    { timeout: timeoutMs }
+  );
+
+  await page.locator('[data-level-boost="pool"]').click();
+  await page.waitForFunction(
+    () => document.querySelector("[data-level-total-xp]")?.textContent?.trim() === "500",
+    undefined,
+    { timeout: timeoutMs }
+  );
+  state = await readLevelXpState(page);
+  if (state.poolPressed !== "false" || state.catchupPressed !== "true" || state.multiplier !== "2x") {
+    throw new Error(`Level XP widget did not preserve toggle state correctly: ${JSON.stringify(state)}`);
+  }
+}
+
+async function setLevelDamage(page, value) {
+  await page.locator("[data-level-damage-slider]").evaluate((input, nextValue) => {
+    input.value = String(nextValue);
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  }, value);
+}
+
+async function readLevelXpState(page) {
+  return await page.evaluate(() => ({
+    base: document.querySelector("[data-level-base-xp]")?.textContent?.trim() || "",
+    boosts: document.querySelector("[data-level-boost-count]")?.textContent?.trim() || "",
+    catchupPressed: document.querySelector('[data-level-boost="catchup"]')?.getAttribute("aria-pressed") || "",
+    damage: document.querySelector("[data-level-damage-value]")?.textContent?.trim() || "",
+    multiplier: document.querySelector("[data-level-multiplier]")?.textContent?.trim() || "",
+    poolPressed: document.querySelector('[data-level-boost="pool"]')?.getAttribute("aria-pressed") || "",
+    total: document.querySelector("[data-level-total-xp]")?.textContent?.trim() || "",
+  }));
 }
 
 async function assertExperienceSimulator(page) {
