@@ -170,6 +170,12 @@ async function main() {
       failures.push(`SMOKE ERROR skills: ${formatError(error)}`);
     }
     try {
+      await runRacesSpec(browser, baseUrl);
+      console.log("SMOKE OK races: race bonuses, requirement preview, related links");
+    } catch (error) {
+      failures.push(`SMOKE ERROR races: ${formatError(error)}`);
+    }
+    try {
       await runGuildSpec(browser, baseUrl);
       console.log("SMOKE OK guild: management reference, party preview, related links");
     } catch (error) {
@@ -208,7 +214,7 @@ async function main() {
     failures.forEach((failure) => console.error(failure));
     process.exit(1);
   }
-  console.log(`SMOKE OK site: ${smokeSpecs.length + 22} page(s) checked at ${baseUrl}`);
+  console.log(`SMOKE OK site: ${smokeSpecs.length + 23} page(s) checked at ${baseUrl}`);
 }
 
 async function importPlaywright() {
@@ -1564,6 +1570,137 @@ async function readSkillsRequirementState(page) {
     requirement: document.querySelector("[data-skill-requirement]")?.textContent?.trim() || "",
     status: document.querySelector("[data-skill-status]")?.textContent?.trim() || "",
     racePressed: document.querySelector("[data-skill-race-toggle]")?.getAttribute("aria-pressed") || "",
+  }));
+}
+
+async function runRacesSpec(browser, baseUrl) {
+  const page = await browser.newPage();
+  page.setDefaultTimeout(timeoutMs);
+  const runtimeErrors = [];
+  page.on("console", (message) => {
+    const text = message.text();
+    if (message.type() === "error" && !text.startsWith("Failed to load resource")) runtimeErrors.push(text);
+  });
+  page.on("pageerror", (error) => runtimeErrors.push(formatError(error)));
+
+  try {
+    await page.goto(joinUrl(baseUrl, "/pages/stats/races.html"), { waitUntil: "load" });
+    await page.locator(".races-preview-widget").waitFor({ state: "visible" });
+    const pageText = (await page.locator(".main-content").textContent()).trim();
+    for (const expected of [
+      "Races at a Glance",
+      "Playable Race Bonuses",
+      "Race Bonus Preview",
+      "Equipment Requirement Rule",
+      "Related Pages",
+      "Human",
+      "Tundrian",
+      "Brimlock",
+      "Komodan",
+      "Elf",
+      "Orc",
+      "Gnoll",
+      "Dark Elf",
+      "Base values pass equipment checks",
+    ]) {
+      if (!pageText.includes(expected)) {
+        throw new Error(`Races page missing "${expected}": "${pageText}"`);
+      }
+    }
+
+    for (const href of [
+      "pages/stats/skills.html",
+      "pages/stats/strength.html",
+      "pages/stats/constitution.html",
+      "pages/stats/dexterity.html",
+      "pages/General/build-planner.html",
+      "pages/systems/perks.html",
+    ]) {
+      const count = await page.locator(`.races-link-grid a[href="${href}"]`).count();
+      if (count !== 1) {
+        throw new Error(`Races related link expected one "${href}", found ${count}`);
+      }
+    }
+
+    await assertRacesPreview(page);
+    await assertMobilePageFirstNavigation(page, baseUrl, "/pages/stats/races.html");
+
+    if (runtimeErrors.length) {
+      throw new Error(`browser errors: ${runtimeErrors.join("; ")}`);
+    }
+  } finally {
+    await page.close();
+  }
+}
+
+async function assertRacesPreview(page) {
+  let state = await readRacesPreviewState(page);
+  for (const [key, expected] of Object.entries({
+    base: "85",
+    effectiveSkill: "90",
+    effectiveStat: "90",
+    requirement: "90",
+    selected: "Human",
+    status: "Requirement unmet",
+  })) {
+    if (state[key] !== expected) {
+      throw new Error(`Races preview expected ${key}="${expected}", got "${state[key]}"`);
+    }
+  }
+  if (!state.note.includes("Race bonus is visible")) {
+    throw new Error(`Races preview initial rule note was incorrect: ${JSON.stringify(state)}`);
+  }
+
+  await page.locator('[data-race-option="tundrian"]').click();
+  await page.waitForFunction(
+    () => document.querySelector("[data-race-selected-name]")?.textContent?.trim() === "Tundrian",
+    undefined,
+    { timeout: timeoutMs }
+  );
+  state = await readRacesPreviewState(page);
+  if (state.selected !== "Tundrian" || state.effectiveStat !== "95" || state.effectiveSkill !== "90") {
+    throw new Error(`Races preview did not apply Tundrian bonuses: ${JSON.stringify(state)}`);
+  }
+  if (state.status !== "Requirement unmet") {
+    throw new Error(`Races preview incorrectly let a race bonus pass the requirement: ${JSON.stringify(state)}`);
+  }
+
+  await setRacesRange(page, "[data-race-base-slider]", 90);
+  await page.waitForFunction(
+    () => document.querySelector("[data-race-requirement-status]")?.textContent?.trim() === "Meets requirement",
+    undefined,
+    { timeout: timeoutMs }
+  );
+  state = await readRacesPreviewState(page);
+  if (state.base !== "90" || state.effectiveStat !== "100" || state.effectiveSkill !== "95") {
+    throw new Error(`Races preview did not update base slider correctly: ${JSON.stringify(state)}`);
+  }
+
+  await setRacesRange(page, "[data-race-requirement-slider]", 105);
+  await page.waitForFunction(
+    () => document.querySelector("[data-race-requirement-status]")?.textContent?.trim() === "Requirement unmet",
+    undefined,
+    { timeout: timeoutMs }
+  );
+}
+
+async function setRacesRange(page, selector, value) {
+  await page.locator(selector).evaluate((input, nextValue) => {
+    input.value = String(nextValue);
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  }, value);
+}
+
+async function readRacesPreviewState(page) {
+  return await page.evaluate(() => ({
+    base: document.querySelector("[data-race-base]")?.textContent?.trim() || "",
+    effectiveSkill: document.querySelector("[data-race-effective-skill]")?.textContent?.trim() || "",
+    effectiveStat: document.querySelector("[data-race-effective-stat]")?.textContent?.trim() || "",
+    note: document.querySelector("[data-race-rule-note]")?.textContent?.trim() || "",
+    requirement: document.querySelector("[data-race-requirement]")?.textContent?.trim() || "",
+    selected: document.querySelector("[data-race-selected-name]")?.textContent?.trim() || "",
+    status: document.querySelector("[data-race-requirement-status]")?.textContent?.trim() || "",
+    tundrianPressed: document.querySelector('[data-race-option="tundrian"]')?.getAttribute("aria-pressed") || "",
   }));
 }
 

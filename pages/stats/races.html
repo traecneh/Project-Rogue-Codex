@@ -11,6 +11,7 @@
     <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
     <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/races.css" />
     <script src="js/site-search.js" defer></script>
     <script src="js/weapon-specialty.js" defer></script>
     <script src="js/stat-widgets.js" defer></script>
@@ -19,6 +20,7 @@
     <script src="js/perks.js" defer></script>
     <script src="js/rarity-roller.js" defer></script>
     <script src="js/nav-core.js" defer></script>
+    <script src="js/races.js" defer></script>
   </head>
   <body>
     <div class="layout">
@@ -26,26 +28,48 @@
       <main class="main-content">
         <header class="content-header">
           <h1 class="content-title">Races</h1>
-          <p class="content-tagline">
-            Stat bonuses, weapon proficiencies, and innate perks per race.
-          </p>
+          <p class="content-tagline">Playable race bonuses, racial innate perks, and how those bonuses affect checks.</p>
         </header>
 
-        <article class="content-section">
-          <h2>Tier Progression</h2>
-          <p>
-            All racial perks begin at <strong>Tier 1</strong> and climb automatically as you level up. You stay in T1
-            from <strong>level 1&ndash;70</strong>, reach <strong>Tier 2</strong> at levels <strong>71&ndash;99</strong>,
-            and finish at <strong>Tier 3</strong> from <strong>level 100&ndash;105</strong>. The perk descriptions below
-            mirror the main perk reference so you get the exact tier scaling in one place.
-          </p>
+        <article class="content-section" id="races-basics">
+          <h2>Races at a Glance</h2>
+          <div class="races-summary-grid" role="list">
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Playable Races</p>
+              <h3>8</h3>
+              <p>Each race combines attribute bonuses, weapon proficiency, and one innate perk.</p>
+            </section>
+
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Innate Perks</p>
+              <h3>Tier 1-Tier 3</h3>
+              <p>Racial perks start at Tier 1, reach Tier 2 at level 71, and reach Tier 3 at level 100.</p>
+            </section>
+
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Bonus Range</p>
+              <h3>+5 or +10</h3>
+              <p>Race bonuses can raise displayed attributes or weapon skills beyond trained values.</p>
+            </section>
+
+            <section class="stat-card" role="listitem">
+              <p class="stat-label">Requirement Rule</p>
+              <h3>Base values pass equipment checks</h3>
+              <p>Race bonuses are visible on the character, but equipment requirements check base values.</p>
+            </section>
+          </div>
         </article>
 
         <article class="content-section" id="race-list">
-          <h2>Racial Bonuses</h2>
-          <div class="stat-grid" role="list">
-            <section class="stat-card">
-              <h3>Human</h3>
+          <h2>Playable Race Bonuses</h2>
+          <div class="races-card-grid" role="list">
+            <section class="races-card" role="listitem" data-race-card="human">
+              <div class="races-card-header">
+                <h3>Human</h3>
+                <button class="races-select-button" type="button" data-race-option="human" aria-pressed="true">
+                  Preview
+                </button>
+              </div>
               <div class="race-portraits" aria-label="Human heroes">
                 <figure class="race-portrait">
                   <img src="images/races/Human-Male.gif" alt="Human male" loading="lazy" />
@@ -56,13 +80,29 @@
                   <figcaption>Female</figcaption>
                 </figure>
               </div>
-              <p><strong>Attributes:</strong> +5 Strength, +5 Constitution.</p>
-              <p><strong>Weapon Proficiency:</strong> +5 to swords and small blades.</p>
-              <p><strong>Desperation:</strong> Up to <strong>[6/8/10]%</strong> bonus damage scaling with low health.</p>
+              <dl class="races-bonus-list">
+                <div>
+                  <dt>Attributes</dt>
+                  <dd>+5 Strength, +5 Constitution</dd>
+                </div>
+                <div>
+                  <dt>Weapon Proficiency</dt>
+                  <dd>+5 Large Blades and Small Blades</dd>
+                </div>
+                <div>
+                  <dt>Innate Perk</dt>
+                  <dd>Desperation: up to [6/8/10]% bonus damage scaling with low health.</dd>
+                </div>
+              </dl>
             </section>
 
-            <section class="stat-card">
-              <h3>Tundrian</h3>
+            <section class="races-card" role="listitem" data-race-card="tundrian">
+              <div class="races-card-header">
+                <h3>Tundrian</h3>
+                <button class="races-select-button" type="button" data-race-option="tundrian" aria-pressed="false">
+                  Preview
+                </button>
+              </div>
               <div class="race-portraits" aria-label="Tundrian heroes">
                 <figure class="race-portrait">
                   <img src="images/races/Tundrian-Male.gif" alt="Tundrian male" loading="lazy" />
@@ -73,13 +113,29 @@
                   <figcaption>Female</figcaption>
                 </figure>
               </div>
-              <p><strong>Attributes:</strong> +10 Strength.</p>
-              <p><strong>Weapon Proficiency:</strong> +5 to axes.</p>
-              <p><strong>Frozen Heart:</strong> Element resistance <strong>[8/10/12]%</strong>.</p>
+              <dl class="races-bonus-list">
+                <div>
+                  <dt>Attributes</dt>
+                  <dd>+10 Strength</dd>
+                </div>
+                <div>
+                  <dt>Weapon Proficiency</dt>
+                  <dd>+5 Axes</dd>
+                </div>
+                <div>
+                  <dt>Innate Perk</dt>
+                  <dd>Frozen Heart: element resistance [8/10/12]%.</dd>
+                </div>
+              </dl>
             </section>
 
-            <section class="stat-card">
-              <h3>Brimlock</h3>
+            <section class="races-card" role="listitem" data-race-card="brimlock">
+              <div class="races-card-header">
+                <h3>Brimlock</h3>
+                <button class="races-select-button" type="button" data-race-option="brimlock" aria-pressed="false">
+                  Preview
+                </button>
+              </div>
               <div class="race-portraits" aria-label="Brimlock heroes">
                 <figure class="race-portrait">
                   <img src="images/races/Brimlock-Male.gif" alt="Brimlock male" loading="lazy" />
@@ -90,13 +146,29 @@
                   <figcaption>Female</figcaption>
                 </figure>
               </div>
-              <p><strong>Attributes:</strong> +5 Constitution.</p>
-              <p><strong>Weapon Proficiency:</strong> +10 to blunts.</p>
-              <p><strong>Demon Blood:</strong> Element resistance <strong>[8/10/12]%</strong>.</p>
+              <dl class="races-bonus-list">
+                <div>
+                  <dt>Attributes</dt>
+                  <dd>+5 Constitution</dd>
+                </div>
+                <div>
+                  <dt>Weapon Proficiency</dt>
+                  <dd>+10 Blunts</dd>
+                </div>
+                <div>
+                  <dt>Innate Perk</dt>
+                  <dd>Demon Blood: element resistance [8/10/12]%.</dd>
+                </div>
+              </dl>
             </section>
 
-            <section class="stat-card">
-              <h3>Komodan</h3>
+            <section class="races-card" role="listitem" data-race-card="komodan">
+              <div class="races-card-header">
+                <h3>Komodan</h3>
+                <button class="races-select-button" type="button" data-race-option="komodan" aria-pressed="false">
+                  Preview
+                </button>
+              </div>
               <div class="race-portraits" aria-label="Komodan heroes">
                 <figure class="race-portrait">
                   <img src="images/races/Komodan-Male.gif" alt="Komodan male" loading="lazy" />
@@ -107,13 +179,29 @@
                   <figcaption>Female</figcaption>
                 </figure>
               </div>
-              <p><strong>Attributes:</strong> +5 Constitution.</p>
-              <p><strong>Weapon Proficiency:</strong> +10 to poles.</p>
-              <p><strong>Magic Shield:</strong> All resistances <strong>[2/3/4]%</strong>.</p>
+              <dl class="races-bonus-list">
+                <div>
+                  <dt>Attributes</dt>
+                  <dd>+5 Constitution</dd>
+                </div>
+                <div>
+                  <dt>Weapon Proficiency</dt>
+                  <dd>+10 Polearms</dd>
+                </div>
+                <div>
+                  <dt>Innate Perk</dt>
+                  <dd>Magic Shield: all resistances [2/3/4]%.</dd>
+                </div>
+              </dl>
             </section>
 
-            <section class="stat-card">
-              <h3>Elf</h3>
+            <section class="races-card" role="listitem" data-race-card="elf">
+              <div class="races-card-header">
+                <h3>Elf</h3>
+                <button class="races-select-button" type="button" data-race-option="elf" aria-pressed="false">
+                  Preview
+                </button>
+              </div>
               <div class="race-portraits" aria-label="Elf heroes">
                 <figure class="race-portrait">
                   <img src="images/races/Elf-Male.gif" alt="Elf male" loading="lazy" />
@@ -124,13 +212,29 @@
                   <figcaption>Female</figcaption>
                 </figure>
               </div>
-              <p><strong>Attributes:</strong> +10 Dexterity.</p>
-              <p><strong>Weapon Proficiency:</strong> +5 to poles.</p>
-              <p><strong>Parry:</strong> <strong>(6/7/9/10)%</strong> parry for <strong>[70/80/90]%</strong> reduced damage (multiplicative).</p>
+              <dl class="races-bonus-list">
+                <div>
+                  <dt>Attributes</dt>
+                  <dd>+10 Dexterity</dd>
+                </div>
+                <div>
+                  <dt>Weapon Proficiency</dt>
+                  <dd>+5 Polearms</dd>
+                </div>
+                <div>
+                  <dt>Innate Perk</dt>
+                  <dd>Parry: (6/7/9/10)% parry for [70/80/90]% reduced damage.</dd>
+                </div>
+              </dl>
             </section>
 
-            <section class="stat-card">
-              <h3>Orc</h3>
+            <section class="races-card" role="listitem" data-race-card="orc">
+              <div class="races-card-header">
+                <h3>Orc</h3>
+                <button class="races-select-button" type="button" data-race-option="orc" aria-pressed="false">
+                  Preview
+                </button>
+              </div>
               <div class="race-portraits" aria-label="Orc heroes">
                 <figure class="race-portrait">
                   <img src="images/races/Orc-Male.gif" alt="Orc male" loading="lazy" />
@@ -141,13 +245,29 @@
                   <figcaption>Female</figcaption>
                 </figure>
               </div>
-              <p><strong>Attributes:</strong> +10 Constitution.</p>
-              <p><strong>Weapon Proficiency:</strong> +5 to blunts.</p>
-              <p><strong>Hazmat:</strong> Element resistance <strong>[8/10/12]%</strong>.</p>
+              <dl class="races-bonus-list">
+                <div>
+                  <dt>Attributes</dt>
+                  <dd>+10 Constitution</dd>
+                </div>
+                <div>
+                  <dt>Weapon Proficiency</dt>
+                  <dd>+5 Blunts</dd>
+                </div>
+                <div>
+                  <dt>Innate Perk</dt>
+                  <dd>Hazmat: element resistance [8/10/12]%.</dd>
+                </div>
+              </dl>
             </section>
 
-            <section class="stat-card">
-              <h3>Gnoll</h3>
+            <section class="races-card" role="listitem" data-race-card="gnoll">
+              <div class="races-card-header">
+                <h3>Gnoll</h3>
+                <button class="races-select-button" type="button" data-race-option="gnoll" aria-pressed="false">
+                  Preview
+                </button>
+              </div>
               <div class="race-portraits" aria-label="Gnoll heroes">
                 <figure class="race-portrait">
                   <img src="images/races/Gnoll-Male.gif" alt="Gnoll male" loading="lazy" />
@@ -158,13 +278,29 @@
                   <figcaption>Female</figcaption>
                 </figure>
               </div>
-              <p><strong>Attributes:</strong> +5 Constitution.</p>
-              <p><strong>Weapon Proficiency:</strong> +5 to swords.</p>
-              <p><strong>Rejuvenation:</strong> Heals <strong>[10/15/20]</strong> per Constitution tick plus <strong>[2/3/4]</strong> per tick per 25 levels.</p>
+              <dl class="races-bonus-list">
+                <div>
+                  <dt>Attributes</dt>
+                  <dd>+5 Constitution</dd>
+                </div>
+                <div>
+                  <dt>Weapon Proficiency</dt>
+                  <dd>+5 Large Blades</dd>
+                </div>
+                <div>
+                  <dt>Innate Perk</dt>
+                  <dd>Rejuvenation: heals [10/15/20] per Constitution tick plus [2/3/4] per 25 levels.</dd>
+                </div>
+              </dl>
             </section>
 
-            <section class="stat-card">
-              <h3>Dark Elf</h3>
+            <section class="races-card" role="listitem" data-race-card="dark-elf">
+              <div class="races-card-header">
+                <h3>Dark Elf</h3>
+                <button class="races-select-button" type="button" data-race-option="dark-elf" aria-pressed="false">
+                  Preview
+                </button>
+              </div>
               <div class="race-portraits" aria-label="Dark Elf heroes">
                 <figure class="race-portrait">
                   <img src="images/races/Dark%20Elf-Male.gif" alt="Dark Elf male" loading="lazy" />
@@ -175,10 +311,115 @@
                   <figcaption>Female</figcaption>
                 </figure>
               </div>
-              <p><strong>Attributes:</strong> +5 Dexterity.</p>
-              <p><strong>Weapon Proficiency:</strong> +5 to small blades.</p>
-              <p><strong>Alchemist:</strong> Potions heal <strong>[30/40/50]%</strong> more (additive).</p>
+              <dl class="races-bonus-list">
+                <div>
+                  <dt>Attributes</dt>
+                  <dd>+5 Dexterity</dd>
+                </div>
+                <div>
+                  <dt>Weapon Proficiency</dt>
+                  <dd>+5 Small Blades</dd>
+                </div>
+                <div>
+                  <dt>Innate Perk</dt>
+                  <dd>Alchemist: potions heal [30/40/50]% more.</dd>
+                </div>
+              </dl>
             </section>
+          </div>
+        </article>
+
+        <article class="content-section" id="race-preview">
+          <h2>Race Bonus Preview</h2>
+          <p>
+            Pick a race and compare trained base values against a requirement. The effective values include the selected
+            race bonus; the requirement check does not.
+          </p>
+
+          <div class="races-preview-widget">
+            <div class="races-preview-header">
+              <div>
+                <p class="stat-label">Selected Race</p>
+                <h3 data-race-selected-name>Human</h3>
+              </div>
+              <p data-race-bonus-summary>+5 Strength / Constitution, +5 Large Blades / Small Blades</p>
+            </div>
+
+            <div class="races-control-grid">
+              <label for="race-base-slider">Base Value: <span data-race-base>85</span></label>
+              <input
+                type="range"
+                id="race-base-slider"
+                min="0"
+                max="110"
+                value="85"
+                data-race-base-slider
+              />
+
+              <label for="race-requirement-slider">Requirement: <span data-race-requirement>90</span></label>
+              <input
+                type="range"
+                id="race-requirement-slider"
+                min="0"
+                max="120"
+                value="90"
+                data-race-requirement-slider
+              />
+            </div>
+
+            <div class="races-output-grid" aria-live="polite">
+              <div class="stat-output">
+                <span class="stat-output-label" data-race-stat-label>Strength / Constitution</span>
+                <span class="stat-output-value" data-race-effective-stat>90</span>
+              </div>
+              <div class="stat-output">
+                <span class="stat-output-label" data-race-skill-label>Large Blades / Small Blades</span>
+                <span class="stat-output-value" data-race-effective-skill>90</span>
+              </div>
+              <div class="stat-output">
+                <span class="stat-output-label">Requirement Check</span>
+                <span class="stat-output-value" data-race-requirement-status>Requirement unmet</span>
+              </div>
+              <div class="stat-output races-note">
+                <span class="stat-output-label">Rule</span>
+                <span class="stat-output-value" data-race-rule-note>Race bonus is visible, but base value is still short.</span>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="content-section" id="race-equipment-rule">
+          <h2>Equipment Requirement Rule</h2>
+          <div class="races-rule-grid">
+            <section class="races-rule-card">
+              <p class="stat-label">Displayed Value</p>
+              <h3>Base + Race Bonus</h3>
+              <p>Character panels and race previews can show the bonus-included attribute or weapon skill.</p>
+            </section>
+
+            <section class="races-rule-card">
+              <p class="stat-label">Requirement Check</p>
+              <h3>Base Value Only</h3>
+              <p>Equipment requirements use the trained value before racial bonuses are added.</p>
+            </section>
+
+            <section class="races-rule-card">
+              <p class="stat-label">Best Cross-Check</p>
+              <h3>Use Build Planner</h3>
+              <p>The Build Planner should flag unmet gear requirements even when a race bonus makes the display higher.</p>
+            </section>
+          </div>
+        </article>
+
+        <article class="content-section">
+          <h2>Related Pages</h2>
+          <div class="races-link-grid">
+            <a href="pages/stats/skills.html">Skills</a>
+            <a href="pages/stats/strength.html">Strength</a>
+            <a href="pages/stats/constitution.html">Constitution</a>
+            <a href="pages/stats/dexterity.html">Dexterity</a>
+            <a href="pages/General/build-planner.html">Build Planner</a>
+            <a href="pages/systems/perks.html">Perks</a>
           </div>
         </article>
       </main>

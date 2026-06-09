@@ -1,0 +1,184 @@
+.races-summary-grid,
+.races-card-grid,
+.races-output-grid,
+.races-rule-grid,
+.races-link-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.races-summary-grid,
+.races-rule-grid {
+  grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
+}
+
+.races-card-grid {
+  grid-template-columns: repeat(auto-fit, minmax(245px, 1fr));
+}
+
+.races-card,
+.races-preview-widget,
+.races-rule-card {
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  background: var(--bg-panel-dark);
+}
+
+.races-card,
+.races-rule-card {
+  padding: 0.85rem;
+}
+
+.races-card-header,
+.races-preview-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.races-card h3,
+.races-rule-card h3,
+.races-preview-header h3 {
+  margin: 0.15rem 0 0.35rem;
+}
+
+.races-card .race-portraits {
+  margin: 0.55rem 0 0.7rem;
+}
+
+.races-bonus-list {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+}
+
+.races-bonus-list div {
+  display: grid;
+  gap: 0.12rem;
+}
+
+.races-bonus-list dt {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.races-bonus-list dd {
+  margin: 0;
+  color: var(--text-main);
+  line-height: 1.45;
+}
+
+.races-select-button {
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-main);
+  cursor: pointer;
+  font-weight: 700;
+  padding: 0.45rem 0.65rem;
+  transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+}
+
+.races-select-button:hover,
+.races-select-button:focus-visible,
+.races-select-button[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: rgba(75, 255, 75, 0.12);
+  color: var(--accent);
+}
+
+.races-card.is-selected {
+  border-color: rgba(75, 255, 75, 0.7);
+  box-shadow: inset 0 0 0 1px rgba(75, 255, 75, 0.22);
+}
+
+.races-preview-widget {
+  display: grid;
+  gap: 0.95rem;
+  padding: 1rem;
+}
+
+.races-preview-header p {
+  margin: 0;
+  color: var(--text-muted);
+  line-height: 1.5;
+  max-width: 32rem;
+}
+
+.races-control-grid {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.races-control-grid > * {
+  min-width: 0;
+}
+
+.races-control-grid label {
+  color: var(--text-main);
+  font-weight: 700;
+}
+
+.races-control-grid input[type="range"] {
+  box-sizing: border-box;
+  margin: 0;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+}
+
+.races-output-grid {
+  grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+}
+
+.races-output-grid .stat-output {
+  margin-top: 0;
+}
+
+.races-note {
+  grid-column: span 2;
+}
+
+.races-rule-card p {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.races-link-grid {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.races-link-grid a {
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  background: var(--bg-panel-dark);
+  color: var(--text-main);
+  padding: 0.65rem 0.75rem;
+  text-decoration: none;
+}
+
+.races-link-grid a:hover,
+.races-link-grid a:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+@media (max-width: 620px) {
+  .races-card-header,
+  .races-preview-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .races-select-button {
+    width: 100%;
+  }
+
+  .races-note {
+    grid-column: auto;
+  }
+}

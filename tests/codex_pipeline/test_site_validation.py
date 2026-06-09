@@ -1790,6 +1790,82 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn("function renderSkillCurve", script)
         self.assertIn('document.addEventListener("DOMContentLoaded"', script)
 
+    def test_races_page_has_compact_bonus_reference(self):
+        from tools.codex_pipeline import cli
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        html_path = REPO_ROOT / "pages" / "stats" / "races.html"
+        css_path = REPO_ROOT / "css" / "races.css"
+        script_path = REPO_ROOT / "js" / "races.js"
+        html = html_path.read_text(encoding="utf-8")
+        css = css_path.read_text(encoding="utf-8") if css_path.exists() else ""
+        script = script_path.read_text(encoding="utf-8") if script_path.exists() else ""
+
+        self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
+        self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
+        self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
+        self.assertIn('<link rel="stylesheet" href="css/races.css" />', html)
+        self.assertIn('<script src="js/races.js" defer></script>', html)
+        self.assertNotIn("<style>", html)
+        self.assertEqual(
+            [],
+            [
+                block.strip()
+                for block in re.findall(
+                    r"<script\b(?![^>]*\bsrc\s*=)[^>]*>([\s\S]*?)</script>",
+                    html,
+                    flags=re.IGNORECASE,
+                )
+                if block.strip()
+            ],
+        )
+        self.assertNotRegex(html, r"\sstyle\s*=")
+
+        for expected in [
+            "Races at a Glance",
+            "Playable Race Bonuses",
+            "Race Bonus Preview",
+            "Equipment Requirement Rule",
+            "Related Pages",
+            "Human",
+            "Tundrian",
+            "Brimlock",
+            "Komodan",
+            "Elf",
+            "Orc",
+            "Gnoll",
+            "Dark Elf",
+            "Tier 1",
+            "Tier 2",
+            "Tier 3",
+            "Base values pass equipment checks",
+            "data-race-option",
+            "data-race-base-slider",
+            "data-race-requirement-slider",
+            "data-race-effective-stat",
+            "data-race-effective-skill",
+            "data-race-requirement-status",
+            "pages/stats/skills.html",
+            "pages/stats/strength.html",
+            "pages/stats/constitution.html",
+            "pages/stats/dexterity.html",
+            "pages/General/build-planner.html",
+            "pages/systems/perks.html",
+        ]:
+            self.assertIn(expected, html)
+
+        self.assertIn(".races-summary-grid", css)
+        self.assertIn(".races-card-grid", css)
+        self.assertIn(".races-preview-widget", css)
+        self.assertIn(".races-rule-grid", css)
+        self.assertIn(".races-link-grid", css)
+
+        self.assertIn("const RACE_BONUSES", script)
+        self.assertIn("function initRacePreviewWidget", script)
+        self.assertIn("function renderRaceSummary", script)
+        self.assertIn("function updateRacePreview", script)
+        self.assertIn('document.addEventListener("DOMContentLoaded"', script)
+
     def test_crafting_page_has_compact_armor_crafting_reference(self):
         from tools.codex_pipeline import cli
         from tools.codex_pipeline.config import REPO_ROOT
