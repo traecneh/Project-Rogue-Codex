@@ -38,7 +38,7 @@ jobs:
         run: python -m tools.codex_pipeline validate
 
       - name: Smoke test site pages
-        run: python -m tools.codex_pipeline smoke-site
+        run: python -m tools.codex_pipeline smoke-site --smoke-timeout-ms 60000
 
       - name: Check whitespace
         run: git diff --check

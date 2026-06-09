@@ -18,5 +18,8 @@ class GitHubActionsWorkflowTests(unittest.TestCase):
         self.assertIn("npm ci", workflow)
         self.assertIn("python -m unittest discover -s tests -v", workflow)
         self.assertIn("python -m tools.codex_pipeline validate", workflow)
-        self.assertIn("python -m tools.codex_pipeline smoke-site", workflow)
+        self.assertIn(
+            "python -m tools.codex_pipeline smoke-site --smoke-timeout-ms 60000",
+            workflow,
+        )
         self.assertIn("git diff --check", workflow)
