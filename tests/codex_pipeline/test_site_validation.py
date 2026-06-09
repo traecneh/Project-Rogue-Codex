@@ -1289,6 +1289,81 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn("function initMonsterDamageReductionCalculator", script)
         self.assertIn('document.addEventListener("DOMContentLoaded"', script)
 
+    def test_experience_page_has_compact_pool_simulator_reference(self):
+        from tools.codex_pipeline import cli
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        html_path = REPO_ROOT / "pages" / "systems" / "experience.html"
+        css_path = REPO_ROOT / "css" / "experience.css"
+        script_path = REPO_ROOT / "js" / "experience.js"
+        html = html_path.read_text(encoding="utf-8")
+        css = css_path.read_text(encoding="utf-8") if css_path.exists() else ""
+        script = script_path.read_text(encoding="utf-8") if script_path.exists() else ""
+
+        self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
+        self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
+        self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
+        self.assertIn('<link rel="stylesheet" href="css/experience.css" />', html)
+        self.assertIn('<script src="js/experience.js" defer></script>', html)
+        self.assertNotIn("<style>", html)
+        self.assertEqual(
+            [],
+            [
+                block.strip()
+                for block in re.findall(
+                    r"<script\b(?![^>]*\bsrc\s*=)[^>]*>([\s\S]*?)</script>",
+                    html,
+                    flags=re.IGNORECASE,
+                )
+                if block.strip()
+            ],
+        )
+
+        for expected in [
+            "Experience Pool at a Glance",
+            "Daily Pool Build",
+            "Combat Conversion",
+            "Experience Pool Simulator",
+            "XP Threshold Reference",
+            "Related Pages",
+            "Levels 1-89",
+            "+3.0 levels per 24 hours",
+            "Levels 90+",
+            "+1.0 level per 24 hours",
+            "3.0 levels",
+            "Double XP",
+            "1% of a level",
+            "0.01 pool",
+            "150-235 XP",
+            "XP Multiplier",
+            "Weapon Speed",
+            "Projected XP / Second",
+            "Est. Time to Level",
+            "Run Tick",
+            "data-xp-run-tick",
+            "pages/General/build-planner.html",
+            "pages/systems/perks.html",
+            "pages/systems/monster-damage-reduction.html",
+            "pages/items/weapons.html",
+            "pages/items/armors.html",
+            "pages/enemies/monsters.html",
+        ]:
+            self.assertIn(expected, html)
+
+        self.assertIn(".experience-summary-grid", css)
+        self.assertIn(".experience-build-grid", css)
+        self.assertIn(".experience-conversion-grid", css)
+        self.assertIn(".experience-sim-widget", css)
+        self.assertIn(".experience-threshold-grid", css)
+        self.assertIn(".experience-link-grid", css)
+
+        self.assertIn("const EXPERIENCE_XP_THRESHOLDS", script)
+        self.assertIn("function getExperiencePoolBuildRate", script)
+        self.assertIn("function calculateExperienceTick", script)
+        self.assertIn("function updateExperienceSimulator", script)
+        self.assertIn("function initExperienceSimulator", script)
+        self.assertIn('document.addEventListener("DOMContentLoaded"', script)
+
     def test_guild_page_has_compact_management_reference(self):
         from tools.codex_pipeline import cli
         from tools.codex_pipeline.config import REPO_ROOT

@@ -146,6 +146,12 @@ async function main() {
       failures.push(`SMOKE ERROR monster damage reduction: ${formatError(error)}`);
     }
     try {
+      await runExperienceSpec(browser, baseUrl);
+      console.log("SMOKE OK experience: pool reference, simulator, related links");
+    } catch (error) {
+      failures.push(`SMOKE ERROR experience: ${formatError(error)}`);
+    }
+    try {
       await runGuildSpec(browser, baseUrl);
       console.log("SMOKE OK guild: management reference, party preview, related links");
     } catch (error) {
@@ -184,7 +190,7 @@ async function main() {
     failures.forEach((failure) => console.error(failure));
     process.exit(1);
   }
-  console.log(`SMOKE OK site: ${smokeSpecs.length + 18} page(s) checked at ${baseUrl}`);
+  console.log(`SMOKE OK site: ${smokeSpecs.length + 19} page(s) checked at ${baseUrl}`);
 }
 
 async function importPlaywright() {
@@ -1151,6 +1157,152 @@ async function assertMonsterDamageReductionCalculator(page, playerLevel, monster
       throw new Error(`Monster DR calculator expected ${key}="${value}", got "${state[key]}"`);
     }
   }
+}
+
+async function runExperienceSpec(browser, baseUrl) {
+  const page = await browser.newPage();
+  page.setDefaultTimeout(timeoutMs);
+  const runtimeErrors = [];
+  page.on("console", (message) => {
+    const text = message.text();
+    if (message.type() === "error" && !text.startsWith("Failed to load resource")) runtimeErrors.push(text);
+  });
+  page.on("pageerror", (error) => runtimeErrors.push(formatError(error)));
+
+  try {
+    await page.goto(joinUrl(baseUrl, "/pages/systems/experience.html"), { waitUntil: "load" });
+    await page.locator(".experience-sim-widget").waitFor({ state: "visible" });
+    const pageText = (await page.locator("#experience-basics").textContent()).trim();
+    for (const expected of [
+      "Experience Pool at a Glance",
+      "Daily Pool Build",
+      "Combat Conversion",
+      "Experience Pool Simulator",
+      "XP Threshold Reference",
+      "Related Pages",
+      "Levels 1-89",
+      "+3.0 levels per 24 hours",
+      "Levels 90+",
+      "+1.0 level per 24 hours",
+      "3.0 levels",
+      "Double XP",
+      "1% of a level",
+      "0.01 pool",
+      "150-235 XP",
+      "XP Multiplier",
+      "Weapon Speed",
+      "Projected XP / Second",
+      "Est. Time to Level",
+      "Run Tick",
+    ]) {
+      if (!pageText.includes(expected)) {
+        throw new Error(`Experience page missing "${expected}": "${pageText}"`);
+      }
+    }
+
+    for (const href of [
+      "pages/General/build-planner.html",
+      "pages/systems/perks.html",
+      "pages/systems/monster-damage-reduction.html",
+      "pages/items/weapons.html",
+      "pages/items/armors.html",
+      "pages/enemies/monsters.html",
+      "pages/General/play-the-game.html",
+    ]) {
+      const count = await page.locator(`.experience-link-grid a[href="${href}"]`).count();
+      if (count !== 1) {
+        throw new Error(`Experience related link expected one "${href}", found ${count}`);
+      }
+    }
+
+    await assertExperienceSimulator(page);
+    await assertMobilePageFirstNavigation(page, baseUrl, "/pages/systems/experience.html");
+
+    if (runtimeErrors.length) {
+      throw new Error(`browser errors: ${runtimeErrors.join("; ")}`);
+    }
+  } finally {
+    await page.close();
+  }
+}
+
+async function assertExperienceSimulator(page) {
+  await setExperienceInput(page, "[data-xp-level-input]", 10);
+  await setExperienceInput(page, "[data-xp-current-input]", 0);
+  await setExperienceInput(page, "[data-xp-pool-input]", 1);
+  await setExperienceInput(page, "[data-xp-min-input]", 100);
+  await setExperienceInput(page, "[data-xp-max-input]", 100);
+  await setExperienceInput(page, "[data-xp-multiplier-input]", 1.07);
+  await setExperienceInput(page, "[data-xp-speed-input]", 1000);
+
+  await page.waitForFunction(
+    () => document.querySelector("[data-xp-rate]")?.textContent?.trim() === "107 xp/s",
+    undefined,
+    { timeout: timeoutMs }
+  );
+
+  await page.locator("[data-xp-run-tick]").click();
+  await page.waitForFunction(
+    () => document.querySelector("[data-xp-total]")?.textContent?.trim() === "214",
+    undefined,
+    { timeout: timeoutMs }
+  );
+
+  let state = await readExperienceState(page);
+  for (const [key, expected] of Object.entries({
+    base: "107",
+    bonus: "107",
+    current: "214",
+    currentInput: "214",
+    pool: "0.99",
+    poolInput: "0.99",
+    progress: "2.1%",
+    total: "214",
+  })) {
+    if (state[key] !== expected) {
+      throw new Error(`Experience simulator expected ${key}="${expected}", got "${state[key]}"`);
+    }
+  }
+
+  await setExperienceInput(page, "[data-xp-pool-input]", 0);
+  await page.locator("[data-xp-run-tick]").click();
+  await page.waitForFunction(
+    () => document.querySelector("[data-xp-bonus]")?.textContent?.trim() === "0",
+    undefined,
+    { timeout: timeoutMs }
+  );
+  state = await readExperienceState(page);
+  if (state.total !== "107" || state.bonus !== "0") {
+    throw new Error(`Experience simulator empty-pool tick expected total 107 and bonus 0: ${JSON.stringify(state)}`);
+  }
+
+  await setExperienceInput(page, "[data-xp-level-input]", 90);
+  await page.waitForFunction(
+    () => document.querySelector("[data-xp-build-rate]")?.textContent?.trim() === "+1.0 levels per 24 hours",
+    undefined,
+    { timeout: timeoutMs }
+  );
+}
+
+async function setExperienceInput(page, selector, value) {
+  await page.locator(selector).evaluate((input, nextValue) => {
+    input.value = String(nextValue);
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  }, value);
+}
+
+async function readExperienceState(page) {
+  return await page.evaluate(() => ({
+    base: document.querySelector("[data-xp-base]")?.textContent?.trim() || "",
+    bonus: document.querySelector("[data-xp-bonus]")?.textContent?.trim() || "",
+    current: document.querySelector("[data-xp-current]")?.textContent?.trim() || "",
+    currentInput: document.querySelector("[data-xp-current-input]")?.value || "",
+    pool: document.querySelector("[data-xp-pool-remaining]")?.textContent?.trim() || "",
+    poolInput: document.querySelector("[data-xp-pool-input]")?.value || "",
+    progress: document.querySelector("[data-xp-progress]")?.textContent?.trim() || "",
+    rate: document.querySelector("[data-xp-rate]")?.textContent?.trim() || "",
+    total: document.querySelector("[data-xp-total]")?.textContent?.trim() || "",
+  }));
 }
 
 async function runGuildSpec(browser, baseUrl) {

@@ -11,6 +11,7 @@
     <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
     <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/experience.css" />
     <script src="js/site-search.js" defer></script>
     <script src="js/weapon-specialty.js" defer></script>
     <script src="js/stat-widgets.js" defer></script>
@@ -19,6 +20,7 @@
     <script src="js/perks.js" defer></script>
     <script src="js/rarity-roller.js" defer></script>
     <script src="js/nav-core.js" defer></script>
+    <script src="js/experience.js" defer></script>
   </head>
   <body>
     <div class="layout">
@@ -26,557 +28,237 @@
       <main class="main-content">
         <header class="content-header">
           <h1 class="content-title">Experience Pool System</h1>
-          <p class="content-tagline">Stored levels that build passively and double XP until depleted.</p>
+          <p class="content-tagline">Stored levels that build passively and double XP while they are available.</p>
         </header>
 
-        <article class="content-section">
-          <h2>How the Pool Builds</h2>
-          <p>The Experience Pool is a small reserve of bonus levels that ticks up automatically:</p>
-          <div class="stat-grid" role="list">
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Gain</p>
-              <h3>Levels 1-89</h3>
-              <p>+3.0 levels per 24 hours; pool cap remains 3.0 levels.</p>
+        <article class="content-section" id="experience-basics">
+          <h2>Experience Pool at a Glance</h2>
+          <div class="experience-summary-grid" role="list">
+            <section class="experience-summary-card" role="listitem">
+              <p class="stat-label">Pool Cap</p>
+              <h3>3.0 levels</h3>
+              <p>The pool caps at 3.0 levels for every character.</p>
             </section>
 
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Gain</p>
-              <h3>Levels 90+</h3>
-              <p>+1.0 level per 24 hours; pool cap still 3.0 levels.</p>
-            </section>
-
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Cap</p>
-              <h3>Fill Behavior</h3>
-              <p>The pool caps at 3.0 levels for all characters; it pauses at cap until XP is spent.</p>
-            </section>
-          </div>
-        </article>
-
-        <article class="content-section">
-          <h2>How It Works In Combat</h2>
-          <div class="stat-grid" role="list">
-            <section class="stat-card" role="listitem">
+            <section class="experience-summary-card" role="listitem">
               <p class="stat-label">Bonus</p>
               <h3>Double XP</h3>
               <p>Stored pool doubles XP earned from hunting while pool remains.</p>
             </section>
 
-            <section class="stat-card" role="listitem">
+            <section class="experience-summary-card" role="listitem">
               <p class="stat-label">Drain</p>
-              <h3>Pool Consumption</h3>
-              <p>Each 1% of a level gained consumes 0.01 pool (e.g., 25% costs 0.25 pool).</p>
+              <h3>1% = 0.01 pool</h3>
+              <p>Each 1% of a level gained consumes 0.01 pool; a 25% level gain costs 0.25 pool.</p>
             </section>
 
-            <section class="stat-card" role="listitem">
+            <section class="experience-summary-card" role="listitem">
               <p class="stat-label">Empty</p>
               <h3>Normal XP</h3>
               <p>When the pool is empty, XP returns to the normal rate until the pool refills.</p>
             </section>
           </div>
-        </article>
 
-        <article class="content-section">
-          <h2>Why It Exists</h2>
-          <div class="stat-grid" role="list">
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Bank</p>
-              <h3>Stored Levels</h3>
-              <p>Lets players bank levels while offline and spend them through combat.</p>
-            </section>
+          <section class="experience-build-section">
+            <h2>Daily Pool Build</h2>
+            <div class="experience-build-grid" role="list">
+              <section class="experience-build-card" role="listitem">
+                <p class="stat-label">Levels 1-89</p>
+                <h3>+3.0 levels per 24 hours</h3>
+                <p>Characters below level 90 rebuild the pool at the full daily rate.</p>
+              </section>
 
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Conversion</p>
-              <h3>Hunt to Use</h3>
-              <p>Stored pool converts to XP only when hunting.</p>
-            </section>
+              <section class="experience-build-card" role="listitem">
+                <p class="stat-label">Levels 90+</p>
+                <h3>+1.0 level per 24 hours</h3>
+                <p>High-level characters rebuild more slowly, while the cap remains 3.0 levels.</p>
+              </section>
 
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Catch-Up</p>
-              <h3>Seasonal Support</h3>
-              <p>Works with seasonal catch-up by preloading bonus levels.</p>
-            </section>
-          </div>
-        </article>
+              <section class="experience-build-card" role="listitem">
+                <p class="stat-label">At Cap</p>
+                <h3>Paused</h3>
+                <p>Passive gain pauses at 3.0 levels until you spend pool through combat XP.</p>
+              </section>
+            </div>
+          </section>
 
-        <article class="content-section" id="experience-pool-sim">
-          <h2>Experience Pool Simulator</h2>
-          <p>
-            Pick a level, current XP, stored pool, XP range per tick, XP multiplier, and weapon speed. Hit start to watch
-            randomized kills in your custom range (e.g., 150&ndash;235 XP) trigger every weapon swing and consume pool as they
-            double your XP. The multiplier only scales your min/max per tick before any pool bonus.
-          </p>
-          <div class="stat-widget xp-sim-widget">
-            <div class="stat-control">
-              <label for="xp-sim-level">Level: <span data-xp-level>70</span></label>
-              <input type="range" id="xp-sim-level" min="1" max="105" value="70" />
+          <section class="experience-conversion-section">
+            <h2>Combat Conversion</h2>
+            <div class="experience-conversion-grid" role="list">
+              <section class="experience-conversion-card" role="listitem">
+                <p class="stat-label">Base XP</p>
+                <h3>Kill or Tick XP</h3>
+                <p>XP gain starts with the tick's base XP, then applies the XP multiplier.</p>
+              </section>
+
+              <section class="experience-conversion-card" role="listitem">
+                <p class="stat-label">Pool Bonus</p>
+                <h3>Matched XP</h3>
+                <p>If pool remains, it adds an equal bonus up to the amount of pool available.</p>
+              </section>
+
+              <section class="experience-conversion-card" role="listitem">
+                <p class="stat-label">Spend Rate</p>
+                <h3>Percent of Level</h3>
+                <p>Pool consumption is based on how much of the current level the base XP would award.</p>
+              </section>
             </div>
-            <div class="stat-control">
-              <label for="xp-sim-current-xp">
-                Current XP:
-                <span data-xp-current>0</span> /
-                <span data-xp-needed>2,000</span>
-              </label>
-              <input type="range" id="xp-sim-current-xp" min="0" value="0" step="100" />
+          </section>
+
+          <section class="experience-sim-section">
+            <div class="experience-section-heading">
+              <div>
+                <h2>Experience Pool Simulator</h2>
+                <p>Preview 150-235 XP ticks, multiplier scaling, weapon speed, pool drain, and time-to-level.</p>
+              </div>
+              <p class="experience-sim-note">
+                Current refill: <strong data-xp-build-rate>+3.0 levels per 24 hours</strong>
+              </p>
             </div>
-            <div class="stat-control">
-              <label for="xp-sim-pool">
-                Experience Pool:
-                <span data-xp-pool>0.00</span> levels
-              </label>
-              <input type="range" id="xp-sim-pool" min="0" max="3" step="0.01" value="0" />
+
+            <div class="stat-widget experience-sim-widget" data-experience-widget>
+              <div class="experience-control-grid">
+                <label class="experience-control" for="xp-sim-level">
+                  <span>Level</span>
+                  <strong data-xp-level>10</strong>
+                  <input type="range" id="xp-sim-level" min="1" max="105" value="10" step="1" data-xp-level-input />
+                </label>
+
+                <label class="experience-control" for="xp-sim-current-xp">
+                  <span>Current XP</span>
+                  <strong><span data-xp-current>0</span> / <span data-xp-needed>10,000</span></strong>
+                  <input
+                    type="range"
+                    id="xp-sim-current-xp"
+                    min="0"
+                    max="10000"
+                    value="0"
+                    step="1"
+                    data-xp-current-input
+                  />
+                </label>
+
+                <label class="experience-control" for="xp-sim-pool">
+                  <span>Experience Pool</span>
+                  <strong><span data-xp-pool>1.00</span> levels</strong>
+                  <input type="range" id="xp-sim-pool" min="0" max="3" step="0.01" value="1" data-xp-pool-input />
+                </label>
+
+                <label class="experience-control" for="xp-sim-min-gain">
+                  <span>Minimum XP per tick</span>
+                  <strong><span data-xp-min>100</span> (<span data-xp-min-effective>107</span>)</strong>
+                  <input type="range" id="xp-sim-min-gain" min="0" max="235" step="1" value="100" data-xp-min-input />
+                </label>
+
+                <label class="experience-control" for="xp-sim-max-gain">
+                  <span>Maximum XP per tick</span>
+                  <strong><span data-xp-max>100</span> (<span data-xp-max-effective>107</span>)</strong>
+                  <input type="range" id="xp-sim-max-gain" min="0" max="235" step="1" value="100" data-xp-max-input />
+                </label>
+
+                <label class="experience-control" for="xp-sim-multiplier">
+                  <span>XP Multiplier</span>
+                  <strong data-xp-multiplier>1.07x</strong>
+                  <input
+                    type="range"
+                    id="xp-sim-multiplier"
+                    min="1.07"
+                    max="10.9"
+                    step="0.01"
+                    value="1.07"
+                    data-xp-multiplier-input
+                  />
+                </label>
+
+                <label class="experience-control" for="xp-sim-speed">
+                  <span>Weapon Speed</span>
+                  <strong><span data-xp-speed>1000</span> ms</strong>
+                  <input type="range" id="xp-sim-speed" min="750" max="1500" step="250" value="1000" data-xp-speed-input />
+                </label>
+              </div>
+
+              <div class="experience-sim-buttons">
+                <button type="button" data-xp-run-tick>Run Tick</button>
+                <button type="button" data-xp-start>Start Simulation</button>
+                <button type="button" data-xp-stop disabled>Stop</button>
+              </div>
+
+              <div class="experience-metric-grid" aria-label="Experience simulator results">
+                <section class="experience-metric-card">
+                  <p class="stat-label">Last Base XP</p>
+                  <h3 data-xp-base>0</h3>
+                </section>
+
+                <section class="experience-metric-card">
+                  <p class="stat-label">Pool Bonus</p>
+                  <h3 data-xp-bonus>0</h3>
+                </section>
+
+                <section class="experience-metric-card">
+                  <p class="stat-label">Total XP Gain</p>
+                  <h3 data-xp-total>0</h3>
+                </section>
+
+                <section class="experience-metric-card">
+                  <p class="stat-label">Pool Remaining</p>
+                  <h3><span data-xp-pool-remaining>1.00</span> levels</h3>
+                </section>
+
+                <section class="experience-metric-card">
+                  <p class="stat-label">Progress</p>
+                  <h3 data-xp-progress>0.0%</h3>
+                </section>
+
+                <section class="experience-metric-card">
+                  <p class="stat-label">Projected XP / Second</p>
+                  <h3 data-xp-rate>107 xp/s</h3>
+                </section>
+
+                <section class="experience-metric-card">
+                  <p class="stat-label">Est. Time to Level</p>
+                  <h3 data-xp-eta>1m 34s</h3>
+                </section>
+              </div>
             </div>
-            <div class="stat-control">
-              <label for="xp-sim-min-gain">
-                Minimum XP per tick:
-                <span data-xp-min>150</span>
-                (<span data-xp-min-effective>150</span> with multiplier)
-              </label>
-              <input type="range" id="xp-sim-min-gain" min="0" max="235" step="1" value="150" />
+          </section>
+
+          <section class="experience-threshold-section">
+            <h2>XP Threshold Reference</h2>
+            <div class="experience-threshold-grid" role="list">
+              <section class="experience-threshold-card" role="listitem">
+                <p class="stat-label">Level 10</p>
+                <h3>10,000 XP</h3>
+                <p>Default simulator level for a readable one-tick example.</p>
+              </section>
+
+              <section class="experience-threshold-card" role="listitem">
+                <p class="stat-label">Level 70</p>
+                <h3>3,000,000 XP</h3>
+                <p>Higher-level thresholds make the same XP tick consume less pool.</p>
+              </section>
+
+              <section class="experience-threshold-card" role="listitem">
+                <p class="stat-label">Level 90+</p>
+                <h3>Slower refill</h3>
+                <p>The pool still caps at 3.0 levels, but passive refill drops to +1.0 level per 24 hours.</p>
+              </section>
             </div>
-            <div class="stat-control">
-              <label for="xp-sim-max-gain">
-                Maximum XP per tick:
-                <span data-xp-max>235</span>
-                (<span data-xp-max-effective>235</span> with multiplier)
-              </label>
-              <input type="range" id="xp-sim-max-gain" min="0" max="235" step="1" value="235" />
+          </section>
+
+          <section class="experience-related">
+            <h2>Related Pages</h2>
+            <div class="experience-link-grid" aria-label="Related Experience pages">
+              <a href="pages/General/build-planner.html">Build Planner</a>
+              <a href="pages/systems/perks.html">Perks</a>
+              <a href="pages/systems/monster-damage-reduction.html">Monster Damage Reduction</a>
+              <a href="pages/items/weapons.html">Weapons</a>
+              <a href="pages/items/armors.html">Armors</a>
+              <a href="pages/enemies/monsters.html">Monsters</a>
+              <a href="pages/General/play-the-game.html">Play the Game</a>
             </div>
-            <div class="stat-control">
-              <label for="xp-sim-multiplier">
-                XP Multiplier:
-                <span data-xp-multiplier>1.07x</span>
-              </label>
-              <input type="range" id="xp-sim-multiplier" min="1.07" max="10.9" step="0.01" value="1.07" />
-            </div>
-            <div class="stat-control">
-              <label for="xp-sim-speed">Weapon Speed: <span data-xp-speed>1500</span> ms</label>
-              <input type="range" id="xp-sim-speed" min="750" max="1500" step="250" value="1500" />
-            </div>
-            <div class="xp-sim-buttons">
-              <button type="button" data-xp-start>Start Simulation</button>
-              <button type="button" data-xp-stop disabled>Stop</button>
-            </div>
-            <div class="xp-sim-metrics">
-              <p><strong>Last Base XP:</strong> <span data-xp-base>0</span></p>
-              <p><strong>Pool Bonus:</strong> <span data-xp-bonus>0</span></p>
-              <p><strong>Total XP Gain:</strong> <span data-xp-total>0</span></p>
-              <p><strong>Pool Remaining:</strong> <span data-xp-pool-remaining>0.00</span> levels</p>
-              <p><strong>Progress:</strong> <span data-xp-progress>0%</span></p>
-              <p><strong>Projected XP / Second:</strong> <span data-xp-rate>0</span></p>
-              <p><strong>Est. Time to Level:</strong> <span data-xp-eta>&mdash;</span></p>
-            </div>
-          </div>
+          </section>
         </article>
       </main>
     </div>
-    <script>
-      document.addEventListener("DOMContentLoaded", function () {
-        const XP_THRESHOLDS = [
-          2000, 4000, 6000, 8000, 10000, 15000, 20000, 25000, 30000, 40000, 50000, 60000, 80000, 100000, 120000, 140000,
-          160000, 200000, 300000, 400000, 500000, 600000, 750000, 1000000, 1250000, 1500000, 1750000, 2000000, 2250000,
-          2500000, 2750000, 3000000, 3500000, 4000000, 4500000, 5000000, 5500000, 6000000, 7000000, 8000000, 9000000,
-          10000000, 11000000, 12000000, 13000000, 14000000, 15000000, 16000000, 17000000, 18000000, 19000000, 20000000,
-          21000000, 22000000, 23000000, 24000000, 26000000, 28000000, 30000000, 32000000, 34000000, 36000000, 38000000,
-          40000000, 42000000, 44000000, 46000000, 48000000, 51000000, 54000000, 57000000, 60000000, 63000000, 66000000,
-          69000000, 72000000, 75000000, 78000000, 81000000, 84000000, 87000000, 90000000, 93000000, 96000000, 100000000,
-          104000000, 108000000, 113000000, 118000000, 123000000, 128000000, 133000000, 138000000, 143000000, 148000000,
-          153000000, 160000000, 168000000, 178000000, 350000000, 700000000, 1050000000, 1400000000, 1750000000
-        ];
-
-        const levelInput = document.getElementById("xp-sim-level");
-        const xpInput = document.getElementById("xp-sim-current-xp");
-        const poolInput = document.getElementById("xp-sim-pool");
-        const minGainInput = document.getElementById("xp-sim-min-gain");
-        const maxGainInput = document.getElementById("xp-sim-max-gain");
-        const speedInput = document.getElementById("xp-sim-speed");
-        const startButton = document.querySelector("[data-xp-start]");
-        const stopButton = document.querySelector("[data-xp-stop]");
-        const levelLabel = document.querySelector("[data-xp-level]");
-        const xpCurrentLabel = document.querySelector("[data-xp-current]");
-        const xpNeededLabel = document.querySelector("[data-xp-needed]");
-        const poolLabel = document.querySelector("[data-xp-pool]");
-        const baseLabel = document.querySelector("[data-xp-base]");
-        const bonusLabel = document.querySelector("[data-xp-bonus]");
-        const totalLabel = document.querySelector("[data-xp-total]");
-        const poolRemainingLabel = document.querySelector("[data-xp-pool-remaining]");
-        const progressLabel = document.querySelector("[data-xp-progress]");
-        const etaLabel = document.querySelector("[data-xp-eta]");
-
-        const minLabel = document.querySelector("[data-xp-min]");
-        const maxLabel = document.querySelector("[data-xp-max]");
-        const minEffectiveLabel = document.querySelector("[data-xp-min-effective]");
-        const maxEffectiveLabel = document.querySelector("[data-xp-max-effective]");
-        const multiplierInput = document.getElementById("xp-sim-multiplier");
-        const multiplierLabel = document.querySelector("[data-xp-multiplier]");
-        const speedLabel = document.querySelector("[data-xp-speed]");
-        const rateLabel = document.querySelector("[data-xp-rate]");
-
-        if (
-          !levelInput ||
-          !xpInput ||
-          !poolInput ||
-          !minGainInput ||
-          !maxGainInput ||
-          !speedInput ||
-          !startButton ||
-          !stopButton ||
-          !levelLabel ||
-          !xpCurrentLabel ||
-          !xpNeededLabel ||
-          !poolLabel ||
-          !baseLabel ||
-          !bonusLabel ||
-          !totalLabel ||
-          !poolRemainingLabel ||
-          !progressLabel ||
-          !etaLabel ||
-          !minLabel ||
-          !maxLabel ||
-          !minEffectiveLabel ||
-          !maxEffectiveLabel ||
-          !multiplierInput ||
-          !multiplierLabel ||
-          !speedLabel ||
-          !rateLabel
-        ) {
-          return;
-        }
-
-        const state = {
-          level: Number(levelInput.value) || 1,
-          xp: Number(xpInput.value) || 0,
-          pool: Number(poolInput.value) || 0,
-          minGain: Number(minGainInput.value) || 150,
-          maxGain: Number(maxGainInput.value) || 235,
-          xpMultiplier: Number(multiplierInput.value) || 1.07,
-          weaponSpeed: Number(speedInput.value) || 1500
-        };
-
-        let simIntervalId = null;
-        let simStartTimestamp = 0;
-        let simAccumulatedXp = 0;
-
-        const formatNumber = (value) => Number(value || 0).toLocaleString();
-
-        const randomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
-
-        const getXpNeeded = (level) => {
-          if (level < 1 || level > XP_THRESHOLDS.length) return null;
-          const nextRequirement = XP_THRESHOLDS[level - 1];
-          const currentRequirement = level > 1 ? XP_THRESHOLDS[level - 2] : 0;
-          return nextRequirement - currentRequirement;
-        };
-
-        const getPoolCap = () => 3;
-
-        const formatDuration = (seconds) => {
-          if (!isFinite(seconds) || seconds <= 0) return "—";
-          const totalSeconds = Math.ceil(seconds);
-          const hours = Math.floor(totalSeconds / 3600);
-          const minutes = Math.floor((totalSeconds % 3600) / 60);
-          const secs = totalSeconds % 60;
-          if (hours > 0) {
-            return `${hours}h ${minutes}m`;
-          }
-          if (minutes > 0) {
-            return `${minutes}m ${secs}s`;
-          }
-          return `${secs}s`;
-        };
-
-        const syncPoolSliderBounds = () => {
-          const cap = getPoolCap();
-          poolInput.max = String(cap);
-          if (state.pool > cap) {
-            state.pool = cap;
-          }
-        };
-
-        const syncXpSliderBounds = () => {
-          const xpNeeded = getXpNeeded(state.level);
-          if (xpNeeded) {
-            xpInput.disabled = false;
-            xpInput.max = String(xpNeeded);
-            const step = Math.max(1, Math.round(xpNeeded / 400));
-            xpInput.step = String(step);
-            if (state.xp > xpNeeded) {
-              state.xp = xpNeeded - step;
-            }
-          } else {
-            xpInput.disabled = true;
-            state.xp = 0;
-          }
-        };
-
-        const normalizeState = () => {
-          while (true) {
-            const xpNeeded = getXpNeeded(state.level);
-            if (!xpNeeded) {
-              state.xp = 0;
-              break;
-            }
-            if (state.xp >= xpNeeded) {
-              state.xp -= xpNeeded;
-              state.level += 1;
-            } else if (state.xp < 0) {
-              state.xp = 0;
-              break;
-            } else {
-              break;
-            }
-          }
-        };
-
-        const updateLabels = () => {
-          const xpNeeded = getXpNeeded(state.level);
-          const effectiveMin = state.minGain * state.xpMultiplier;
-          const effectiveMax = state.maxGain * state.xpMultiplier;
-          levelLabel.textContent = state.level.toString();
-          xpCurrentLabel.textContent = formatNumber(Math.floor(state.xp));
-          xpNeededLabel.textContent = xpNeeded ? formatNumber(xpNeeded) : "Max";
-          poolLabel.textContent = state.pool.toFixed(2);
-          poolRemainingLabel.textContent = `${state.pool.toFixed(2)}`;
-          minLabel.textContent = formatNumber(state.minGain);
-          maxLabel.textContent = formatNumber(state.maxGain);
-          minEffectiveLabel.textContent = formatNumber(Number(effectiveMin.toFixed(1)));
-          maxEffectiveLabel.textContent = formatNumber(Number(effectiveMax.toFixed(1)));
-          multiplierLabel.textContent = `${state.xpMultiplier.toFixed(2)}x`;
-          speedLabel.textContent = state.weaponSpeed.toString();
-          const ticksPerSecond = state.weaponSpeed > 0 ? 1000 / state.weaponSpeed : 0;
-          const averageGain = (effectiveMin + effectiveMax) / 2;
-          const projectedRate = averageGain * ticksPerSecond;
-          rateLabel.textContent = `${formatNumber(Number(projectedRate.toFixed(1)))} xp/s`;
-          if (xpNeeded) {
-            const percent = Math.min(100, (state.xp / xpNeeded) * 100);
-            progressLabel.textContent = `${percent.toFixed(1)}%`;
-          } else {
-            progressLabel.textContent = "Max level";
-          }
-        };
-
-        const updateInputs = () => {
-          levelInput.value = String(state.level);
-          xpInput.value = String(Math.max(0, Math.round(state.xp)));
-          poolInput.value = state.pool.toFixed(2);
-          multiplierInput.value = state.xpMultiplier.toFixed(2);
-        };
-
-        const syncButtons = () => {
-          const hasNextLevel = Boolean(getXpNeeded(state.level));
-          startButton.disabled = Boolean(simIntervalId) || !hasNextLevel;
-          stopButton.disabled = !simIntervalId;
-        };
-
-        const updateEta = () => {
-          if (!simStartTimestamp || simAccumulatedXp <= 0 || !simIntervalId) {
-            etaLabel.textContent = "—";
-            return;
-          }
-          const xpNeeded = getXpNeeded(state.level);
-          if (!xpNeeded) {
-            etaLabel.textContent = "Max level";
-            return;
-          }
-          const xpRemaining = xpNeeded - state.xp;
-          if (xpRemaining <= 0) {
-            etaLabel.textContent = "Level up imminent";
-            return;
-          }
-          const elapsedSeconds = (performance.now() - simStartTimestamp) / 1000;
-          if (elapsedSeconds <= 0) {
-            etaLabel.textContent = "—";
-            return;
-          }
-          const xpPerSecond = simAccumulatedXp / elapsedSeconds;
-          if (xpPerSecond <= 0) {
-            etaLabel.textContent = "—";
-            return;
-          }
-          const seconds = xpRemaining / xpPerSecond;
-          etaLabel.textContent = formatDuration(seconds);
-        };
-
-        const applyExperienceGain = (gain) => {
-          state.xp += gain;
-          while (true) {
-            const xpNeeded = getXpNeeded(state.level);
-            if (!xpNeeded) {
-              state.xp = 0;
-              break;
-            }
-            if (state.xp >= xpNeeded) {
-              state.xp -= xpNeeded;
-              state.level += 1;
-            } else {
-              break;
-            }
-          }
-        };
-
-        const runSimulationTick = () => {
-          const xpNeeded = getXpNeeded(state.level);
-          if (!xpNeeded) {
-            stopSimulation();
-            return;
-          }
-
-          const baseGainRoll = randomInt(state.minGain, state.maxGain);
-          const baseGain = baseGainRoll * state.xpMultiplier;
-          const percentGain = (baseGain / xpNeeded) * 100;
-          let bonusGain = 0;
-          if (state.pool > 0 && percentGain > 0) {
-            const poolPercentAvailable = state.pool * 100;
-            const percentFromPool = Math.min(poolPercentAvailable, percentGain);
-            bonusGain = baseGain * (percentFromPool / percentGain);
-            state.pool = Math.max(0, state.pool - percentFromPool / 100);
-          }
-
-          const totalGain = baseGain + bonusGain;
-          simAccumulatedXp += totalGain;
-          applyExperienceGain(totalGain);
-
-          syncPoolSliderBounds();
-          syncXpSliderBounds();
-          updateLabels();
-          updateInputs();
-          syncButtons();
-          baseLabel.textContent = formatNumber(Number(baseGain.toFixed(1)));
-          bonusLabel.textContent = formatNumber(Number(bonusGain.toFixed(1)));
-          totalLabel.textContent = formatNumber(Number(totalGain.toFixed(1)));
-          poolRemainingLabel.textContent = state.pool.toFixed(2);
-          updateEta();
-        };
-
-        const startSimulation = () => {
-          if (simIntervalId || !getXpNeeded(state.level)) return;
-          simStartTimestamp = performance.now();
-          simAccumulatedXp = 0;
-          simIntervalId = setInterval(runSimulationTick, state.weaponSpeed);
-          syncButtons();
-        };
-
-        const stopSimulation = () => {
-          if (!simIntervalId) {
-            syncButtons();
-            return;
-          }
-          clearInterval(simIntervalId);
-          simIntervalId = null;
-          syncButtons();
-        };
-
-        levelInput.addEventListener("input", () => {
-          stopSimulation();
-          state.level = Number(levelInput.value) || 1;
-          normalizeState();
-          syncPoolSliderBounds();
-          syncXpSliderBounds();
-          updateLabels();
-          updateInputs();
-          syncButtons();
-        });
-
-        xpInput.addEventListener("input", () => {
-          stopSimulation();
-          state.xp = Number(xpInput.value) || 0;
-          normalizeState();
-          syncPoolSliderBounds();
-          syncXpSliderBounds();
-          updateLabels();
-          updateInputs();
-          syncButtons();
-        });
-
-        poolInput.addEventListener("input", () => {
-          stopSimulation();
-          const cap = getPoolCap();
-          state.pool = Math.min(cap, Math.max(0, Number(poolInput.value) || 0));
-          poolLabel.textContent = state.pool.toFixed(2);
-          poolInput.value = state.pool.toFixed(2);
-          updateLabels();
-          syncButtons();
-        });
-
-        const clampGainRange = () => {
-          if (state.minGain > state.maxGain) {
-            state.maxGain = state.minGain;
-          }
-          minGainInput.value = String(state.minGain);
-          maxGainInput.value = String(state.maxGain);
-          updateLabels();
-        };
-
-        minGainInput.addEventListener("input", () => {
-          stopSimulation();
-          state.minGain = Math.max(0, Math.min(235, Number(minGainInput.value) || 0));
-          if (state.minGain > state.maxGain) {
-            state.maxGain = state.minGain;
-          }
-          clampGainRange();
-        });
-
-        maxGainInput.addEventListener("input", () => {
-          stopSimulation();
-          state.maxGain = Math.max(0, Math.min(235, Number(maxGainInput.value) || 0));
-          if (state.maxGain < state.minGain) {
-            state.minGain = state.maxGain;
-          }
-          clampGainRange();
-        });
-
-        multiplierInput.addEventListener("input", () => {
-          stopSimulation();
-          const rawValue = Number(multiplierInput.value);
-          const clampedValue = Math.min(10.9, Math.max(1.07, Number.isFinite(rawValue) ? rawValue : 1.07));
-          state.xpMultiplier = Number(clampedValue.toFixed(2));
-          multiplierInput.value = state.xpMultiplier.toFixed(2);
-          updateLabels();
-        });
-
-        speedInput.addEventListener("input", () => {
-          stopSimulation();
-          let value = Number(speedInput.value) || 1500;
-          const allowed = [750, 1000, 1250, 1500];
-          if (!allowed.includes(value)) {
-            value = allowed.reduce((prev, curr) => (Math.abs(curr - value) < Math.abs(prev - value) ? curr : prev), allowed[0]);
-          }
-          state.weaponSpeed = value;
-          speedInput.value = String(value);
-          updateLabels();
-        });
-
-        startButton.addEventListener("click", startSimulation);
-        stopButton.addEventListener("click", stopSimulation);
-
-        // Initial setup
-        // Initial setup with randomized values
-        state.level = randomInt(1, 105);
-        const xpNeededInitial = getXpNeeded(state.level);
-        state.xp = xpNeededInitial ? randomInt(0, Math.max(0, Math.round(xpNeededInitial * 0.8))) : 0;
-        const poolCapInitial = getPoolCap();
-        state.pool = Number((Math.random() * poolCapInitial).toFixed(2));
-        state.minGain = randomInt(0, 200);
-        state.maxGain = randomInt(state.minGain, 235);
-        state.xpMultiplier = Number((Math.random() * (10.9 - 1.07) + 1.07).toFixed(2));
-        const allowedSpeeds = [750, 1000, 1250, 1500];
-        state.weaponSpeed = allowedSpeeds[randomInt(0, allowedSpeeds.length - 1)];
-        minGainInput.value = String(state.minGain);
-        maxGainInput.value = String(state.maxGain);
-        multiplierInput.value = state.xpMultiplier.toFixed(2);
-        speedInput.value = String(state.weaponSpeed);
-
-        normalizeState();
-        syncPoolSliderBounds();
-        syncXpSliderBounds();
-        updateLabels();
-        updateInputs();
-        syncButtons();
-        baseLabel.textContent = "0";
-        bonusLabel.textContent = "0";
-        totalLabel.textContent = "0";
-        etaLabel.textContent = "—";
-      });
-    </script>
   </body>
 </html>
