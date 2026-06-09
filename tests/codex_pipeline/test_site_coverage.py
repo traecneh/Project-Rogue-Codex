@@ -83,9 +83,11 @@ class SiteCoverageTests(unittest.TestCase):
         self.assertNotIn("pages/stats/skills.html", unsmoked)
         self.assertNotIn("pages/stats/races.html", unvalidated)
         self.assertNotIn("pages/stats/races.html", unsmoked)
+        self.assertNotIn("pages/stats/strength.html", unvalidated)
+        self.assertNotIn("pages/stats/strength.html", unsmoked)
         self.assertNotIn("pages/General/endless-hunt.html", linked_pages)
-        self.assertIn("pages/stats/strength.html", unvalidated)
-        self.assertIn("pages/stats/strength.html", unsmoked)
+        self.assertIn("pages/stats/constitution.html", unvalidated)
+        self.assertIn("pages/stats/constitution.html", unsmoked)
 
     def test_cli_prints_site_coverage_report(self):
         from tools.codex_pipeline import cli

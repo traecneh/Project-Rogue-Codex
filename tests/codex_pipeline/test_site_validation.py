@@ -1866,6 +1866,87 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn("function updateRacePreview", script)
         self.assertIn('document.addEventListener("DOMContentLoaded"', script)
 
+    def test_strength_page_has_compact_formula_reference(self):
+        from tools.codex_pipeline import cli
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        html_path = REPO_ROOT / "pages" / "stats" / "strength.html"
+        css_path = REPO_ROOT / "css" / "strength.css"
+        script_path = REPO_ROOT / "js" / "strength.js"
+        html = html_path.read_text(encoding="utf-8")
+        css = css_path.read_text(encoding="utf-8") if css_path.exists() else ""
+        script = script_path.read_text(encoding="utf-8") if script_path.exists() else ""
+
+        self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
+        self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
+        self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
+        self.assertIn('<link rel="stylesheet" href="css/strength.css" />', html)
+        self.assertIn('<script src="js/strength.js" defer></script>', html)
+        self.assertNotIn("<style>", html)
+        self.assertEqual(
+            [],
+            [
+                block.strip()
+                for block in re.findall(
+                    r"<script\b(?![^>]*\bsrc\s*=)[^>]*>([\s\S]*?)</script>",
+                    html,
+                    flags=re.IGNORECASE,
+                )
+                if block.strip()
+            ],
+        )
+        self.assertNotRegex(html, r"\sstyle\s*=")
+
+        for expected in [
+            "Strength at a Glance",
+            "Strength Calculator",
+            "Weight Benchmarks",
+            "Bleed Threshold",
+            "Build Context",
+            "Perks",
+            "Equipment Reference",
+            "Related Pages",
+            "Melee Multiplier",
+            "Max Weight",
+            "Max Health",
+            "100 Base Strength",
+            "7.5% of hit damage",
+            "data-strength-skill-slider",
+            "data-strength-str-slider",
+            "data-strength-dex-slider",
+            "data-strength-level-slider",
+            "data-strength-con-slider",
+            "data-strength-hit-slider",
+            "data-strength-multiplier",
+            "data-strength-max-weight",
+            "data-strength-max-health",
+            "data-strength-bleed-chance",
+            "data-strength-bleed-damage",
+            "data-strength-weight-chart",
+            "data-perk-stats=\"strength\"",
+            "data-weapon-specialty=\"Strength\"",
+            "pages/stats/races.html",
+            "pages/stats/skills.html",
+            "pages/stats/constitution.html",
+            "pages/stats/dexterity.html",
+            "pages/General/build-planner.html",
+            "pages/items/weapons.html",
+        ]:
+            self.assertIn(expected, html)
+
+        self.assertIn(".strength-summary-grid", css)
+        self.assertIn(".strength-calculator-widget", css)
+        self.assertIn(".strength-output-grid", css)
+        self.assertIn(".strength-benchmark-grid", css)
+        self.assertIn(".strength-context-grid", css)
+        self.assertIn(".strength-link-grid", css)
+
+        self.assertIn("const STRENGTH_WEIGHT_BENCHMARKS", script)
+        self.assertIn("function initStrengthCalculator", script)
+        self.assertIn("function renderWeightBenchmarks", script)
+        self.assertIn("function updateStrengthCalculator", script)
+        self.assertIn('document.addEventListener("DOMContentLoaded"', script)
+
     def test_crafting_page_has_compact_armor_crafting_reference(self):
         from tools.codex_pipeline import cli
         from tools.codex_pipeline.config import REPO_ROOT

@@ -85,6 +85,13 @@ function getPreferredScrollBehavior() {
   }
 }
 
+function runOptionalInitializer(name) {
+  const initializer = window[name];
+  if (typeof initializer === "function") {
+    initializer();
+  }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   const sidebarRoot = document.getElementById("sidebar-root");
   const navPromise = fetch("nav.html")
@@ -104,19 +111,19 @@ document.addEventListener("DOMContentLoaded", () => {
     .catch((error) => console.error(error));
 
   navPromise.finally(() => {
-    initializeWeightSlider();
-    initializeMultiplierWidget();
-    initializeHealthWidget();
-    initializeRegenWidget();
-    initializeBleedWidget();
-    initializeDexCritWidget();
-    initializeDexDrWidget();
-    initializeWeaponSpecialtyReferences();
-    initializeKeywordLinks();
-    initializePerkAnchors();
-    initializePerkEmbeds();
-    initializeCursorToggle();
-    initializeRarityRoller();
+    runOptionalInitializer("initializeWeightSlider");
+    runOptionalInitializer("initializeMultiplierWidget");
+    runOptionalInitializer("initializeHealthWidget");
+    runOptionalInitializer("initializeRegenWidget");
+    runOptionalInitializer("initializeBleedWidget");
+    runOptionalInitializer("initializeDexCritWidget");
+    runOptionalInitializer("initializeDexDrWidget");
+    runOptionalInitializer("initializeWeaponSpecialtyReferences");
+    runOptionalInitializer("initializeKeywordLinks");
+    runOptionalInitializer("initializePerkAnchors");
+    runOptionalInitializer("initializePerkEmbeds");
+    runOptionalInitializer("initializeCursorToggle");
+    runOptionalInitializer("initializeRarityRoller");
   });
 });
 

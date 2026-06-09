@@ -176,6 +176,12 @@ async function main() {
       failures.push(`SMOKE ERROR races: ${formatError(error)}`);
     }
     try {
+      await runStrengthSpec(browser, baseUrl);
+      console.log("SMOKE OK strength: formulas, calculator, benchmarks, related links");
+    } catch (error) {
+      failures.push(`SMOKE ERROR strength: ${formatError(error)}`);
+    }
+    try {
       await runGuildSpec(browser, baseUrl);
       console.log("SMOKE OK guild: management reference, party preview, related links");
     } catch (error) {
@@ -214,7 +220,7 @@ async function main() {
     failures.forEach((failure) => console.error(failure));
     process.exit(1);
   }
-  console.log(`SMOKE OK site: ${smokeSpecs.length + 23} page(s) checked at ${baseUrl}`);
+  console.log(`SMOKE OK site: ${smokeSpecs.length + 24} page(s) checked at ${baseUrl}`);
 }
 
 async function importPlaywright() {
@@ -1701,6 +1707,147 @@ async function readRacesPreviewState(page) {
     selected: document.querySelector("[data-race-selected-name]")?.textContent?.trim() || "",
     status: document.querySelector("[data-race-requirement-status]")?.textContent?.trim() || "",
     tundrianPressed: document.querySelector('[data-race-option="tundrian"]')?.getAttribute("aria-pressed") || "",
+  }));
+}
+
+async function runStrengthSpec(browser, baseUrl) {
+  const page = await browser.newPage();
+  page.setDefaultTimeout(timeoutMs);
+  const runtimeErrors = [];
+  page.on("console", (message) => {
+    const text = message.text();
+    if (message.type() === "error" && !text.startsWith("Failed to load resource")) runtimeErrors.push(text);
+  });
+  page.on("pageerror", (error) => runtimeErrors.push(formatError(error)));
+
+  try {
+    await page.goto(joinUrl(baseUrl, "/pages/stats/strength.html"), { waitUntil: "load" });
+    await page.locator(".strength-calculator-widget").waitFor({ state: "visible" });
+    const pageText = (await page.locator(".main-content").textContent()).trim();
+    for (const expected of [
+      "Strength at a Glance",
+      "Strength Calculator",
+      "Weight Benchmarks",
+      "Bleed Threshold",
+      "Build Context",
+      "Perks",
+      "Equipment Reference",
+      "Related Pages",
+      "Melee Multiplier",
+      "Max Weight",
+      "Max Health",
+      "100 Base Strength",
+      "7.5% of hit damage",
+    ]) {
+      if (!pageText.includes(expected)) {
+        throw new Error(`Strength page missing "${expected}": "${pageText}"`);
+      }
+    }
+
+    for (const href of [
+      "pages/stats/races.html",
+      "pages/stats/skills.html",
+      "pages/stats/constitution.html",
+      "pages/stats/dexterity.html",
+      "pages/General/build-planner.html",
+      "pages/items/weapons.html",
+    ]) {
+      const count = await page.locator(`.strength-link-grid a[href="${href}"]`).count();
+      if (count !== 1) {
+        throw new Error(`Strength related link expected one "${href}", found ${count}`);
+      }
+    }
+
+    await assertStrengthCalculator(page);
+    await assertMobilePageFirstNavigation(page, baseUrl, "/pages/stats/strength.html");
+
+    if (runtimeErrors.length) {
+      throw new Error(`browser errors: ${runtimeErrors.join("; ")}`);
+    }
+  } finally {
+    await page.close();
+  }
+}
+
+async function assertStrengthCalculator(page) {
+  await page.locator("[data-strength-weight-chart] .strength-benchmark-card").first().waitFor({ state: "visible" });
+  const benchmarkCount = await page.locator("[data-strength-weight-chart] .strength-benchmark-card").count();
+  if (benchmarkCount !== 7) {
+    throw new Error(`Strength page expected 7 weight benchmark cards, found ${benchmarkCount}`);
+  }
+
+  let state = await readStrengthCalculatorState(page);
+  for (const [key, expected] of Object.entries({
+    bleedChance: "10.0%",
+    bleedDamage: "7.5",
+    maxHealth: "2,470",
+    maxWeight: "450",
+    multiplier: "3.25x",
+    strength: "100",
+  })) {
+    if (state[key] !== expected) {
+      throw new Error(`Strength calculator expected ${key}="${expected}", got "${state[key]}"`);
+    }
+  }
+
+  await setStrengthRange(page, "[data-strength-str-slider]", 150);
+  await page.waitForFunction(
+    () => document.querySelector("[data-strength-max-weight]")?.textContent?.trim() === "600",
+    undefined,
+    { timeout: timeoutMs }
+  );
+  state = await readStrengthCalculatorState(page);
+  for (const [key, expected] of Object.entries({
+    bleedChance: "15.0%",
+    maxHealth: "2,570",
+    maxWeight: "600",
+    multiplier: "3.75x",
+    strength: "150",
+  })) {
+    if (state[key] !== expected) {
+      throw new Error(`Strength calculator after STR 150 expected ${key}="${expected}", got "${state[key]}"`);
+    }
+  }
+
+  await setStrengthRange(page, "[data-strength-hit-slider]", 250);
+  await page.waitForFunction(
+    () => document.querySelector("[data-strength-bleed-damage]")?.textContent?.trim() === "18.75",
+    undefined,
+    { timeout: timeoutMs }
+  );
+
+  await setStrengthRange(page, "[data-strength-str-slider]", 80);
+  await page.waitForFunction(
+    () => document.querySelector("[data-strength-bleed-note]")?.textContent?.trim() === "Requires 100 base Strength.",
+    undefined,
+    { timeout: timeoutMs }
+  );
+  state = await readStrengthCalculatorState(page);
+  if (state.bleedChance !== "0.0%" || state.bleedDamage !== "0" || state.note !== "Requires 100 base Strength.") {
+    throw new Error(`Strength calculator should lock bleed below 100 base STR: ${JSON.stringify(state)}`);
+  }
+}
+
+async function setStrengthRange(page, selector, value) {
+  await page.locator(selector).evaluate((input, nextValue) => {
+    input.value = String(nextValue);
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  }, value);
+}
+
+async function readStrengthCalculatorState(page) {
+  return await page.evaluate(() => ({
+    bleedChance: document.querySelector("[data-strength-bleed-chance]")?.textContent?.trim() || "",
+    bleedDamage: document.querySelector("[data-strength-bleed-damage]")?.textContent?.trim() || "",
+    dexterity: document.querySelector("[data-strength-dex]")?.textContent?.trim() || "",
+    hit: document.querySelector("[data-strength-hit]")?.textContent?.trim() || "",
+    level: document.querySelector("[data-strength-level]")?.textContent?.trim() || "",
+    maxHealth: document.querySelector("[data-strength-max-health]")?.textContent?.trim() || "",
+    maxWeight: document.querySelector("[data-strength-max-weight]")?.textContent?.trim() || "",
+    multiplier: document.querySelector("[data-strength-multiplier]")?.textContent?.trim() || "",
+    note: document.querySelector("[data-strength-bleed-note]")?.textContent?.trim() || "",
+    skill: document.querySelector("[data-strength-skill]")?.textContent?.trim() || "",
+    strength: document.querySelector("[data-strength-str]")?.textContent?.trim() || "",
   }));
 }
 

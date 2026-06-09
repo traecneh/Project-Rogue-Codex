@@ -1,0 +1,122 @@
+.strength-summary-grid,
+.strength-output-grid,
+.strength-benchmark-grid,
+.strength-context-grid,
+.strength-link-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.strength-summary-grid,
+.strength-context-grid {
+  grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
+}
+
+.strength-calculator-widget,
+.strength-benchmark-card,
+.strength-context-card {
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  background: var(--bg-panel-dark);
+}
+
+.strength-calculator-widget {
+  display: grid;
+  gap: 0.95rem;
+  padding: 1rem;
+}
+
+.strength-control-grid {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.strength-control-grid > * {
+  min-width: 0;
+}
+
+.strength-control-grid label {
+  color: var(--text-main);
+  font-weight: 700;
+}
+
+.strength-control-grid input[type="range"] {
+  box-sizing: border-box;
+  margin: 0;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+}
+
+.strength-output-grid {
+  grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+}
+
+.strength-output-grid .stat-output {
+  margin-top: 0;
+}
+
+.strength-note {
+  grid-column: span 2;
+}
+
+.strength-benchmark-grid {
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+}
+
+.strength-benchmark-card,
+.strength-context-card {
+  padding: 0.85rem;
+}
+
+.strength-benchmark-card h3,
+.strength-context-card h3 {
+  margin: 0.15rem 0 0.35rem;
+}
+
+.strength-benchmark-card p,
+.strength-context-card p {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.strength-bar-track {
+  height: 0.55rem;
+  margin-top: 0.65rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.strength-bar-fill {
+  display: block;
+  height: 100%;
+  width: var(--fill, 0%);
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--accent), var(--accent-blue));
+}
+
+.strength-link-grid {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.strength-link-grid a {
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  background: var(--bg-panel-dark);
+  color: var(--text-main);
+  padding: 0.65rem 0.75rem;
+  text-decoration: none;
+}
+
+.strength-link-grid a:hover,
+.strength-link-grid a:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+@media (max-width: 620px) {
+  .strength-note {
+    grid-column: auto;
+  }
+}
