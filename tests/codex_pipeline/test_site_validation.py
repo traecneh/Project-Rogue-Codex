@@ -195,7 +195,7 @@ class SiteValidationTests(unittest.TestCase):
                 self.assertNotIn("function attachTooltipPinning", script)
                 self.assertNotIn("function unpinTooltip", script)
 
-    def test_home_page_has_wipe_status_and_timeline_filters(self):
+    def test_home_page_has_timeline_filters_without_countdown(self):
         from tools.codex_pipeline import cli
         from tools.codex_pipeline.config import REPO_ROOT
 
@@ -250,13 +250,14 @@ class SiteValidationTests(unittest.TestCase):
             "placeholder date",
             "LIVE!",
             "Released on January 15th",
+            "Next Wipe",
+            "Awaiting official date",
+            "No official wipe date has been announced",
+            "wipe-status",
         ]:
             self.assertNotIn(removed, html)
 
         for expected in [
-            "Next Wipe",
-            "Awaiting official date",
-            "No official wipe date has been announced",
             "Project Rogue Timeline",
             "Timeline Filter",
             "data-home-timeline",
@@ -285,9 +286,15 @@ class SiteValidationTests(unittest.TestCase):
             ".home-filter-bar",
             ".home-timeline",
             ".home-link-grid",
-            ".wipe-status-panel",
         ]:
             self.assertIn(expected, css)
+
+        for removed in [
+            ".wipe-status-panel",
+            ".wipe-status-grid",
+            ".wipe-status-card",
+        ]:
+            self.assertNotIn(removed, css)
 
         for removed in [
             "const CODEX_MANIFEST_URL",
