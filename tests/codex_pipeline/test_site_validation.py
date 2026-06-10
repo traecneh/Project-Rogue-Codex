@@ -195,7 +195,7 @@ class SiteValidationTests(unittest.TestCase):
                 self.assertNotIn("function attachTooltipPinning", script)
                 self.assertNotIn("function unpinTooltip", script)
 
-    def test_home_page_has_countdown_and_timeline_filters(self):
+    def test_home_page_has_wipe_status_and_timeline_filters(self):
         from tools.codex_pipeline import cli
         from tools.codex_pipeline.config import REPO_ROOT
 
@@ -211,6 +211,7 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
         self.assertIn('<link rel="stylesheet" href="css/home.css" />', html)
         self.assertIn('<script src="js/home.js" defer></script>', html)
+        self.assertNotIn('<script src="js/release-countdown.js" defer></script>', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -242,11 +243,20 @@ class SiteValidationTests(unittest.TestCase):
             "pages/items/armors.html",
             "pages/enemies/monsters.html",
             "pages/systems/perks.html",
+            "Nocturne Blight",
+            "data-release-countdown",
+            "data-target-utc",
+            "2026-01-15",
+            "placeholder date",
+            "LIVE!",
+            "Released on January 15th",
         ]:
             self.assertNotIn(removed, html)
 
         for expected in [
-            "Nocturne Blight",
+            "Next Wipe",
+            "Awaiting official date",
+            "No official wipe date has been announced",
             "Project Rogue Timeline",
             "Timeline Filter",
             "data-home-timeline",
@@ -275,6 +285,7 @@ class SiteValidationTests(unittest.TestCase):
             ".home-filter-bar",
             ".home-timeline",
             ".home-link-grid",
+            ".wipe-status-panel",
         ]:
             self.assertIn(expected, css)
 

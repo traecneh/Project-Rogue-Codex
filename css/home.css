@@ -275,6 +275,34 @@
   color: rgba(255, 214, 90, 0.95);
 }
 
+.wipe-status-panel {
+  border-color: rgba(255, 214, 90, 0.34);
+  background:
+    linear-gradient(135deg, rgba(255, 214, 90, 0.1), rgba(90, 176, 255, 0.08) 58%, rgba(90, 176, 255, 0)),
+    radial-gradient(circle at top left, #232a36, #10141b 70%);
+}
+
+.wipe-status-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.wipe-status-card {
+  min-width: 0;
+  padding: 0.75rem 0.8rem;
+  border: 1px solid rgba(120, 128, 140, 0.32);
+  border-radius: 8px;
+  background: rgba(11, 15, 22, 0.38);
+}
+
+.wipe-status-card strong {
+  display: block;
+  margin-top: 0.18rem;
+  color: #ffffff;
+  line-height: 1.25;
+}
+
 .countdown-flip {
   display: flex;
   flex-wrap: wrap;
@@ -477,6 +505,10 @@
 }
 
 @media (max-width: 700px) {
+  .wipe-status-grid {
+    grid-template-columns: 1fr;
+  }
+
   .home-timeline {
     padding-left: 1.6rem;
   }

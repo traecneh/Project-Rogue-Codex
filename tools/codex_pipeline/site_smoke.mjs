@@ -70,7 +70,7 @@ async function main() {
     }
     try {
       await runHomeSpec(browser, baseUrl);
-      console.log("SMOKE OK home: countdown, timeline filter, related links");
+      console.log("SMOKE OK home: wipe status, timeline filter, related links");
     } catch (error) {
       failures.push(`SMOKE ERROR home: ${formatError(error)}`);
     }
@@ -335,11 +335,13 @@ async function runHomeSpec(browser, baseUrl) {
 
   try {
     await page.goto(joinUrl(baseUrl, "/index.html"), { waitUntil: "load" });
-    await page.locator(".countdown-panel").waitFor({ state: "visible" });
+    await page.locator(".wipe-status-panel").waitFor({ state: "visible" });
     await page.locator(".home-timeline").waitFor({ state: "visible" });
     const pageText = (await page.locator(".main-content").textContent()).trim();
     for (const expected of [
-      "Nocturne Blight",
+      "Next Wipe",
+      "Awaiting official date",
+      "No official wipe date has been announced",
       "Project Rogue Timeline",
       "Dransik Classic",
       "Project Rogue Begins",

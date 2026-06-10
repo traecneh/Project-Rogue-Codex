@@ -11,7 +11,6 @@
     <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
     <link rel="stylesheet" href="css/styles.css" />
     <link rel="stylesheet" href="css/home.css" />
-    <script src="js/release-countdown.js" defer></script>
     <script src="js/site-search.js" defer></script>
     <script src="js/weapon-specialty.js" defer></script>
     <script src="js/stat-widgets.js" defer></script>
@@ -34,91 +33,27 @@
           </p>
         </header>
 
-        <section class="content-section release-countdown" aria-labelledby="release-countdown-title">
-          <div
-            class="countdown-panel"
-            data-release-countdown
-            data-target-utc="2026-01-15T19:00:00Z"
-            data-live-kicker="LIVE!"
-            data-live-subtitle="Released on January 15th 2 PM ET"
-            data-live-prefix="Live for:"
-            data-live-aria-label="Time since release"
-          >
+        <section class="content-section wipe-status" aria-labelledby="wipe-status-title">
+          <div class="countdown-panel wipe-status-panel">
             <div class="countdown-meta">
               <div class="countdown-heading">
-                <div class="countdown-kicker">Project Rogue</div>
-                <h2 id="release-countdown-title" class="countdown-title">Nocturne Blight</h2>
+                <div class="countdown-kicker">Next Wipe</div>
+                <h2 id="wipe-status-title" class="countdown-title">Awaiting official date</h2>
                 <p class="countdown-subtitle">
-                  Releases January 15th 2 PM ET <span class="countdown-accent">(This is a placeholder date)</span>
+                  No official wipe date has been announced. This panel will become a countdown once the next wipe is
+                  confirmed.
                 </p>
               </div>
             </div>
 
-            <div class="countdown-flip" aria-label="Time until release">
-              <div class="flip-unit flip-unit-days" data-flip-unit="days">
-                <div class="flip-digits flip-digits-days" aria-hidden="true">
-                  <div class="flip-digit flip-digit-wide" data-flip-digit="days">
-                    <div class="flip-digit-top"><span class="flip-digit-value">--</span></div>
-                    <div class="flip-digit-bottom"><span class="flip-digit-value">--</span></div>
-                  </div>
-                </div>
-                <div class="flip-unit-label">Days</div>
+            <div class="wipe-status-grid" role="list" aria-label="Next wipe status">
+              <div class="wipe-status-card" role="listitem">
+                <span class="stat-label">Status</span>
+                <strong>Waiting on factual update</strong>
               </div>
-
-              <div class="flip-separator" aria-hidden="true">:</div>
-
-              <div class="flip-clock" role="group" aria-label="Hours minutes seconds remaining">
-                <div class="flip-unit" data-flip-unit="hours">
-                  <div class="flip-digits" aria-hidden="true">
-                    <div class="flip-digit" data-flip-digit="hours-tens">
-                      <div class="flip-digit-top"><span class="flip-digit-value">0</span></div>
-                      <div class="flip-digit-bottom"><span class="flip-digit-value">0</span></div>
-                    </div>
-                    <div class="flip-digit" data-flip-digit="hours-ones">
-                      <div class="flip-digit-top"><span class="flip-digit-value">0</span></div>
-                      <div class="flip-digit-bottom"><span class="flip-digit-value">0</span></div>
-                    </div>
-                  </div>
-                  <div class="flip-unit-label">Hours</div>
-                </div>
-
-                <div class="flip-separator" aria-hidden="true">:</div>
-
-                <div class="flip-unit" data-flip-unit="minutes">
-                  <div class="flip-digits" aria-hidden="true">
-                    <div class="flip-digit" data-flip-digit="minutes-tens">
-                      <div class="flip-digit-top"><span class="flip-digit-value">0</span></div>
-                      <div class="flip-digit-bottom"><span class="flip-digit-value">0</span></div>
-                    </div>
-                    <div class="flip-digit" data-flip-digit="minutes-ones">
-                      <div class="flip-digit-top"><span class="flip-digit-value">0</span></div>
-                      <div class="flip-digit-bottom"><span class="flip-digit-value">0</span></div>
-                    </div>
-                  </div>
-                  <div class="flip-unit-label">Minutes</div>
-                </div>
-
-                <div class="flip-separator" aria-hidden="true">:</div>
-
-                <div class="flip-unit" data-flip-unit="seconds">
-                  <div class="flip-digits" aria-hidden="true">
-                    <div class="flip-digit" data-flip-digit="seconds-tens">
-                      <div class="flip-digit-top"><span class="flip-digit-value">0</span></div>
-                      <div class="flip-digit-bottom"><span class="flip-digit-value">0</span></div>
-                    </div>
-                    <div class="flip-digit" data-flip-digit="seconds-ones">
-                      <div class="flip-digit-top"><span class="flip-digit-value">0</span></div>
-                      <div class="flip-digit-bottom"><span class="flip-digit-value">0</span></div>
-                    </div>
-                  </div>
-                  <div class="flip-unit-label">Seconds</div>
-                </div>
-              </div>
-
-              <div class="sr-only">
-                <span data-countdown-prefix>Remaining:</span> <span data-countdown-days>--</span> days
-                <span data-countdown-hours>--</span> hours <span data-countdown-minutes>--</span> minutes
-                <span data-countdown-seconds>--</span> seconds.
+              <div class="wipe-status-card" role="listitem">
+                <span class="stat-label">Countdown</span>
+                <strong>Paused until announced</strong>
               </div>
             </div>
           </div>
