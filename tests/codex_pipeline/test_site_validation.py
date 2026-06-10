@@ -195,7 +195,7 @@ class SiteValidationTests(unittest.TestCase):
                 self.assertNotIn("function attachTooltipPinning", script)
                 self.assertNotIn("function unpinTooltip", script)
 
-    def test_home_page_has_compact_gateway_and_timeline_filters(self):
+    def test_home_page_has_countdown_and_timeline_filters(self):
         from tools.codex_pipeline import cli
         from tools.codex_pipeline.config import REPO_ROOT
 
@@ -226,7 +226,7 @@ class SiteValidationTests(unittest.TestCase):
         )
         self.assertNotRegex(html, r"\sstyle\s*=")
 
-        for expected in [
+        for removed in [
             "Codex Command Center",
             "Codex Entry Points",
             "Data Pipeline Snapshot",
@@ -236,6 +236,17 @@ class SiteValidationTests(unittest.TestCase):
             "data-freshness-total-records",
             "data-freshness-total-assets",
             "data-freshness-content-hash",
+            "pages/General/play-the-game.html",
+            "pages/General/build-planner.html",
+            "pages/items/weapons.html",
+            "pages/items/armors.html",
+            "pages/enemies/monsters.html",
+            "pages/systems/perks.html",
+        ]:
+            self.assertNotIn(removed, html)
+
+        for expected in [
+            "Nocturne Blight",
             "Project Rogue Timeline",
             "Timeline Filter",
             "data-home-timeline",
@@ -245,35 +256,38 @@ class SiteValidationTests(unittest.TestCase):
             "Dransik Classic",
             "Project Rogue Begins",
             "Fresh Wipes &amp; Live Upkeep",
-            "pages/General/play-the-game.html",
-            "pages/General/build-planner.html",
-            "pages/items/weapons.html",
-            "pages/items/armors.html",
-            "pages/enemies/monsters.html",
-            "pages/systems/perks.html",
             "pages/stats/resistances.html",
             "https://traecneh.github.io/Project-Rogue-Map/",
         ]:
             self.assertIn(expected, html)
 
-        for expected in [
+        for removed in [
             ".home-hero",
             ".home-entry-grid",
             ".home-pipeline-grid",
             ".home-freshness-panel",
             ".home-freshness-grid",
+            ".home-summary-grid",
+        ]:
+            self.assertNotIn(removed, css)
+
+        for expected in [
             ".home-filter-bar",
             ".home-timeline",
             ".home-link-grid",
         ]:
             self.assertIn(expected, css)
 
-        for expected in [
-            "const HOME_TIMELINE_FILTERS",
+        for removed in [
             "const CODEX_MANIFEST_URL",
             "function initCodexFreshness",
             "function renderCodexFreshness",
             "data-freshness-content-hash",
+        ]:
+            self.assertNotIn(removed, script)
+
+        for expected in [
+            "const HOME_TIMELINE_FILTERS",
             "function initHomeTimelineFilters",
             "function updateHomeTimelineFilter",
             "data-era-filter",

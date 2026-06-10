@@ -70,7 +70,7 @@ async function main() {
     }
     try {
       await runHomeSpec(browser, baseUrl);
-      console.log("SMOKE OK home: gateway links, freshness, countdown, timeline filter");
+      console.log("SMOKE OK home: countdown, timeline filter, related links");
     } catch (error) {
       failures.push(`SMOKE ERROR home: ${formatError(error)}`);
     }
@@ -335,13 +335,11 @@ async function runHomeSpec(browser, baseUrl) {
 
   try {
     await page.goto(joinUrl(baseUrl, "/index.html"), { waitUntil: "load" });
-    await page.locator(".home-entry-grid").waitFor({ state: "visible" });
     await page.locator(".countdown-panel").waitFor({ state: "visible" });
+    await page.locator(".home-timeline").waitFor({ state: "visible" });
     const pageText = (await page.locator(".main-content").textContent()).trim();
     for (const expected of [
-      "Codex Command Center",
-      "Codex Entry Points",
-      "Data Pipeline Snapshot",
+      "Nocturne Blight",
       "Project Rogue Timeline",
       "Dransik Classic",
       "Project Rogue Begins",
@@ -349,20 +347,6 @@ async function runHomeSpec(browser, baseUrl) {
     ]) {
       if (!pageText.includes(expected)) {
         throw new Error(`Home page missing "${expected}": "${pageText}"`);
-      }
-    }
-
-    for (const href of [
-      "pages/General/play-the-game.html",
-      "pages/General/build-planner.html",
-      "pages/items/weapons.html",
-      "pages/items/armors.html",
-      "pages/enemies/monsters.html",
-      "pages/systems/perks.html",
-    ]) {
-      const count = await page.locator(`.home-entry-grid a[href="${href}"]`).count();
-      if (count !== 1) {
-        throw new Error(`Home entry link expected one "${href}", found ${count}`);
       }
     }
 
@@ -380,7 +364,6 @@ async function runHomeSpec(browser, baseUrl) {
       }
     }
 
-    await assertHomeFreshness(page);
     await assertHomeTimelineFilter(page, "all", 10, ["Dransik Classic", "Fresh Wipes & Live Upkeep"], []);
     await page.locator(PROJECT_ROGUE_FILTER_SELECTOR).waitFor({ state: "visible" });
     await assertHomeTimelineFilter(page, "project-rogue", 2, ["Project Rogue Begins", "Fresh Wipes & Live Upkeep"], [
@@ -396,36 +379,6 @@ async function runHomeSpec(browser, baseUrl) {
     }
   } finally {
     await page.close();
-  }
-}
-
-async function assertHomeFreshness(page) {
-  await page.locator(".home-freshness-panel").waitFor({ state: "visible" });
-  await page.waitForFunction(
-    () => {
-      const hash = document.querySelector("[data-freshness-content-hash]")?.textContent?.trim() || "";
-      return hash.length >= 12 && hash !== "Unavailable";
-    },
-    {},
-    { timeout: timeoutMs }
-  );
-
-  const status = (await page.locator("[data-freshness-status]").textContent()).trim();
-  if (status !== "Current") {
-    throw new Error(`Home freshness status expected Current, got "${status}"`);
-  }
-
-  for (const [selector, label] of [
-    ["[data-freshness-generated]", "generated"],
-    ["[data-freshness-total-records]", "records"],
-    ["[data-freshness-total-assets]", "assets"],
-    ["[data-freshness-content-hash]", "content hash"],
-    ["[data-freshness-commit]", "source commit"],
-  ]) {
-    const text = (await page.locator(selector).textContent()).trim();
-    if (!text || text === "--" || text === "Unavailable") {
-      throw new Error(`Home freshness ${label} did not populate: "${text}"`);
-    }
   }
 }
 

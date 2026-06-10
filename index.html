@@ -34,36 +34,6 @@
           </p>
         </header>
 
-        <section class="home-hero" aria-labelledby="home-overview-title">
-          <div class="home-hero-copy">
-            <p class="stat-label">Codex Command Center</p>
-            <h2 id="home-overview-title">Start with the live reference, then branch into the details.</h2>
-            <p>
-              The Codex is organized around the pages players open during a wipe: how to get in, what to farm,
-              what gear does, and which systems change the math.
-            </p>
-
-            <div class="home-summary-grid" role="list">
-              <section class="home-summary-card" role="listitem">
-                <span class="home-summary-value">31</span>
-                <span class="home-summary-label">smoked pages</span>
-              </section>
-              <section class="home-summary-card" role="listitem">
-                <span class="home-summary-value">3</span>
-                <span class="home-summary-label">core data exports</span>
-              </section>
-              <section class="home-summary-card" role="listitem">
-                <span class="home-summary-value">646</span>
-                <span class="home-summary-label">image assets checked</span>
-              </section>
-            </div>
-          </div>
-
-          <div class="home-hero-media">
-            <img src="images/project_rogue_today.png" alt="Project Rogue gameplay" loading="eager" />
-          </div>
-        </section>
-
         <section class="content-section release-countdown" aria-labelledby="release-countdown-title">
           <div
             class="countdown-panel"
@@ -153,100 +123,6 @@
             </div>
           </div>
         </section>
-
-        <article class="content-section" id="entry-points">
-          <h2>Codex Entry Points</h2>
-          <div class="home-entry-grid" role="list">
-            <a class="home-entry-card" href="pages/General/play-the-game.html" role="listitem">
-              <span class="stat-label">Start</span>
-              <strong>Play the Game</strong>
-              <span>Discord-first setup, account flow, and launch path.</span>
-            </a>
-            <a class="home-entry-card" href="pages/General/build-planner.html" role="listitem">
-              <span class="stat-label">Plan</span>
-              <strong>Build Planner</strong>
-              <span>Compare gear, requirements, bonuses, and shareable builds.</span>
-            </a>
-            <a class="home-entry-card" href="pages/items/weapons.html" role="listitem">
-              <span class="stat-label">Items</span>
-              <strong>Weapons</strong>
-              <span>Speed, DPS, requirements, perks, and drop sources.</span>
-            </a>
-            <a class="home-entry-card" href="pages/items/armors.html" role="listitem">
-              <span class="stat-label">Items</span>
-              <strong>Armors</strong>
-              <span>Armor value, resistances, slots, perks, and drops.</span>
-            </a>
-            <a class="home-entry-card" href="pages/enemies/monsters.html" role="listitem">
-              <span class="stat-label">Enemies</span>
-              <strong>Monsters</strong>
-              <span>Stats, damage types, deep links, and loot tables.</span>
-            </a>
-            <a class="home-entry-card" href="pages/systems/perks.html" role="listitem">
-              <span class="stat-label">Systems</span>
-              <strong>Perks</strong>
-              <span>Found-on references, stacking examples, and speed context.</span>
-            </a>
-          </div>
-        </article>
-
-        <article class="content-section" id="data-pipeline">
-          <h2>Data Pipeline Snapshot</h2>
-          <div class="home-pipeline-grid" role="list">
-            <section class="home-pipeline-card" role="listitem">
-              <p class="stat-label">Exports</p>
-              <h3>Game Data Pull</h3>
-              <p>Weapons, armors, and monsters are covered by the Codex export workflow and live verification.</p>
-            </section>
-            <section class="home-pipeline-card" role="listitem">
-              <p class="stat-label">Assets</p>
-              <h3>Image Manifests</h3>
-              <p>Weapon, armor, and monster image manifests are checked against the published site.</p>
-            </section>
-            <section class="home-pipeline-card" role="listitem">
-              <p class="stat-label">Pages</p>
-              <h3>Smoke Coverage</h3>
-              <p>Modern pages have validation and browser smoke checks so updates can be pushed with evidence.</p>
-            </section>
-          </div>
-
-          <section
-            class="home-freshness-panel"
-            data-freshness-panel
-            data-manifest-url="data/codex_manifest.json"
-            aria-live="polite"
-          >
-            <div class="home-freshness-heading">
-              <div>
-                <p class="stat-label">Data Freshness</p>
-                <h3>Current exported snapshot</h3>
-              </div>
-              <span class="home-freshness-status" data-freshness-status>Loading manifest</span>
-            </div>
-            <div class="home-freshness-grid" role="list">
-              <div class="home-freshness-metric" role="listitem">
-                <span>Generated</span>
-                <strong data-freshness-generated>--</strong>
-              </div>
-              <div class="home-freshness-metric" role="listitem">
-                <span>Records</span>
-                <strong data-freshness-total-records>--</strong>
-              </div>
-              <div class="home-freshness-metric" role="listitem">
-                <span>Image entries</span>
-                <strong data-freshness-total-assets>--</strong>
-              </div>
-              <div class="home-freshness-metric" role="listitem">
-                <span>Content hash</span>
-                <strong data-freshness-content-hash>--</strong>
-              </div>
-              <div class="home-freshness-metric" role="listitem">
-                <span>Source commit</span>
-                <strong data-freshness-commit>--</strong>
-              </div>
-            </div>
-          </section>
-        </article>
 
         <article class="content-section" id="overview">
           <div class="home-section-heading">
