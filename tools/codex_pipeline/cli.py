@@ -11,6 +11,7 @@ from tools.codex_pipeline.config import (
     CLIENT_GF_JSON_DIR,
     DROP_SOURCES_PATH,
     GENERATED_ATLAS_ASSET_DIR,
+    GENERATED_IMAGE_REVIEW_DIR,
     GENERATED_OUTPUT_DIR,
     CLIENT_LOG_PATH,
     CLIENT_PACK_PATH,
@@ -21,6 +22,7 @@ from tools.codex_pipeline.config import (
     WEAPON_IMAGES_DIR,
     WEAPONS_DATA_PATH,
 )
+from tools.codex_pipeline.asset_review import write_asset_review_artifacts
 from tools.codex_pipeline.atlas_assets import extract_atlas_assets_for_targets, generated_atlas_asset_targets
 from tools.codex_pipeline.assets import resolve_asset_targets, sync_asset_targets
 from tools.codex_pipeline.drop_audit import build_drop_source_audit_report
@@ -226,6 +228,17 @@ def build_parser() -> argparse.ArgumentParser:
         "--write-summary",
         action="store_true",
         help="For game-update-report, write a Markdown review summary artifact.",
+    )
+    parser.add_argument(
+        "--write-image-review",
+        action="store_true",
+        help="For game-update-report/game-update-workflow, write contact sheets for image changes.",
+    )
+    parser.add_argument(
+        "--image-review-dir",
+        type=Path,
+        default=GENERATED_IMAGE_REVIEW_DIR,
+        help="Generated image review artifact directory.",
     )
     parser.add_argument(
         "--review-checklist",
@@ -1129,6 +1142,9 @@ def run_game_update_report(args: argparse.Namespace) -> int:
         summary_path = report.output_dir / "game_update_summary.md"
         written_path = _write_game_update_summary(report, summary_path)
         print(f"WROTE SUMMARY: {written_path}")
+    if args.write_image_review:
+        artifact = write_asset_review_artifacts(report.asset_reports, output_dir=args.image_review_dir)
+        print(f"WROTE IMAGE REVIEW: {artifact.markdown_path}")
     return 0 if not report.has_errors else 1
 
 

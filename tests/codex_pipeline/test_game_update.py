@@ -531,6 +531,71 @@ class GameUpdateReportTests(unittest.TestCase):
             self.assertIn("## Review Notes", markdown)
             self.assertIn("- WARNING: sample warning", markdown)
 
+    def test_cli_can_write_game_update_image_review_artifact(self):
+        from tools.codex_pipeline import cli
+        from tools.codex_pipeline.game_update import GameUpdateReport
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            output_dir = root / "generated"
+            review_dir = root / "image-review"
+            client_dir = root / "generated-assets" / "weapons"
+            site_dir = root / "site" / "images" / "weapons"
+            client_dir.mkdir(parents=True)
+            site_dir.mkdir(parents=True)
+            Image.new("RGBA", (8, 8), (0, 0, 255, 255)).save(client_dir / "New Sword.png")
+            Image.new("RGBA", (8, 8), (255, 0, 0, 255)).save(site_dir / "Old Sword.png")
+            report = GameUpdateReport(
+                output_dir=output_dir,
+                source_checks=[],
+                export_results=[],
+                diff_reports=[],
+                unknown_reports=[],
+                asset_reports=[
+                    AssetChangeReport(
+                        target_name="weapons",
+                        client_dir=client_dir,
+                        site_dir=site_dir,
+                        client_count=1,
+                        site_count=1,
+                        manifest_count=1,
+                        added=["New Sword.png"],
+                        removed=["Old Sword.png"],
+                        changed=[],
+                        issues=[],
+                    )
+                ],
+                drop_report=None,
+                validation_issues=[],
+                export_errors=[],
+                skipped_sections=[],
+            )
+            output = io.StringIO()
+            with (
+                patch.object(cli, "resolve_targets", return_value=[]),
+                patch.object(cli, "build_game_update_report", return_value=report),
+                patch("sys.stdout", output),
+            ):
+                exit_code = cli.main(
+                    [
+                        "game-update-report",
+                        "--write-image-review",
+                        "--image-review-dir",
+                        str(review_dir),
+                    ]
+                )
+
+            review_path = review_dir / "asset_image_review.md"
+            sheet_path = review_dir / "weapons_contact_sheet.png"
+            review_exists = review_path.is_file()
+            sheet_exists = sheet_path.is_file()
+            printed = output.getvalue()
+
+        self.assertEqual(0, exit_code)
+        self.assertTrue(review_exists)
+        self.assertTrue(sheet_exists)
+        self.assertIn(f"WROTE IMAGE REVIEW: {review_path}", printed)
+
     def test_cli_prints_game_update_review_checklist(self):
         from tools.codex_pipeline import cli
         from tools.codex_pipeline.game_update import GameUpdateReport

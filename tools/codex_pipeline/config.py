@@ -20,6 +20,7 @@ DROP_SOURCES_PATH = REPO_ROOT / "data" / "codex-overrides" / "drop_sources.json"
 PERK_LABEL_OVERRIDES_PATH = REPO_ROOT / "data" / "codex-overrides" / "perk_labels.json"
 GENERATED_OUTPUT_DIR = REPO_ROOT / "generated-output" / "codex-data"
 GENERATED_ATLAS_ASSET_DIR = REPO_ROOT / "generated-output" / "atlas-assets"
+GENERATED_IMAGE_REVIEW_DIR = REPO_ROOT / "generated-output" / "image-review"
 CODEX_MANIFEST_PATH = REPO_ROOT / "data" / "codex_manifest.json"
 
 WEAPONS_DATA_PATH = REPO_ROOT / "pages" / "items" / "weapons_data05.json"
