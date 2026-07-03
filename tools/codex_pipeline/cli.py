@@ -39,7 +39,7 @@ from tools.codex_pipeline.exports import (
 from tools.codex_pipeline.game_update import build_game_update_report
 from tools.codex_pipeline.freshness import build_codex_manifest, validate_codex_manifest, write_codex_manifest
 from tools.codex_pipeline.perks import load_perk_label_overrides
-from tools.codex_pipeline.sources import validate_export_sources
+from tools.codex_pipeline.sources import inspect_export_source_package, validate_export_sources
 from tools.codex_pipeline.site_smoke import run_site_smoke as run_site_smoke_command
 from tools.codex_pipeline.site_coverage import SiteCoverageReport, build_site_coverage_report
 from tools.codex_pipeline.unknowns import build_unknown_field_reports
@@ -171,6 +171,7 @@ def build_parser() -> argparse.ArgumentParser:
             "verify-live",
             "doctor",
             "validate-sources",
+            "source-inventory",
             "unknown-fields",
             "drop-report",
             "game-update-report",
@@ -787,6 +788,44 @@ def run_doctor(args: argparse.Namespace) -> int:
     return 0 if all(result.ok for result in results) else 1
 
 
+def run_source_inventory(args: argparse.Namespace) -> int:
+    try:
+        targets = resolve_targets(args.targets)
+    except ExportError as exc:
+        print(f"ERROR: {exc}")
+        return 1
+
+    report = inspect_export_source_package(targets)
+    print(
+        "SOURCE INVENTORY: "
+        f"{report.legacy_source_count} legacy .dat source(s), "
+        f"{report.missing_source_count} missing source(s)"
+    )
+    for check in report.source_checks:
+        status = "OK" if check.ok else "ERROR"
+        print(f"SOURCE {status} {check.target}: {check.message}")
+
+    for source in report.vpack_sources:
+        if not source.exists:
+            print(f"VPACK NOT FOUND: {source.path}")
+            continue
+        status = "VPACK FOUND" if source.is_vpack else "VPACK UNKNOWN"
+        details = f"{status}: {source.path} size={source.size_bytes} sha256={source.sha256} header={source.header_hex}"
+        if source.error:
+            details = f"{details} error={source.error}"
+        print(details)
+
+    if report.export_ready:
+        print("EXPORT READINESS: READY")
+        return 0
+
+    if any(source.exists and source.is_vpack for source in report.vpack_sources):
+        print("EXPORT READINESS: BLOCKED - VPACK unpacking is not yet supported")
+    else:
+        print("EXPORT READINESS: BLOCKED - source data is missing")
+    return 1
+
+
 def _format_report_values(values) -> str:
     return ", ".join(_format_value(value) for value in values)
 
@@ -1044,6 +1083,8 @@ def main(argv: list[str] | None = None) -> int:
         return run_site_coverage()
     if args.command in {"doctor", "validate-sources"}:
         return run_doctor(args)
+    if args.command == "source-inventory":
+        return run_source_inventory(args)
     if args.command == "unknown-fields":
         return run_unknown_fields(args)
     if args.command == "drop-report":

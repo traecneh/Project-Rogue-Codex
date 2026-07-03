@@ -21,6 +21,21 @@ The game client source data is external and configured in
 - `C:\Users\traec\Desktop\Client\data\data05.dat` for weapons
 - `C:\Users\traec\Desktop\Client\data\data06.dat` for armors
 
+Set `PROJECT_ROGUE_CLIENT_ROOT` to point the pipeline at a different local
+client install for source checks, exports, and asset inventory. For example:
+
+```powershell
+$env:PROJECT_ROGUE_CLIENT_ROOT = "C:\Users\traec\Desktop\Project Rogue\Client"
+python -m tools.codex_pipeline doctor
+python -m tools.codex_pipeline source-inventory
+```
+
+The July 2026 client package moved the direct `.dat` files into
+`Data\ClientPack\rogue_data.vpack`. The pipeline detects that packed source and
+blocks export with a clear message until VPACK unpacking is supported.
+`source-inventory` reports the currently selected client source shape, including
+legacy `.dat` availability, VPACK path, size, SHA-256, and header bytes.
+
 The pipeline writes generated client exports to
 `generated-output/codex-data/` first. Site JSON is only changed after an
 explicit sync.

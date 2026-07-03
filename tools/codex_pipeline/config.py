@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-CLIENT_ROOT = Path(r"C:\Users\traec\Desktop\Client")
+CLIENT_ROOT = Path(os.environ.get("PROJECT_ROGUE_CLIENT_ROOT", r"C:\Users\traec\Desktop\Client")).expanduser()
 CLIENT_DATA_DIR = CLIENT_ROOT / "data"
 CLIENT_GF_JSON_DIR = CLIENT_ROOT / "gf_json"
 CLIENT_IMAGE_DIR = CLIENT_GF_JSON_DIR / "images"
