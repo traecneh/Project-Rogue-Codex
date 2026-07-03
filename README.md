@@ -95,6 +95,13 @@ python -m tools.codex_pipeline sync-assets --dry-run
 python -m tools.codex_pipeline sync-assets
 ```
 
+For atlas-based update reviews, use priority image sync to apply added/removed images and meaningful or unreadable changed images while leaving background-only or encoding-only churn untouched:
+
+```powershell
+python -m tools.codex_pipeline sync-assets --dry-run --asset-source atlas --image-sync-scope priority
+python -m tools.codex_pipeline game-update-workflow --apply --force-apply --image-sync-scope priority
+```
+
 To export and sync in one step after you are comfortable with the generated output:
 
 ```powershell

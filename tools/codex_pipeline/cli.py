@@ -22,7 +22,7 @@ from tools.codex_pipeline.config import (
     WEAPON_IMAGES_DIR,
     WEAPONS_DATA_PATH,
 )
-from tools.codex_pipeline.asset_review import write_asset_review_artifacts
+from tools.codex_pipeline.asset_review import classify_image_change, write_asset_review_artifacts
 from tools.codex_pipeline.atlas_assets import extract_atlas_assets_for_targets, generated_atlas_asset_targets
 from tools.codex_pipeline.assets import resolve_asset_targets, sync_asset_targets
 from tools.codex_pipeline.drop_audit import build_drop_source_audit_report
@@ -161,6 +161,7 @@ VALIDATED_SCRIPT_PATHS = [
     REPO_ROOT / "js" / "floor-cleanup.js",
     REPO_ROOT / "js" / "crafting-page.js",
 ]
+PRIORITY_IMAGE_CHANGE_CLASSIFICATIONS = {"meaningful", "unreadable"}
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -223,6 +224,12 @@ def build_parser() -> argparse.ArgumentParser:
         choices=["auto", "client", "atlas"],
         default="auto",
         help="Image source for game-update-report/sync-assets. auto uses atlas output when legacy client images are absent.",
+    )
+    parser.add_argument(
+        "--image-sync-scope",
+        choices=["all", "priority"],
+        default="all",
+        help="For sync-assets/game-update-workflow, priority sync applies added/removed images plus meaningful or unreadable changed images.",
     )
     parser.add_argument(
         "--write-summary",
@@ -1068,10 +1075,12 @@ def _print_asset_report_summaries(reports) -> None:
 def _print_asset_sync_reports(reports) -> None:
     for report in reports:
         mode = "DRY-RUN" if report.dry_run else "APPLIED"
+        skipped_changed = getattr(report, "skipped_changed", [])
+        skipped_text = f", skipped changed={len(skipped_changed)}" if skipped_changed else ""
         print(
             f"ASSET SYNC {mode} {report.target_name}: "
             f"copied {len(report.copied)}, removed {len(report.removed)}, "
-            f"manifest entries={report.manifest_count}, issues={len(report.issues)} "
+            f"manifest entries={report.manifest_count}, issues={len(report.issues)}{skipped_text} "
             f"({report.client_dir} -> {report.site_dir})"
         )
         for issue in report.issues:
@@ -1162,13 +1171,27 @@ def _resolve_sync_asset_targets(args: argparse.Namespace):
     return targets
 
 
+def _priority_image_change_filter(before_path: Path, after_path: Path, _image_name: str) -> bool:
+    return classify_image_change(before_path, after_path) in PRIORITY_IMAGE_CHANGE_CLASSIFICATIONS
+
+
+def _image_sync_changed_filter(args: argparse.Namespace):
+    if getattr(args, "image_sync_scope", "all") == "priority":
+        return _priority_image_change_filter
+    return None
+
+
 def run_sync_assets(args: argparse.Namespace) -> int:
     try:
         targets = _resolve_sync_asset_targets(args)
     except ValueError as exc:
         print(f"ERROR: {exc}")
         return 1
-    reports = sync_asset_targets(targets, dry_run=args.dry_run)
+    changed_filter = _image_sync_changed_filter(args)
+    sync_kwargs = {"dry_run": args.dry_run}
+    if changed_filter is not None:
+        sync_kwargs["changed_filter"] = changed_filter
+    reports = sync_asset_targets(targets, **sync_kwargs)
     _print_asset_sync_reports(reports)
     if any(report.has_errors for report in reports):
         return 1

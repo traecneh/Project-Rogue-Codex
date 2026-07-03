@@ -3,7 +3,8 @@ from __future__ import annotations
 import hashlib
 import json
 import shutil
-from dataclasses import dataclass
+from collections.abc import Callable
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Iterable, Sequence
 
@@ -66,6 +67,7 @@ class AssetSyncReport:
     removed: list[str]
     manifest_count: int
     issues: list[ValidationIssue]
+    skipped_changed: list[str] = field(default_factory=list)
 
     @property
     def has_changes(self) -> bool:
@@ -82,6 +84,7 @@ DEFAULT_ASSET_TARGETS = [
     AssetTarget("monsters", CLIENT_MONSTER_IMAGES_DIR, MONSTER_IMAGES_DIR),
 ]
 DEFAULT_ASSET_TARGETS_BY_NAME = {target.name: target for target in DEFAULT_ASSET_TARGETS}
+ChangedImageFilter = Callable[[Path, Path, str], bool]
 
 
 def _is_image_file(path: Path) -> bool:
@@ -364,7 +367,12 @@ def _asset_sync_path_issues(target: AssetTarget) -> list[ValidationIssue]:
     return [ValidationIssue("error", f"{target.name} client image folder not found: {target.client_dir}")]
 
 
-def sync_asset_changes(target: AssetTarget, *, dry_run: bool = False) -> AssetSyncReport:
+def sync_asset_changes(
+    target: AssetTarget,
+    *,
+    dry_run: bool = False,
+    changed_filter: ChangedImageFilter | None = None,
+) -> AssetSyncReport:
     issues = _asset_sync_path_issues(target)
     if issues:
         return AssetSyncReport(
@@ -386,7 +394,14 @@ def sync_asset_changes(target: AssetTarget, *, dry_run: bool = False) -> AssetSy
         for name in set(client_files) & set(site_files)
         if _file_hash(client_files[name]) != _file_hash(site_files[name])
     )
-    copied = sorted(set(added) | set(changed))
+    selected_changed: list[str] = []
+    skipped_changed: list[str] = []
+    for image_name in changed:
+        if changed_filter is None or changed_filter(site_files[image_name], client_files[image_name], image_name):
+            selected_changed.append(image_name)
+        else:
+            skipped_changed.append(image_name)
+    copied = sorted(set(added) | set(selected_changed))
     removed = sorted(set(site_files) - set(client_files))
     manifest_entries = _manifest_entries_for(target, client_files)
 
@@ -413,6 +428,7 @@ def sync_asset_changes(target: AssetTarget, *, dry_run: bool = False) -> AssetSy
         removed=removed,
         manifest_count=len(manifest_entries),
         issues=issues,
+        skipped_changed=skipped_changed,
     )
 
 
@@ -420,5 +436,6 @@ def sync_asset_targets(
     targets: Iterable[AssetTarget] = DEFAULT_ASSET_TARGETS,
     *,
     dry_run: bool = False,
+    changed_filter: ChangedImageFilter | None = None,
 ) -> list[AssetSyncReport]:
-    return [sync_asset_changes(target, dry_run=dry_run) for target in targets]
+    return [sync_asset_changes(target, dry_run=dry_run, changed_filter=changed_filter) for target in targets]

@@ -5,6 +5,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+from PIL import Image
+
 
 class AssetReportTests(unittest.TestCase):
     def test_build_asset_change_report_compares_client_and_site_images(self):
@@ -280,6 +282,54 @@ class AssetReportTests(unittest.TestCase):
             self.assertEqual(b"new", (site_dir / "Galdruil Axe.gif").read_bytes())
             self.assertEqual(original_manifest, manifest_path.read_bytes())
 
+    def test_sync_asset_changes_can_filter_changed_images_and_report_skipped(self):
+        from tools.codex_pipeline.asset_review import classify_image_change
+        from tools.codex_pipeline.assets import AssetTarget, sync_asset_changes
+
+        def write_png(path: Path, background: tuple[int, int, int, int], pixel: tuple[int, int, int, int]) -> None:
+            image = Image.new("RGBA", (2, 2), background)
+            image.putpixel((0, 0), pixel)
+            image.save(path)
+
+        def priority_change_filter(before_path: Path, after_path: Path, _image_name: str) -> bool:
+            return classify_image_change(before_path, after_path) in {"meaningful", "unreadable"}
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            client_dir = root / "client" / "Weapons"
+            site_dir = root / "site" / "images" / "weapons"
+            client_dir.mkdir(parents=True)
+            site_dir.mkdir(parents=True)
+            write_png(client_dir / "Added.png", (0, 0, 0, 0), (200, 0, 0, 255))
+            write_png(client_dir / "Meaningful.png", (255, 0, 255, 255), (0, 200, 0, 255))
+            write_png(site_dir / "Meaningful.png", (0, 0, 0, 0), (0, 0, 200, 255))
+            write_png(client_dir / "Background Only.png", (255, 0, 255, 255), (0, 200, 0, 255))
+            write_png(site_dir / "Background Only.png", (0, 0, 0, 0), (0, 200, 0, 255))
+            write_png(site_dir / "Removed.png", (0, 0, 0, 0), (200, 200, 0, 255))
+            (site_dir / "manifest.json").write_text(
+                json.dumps(
+                    [
+                        "images/weapons/Meaningful.png",
+                        "images/weapons/Background Only.png",
+                        "images/weapons/Removed.png",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            report = sync_asset_changes(
+                AssetTarget("weapons", client_dir, site_dir),
+                dry_run=True,
+                changed_filter=priority_change_filter,
+            )
+
+            self.assertTrue(report.dry_run)
+            self.assertEqual(["Added.png", "Meaningful.png"], report.copied)
+            self.assertEqual(["Removed.png"], report.removed)
+            self.assertEqual(["Background Only.png"], report.skipped_changed)
+            self.assertFalse((site_dir / "Added.png").exists())
+            self.assertTrue((site_dir / "Removed.png").exists())
+
     def test_cli_sync_assets_prints_dry_run_summary(self):
         from tools.codex_pipeline import cli
         from tools.codex_pipeline.assets import AssetSyncReport
@@ -352,3 +402,30 @@ class AssetReportTests(unittest.TestCase):
         self.assertEqual(Path("atlas/weapons"), sync_targets[0].client_dir)
         self.assertEqual(Path("site/images/weapons"), sync_targets[0].site_dir)
         self.assertIn("ASSET SYNC DRY-RUN weapons: copied 1, removed 0, manifest entries=1, issues=0", output.getvalue())
+
+    def test_cli_sync_assets_priority_scope_passes_changed_filter(self):
+        from tools.codex_pipeline import cli
+        from tools.codex_pipeline.assets import AssetSyncReport
+
+        report = AssetSyncReport(
+            target_name="weapons",
+            client_dir=Path("client/Weapons"),
+            site_dir=Path("images/weapons"),
+            dry_run=True,
+            copied=["Meaningful.png"],
+            removed=[],
+            manifest_count=1,
+            issues=[],
+            skipped_changed=["Background Only.png"],
+        )
+        output = io.StringIO()
+        with (
+            patch.object(cli, "resolve_asset_targets", return_value=["weapons"]),
+            patch.object(cli, "sync_asset_targets", return_value=[report]) as sync_assets,
+            patch("sys.stdout", output),
+        ):
+            exit_code = cli.main(["sync-assets", "--dry-run", "--target", "weapons", "--image-sync-scope", "priority"])
+
+        self.assertEqual(0, exit_code)
+        self.assertTrue(callable(sync_assets.call_args.kwargs["changed_filter"]))
+        self.assertIn("skipped changed=1", output.getvalue())
