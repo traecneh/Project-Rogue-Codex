@@ -345,19 +345,23 @@ def _check_freshness_target(
 ) -> LiveCheckResult:
     url = urljoin(site_url, target.site_relative_path)
     try:
-        local_bytes = target.local_path.read_bytes()
-    except OSError as exc:
-        return LiveCheckResult(target.name, url, False, f"{target.name} local bytes failed to read: {exc}")
+        local_json = json.loads(target.local_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        return LiveCheckResult(target.name, url, False, f"{target.name} local JSON failed to read: {exc}")
     try:
         live_bytes = fetch_bytes(url, timeout_seconds)
     except Exception as exc:
         return LiveCheckResult(target.name, url, False, f"{target.name} live bytes failed to load: {exc}")
-    if live_bytes != local_bytes:
+    try:
+        live_json = json.loads(live_bytes.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        return LiveCheckResult(target.name, url, False, f"{target.name} live JSON failed to parse: {exc}")
+    if live_json != local_json:
         return LiveCheckResult(
             target.name,
             url,
             False,
-            f"{target.name} live bytes differ from {target.site_relative_path}",
+            f"{target.name} live JSON differs from {target.site_relative_path}",
         )
     return LiveCheckResult(target.name, url, True, f"{target.name} matches {target.site_relative_path}")
 

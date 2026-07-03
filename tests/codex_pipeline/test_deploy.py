@@ -170,14 +170,14 @@ class LiveDeploymentTests(unittest.TestCase):
         messages = "\n".join(result.message for result in results if not result.ok)
         self.assertIn("armors live image differs from images/armors/Iceburst Amulet.gif", messages)
 
-    def test_verify_live_site_compares_codex_manifest_bytes(self):
+    def test_verify_live_site_compares_codex_manifest_json(self):
         from tools.codex_pipeline.deploy import LiveFreshnessTarget, verify_live_site
 
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             manifest_path = root / "data" / "codex_manifest.json"
             manifest_path.parent.mkdir(parents=True)
-            manifest_path.write_bytes(b'{"schema":"project-rogue-codex-manifest"}\n')
+            manifest_path.write_bytes(b'{"schema":"project-rogue-codex-manifest"}\r\n')
             target = LiveFreshnessTarget(
                 "codex manifest",
                 manifest_path,
@@ -193,7 +193,7 @@ class LiveDeploymentTests(unittest.TestCase):
             def fetch_bytes(url, timeout_seconds):
                 seen_binary_urls.append((url, timeout_seconds))
                 if url == "https://example.test/codex/data/codex_manifest.json":
-                    return manifest_path.read_bytes()
+                    return b'{"schema":"project-rogue-codex-manifest"}\n'
                 raise OSError(f"unexpected binary URL: {url}")
 
             results = verify_live_site(
@@ -241,7 +241,7 @@ class LiveDeploymentTests(unittest.TestCase):
             )
 
         messages = "\n".join(result.message for result in results if not result.ok)
-        self.assertIn("codex manifest live bytes differ from data/codex_manifest.json", messages)
+        self.assertIn("codex manifest live JSON differs from data/codex_manifest.json", messages)
 
     def test_cli_verify_live_prints_results_and_returns_failure_for_errors(self):
         from tools.codex_pipeline import cli
