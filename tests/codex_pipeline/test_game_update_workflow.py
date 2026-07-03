@@ -43,7 +43,7 @@ class GameUpdateWorkflowTests(unittest.TestCase):
 
         def record(name):
             def inner(args):
-                events.append((name, getattr(args, "dry_run", None)))
+                events.append((name, getattr(args, "dry_run", None), getattr(args, "asset_source", None)))
                 return 0
 
             return inner
@@ -53,6 +53,7 @@ class GameUpdateWorkflowTests(unittest.TestCase):
             patch.object(cli, "run_doctor", record("doctor")),
             patch.object(cli, "run_game_update_report", record("game-update-report")),
             patch.object(cli, "run_sync_generated", record("sync-generated")),
+            patch.object(cli, "run_extract_atlas_assets", record("extract-atlas-assets")),
             patch.object(cli, "run_sync_assets", record("sync-assets")),
             patch.object(cli, "run_refresh_manifest", side_effect=AssertionError("refresh-manifest should not run")),
             patch.object(cli, "run_validate", side_effect=AssertionError("validate should not run")),
@@ -64,10 +65,11 @@ class GameUpdateWorkflowTests(unittest.TestCase):
         self.assertEqual(0, exit_code)
         self.assertEqual(
             [
-                ("doctor", False),
-                ("game-update-report", False),
-                ("sync-generated", True),
-                ("sync-assets", True),
+                ("doctor", False, "auto"),
+                ("game-update-report", False, "atlas"),
+                ("sync-generated", True, "auto"),
+                ("extract-atlas-assets", False, "atlas"),
+                ("sync-assets", True, "atlas"),
             ],
             events,
         )
@@ -80,7 +82,7 @@ class GameUpdateWorkflowTests(unittest.TestCase):
 
         def record(name):
             def inner(args=None):
-                events.append((name, getattr(args, "dry_run", None)))
+                events.append((name, getattr(args, "dry_run", None), getattr(args, "asset_source", None)))
                 return 0
 
             return inner
@@ -89,6 +91,7 @@ class GameUpdateWorkflowTests(unittest.TestCase):
             patch.object(cli, "run_doctor", record("doctor")),
             patch.object(cli, "run_game_update_report", record("game-update-report")),
             patch.object(cli, "run_sync_generated", record("sync-generated")),
+            patch.object(cli, "run_extract_atlas_assets", record("extract-atlas-assets")),
             patch.object(cli, "run_sync_assets", record("sync-assets")),
             patch.object(cli, "run_refresh_manifest", record("refresh-manifest")),
             patch.object(cli, "run_validate", record("validate")),
@@ -100,15 +103,17 @@ class GameUpdateWorkflowTests(unittest.TestCase):
         self.assertEqual(0, exit_code)
         self.assertEqual(
             [
-                ("doctor", False),
-                ("game-update-report", False),
-                ("sync-generated", True),
-                ("sync-assets", True),
-                ("sync-generated", False),
-                ("sync-assets", False),
-                ("refresh-manifest", None),
-                ("validate", None),
-                ("verify-live", False),
+                ("doctor", False, "auto"),
+                ("game-update-report", False, "atlas"),
+                ("sync-generated", True, "auto"),
+                ("extract-atlas-assets", False, "atlas"),
+                ("sync-assets", True, "atlas"),
+                ("sync-generated", False, "auto"),
+                ("extract-atlas-assets", False, "atlas"),
+                ("sync-assets", False, "atlas"),
+                ("refresh-manifest", None, None),
+                ("validate", None, None),
+                ("verify-live", False, "auto"),
             ],
             events,
         )
@@ -120,7 +125,14 @@ class GameUpdateWorkflowTests(unittest.TestCase):
 
         def record(name):
             def inner(args):
-                events.append((name, getattr(args, "review_checklist", None), getattr(args, "dry_run", None)))
+                events.append(
+                    (
+                        name,
+                        getattr(args, "review_checklist", None),
+                        getattr(args, "dry_run", None),
+                        getattr(args, "asset_source", None),
+                    )
+                )
                 return 0
 
             return inner
@@ -129,6 +141,7 @@ class GameUpdateWorkflowTests(unittest.TestCase):
             patch.object(cli, "run_doctor", record("doctor")),
             patch.object(cli, "run_game_update_report", record("game-update-report")),
             patch.object(cli, "run_sync_generated", record("sync-generated")),
+            patch.object(cli, "run_extract_atlas_assets", record("extract-atlas-assets")),
             patch.object(cli, "run_sync_assets", record("sync-assets")),
             patch.object(cli, "run_refresh_manifest", side_effect=AssertionError("refresh-manifest should not run")),
             patch.object(cli, "run_validate", side_effect=AssertionError("validate should not run")),
@@ -140,10 +153,11 @@ class GameUpdateWorkflowTests(unittest.TestCase):
         self.assertEqual(0, exit_code)
         self.assertEqual(
             [
-                ("doctor", True, False),
-                ("game-update-report", True, False),
-                ("sync-generated", True, True),
-                ("sync-assets", True, True),
+                ("doctor", True, False, "auto"),
+                ("game-update-report", True, False, "atlas"),
+                ("sync-generated", True, True, "auto"),
+                ("extract-atlas-assets", True, False, "atlas"),
+                ("sync-assets", True, True, "atlas"),
             ],
             events,
         )
@@ -156,7 +170,7 @@ class GameUpdateWorkflowTests(unittest.TestCase):
 
         def record_sync(name):
             def inner(args):
-                events.append((name, getattr(args, "dry_run", None)))
+                events.append((name, getattr(args, "dry_run", None), getattr(args, "asset_source", None)))
                 return 0
 
             return inner
@@ -167,6 +181,7 @@ class GameUpdateWorkflowTests(unittest.TestCase):
             patch.object(cli, "resolve_targets", return_value=[]),
             patch.object(cli, "build_game_update_report", return_value=blocked_report),
             patch.object(cli, "run_sync_generated", record_sync("sync-generated")),
+            patch.object(cli, "run_extract_atlas_assets", record_sync("extract-atlas-assets")),
             patch.object(cli, "run_sync_assets", record_sync("sync-assets")),
             patch.object(cli, "run_refresh_manifest", side_effect=AssertionError("refresh-manifest should not run")),
             patch.object(cli, "run_validate", side_effect=AssertionError("validate should not run")),
@@ -177,8 +192,9 @@ class GameUpdateWorkflowTests(unittest.TestCase):
         self.assertEqual(1, exit_code)
         self.assertEqual(
             [
-                ("sync-generated", True),
-                ("sync-assets", True),
+                ("sync-generated", True, "auto"),
+                ("extract-atlas-assets", False, "atlas"),
+                ("sync-assets", True, "atlas"),
             ],
             events,
         )
@@ -193,7 +209,7 @@ class GameUpdateWorkflowTests(unittest.TestCase):
 
         def record(name):
             def inner(args=None):
-                events.append((name, getattr(args, "dry_run", None)))
+                events.append((name, getattr(args, "dry_run", None), getattr(args, "asset_source", None)))
                 return 0
 
             return inner
@@ -204,6 +220,7 @@ class GameUpdateWorkflowTests(unittest.TestCase):
             patch.object(cli, "resolve_targets", return_value=[]),
             patch.object(cli, "build_game_update_report", return_value=blocked_report),
             patch.object(cli, "run_sync_generated", record("sync-generated")),
+            patch.object(cli, "run_extract_atlas_assets", record("extract-atlas-assets")),
             patch.object(cli, "run_sync_assets", record("sync-assets")),
             patch.object(cli, "run_refresh_manifest", record("refresh-manifest")),
             patch.object(cli, "run_validate", record("validate")),
@@ -214,12 +231,14 @@ class GameUpdateWorkflowTests(unittest.TestCase):
         self.assertEqual(0, exit_code)
         self.assertEqual(
             [
-                ("sync-generated", True),
-                ("sync-assets", True),
-                ("sync-generated", False),
-                ("sync-assets", False),
-                ("refresh-manifest", None),
-                ("validate", None),
+                ("sync-generated", True, "auto"),
+                ("extract-atlas-assets", False, "atlas"),
+                ("sync-assets", True, "atlas"),
+                ("sync-generated", False, "auto"),
+                ("extract-atlas-assets", False, "atlas"),
+                ("sync-assets", False, "atlas"),
+                ("refresh-manifest", None, None),
+                ("validate", None, None),
             ],
             events,
         )

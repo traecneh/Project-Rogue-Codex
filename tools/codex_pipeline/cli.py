@@ -21,7 +21,7 @@ from tools.codex_pipeline.config import (
     WEAPON_IMAGES_DIR,
     WEAPONS_DATA_PATH,
 )
-from tools.codex_pipeline.atlas_assets import extract_atlas_assets_for_targets
+from tools.codex_pipeline.atlas_assets import extract_atlas_assets_for_targets, generated_atlas_asset_targets
 from tools.codex_pipeline.assets import resolve_asset_targets, sync_asset_targets
 from tools.codex_pipeline.drop_audit import build_drop_source_audit_report
 from tools.codex_pipeline.drops import load_drop_sources
@@ -215,6 +215,12 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=CLIENT_GF_JSON_DIR,
         help="Client gf_json directory for extract-atlas-assets.",
+    )
+    parser.add_argument(
+        "--asset-source",
+        choices=["auto", "client", "atlas"],
+        default="auto",
+        help="Image source for game-update-report/sync-assets. auto uses atlas output when legacy client images are absent.",
     )
     parser.add_argument(
         "--write-summary",
@@ -1105,7 +1111,13 @@ def _print_game_update_report(report) -> None:
 def run_game_update_report(args: argparse.Namespace) -> int:
     try:
         targets = resolve_targets(args.targets)
-        report = build_game_update_report(targets, output_dir=args.output_dir)
+        report = build_game_update_report(
+            targets,
+            output_dir=args.output_dir,
+            asset_source=args.asset_source,
+            gf_json_dir=args.gf_json_dir,
+            asset_output_dir=args.asset_output_dir,
+        )
     except ExportError as exc:
         print(f"ERROR: {exc}")
         return 1
@@ -1120,9 +1132,23 @@ def run_game_update_report(args: argparse.Namespace) -> int:
     return 0 if not report.has_errors else 1
 
 
+def _resolve_sync_asset_targets(args: argparse.Namespace):
+    targets = resolve_asset_targets(args.targets)
+    if not all(hasattr(target, "client_dir") and hasattr(target, "name") for target in targets):
+        return targets
+    if args.asset_source == "atlas":
+        return generated_atlas_asset_targets(targets, asset_output_dir=args.asset_output_dir)
+    if args.asset_source == "auto":
+        client_ready = all(target.client_dir.is_dir() for target in targets)
+        atlas_ready = all((args.asset_output_dir / target.name).is_dir() for target in targets)
+        if not client_ready and atlas_ready:
+            return generated_atlas_asset_targets(targets, asset_output_dir=args.asset_output_dir)
+    return targets
+
+
 def run_sync_assets(args: argparse.Namespace) -> int:
     try:
-        targets = resolve_asset_targets(args.targets)
+        targets = _resolve_sync_asset_targets(args)
     except ValueError as exc:
         print(f"ERROR: {exc}")
         return 1
@@ -1167,20 +1193,37 @@ def _run_workflow_step(label: str, runner, args: argparse.Namespace | None = Non
     return code
 
 
+def _workflow_asset_args(args: argparse.Namespace) -> argparse.Namespace:
+    if args.asset_source == "client":
+        return args
+    return _args_with(args, asset_source="atlas")
+
+
+def _workflow_asset_steps(label_prefix: str, args: argparse.Namespace, *, dry_run: bool) -> list[tuple[str, object, argparse.Namespace]]:
+    asset_args = _workflow_asset_args(args)
+    if asset_args.asset_source == "client":
+        return [(f"{label_prefix}sync-assets" if label_prefix else "sync-assets", run_sync_assets, _args_with(asset_args, dry_run=dry_run))]
+    return [
+        (f"{label_prefix}extract-atlas-assets" if label_prefix else "extract-atlas-assets", run_extract_atlas_assets, asset_args),
+        (f"{label_prefix}sync-assets" if label_prefix else "sync-assets", run_sync_assets, _args_with(asset_args, dry_run=dry_run)),
+    ]
+
+
 def run_game_update_workflow(args: argparse.Namespace) -> int:
+    asset_args = _workflow_asset_args(args)
     review_steps = [
         ("doctor", run_doctor, args),
-        ("game-update-report", run_game_update_report, args),
+        ("game-update-report", run_game_update_report, asset_args),
         ("sync-generated --dry-run", run_sync_generated, _args_with(args, dry_run=True)),
-        ("sync-assets --dry-run", run_sync_assets, _args_with(args, dry_run=True)),
     ]
+    review_steps.extend(_workflow_asset_steps("", args, dry_run=True))
     for label, runner, step_args in review_steps:
         code = _run_workflow_step(label, runner, step_args)
         if code != 0:
             return code
 
     if args.apply:
-        sync_ready = getattr(args, "_game_update_report_safe_to_sync", None)
+        sync_ready = getattr(asset_args, "_game_update_report_safe_to_sync", getattr(args, "_game_update_report_safe_to_sync", None))
         if sync_ready is False and not args.force_apply:
             print("WORKFLOW STOP apply: sync readiness BLOCKED; rerun with --force-apply to override")
             return 1
@@ -1188,9 +1231,9 @@ def run_game_update_workflow(args: argparse.Namespace) -> int:
             print("WORKFLOW OVERRIDE apply: sync readiness BLOCKED; continuing because --force-apply was provided")
         apply_steps = [
             ("sync-generated", run_sync_generated, _args_with(args, dry_run=False)),
-            ("sync-assets", run_sync_assets, _args_with(args, dry_run=False)),
             ("refresh-manifest", run_refresh_manifest, None),
         ]
+        apply_steps[1:1] = _workflow_asset_steps("", args, dry_run=False)
         for label, runner, step_args in apply_steps:
             code = _run_workflow_step(label, runner, step_args) if step_args is not None else _run_workflow_step(label, runner)
             if code != 0:

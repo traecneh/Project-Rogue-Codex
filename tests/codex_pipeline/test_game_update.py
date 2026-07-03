@@ -1,4 +1,5 @@
 import io
+import base64
 import json
 import sys
 import tempfile
@@ -13,6 +14,7 @@ from tools.codex_pipeline.drop_audit import DropSourceAuditReport, DropSourceIte
 from tools.codex_pipeline.sources import SourceCheckResult
 from tools.codex_pipeline.unknowns import UnknownFieldReport, UnknownFieldTargetReport
 from tools.codex_pipeline.validators.site import ValidationIssue
+from PIL import Image
 
 
 def write_json(path: Path, data) -> None:
@@ -34,6 +36,15 @@ def write_json_copy_extractor(path: Path) -> None:
             """
         ).strip()
         + "\n",
+        encoding="utf-8",
+    )
+
+
+def write_gf_json_png(path: Path, image: Image.Image) -> None:
+    buffer = io.BytesIO()
+    image.save(buffer, format="PNG")
+    path.write_text(
+        json.dumps({"Name": path.stem, "Data": base64.b64encode(buffer.getvalue()).decode("ascii")}),
         encoding="utf-8",
     )
 
@@ -139,6 +150,73 @@ class GameUpdateReportTests(unittest.TestCase):
             self.assertIsNotNone(report.drop_report)
             self.assertEqual(2, report.drop_report.item_override_count)
             self.assertEqual(["Rune Sword.gif"], report.asset_reports[0].changed)
+
+    def test_build_game_update_report_compares_generated_atlas_assets_to_site(self):
+        from tools.codex_pipeline.game_update import build_game_update_report
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            output_dir = root / "generated"
+            atlas_output_dir = root / "atlas-assets"
+            gf_json_dir = root / "client" / "gf_json"
+            site_assets = root / "site-assets" / "weapons"
+            extractor = root / "extract_json.py"
+            write_json_copy_extractor(extractor)
+            gf_json_dir.mkdir(parents=True)
+            site_assets.mkdir(parents=True)
+
+            atlas = Image.new("RGBA", (4, 2), (0, 0, 0, 0))
+            for x in range(2):
+                for y in range(2):
+                    atlas.putpixel((x, y), (255, 0, 0, 255))
+                    atlas.putpixel((x + 2, y), (0, 0, 255, 255))
+            write_gf_json_png(gf_json_dir / "itemgraph.json", atlas)
+            Image.new("RGBA", (2, 2), (0, 255, 0, 255)).save(site_assets / "Rune Sword.png")
+            site_assets.joinpath("manifest.json").write_text(
+                json.dumps(["images/weapons/Rune Sword.png"]),
+                encoding="utf-8",
+            )
+
+            weapon_source = root / "sources" / "weapons.dat"
+            write_json(
+                weapon_source,
+                [
+                    {
+                        "id": 1,
+                        "name": "Rune Sword",
+                        "fields": {"frame_1_x": 0, "frame_1_y": 0, "frame_1_width": 2, "frame_1_height": 2},
+                    },
+                    {
+                        "id": 2,
+                        "name": "New Sword",
+                        "fields": {"frame_1_x": 2, "frame_1_y": 0, "frame_1_width": 2, "frame_1_height": 2},
+                    },
+                ],
+            )
+            weapon_site = root / "site" / "weapons.json"
+            write_json(weapon_site, [{"id": 1, "name": "Rune Sword", "fields": {}}])
+            perk_labels = root / "perk_labels.json"
+            write_json(perk_labels, {"schemaVersion": 1, "corruptedPerkLabels": {}})
+
+            report = build_game_update_report(
+                [ExportTarget("weapons", extractor, weapon_source, "weapons.json", weapon_site)],
+                output_dir=output_dir,
+                python_executable=sys.executable,
+                perk_label_overrides_path=perk_labels,
+                asset_targets=[AssetTarget("weapons", root / "missing-client-assets", site_assets)],
+                asset_source="atlas",
+                gf_json_dir=gf_json_dir,
+                asset_output_dir=atlas_output_dir,
+            )
+            generated_new_sword_exists = (atlas_output_dir / "weapons" / "New Sword.png").is_file()
+
+        self.assertFalse(report.has_errors)
+        self.assertTrue(generated_new_sword_exists)
+        self.assertEqual(atlas_output_dir / "weapons", report.asset_reports[0].client_dir)
+        self.assertEqual(["New Sword.png"], report.asset_reports[0].added)
+        self.assertEqual(["Rune Sword.png"], report.asset_reports[0].changed)
+        messages = "\n".join(issue.message for issue in report.asset_reports[0].issues)
+        self.assertNotIn("client image folder not found", messages)
 
     def test_build_game_update_report_warns_about_generated_data_image_mismatches(self):
         from tools.codex_pipeline.game_update import build_game_update_report

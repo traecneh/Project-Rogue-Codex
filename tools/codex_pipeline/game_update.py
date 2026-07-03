@@ -7,9 +7,16 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from tools.codex_pipeline.config import (
+    CLIENT_GF_JSON_DIR,
     DROP_SOURCES_PATH,
+    GENERATED_ATLAS_ASSET_DIR,
     GENERATED_OUTPUT_DIR,
     PERK_LABEL_OVERRIDES_PATH,
+)
+from tools.codex_pipeline.atlas_assets import (
+    extract_atlas_assets_for_targets,
+    generated_atlas_asset_targets,
+    has_atlas_source,
 )
 from tools.codex_pipeline.assets import (
     AssetChangeReport,
@@ -153,10 +160,72 @@ def _validate_generated_asset_data_parity(
             validate_asset_data_parity(
                 asset_target.name,
                 target.generated_path(output_dir),
-                asset_target.manifest_path,
+                _asset_manifest_path_for_parity(asset_target),
             )
         )
     return issues
+
+
+def _asset_manifest_path_for_parity(asset_target: AssetTarget) -> Path:
+    source_manifest = asset_target.client_dir / "manifest.json"
+    return source_manifest if source_manifest.is_file() else asset_target.manifest_path
+
+
+def _filter_asset_targets_for_exports(
+    targets: list[ExportTarget],
+    asset_targets: Iterable[AssetTarget],
+) -> list[AssetTarget]:
+    target_names = {target.name for target in targets}
+    return [asset_target for asset_target in asset_targets if asset_target.name in target_names]
+
+
+def _should_use_atlas_asset_source(
+    asset_source: str,
+    targets: list[ExportTarget],
+    asset_targets: list[AssetTarget],
+    *,
+    gf_json_dir: Path,
+) -> bool:
+    if asset_source == "atlas":
+        return True
+    if asset_source == "client":
+        return False
+    if asset_source != "auto":
+        raise ExportError(f"Unknown asset source: {asset_source}")
+    return (
+        any(not asset_target.client_dir.is_dir() for asset_target in asset_targets)
+        and any(has_atlas_source(target.name, gf_json_dir=gf_json_dir) for target in targets)
+    )
+
+
+def _resolve_game_update_asset_targets(
+    targets: list[ExportTarget],
+    asset_targets: list[AssetTarget],
+    *,
+    output_dir: Path,
+    asset_source: str,
+    gf_json_dir: Path,
+    asset_output_dir: Path,
+) -> tuple[list[AssetTarget], list[ValidationIssue]]:
+    if not _should_use_atlas_asset_source(asset_source, targets, asset_targets, gf_json_dir=gf_json_dir):
+        return asset_targets, []
+
+    scoped_asset_targets = _filter_asset_targets_for_exports(targets, asset_targets)
+    scoped_asset_names = {target.name for target in scoped_asset_targets}
+    scoped_export_targets = [target for target in targets if target.name in scoped_asset_names]
+    atlas_reports = extract_atlas_assets_for_targets(
+        scoped_export_targets,
+        scoped_asset_targets,
+        output_dir=output_dir,
+        gf_json_dir=gf_json_dir,
+        asset_output_dir=asset_output_dir,
+    )
+    issues = [
+        ValidationIssue(issue.severity, f"{report.target_name} atlas extraction: {issue.message}")
+        for report in atlas_reports
+        for issue in report.issues
+    ]
+    return generated_atlas_asset_targets(scoped_asset_targets, asset_output_dir=asset_output_dir), issues
 
 
 def build_game_update_report(
@@ -167,6 +236,9 @@ def build_game_update_report(
     drop_sources_path: Path = DROP_SOURCES_PATH,
     perk_label_overrides_path: Path = PERK_LABEL_OVERRIDES_PATH,
     asset_targets: Iterable[AssetTarget] = DEFAULT_ASSET_TARGETS,
+    asset_source: str = "auto",
+    gf_json_dir: Path = CLIENT_GF_JSON_DIR,
+    asset_output_dir: Path = GENERATED_ATLAS_ASSET_DIR,
 ) -> GameUpdateReport:
     target_list = list(targets)
     asset_target_list = list(asset_targets)
@@ -195,7 +267,15 @@ def build_game_update_report(
         )
         diff_reports = build_generated_diff_reports(target_list, output_dir=output_dir)
         unknown_reports = build_unknown_field_reports(target_list, source="generated", output_dir=output_dir)
-        asset_reports = build_asset_change_reports(asset_target_list)
+        report_asset_targets, atlas_issues = _resolve_game_update_asset_targets(
+            target_list,
+            asset_target_list,
+            output_dir=output_dir,
+            asset_source=asset_source,
+            gf_json_dir=gf_json_dir,
+            asset_output_dir=asset_output_dir,
+        )
+        asset_reports = build_asset_change_reports(report_asset_targets)
         drop_report = _build_generated_drop_report(
             target_list,
             output_dir=output_dir,
@@ -208,11 +288,12 @@ def build_game_update_report(
             perk_label_overrides_path=perk_label_overrides_path,
             skipped_sections=skipped_sections,
         )
+        validation_issues.extend(atlas_issues)
         validation_issues.extend(
             _validate_generated_asset_data_parity(
                 target_list,
                 output_dir=output_dir,
-                asset_targets=asset_target_list,
+                asset_targets=report_asset_targets,
                 skipped_sections=skipped_sections,
             )
         )

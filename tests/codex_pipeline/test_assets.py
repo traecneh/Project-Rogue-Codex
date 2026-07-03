@@ -308,3 +308,47 @@ class AssetReportTests(unittest.TestCase):
         printed = output.getvalue()
         self.assertIn("ASSET SYNC DRY-RUN weapons: copied 2, removed 1, manifest entries=3, issues=1", printed)
         self.assertIn("ASSET SYNC ISSUE WARNING: sample warning", printed)
+
+    def test_cli_sync_assets_can_use_generated_atlas_source(self):
+        from tools.codex_pipeline import cli
+        from tools.codex_pipeline.assets import AssetSyncReport, AssetTarget
+
+        resolved_target = AssetTarget(
+            "weapons",
+            Path("client/Weapons"),
+            Path("site/images/weapons"),
+        )
+        report = AssetSyncReport(
+            target_name="weapons",
+            client_dir=Path("atlas/weapons"),
+            site_dir=Path("site/images/weapons"),
+            dry_run=True,
+            copied=["New Sword.png"],
+            removed=[],
+            manifest_count=1,
+            issues=[],
+        )
+        output = io.StringIO()
+        with (
+            patch.object(cli, "resolve_asset_targets", return_value=[resolved_target]),
+            patch.object(cli, "sync_asset_targets", return_value=[report]) as sync_assets,
+            patch("sys.stdout", output),
+        ):
+            exit_code = cli.main(
+                [
+                    "sync-assets",
+                    "--dry-run",
+                    "--asset-source",
+                    "atlas",
+                    "--asset-output-dir",
+                    "atlas",
+                    "--target",
+                    "weapons",
+                ]
+            )
+
+        self.assertEqual(0, exit_code)
+        sync_targets = list(sync_assets.call_args.args[0])
+        self.assertEqual(Path("atlas/weapons"), sync_targets[0].client_dir)
+        self.assertEqual(Path("site/images/weapons"), sync_targets[0].site_dir)
+        self.assertIn("ASSET SYNC DRY-RUN weapons: copied 1, removed 0, manifest entries=1, issues=0", output.getvalue())

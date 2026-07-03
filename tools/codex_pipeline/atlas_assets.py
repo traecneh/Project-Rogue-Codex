@@ -269,3 +269,24 @@ def extract_atlas_assets_for_targets(
             )
         )
     return reports
+
+
+def generated_atlas_asset_targets(
+    asset_targets: Iterable[AssetTarget],
+    *,
+    asset_output_dir: Path,
+) -> list[AssetTarget]:
+    return [
+        AssetTarget(
+            target.name,
+            asset_output_dir / target.name,
+            target.site_dir,
+            target.manifest_prefix,
+        )
+        for target in asset_targets
+    ]
+
+
+def has_atlas_source(target_name: str, *, gf_json_dir: Path) -> bool:
+    atlas_filename = ATLAS_FILENAMES_BY_TARGET.get(target_name)
+    return bool(atlas_filename) and (gf_json_dir / atlas_filename).is_file()
