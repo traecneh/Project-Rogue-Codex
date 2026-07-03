@@ -15,6 +15,7 @@ class GitHubActionsWorkflowTests(unittest.TestCase):
         self.assertIn("actions/setup-python@v5", workflow)
         self.assertIn("actions/setup-node@v4", workflow)
         self.assertIn("cache: \"npm\"", workflow)
+        self.assertIn("python -m pip install cryptography", workflow)
         self.assertIn("npm ci", workflow)
         self.assertIn("python -m unittest discover -s tests -v", workflow)
         self.assertIn("python -m tools.codex_pipeline validate", workflow)

@@ -45,7 +45,7 @@ from tools.codex_pipeline.sources import inspect_export_source_package, validate
 from tools.codex_pipeline.site_smoke import run_site_smoke as run_site_smoke_command
 from tools.codex_pipeline.site_coverage import SiteCoverageReport, build_site_coverage_report
 from tools.codex_pipeline.unknowns import build_unknown_field_reports
-from tools.codex_pipeline.vpack import inspect_vpack
+from tools.codex_pipeline.vpack import VpackError, decrypt_vpack, inspect_vpack, resolve_vpack_output_path
 from tools.codex_pipeline.validators.site import (
     ValidationIssue,
     read_json,
@@ -176,6 +176,7 @@ def build_parser() -> argparse.ArgumentParser:
             "validate-sources",
             "source-inventory",
             "vpack-info",
+            "vpack-extract",
             "unknown-fields",
             "drop-report",
             "game-update-report",
@@ -834,7 +835,7 @@ def run_source_inventory(args: argparse.Namespace) -> int:
         return 0
 
     if any(source.exists and source.is_vpack for source in report.vpack_sources):
-        print("EXPORT READINESS: BLOCKED - VPACK unpacking is not yet supported")
+        print("EXPORT READINESS: BLOCKED - legacy .dat extractors cannot read packed VPACK JSON yet")
     else:
         print("EXPORT READINESS: BLOCKED - source data is missing")
     return 1
@@ -880,8 +881,49 @@ def run_vpack_info(args: argparse.Namespace) -> int:
     for issue in report.issues:
         print(f"VPACK ISSUE ERROR: {issue}")
 
-    print("DECRYPTION: unsupported by Codex pipeline")
-    return 0 if report.header_valid else 1
+    if not report.header_valid:
+        print("DECRYPTION: skipped because the VPACK header is invalid")
+        return 1
+
+    try:
+        decrypted = decrypt_vpack(pack_path, log_path=log_path)
+    except VpackError as exc:
+        print(f"DECRYPTION: failed - {exc}")
+        return 1
+
+    manifest = decrypted.manifest
+    print(
+        "MANIFEST: "
+        f"schema={manifest['schema_version']} build={manifest['build_version']} "
+        f"compression={manifest['compression']} files={len(decrypted.files)}"
+    )
+    for file in decrypted.files:
+        print(
+            f"MANIFEST FILE {file.path}: "
+            f"original={file.original_size} compressed={file.compressed_size} sha256={'ok' if file.sha256_ok else 'error'}"
+        )
+    print("DECRYPTION: supported by Codex pipeline")
+    return 0
+
+
+def run_vpack_extract(args: argparse.Namespace) -> int:
+    pack_path = args.pack_path or CLIENT_PACK_PATH
+    output_dir = args.output_dir
+    try:
+        decrypted = decrypt_vpack(pack_path, log_path=args.log_path or CLIENT_LOG_PATH)
+        for file in decrypted.files:
+            output_path = resolve_vpack_output_path(output_dir, file.path)
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            output_path.write_bytes(file.data)
+            print(
+                f"VPACK EXTRACTED {file.path}: {output_path} "
+                f"original={file.original_size} compressed={file.compressed_size} sha256=ok"
+            )
+    except (OSError, VpackError) as exc:
+        print(f"ERROR: failed to extract VPACK: {exc}")
+        return 1
+    print(f"VPACK EXTRACT SUMMARY: {len(decrypted.files)} file(s) -> {output_dir}")
+    return 0
 
 
 def _format_report_values(values) -> str:
@@ -1145,6 +1187,8 @@ def main(argv: list[str] | None = None) -> int:
         return run_source_inventory(args)
     if args.command == "vpack-info":
         return run_vpack_info(args)
+    if args.command == "vpack-extract":
+        return run_vpack_extract(args)
     if args.command == "unknown-fields":
         return run_unknown_fields(args)
     if args.command == "drop-report":

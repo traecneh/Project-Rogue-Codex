@@ -29,11 +29,13 @@ $env:PROJECT_ROGUE_CLIENT_ROOT = "C:\Users\traec\Desktop\Project Rogue\Client"
 python -m tools.codex_pipeline doctor
 python -m tools.codex_pipeline source-inventory
 python -m tools.codex_pipeline vpack-info
+python -m tools.codex_pipeline vpack-extract --output-dir generated-output\vpack
 ```
 
 The July 2026 client package moved the direct `.dat` files into
-`Data\ClientPack\rogue_data.vpack`. The pipeline detects that packed source and
-blocks export with a clear message until VPACK unpacking is supported.
+`Data\ClientPack\rogue_data.vpack`. The pipeline detects that packed source,
+can decrypt and extract the packed JSON files, and blocks the legacy export path
+until the new JSON schema is mapped into the Codex site format.
 `source-inventory` reports the currently selected client source shape, including
 legacy `.dat` availability, VPACK path, size, SHA-256, and header bytes.
 `vpack-info` inspects the VPACK fixed header and reads `ProjectRogue.log` for
@@ -42,6 +44,8 @@ build `1`, schema `1`, crypto `1`, compression `1`, and 11 packed JSON files:
 `Map.json`, `safezones.json`, `locales.json`, `tiles.json`, `npcs.json`,
 `monsters.json`, `objecttypes.json`, `weapons.json`, `armors.json`,
 `collectables.json`, and `useables.json`.
+`vpack-extract` verifies the AES-GCM payload and per-file SHA-256 values before
+writing extracted JSON files.
 
 The pipeline writes generated client exports to
 `generated-output/codex-data/` first. Site JSON is only changed after an

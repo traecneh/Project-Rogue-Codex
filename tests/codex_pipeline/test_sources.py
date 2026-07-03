@@ -92,7 +92,7 @@ class SourceDoctorTests(unittest.TestCase):
         self.assertIn("source data not found", source_check.message)
         self.assertIn("packed VPACK source found", source_check.message)
         self.assertIn(str(vpack), source_check.message)
-        self.assertIn("VPACK unpacking is not yet supported", source_check.message)
+        self.assertIn("legacy .dat extractors cannot read packed VPACK JSON yet", source_check.message)
 
     def test_inspect_export_source_package_reports_vpack_metadata(self):
         from tools.codex_pipeline.sources import inspect_export_source_package
@@ -141,7 +141,7 @@ class SourceDoctorTests(unittest.TestCase):
         self.assertIn("VPACK FOUND", printed)
         self.assertIn(str(vpack), printed)
         self.assertIn("EXPORT READINESS: BLOCKED", printed)
-        self.assertIn("VPACK unpacking is not yet supported", printed)
+        self.assertIn("legacy .dat extractors cannot read packed VPACK JSON yet", printed)
 
     def test_config_accepts_project_rogue_client_root_override(self):
         with tempfile.TemporaryDirectory() as tmp:

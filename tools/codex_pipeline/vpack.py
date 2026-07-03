@@ -1,18 +1,29 @@
 from __future__ import annotations
 
+import base64
+import gzip
+import hashlib
+import json
 import re
 import struct
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+
 
 VPACK_MAGIC = b"VPACK"
 VPACK_FIXED_HEADER_SIZE = 49
-VPACK_AUTH_TAG_OFFSET = 13
-VPACK_AUTH_TAG_SIZE = 16
-VPACK_NONCE_OFFSET = 29
+VPACK_NONCE_OFFSET = 13
 VPACK_NONCE_SIZE = 12
+VPACK_AUTH_TAG_OFFSET = 25
+VPACK_AUTH_TAG_SIZE = 16
 VPACK_CIPHERTEXT_LENGTH_OFFSET = 41
+VPACK_AES_KEY_B64 = "Vm9ybGlhUm9ndWVEYXRhUGFja0tleTIwMjYhIVZQSzE="
+
+
+class VpackError(ValueError):
+    pass
 
 
 @dataclass(frozen=True)
@@ -38,6 +49,25 @@ class VpackInspectionReport:
     log_build_version: int | None = None
     log_file_count: int | None = None
     log_loaded_files: list[str] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
+class VpackExtractedFile:
+    path: str
+    data: bytes
+    original_size: int
+    compressed_size: int
+    offset: int
+    sha256: str
+    size_ok: bool
+    sha256_ok: bool
+
+
+@dataclass(frozen=True)
+class VpackDecryptionResult:
+    report: VpackInspectionReport
+    manifest: dict
+    files: list[VpackExtractedFile]
 
 
 def _hex(data: bytes) -> str:
@@ -123,8 +153,8 @@ def inspect_vpack(path: Path, *, log_path: Path | None = None) -> VpackInspectio
     magic = magic_bytes.decode("ascii", errors="replace")
     schema_version = struct.unpack_from("<H", data, 5)[0]
     build_version = struct.unpack_from("<I", data, 7)[0]
-    crypto_id = data[11]
-    compression_id = data[12]
+    compression_id = data[11]
+    crypto_id = data[12]
     auth_tag_hex = _hex(data[VPACK_AUTH_TAG_OFFSET : VPACK_AUTH_TAG_OFFSET + VPACK_AUTH_TAG_SIZE])
     ciphertext_length = struct.unpack_from("<Q", data, VPACK_CIPHERTEXT_LENGTH_OFFSET)[0]
     nonce_hex = _hex(data[VPACK_NONCE_OFFSET : VPACK_NONCE_OFFSET + VPACK_NONCE_SIZE])
@@ -164,3 +194,121 @@ def inspect_vpack(path: Path, *, log_path: Path | None = None) -> VpackInspectio
         log_file_count=log_file_count,
         log_loaded_files=log_loaded_files,
     )
+
+
+def _read_pack_bytes(path: Path) -> bytes:
+    try:
+        return path.read_bytes()
+    except OSError as exc:
+        raise VpackError(f"failed to read pack file: {exc}") from exc
+
+
+def _decode_default_key() -> bytes:
+    key = base64.b64decode(VPACK_AES_KEY_B64, validate=True)
+    if len(key) != 32:
+        raise VpackError(f"decoded AES key length is not 32 bytes: {len(key)}")
+    return key
+
+
+def _validate_manifest(manifest: object, report: VpackInspectionReport) -> dict:
+    if not isinstance(manifest, dict):
+        raise VpackError("manifest root is not an object")
+    if manifest.get("schema_version") != report.schema_version:
+        raise VpackError("manifest schema_version does not match header schema version")
+    if manifest.get("build_version") != report.build_version:
+        raise VpackError("manifest build_version does not match header build version")
+    if manifest.get("compression") != "gzip-per-file":
+        raise VpackError(f"manifest compression is unsupported: {manifest.get('compression')!r}")
+    if not isinstance(manifest.get("files"), list) or not manifest["files"]:
+        raise VpackError("manifest files field is not a non-empty array")
+    return manifest
+
+
+def _parse_manifest(plaintext: bytes, report: VpackInspectionReport) -> tuple[dict, int]:
+    if len(plaintext) < 4:
+        raise VpackError("decrypted plaintext is missing the manifest length")
+    manifest_length = struct.unpack_from("<I", plaintext, 0)[0]
+    manifest_end = 4 + manifest_length
+    if manifest_end > len(plaintext):
+        raise VpackError("manifest length exceeds decrypted plaintext")
+    try:
+        manifest = json.loads(plaintext[4:manifest_end])
+    except json.JSONDecodeError as exc:
+        raise VpackError(f"manifest JSON parse error: {exc}") from exc
+    return _validate_manifest(manifest, report), manifest_end
+
+
+def _extract_file(entry: object, payload: bytes) -> VpackExtractedFile:
+    if not isinstance(entry, dict):
+        raise VpackError("manifest file entry is not an object")
+    path = entry.get("path")
+    original_size = entry.get("original_size")
+    compressed_size = entry.get("compressed_size")
+    offset = entry.get("offset")
+    sha256 = entry.get("sha256")
+    if (
+        not isinstance(path, str)
+        or not isinstance(original_size, int)
+        or not isinstance(compressed_size, int)
+        or not isinstance(offset, int)
+        or not isinstance(sha256, str)
+    ):
+        raise VpackError(f"manifest file entry is missing or has invalid fields: {entry!r}")
+    if compressed_size <= 0:
+        raise VpackError(f"manifest compressed_size is zero for {path}")
+    if offset < 0 or compressed_size < 0 or offset + compressed_size > len(payload):
+        raise VpackError(f"manifest payload range exceeds decrypted payload for {path}")
+    compressed = payload[offset : offset + compressed_size]
+    try:
+        data = gzip.decompress(compressed)
+    except OSError as exc:
+        raise VpackError(f"gzip decompression failed for {path}: {exc}") from exc
+    digest = hashlib.sha256(data).hexdigest()
+    return VpackExtractedFile(
+        path=path,
+        data=data,
+        original_size=original_size,
+        compressed_size=compressed_size,
+        offset=offset,
+        sha256=sha256,
+        size_ok=len(data) == original_size,
+        sha256_ok=digest == sha256,
+    )
+
+
+def decrypt_vpack(path: Path, *, log_path: Path | None = None) -> VpackDecryptionResult:
+    report = inspect_vpack(path, log_path=log_path)
+    if not report.exists:
+        raise VpackError(f"pack file not found: {path}")
+    if not report.header_valid:
+        raise VpackError("; ".join(report.issues))
+
+    data = _read_pack_bytes(path)
+    nonce = data[VPACK_NONCE_OFFSET : VPACK_NONCE_OFFSET + VPACK_NONCE_SIZE]
+    tag = data[VPACK_AUTH_TAG_OFFSET : VPACK_AUTH_TAG_OFFSET + VPACK_AUTH_TAG_SIZE]
+    ciphertext = data[report.ciphertext_offset : report.ciphertext_offset + report.ciphertext_length]
+    try:
+        plaintext = AESGCM(_decode_default_key()).decrypt(nonce, ciphertext + tag, None)
+    except Exception as exc:
+        raise VpackError(f"AES-GCM decrypt/authentication failed: {exc}") from exc
+
+    manifest, payload_offset = _parse_manifest(plaintext, report)
+    payload = plaintext[payload_offset:]
+    files = [_extract_file(entry, payload) for entry in manifest["files"]]
+    for file in files:
+        if not file.size_ok:
+            raise VpackError(f"deflate output size did not match manifest original_size for {file.path}")
+        if not file.sha256_ok:
+            raise VpackError(f"sha256 mismatch for {file.path}")
+    return VpackDecryptionResult(report=report, manifest=manifest, files=files)
+
+
+def resolve_vpack_output_path(output_dir: Path, packed_path: str) -> Path:
+    relative = Path(packed_path)
+    if relative.is_absolute() or ".." in relative.parts:
+        raise VpackError(f"manifest path is invalid: {packed_path}")
+    output_root = output_dir.resolve()
+    output_path = (output_root / relative).resolve()
+    if not output_path.is_relative_to(output_root):
+        raise VpackError(f"manifest path is invalid: {packed_path}")
+    return output_path

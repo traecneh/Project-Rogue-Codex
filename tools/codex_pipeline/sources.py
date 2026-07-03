@@ -88,7 +88,7 @@ def _source_data_check(target: ExportTarget) -> SourceCheckResult:
             False,
             (
                 f"source data not found: {path}; packed VPACK source found: {vpack_path}; "
-                "VPACK unpacking is not yet supported by the Codex extractors"
+                "legacy .dat extractors cannot read packed VPACK JSON yet"
             ),
         )
 
