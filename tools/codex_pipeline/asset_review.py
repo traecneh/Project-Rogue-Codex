@@ -206,10 +206,24 @@ def _classification_summary(rows: list[AssetImageChange]) -> str:
     return ", ".join(f"{classification}={counts[classification]}" for classification in CLASSIFICATION_ORDER)
 
 
+def _priority_rows(rows: list[AssetImageChange]) -> list[AssetImageChange]:
+    return [
+        row
+        for row in rows
+        if row.status in {"ADDED", "REMOVED"} or row.classification in {"meaningful", "unreadable"}
+    ]
+
+
+def _background_rows(rows: list[AssetImageChange]) -> list[AssetImageChange]:
+    return [row for row in rows if row.classification == "background-only"]
+
+
 def _build_markdown(
     reports: list[AssetChangeReport],
     rows_by_target: dict[str, list[AssetImageChange]],
     sheet_paths_by_target: dict[str, Path],
+    priority_sheet_paths_by_target: dict[str, Path],
+    background_sheet_paths_by_target: dict[str, Path],
     output_dir: Path,
 ) -> str:
     changed_reports = [report for report in reports if report.has_changes]
@@ -237,6 +251,44 @@ def _build_markdown(
             rel_path = sheet_path.relative_to(output_dir).as_posix()
             lines.append(f"![{_target_title(report.target_name)} contact sheet]({rel_path})")
         lines.append("")
+
+    lines.append("## Priority Review")
+    priority_found = False
+    for report in changed_reports:
+        rows = _priority_rows(rows_by_target.get(report.target_name, []))
+        sheet_path = priority_sheet_paths_by_target.get(report.target_name)
+        if not rows or sheet_path is None:
+            continue
+        priority_found = True
+        rel_path = sheet_path.relative_to(output_dir).as_posix()
+        lines.extend(
+            [
+                f"- {_target_title(report.target_name)}: {len(rows)} priority image(s)",
+                f"![{_target_title(report.target_name)} priority contact sheet]({rel_path})",
+                "",
+            ]
+        )
+    if not priority_found:
+        lines.extend(["- No priority image changes.", ""])
+
+    lines.append("## Low Priority Background-Only Changes")
+    background_found = False
+    for report in changed_reports:
+        rows = _background_rows(rows_by_target.get(report.target_name, []))
+        sheet_path = background_sheet_paths_by_target.get(report.target_name)
+        if not rows or sheet_path is None:
+            continue
+        background_found = True
+        rel_path = sheet_path.relative_to(output_dir).as_posix()
+        lines.extend(
+            [
+                f"- {_target_title(report.target_name)}: {len(rows)} background-only image(s)",
+                f"![{_target_title(report.target_name)} background contact sheet]({rel_path})",
+                "",
+            ]
+        )
+    if not background_found:
+        lines.extend(["- No background-only image changes.", ""])
     return "\n".join(lines).rstrip() + "\n"
 
 
@@ -248,7 +300,10 @@ def write_asset_review_artifacts(
     report_list = list(reports)
     output_dir.mkdir(parents=True, exist_ok=True)
     sheet_paths_by_target: dict[str, Path] = {}
+    priority_sheet_paths_by_target: dict[str, Path] = {}
+    background_sheet_paths_by_target: dict[str, Path] = {}
     rows_by_target: dict[str, list[AssetImageChange]] = {}
+    sheet_paths: list[Path] = []
     for report in report_list:
         rows = _change_rows(report)
         rows_by_target[report.target_name] = rows
@@ -256,14 +311,34 @@ def write_asset_review_artifacts(
             continue
         sheet_path = output_dir / f"{report.target_name}_contact_sheet.png"
         sheet_paths_by_target[report.target_name] = _write_contact_sheet(report, rows, sheet_path)
+        sheet_paths.append(sheet_paths_by_target[report.target_name])
+
+        priority_rows = _priority_rows(rows)
+        if priority_rows:
+            priority_sheet_path = output_dir / f"{report.target_name}_priority_contact_sheet.png"
+            priority_sheet_paths_by_target[report.target_name] = _write_contact_sheet(report, priority_rows, priority_sheet_path)
+            sheet_paths.append(priority_sheet_paths_by_target[report.target_name])
+
+        background_rows = _background_rows(rows)
+        if background_rows:
+            background_sheet_path = output_dir / f"{report.target_name}_background_contact_sheet.png"
+            background_sheet_paths_by_target[report.target_name] = _write_contact_sheet(report, background_rows, background_sheet_path)
+            sheet_paths.append(background_sheet_paths_by_target[report.target_name])
 
     markdown_path = output_dir / "asset_image_review.md"
     markdown_path.write_text(
-        _build_markdown(report_list, rows_by_target, sheet_paths_by_target, output_dir),
+        _build_markdown(
+            report_list,
+            rows_by_target,
+            sheet_paths_by_target,
+            priority_sheet_paths_by_target,
+            background_sheet_paths_by_target,
+            output_dir,
+        ),
         encoding="utf-8",
         newline="\n",
     )
     return AssetImageReviewArtifact(
         markdown_path=markdown_path,
-        sheet_paths=list(sheet_paths_by_target.values()),
+        sheet_paths=sheet_paths,
     )

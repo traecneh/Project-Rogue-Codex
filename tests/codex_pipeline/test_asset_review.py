@@ -50,11 +50,19 @@ class AssetImageReviewTests(unittest.TestCase):
             output_dir = root / "review"
             site_dir.mkdir(parents=True)
             _write_image(client_dir / "New Sword.png", (0, 0, 255, 255))
-            _sprite_image((255, 0, 255, 255), (20, 30, 40, 255)).save(client_dir / "Changed Sword.png")
+            _sprite_image((255, 0, 255, 255), (20, 30, 40, 255)).save(client_dir / "Background Sword.png")
+            _sprite_image((0, 0, 0, 0), (20, 30, 40, 255)).save(site_dir / "Background Sword.png")
+            _sprite_image((255, 0, 255, 255), (220, 30, 40, 255)).save(client_dir / "Changed Sword.png")
             _sprite_image((0, 0, 0, 0), (20, 30, 40, 255)).save(site_dir / "Changed Sword.png")
             _write_image(site_dir / "Removed Sword.png", (255, 0, 0, 255))
             (site_dir / "manifest.json").write_text(
-                json.dumps(["images/weapons/Changed Sword.png", "images/weapons/Removed Sword.png"]),
+                json.dumps(
+                    [
+                        "images/weapons/Background Sword.png",
+                        "images/weapons/Changed Sword.png",
+                        "images/weapons/Removed Sword.png",
+                    ]
+                ),
                 encoding="utf-8",
             )
             report = AssetChangeReport(
@@ -66,7 +74,7 @@ class AssetImageReviewTests(unittest.TestCase):
                 manifest_count=2,
                 added=["New Sword.png"],
                 removed=["Removed Sword.png"],
-                changed=["Changed Sword.png"],
+                changed=["Background Sword.png", "Changed Sword.png"],
                 issues=[],
             )
 
@@ -77,11 +85,24 @@ class AssetImageReviewTests(unittest.TestCase):
                 sheet.load()
 
         self.assertEqual(output_dir / "asset_image_review.md", artifact.markdown_path)
-        self.assertEqual([output_dir / "weapons_contact_sheet.png"], artifact.sheet_paths)
+        self.assertEqual(
+            [
+                output_dir / "weapons_contact_sheet.png",
+                output_dir / "weapons_priority_contact_sheet.png",
+                output_dir / "weapons_background_contact_sheet.png",
+            ],
+            artifact.sheet_paths,
+        )
         self.assertIn("# Project Rogue Codex Image Review", markdown)
         self.assertIn("## Weapons", markdown)
-        self.assertIn("- Totals: +1 -1 ~1", markdown)
-        self.assertIn("- Changed classifications: meaningful=0, background-only=1, encoding-only=0, unreadable=0", markdown)
+        self.assertIn("- Totals: +1 -1 ~2", markdown)
+        self.assertIn("- Changed classifications: meaningful=1, background-only=1, encoding-only=0, unreadable=0", markdown)
+        self.assertIn("## Priority Review", markdown)
+        self.assertIn("- Weapons: 3 priority image(s)", markdown)
+        self.assertIn("![Weapons priority contact sheet](weapons_priority_contact_sheet.png)", markdown)
+        self.assertIn("## Low Priority Background-Only Changes", markdown)
+        self.assertIn("- Weapons: 1 background-only image(s)", markdown)
+        self.assertIn("![Weapons background contact sheet](weapons_background_contact_sheet.png)", markdown)
         self.assertIn("![Weapons contact sheet](weapons_contact_sheet.png)", markdown)
         self.assertGreater(sheet.size[0], 200)
         self.assertGreater(sheet.size[1], 80)
