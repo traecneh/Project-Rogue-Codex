@@ -333,7 +333,7 @@
     });
 
     const slotList = Array.from(slotOptions.entries())
-      .sort((a, b) => a[1].localeCompare(b[1]))
+      .sort((a, b) => String(a[1] ?? "").localeCompare(String(b[1] ?? "")))
       .map(([value, label]) => ({ value, label }));
     const resistLabels = {
       fire: "Fire",

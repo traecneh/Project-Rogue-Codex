@@ -2374,6 +2374,13 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn("event.stopPropagation();", script)
         self.assertIn(".armor-link", css)
 
+    def test_armors_page_coerces_slot_filter_labels_before_sorting(self):
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        script = (REPO_ROOT / "js" / "armors-page.js").read_text(encoding="utf-8")
+
+        self.assertIn('String(a[1] ?? "").localeCompare(String(b[1] ?? ""))', script)
+
     def test_armors_page_detail_hides_empty_corrupted_perks_and_empty_requirements(self):
         from tools.codex_pipeline.config import REPO_ROOT
 
