@@ -105,6 +105,72 @@ class ExportCommandTests(unittest.TestCase):
             self.assertTrue((root / "generated" / "fake.json").is_file())
             self.assertFalse((script_dir / "generated" / "fake.json").exists())
 
+    def test_export_client_data_uses_packed_vpack_json_when_legacy_source_is_missing(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            script = root / "extract_weapons.py"
+            source = root / "data" / "data05.dat"
+            vpack = root / "data" / "ClientPack" / "rogue_data.vpack"
+            site_path = root / "site" / "weapons.json"
+            output_dir = root / "generated"
+            script.write_text("raise SystemExit('legacy extractor should not run')\n", encoding="utf-8")
+            vpack.parent.mkdir(parents=True)
+            vpack.write_bytes(b"VPACK placeholder")
+            site_path.parent.mkdir()
+            site_path.write_text(
+                json.dumps([{"id": 200, "name": "Short Sword", "fields": {"weight": 1}}]),
+                encoding="utf-8",
+            )
+            packed_files = {
+                "weapons.json": {
+                    "weapons": [
+                        {
+                            "type": 1,
+                            "items": [
+                                {
+                                    "id": 0,
+                                    "name": "Short Sword",
+                                    "dam_min": 1,
+                                    "dam_max": 9,
+                                    "value": 400,
+                                    "speed": 1000,
+                                    "use_req_amnt": 0,
+                                    "use_req_type": 0,
+                                    "subtype": 1,
+                                    "level": 5,
+                                    "elemental_damage_type": 0,
+                                    "elemental_damage_max": 0,
+                                    "maximum_rarity": 0,
+                                    "shards_deconstruction": 0,
+                                    "shards_promotion": 0,
+                                    "innate_special_effect": 0,
+                                    "frames": [],
+                                }
+                            ],
+                        }
+                    ]
+                }
+            }
+            target = ExportTarget(
+                name="weapons",
+                extractor_script=script,
+                source_data=source,
+                output_filename="weapons.json",
+                site_path=site_path,
+            )
+
+            with patch("tools.codex_pipeline.exports.read_packed_json_files", return_value=packed_files):
+                results = export_client_data([target], output_dir=output_dir, python_executable=sys.executable)
+
+            self.assertIn("mapped packed VPACK JSON source", results[0].stdout)
+            exported = json.loads((output_dir / "weapons.json").read_text(encoding="utf-8"))
+            self.assertEqual(200, exported[0]["id"])
+            self.assertEqual("Short Sword", exported[0]["name"])
+            self.assertEqual(1, exported[0]["fields"]["min_damage"])
+            self.assertEqual(9, exported[0]["fields"]["max_damage"])
+            self.assertEqual(400, exported[0]["fields"]["value"])
+            self.assertEqual(1, exported[0]["fields"]["weight"])
+
     def test_sync_generated_outputs_copies_generated_json_to_site_path(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

@@ -814,6 +814,7 @@ def run_source_inventory(args: argparse.Namespace) -> int:
     print(
         "SOURCE INVENTORY: "
         f"{report.legacy_source_count} legacy .dat source(s), "
+        f"{report.packed_source_count} packed VPACK source(s), "
         f"{report.missing_source_count} missing source(s)"
     )
     for check in report.source_checks:
@@ -835,7 +836,7 @@ def run_source_inventory(args: argparse.Namespace) -> int:
         return 0
 
     if any(source.exists and source.is_vpack for source in report.vpack_sources):
-        print("EXPORT READINESS: BLOCKED - legacy .dat extractors cannot read packed VPACK JSON yet")
+        print("EXPORT READINESS: BLOCKED - one or more targets cannot use packed VPACK JSON yet")
     else:
         print("EXPORT READINESS: BLOCKED - source data is missing")
     return 1

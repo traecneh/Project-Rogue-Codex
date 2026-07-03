@@ -69,7 +69,7 @@ class SourceDoctorTests(unittest.TestCase):
         self.assertTrue(source_check.ok)
         self.assertIn("legacy .dat source data found", source_check.message)
 
-    def test_validate_export_sources_reports_packed_vpack_source_blocker(self):
+    def test_validate_export_sources_reports_packed_vpack_source_ready(self):
         from tools.codex_pipeline.sources import validate_export_sources
 
         with tempfile.TemporaryDirectory() as tmp:
@@ -87,12 +87,13 @@ class SourceDoctorTests(unittest.TestCase):
             results = validate_export_sources([target])
 
         source_check = next(result for result in results if result.check == "source data")
-        self.assertFalse(source_check.ok)
-        self.assertEqual(source, source_check.path)
+        self.assertTrue(source_check.ok)
+        self.assertEqual(vpack, source_check.path)
+        self.assertEqual("packed", source_check.source_kind)
         self.assertIn("source data not found", source_check.message)
         self.assertIn("packed VPACK source found", source_check.message)
         self.assertIn(str(vpack), source_check.message)
-        self.assertIn("legacy .dat extractors cannot read packed VPACK JSON yet", source_check.message)
+        self.assertIn("using packed JSON mapper", source_check.message)
 
     def test_inspect_export_source_package_reports_vpack_metadata(self):
         from tools.codex_pipeline.sources import inspect_export_source_package
@@ -108,9 +109,10 @@ class SourceDoctorTests(unittest.TestCase):
 
             report = inspect_export_source_package([target])
 
-        self.assertFalse(report.export_ready)
+        self.assertTrue(report.export_ready)
         self.assertEqual(0, report.legacy_source_count)
-        self.assertEqual(1, report.missing_source_count)
+        self.assertEqual(1, report.packed_source_count)
+        self.assertEqual(0, report.missing_source_count)
         self.assertEqual(1, len(report.vpack_sources))
         source_info = report.vpack_sources[0]
         self.assertEqual(vpack, source_info.path)
@@ -120,7 +122,7 @@ class SourceDoctorTests(unittest.TestCase):
         self.assertEqual(hashlib.sha256(payload).hexdigest().upper(), source_info.sha256)
         self.assertEqual(payload[:16].hex().upper(), source_info.header_hex)
 
-    def test_cli_source_inventory_prints_packed_source_blocker(self):
+    def test_cli_source_inventory_prints_packed_source_ready(self):
         from tools.codex_pipeline import cli
 
         with tempfile.TemporaryDirectory() as tmp:
@@ -135,13 +137,16 @@ class SourceDoctorTests(unittest.TestCase):
             with patch.object(cli, "resolve_targets", return_value=[target]), patch("sys.stdout", output):
                 exit_code = cli.main(["source-inventory", "--target", "weapons"])
 
-        self.assertEqual(1, exit_code)
+        self.assertEqual(0, exit_code)
         printed = output.getvalue()
-        self.assertIn("SOURCE INVENTORY: 0 legacy .dat source(s), 1 missing source(s)", printed)
+        self.assertIn(
+            "SOURCE INVENTORY: 0 legacy .dat source(s), 1 packed VPACK source(s), 0 missing source(s)",
+            printed,
+        )
         self.assertIn("VPACK FOUND", printed)
         self.assertIn(str(vpack), printed)
-        self.assertIn("EXPORT READINESS: BLOCKED", printed)
-        self.assertIn("legacy .dat extractors cannot read packed VPACK JSON yet", printed)
+        self.assertIn("EXPORT READINESS: READY", printed)
+        self.assertIn("using packed JSON mapper", printed)
 
     def test_config_accepts_project_rogue_client_root_override(self):
         with tempfile.TemporaryDirectory() as tmp:

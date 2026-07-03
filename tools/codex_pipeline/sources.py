@@ -7,6 +7,11 @@ from pathlib import Path
 from typing import Iterable
 
 from tools.codex_pipeline.exports import ExportTarget
+from tools.codex_pipeline.packed_json import (
+    find_packed_vpack_source,
+    is_packed_json_target_supported,
+    vpack_candidates_for_source,
+)
 
 VPACK_MAGIC = b"VPACK"
 
@@ -18,6 +23,7 @@ class SourceCheckResult:
     path: Path
     ok: bool
     message: str
+    source_kind: str | None = None
 
 
 @dataclass(frozen=True)
@@ -38,7 +44,11 @@ class ExportSourcePackageReport:
 
     @property
     def legacy_source_count(self) -> int:
-        return sum(1 for check in self.source_checks if check.ok)
+        return sum(1 for check in self.source_checks if check.ok and check.source_kind == "legacy")
+
+    @property
+    def packed_source_count(self) -> int:
+        return sum(1 for check in self.source_checks if check.ok and check.source_kind == "packed")
 
     @property
     def missing_source_count(self) -> int:
@@ -55,19 +65,6 @@ def _file_check(target: str, check: str, path: Path, missing_message: str) -> So
     return SourceCheckResult(target, check, path, False, f"{missing_message}: {path}")
 
 
-def _vpack_candidate_for_source(path: Path) -> Path:
-    return path.parent / "ClientPack" / "rogue_data.vpack"
-
-
-def _is_vpack_file(path: Path) -> bool:
-    if not path.is_file():
-        return False
-    try:
-        return path.read_bytes()[: len(VPACK_MAGIC)] == VPACK_MAGIC
-    except OSError:
-        return False
-
-
 def _source_data_check(target: ExportTarget) -> SourceCheckResult:
     path = target.source_data
     if path.is_file():
@@ -77,18 +74,31 @@ def _source_data_check(target: ExportTarget) -> SourceCheckResult:
             path,
             True,
             f"legacy .dat source data found: {path}",
+            "legacy",
         )
 
-    vpack_path = _vpack_candidate_for_source(path)
-    if _is_vpack_file(vpack_path):
+    vpack_path = find_packed_vpack_source(path)
+    if vpack_path is not None:
+        if is_packed_json_target_supported(target.name):
+            return SourceCheckResult(
+                target.name,
+                "source data",
+                vpack_path,
+                True,
+                (
+                    f"source data not found: {path}; packed VPACK source found: {vpack_path}; "
+                    "using packed JSON mapper"
+                ),
+                "packed",
+            )
         return SourceCheckResult(
             target.name,
             "source data",
-            path,
+            vpack_path,
             False,
             (
                 f"source data not found: {path}; packed VPACK source found: {vpack_path}; "
-                "legacy .dat extractors cannot read packed VPACK JSON yet"
+                f"{target.name} does not support packed JSON mapping yet"
             ),
         )
 
@@ -128,7 +138,11 @@ def _inspect_vpack_source(path: Path) -> VpackSourceInfo:
 def inspect_export_source_package(targets: Iterable[ExportTarget]) -> ExportSourcePackageReport:
     target_list = list(targets)
     source_checks = [_source_data_check(target) for target in target_list]
-    vpack_paths = dict.fromkeys(_vpack_candidate_for_source(target.source_data) for target in target_list)
+    vpack_paths = dict.fromkeys(
+        candidate
+        for target in target_list
+        for candidate in vpack_candidates_for_source(target.source_data)
+    )
     vpack_sources = [_inspect_vpack_source(path) for path in vpack_paths]
     return ExportSourcePackageReport(source_checks, vpack_sources)
 

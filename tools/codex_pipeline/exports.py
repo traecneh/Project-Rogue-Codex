@@ -18,7 +18,14 @@ from tools.codex_pipeline.config import (
     PERK_LABEL_OVERRIDES_PATH,
     WEAPONS_DATA_PATH,
 )
+from tools.codex_pipeline.packed_json import (
+    find_packed_vpack_source,
+    is_packed_json_target_supported,
+    map_packed_json_target,
+    read_packed_json_files,
+)
 from tools.codex_pipeline.perks import CorruptedPerkOverrides, load_perk_label_overrides
+from tools.codex_pipeline.vpack import VpackError
 
 
 class ExportError(RuntimeError):
@@ -381,14 +388,48 @@ def export_client_data(
 ) -> list[ExportResult]:
     output_dir = _resolve_output_dir(output_dir)
     results: list[ExportResult] = []
+    packed_file_cache: dict[Path, dict[str, Any]] = {}
     for target in targets:
         if not target.extractor_script.is_file():
             raise ExportError(f"{target.name} extractor not found: {target.extractor_script}")
-        if not target.source_data.is_file():
-            raise ExportError(f"{target.name} source data not found: {target.source_data}")
 
         generated_path = target.generated_path(output_dir)
         _prepare_generated_path(generated_path)
+        if not target.source_data.is_file():
+            vpack_path = find_packed_vpack_source(target.source_data)
+            if vpack_path is None:
+                raise ExportError(f"{target.name} source data not found: {target.source_data}")
+            if not is_packed_json_target_supported(target.name):
+                raise ExportError(f"{target.name} does not support packed VPACK JSON export: {vpack_path}")
+
+            try:
+                packed_files = packed_file_cache.get(vpack_path)
+                if packed_files is None:
+                    packed_files = read_packed_json_files(vpack_path)
+                    packed_file_cache[vpack_path] = packed_files
+                site_records = (
+                    _read_json_list(target.site_path, target, "site output")
+                    if target.site_path.is_file()
+                    else []
+                )
+                records = map_packed_json_target(target.name, packed_files, site_records=site_records)
+            except VpackError as exc:
+                raise ExportError(f"{target.name} packed VPACK JSON export failed: {exc}") from exc
+
+            _write_json_list(generated_path, records)
+            _validate_generated_json(generated_path, target)
+            _normalize_generated_output_for_site(target, generated_path)
+            _validate_generated_json(generated_path, target)
+            results.append(
+                ExportResult(
+                    target=target,
+                    generated_path=generated_path,
+                    stdout=f"mapped packed VPACK JSON source: {vpack_path}",
+                    stderr="",
+                )
+            )
+            continue
+
         completed = subprocess.run(
             [
                 python_executable,
