@@ -10,6 +10,8 @@ from tools.codex_pipeline.config import (
     CODEX_MANIFEST_PATH,
     DROP_SOURCES_PATH,
     GENERATED_OUTPUT_DIR,
+    CLIENT_LOG_PATH,
+    CLIENT_PACK_PATH,
     MONSTER_IMAGES_DIR,
     MONSTERS_DATA_PATH,
     PERK_LABEL_OVERRIDES_PATH,
@@ -43,6 +45,7 @@ from tools.codex_pipeline.sources import inspect_export_source_package, validate
 from tools.codex_pipeline.site_smoke import run_site_smoke as run_site_smoke_command
 from tools.codex_pipeline.site_coverage import SiteCoverageReport, build_site_coverage_report
 from tools.codex_pipeline.unknowns import build_unknown_field_reports
+from tools.codex_pipeline.vpack import inspect_vpack
 from tools.codex_pipeline.validators.site import (
     ValidationIssue,
     read_json,
@@ -172,6 +175,7 @@ def build_parser() -> argparse.ArgumentParser:
             "doctor",
             "validate-sources",
             "source-inventory",
+            "vpack-info",
             "unknown-fields",
             "drop-report",
             "game-update-report",
@@ -284,6 +288,16 @@ def build_parser() -> argparse.ArgumentParser:
         "--live",
         action="store_true",
         help="For smoke-site, run page behavior checks against --site-url instead of a local server.",
+    )
+    parser.add_argument(
+        "--pack-path",
+        type=Path,
+        help="For vpack-info, inspect this VPACK file instead of the configured client pack.",
+    )
+    parser.add_argument(
+        "--log-path",
+        type=Path,
+        help="For vpack-info, read this client log for observed packed file loads.",
     )
     return parser
 
@@ -826,6 +840,50 @@ def run_source_inventory(args: argparse.Namespace) -> int:
     return 1
 
 
+def run_vpack_info(args: argparse.Namespace) -> int:
+    pack_path = args.pack_path or CLIENT_PACK_PATH
+    log_path = args.log_path or CLIENT_LOG_PATH
+    report = inspect_vpack(pack_path, log_path=log_path)
+
+    print(f"VPACK INFO: {report.path}")
+    if not report.exists:
+        for issue in report.issues:
+            print(f"VPACK ISSUE ERROR: {issue}")
+        return 1
+
+    print(
+        "HEADER: "
+        f"magic={report.magic} schema={report.schema_version} build={report.build_version} "
+        f"crypto={report.crypto_id} compression={report.compression_id} "
+        f"size={report.size_bytes} header={report.header_size}"
+    )
+    print(
+        "CIPHERTEXT: "
+        f"offset={report.ciphertext_offset} length={report.ciphertext_length} "
+        f"trailing={report.trailing_bytes} fits={'yes' if report.ciphertext_fits else 'no'}"
+    )
+    print(f"AUTH TAG CANDIDATE: {report.auth_tag_candidate_hex}")
+    print(f"NONCE CANDIDATE: {report.nonce_candidate_hex}")
+
+    if report.log_path:
+        if report.log_build_version is None and report.log_file_count is None and not report.log_loaded_files:
+            print(f"CLIENT LOG: no pack observations found ({report.log_path})")
+        else:
+            print(
+                "CLIENT LOG: "
+                f"build={report.log_build_version} files={report.log_file_count} "
+                f"observed={len(report.log_loaded_files)} ({report.log_path})"
+            )
+            for file_name in report.log_loaded_files:
+                print(f"LOG FILE {file_name}")
+
+    for issue in report.issues:
+        print(f"VPACK ISSUE ERROR: {issue}")
+
+    print("DECRYPTION: unsupported by Codex pipeline")
+    return 0 if report.header_valid else 1
+
+
 def _format_report_values(values) -> str:
     return ", ".join(_format_value(value) for value in values)
 
@@ -1085,6 +1143,8 @@ def main(argv: list[str] | None = None) -> int:
         return run_doctor(args)
     if args.command == "source-inventory":
         return run_source_inventory(args)
+    if args.command == "vpack-info":
+        return run_vpack_info(args)
     if args.command == "unknown-fields":
         return run_unknown_fields(args)
     if args.command == "drop-report":

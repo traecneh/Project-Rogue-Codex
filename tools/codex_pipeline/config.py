@@ -7,6 +7,8 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[2]
 CLIENT_ROOT = Path(os.environ.get("PROJECT_ROGUE_CLIENT_ROOT", r"C:\Users\traec\Desktop\Client")).expanduser()
 CLIENT_DATA_DIR = CLIENT_ROOT / "data"
+CLIENT_PACK_PATH = CLIENT_ROOT / "Data" / "ClientPack" / "rogue_data.vpack"
+CLIENT_LOG_PATH = CLIENT_ROOT / "ProjectRogue.log"
 CLIENT_GF_JSON_DIR = CLIENT_ROOT / "gf_json"
 CLIENT_IMAGE_DIR = CLIENT_GF_JSON_DIR / "images"
 CLIENT_WEAPON_IMAGES_DIR = CLIENT_IMAGE_DIR / "Weapons"
