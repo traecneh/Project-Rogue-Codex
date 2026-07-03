@@ -135,10 +135,26 @@ def _inspect_vpack_source(path: Path) -> VpackSourceInfo:
     )
 
 
+def _dedupe_vpack_candidate_paths(candidates: Iterable[Path]) -> list[Path]:
+    def candidate_is_file(path: Path) -> bool:
+        is_file = getattr(path, "is_file", None)
+        return bool(is_file and is_file())
+
+    selected: dict[str, Path] = {}
+    for candidate in candidates:
+        key = str(candidate).casefold()
+        existing = selected.get(key)
+        if existing is None:
+            selected[key] = candidate
+        elif not candidate_is_file(existing) and candidate_is_file(candidate):
+            selected[key] = candidate
+    return list(selected.values())
+
+
 def inspect_export_source_package(targets: Iterable[ExportTarget]) -> ExportSourcePackageReport:
     target_list = list(targets)
     source_checks = [_source_data_check(target) for target in target_list]
-    vpack_paths = dict.fromkeys(
+    vpack_paths = _dedupe_vpack_candidate_paths(
         candidate
         for target in target_list
         for candidate in vpack_candidates_for_source(target.source_data)

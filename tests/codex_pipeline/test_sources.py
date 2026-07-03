@@ -6,6 +6,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from pathlib import PurePosixPath
 from unittest.mock import patch
 
 from tools.codex_pipeline.exports import ExportTarget
@@ -121,6 +122,33 @@ class SourceDoctorTests(unittest.TestCase):
         self.assertEqual(len(payload), source_info.size_bytes)
         self.assertEqual(hashlib.sha256(payload).hexdigest().upper(), source_info.sha256)
         self.assertEqual(payload[:16].hex().upper(), source_info.header_hex)
+
+    def test_inspect_export_source_package_dedupes_vpack_case_variants(self):
+        from tools.codex_pipeline.sources import VpackSourceInfo, inspect_export_source_package
+
+        target = ExportTarget(
+            "weapons",
+            Path("extract_fake.py"),
+            Path("/client/data/data05.dat"),
+            "fake.json",
+            Path("site/fake.json"),
+        )
+        lower_candidate = PurePosixPath("/client/data/ClientPack/rogue_data.vpack")
+        upper_candidate = PurePosixPath("/client/Data/ClientPack/rogue_data.vpack")
+
+        with (
+            patch(
+                "tools.codex_pipeline.sources.vpack_candidates_for_source",
+                return_value=[lower_candidate, upper_candidate],
+            ),
+            patch(
+                "tools.codex_pipeline.sources._inspect_vpack_source",
+                side_effect=lambda path: VpackSourceInfo(path, True, True, 1, "hash", "565041434B"),
+            ),
+        ):
+            report = inspect_export_source_package([target])
+
+        self.assertEqual([lower_candidate], [source.path for source in report.vpack_sources])
 
     def test_cli_source_inventory_prints_packed_source_ready(self):
         from tools.codex_pipeline import cli
