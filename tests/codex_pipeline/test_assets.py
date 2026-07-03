@@ -75,6 +75,60 @@ class AssetReportTests(unittest.TestCase):
         self.assertIn("manifest lists missing image Missing.png", messages)
         self.assertIn("manifest does not list image Unlisted.png", messages)
 
+    def test_build_asset_change_report_skips_diff_when_client_folder_is_missing(self):
+        from tools.codex_pipeline.assets import AssetTarget, build_asset_change_report
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            client_dir = root / "client" / "gf_json" / "images" / "Weapons"
+            site_dir = root / "site" / "images" / "weapons"
+            site_dir.mkdir(parents=True)
+            (site_dir / "Rune Sword.gif").write_bytes(b"site asset")
+            (site_dir / "manifest.json").write_text(
+                json.dumps(["images/weapons/Rune Sword.gif"]),
+                encoding="utf-8",
+            )
+
+            report = build_asset_change_report(AssetTarget("weapons", client_dir, site_dir))
+
+        self.assertEqual(0, report.client_count)
+        self.assertEqual(1, report.site_count)
+        self.assertEqual(1, report.manifest_count)
+        self.assertEqual([], report.added)
+        self.assertEqual([], report.removed)
+        self.assertEqual([], report.changed)
+        self.assertFalse(report.has_changes)
+        messages = "\n".join(issue.message for issue in report.issues)
+        self.assertIn("client image folder not found", messages)
+        self.assertIn("asset comparison skipped", messages)
+
+    def test_build_asset_change_report_notes_embedded_gf_json_atlas_source(self):
+        from tools.codex_pipeline.assets import AssetTarget, build_asset_change_report
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            gf_json_dir = root / "client" / "gf_json"
+            client_dir = gf_json_dir / "images" / "Weapons"
+            site_dir = root / "site" / "images" / "weapons"
+            gf_json_dir.mkdir(parents=True)
+            site_dir.mkdir(parents=True)
+            (gf_json_dir / "itemgraph.json").write_text(
+                json.dumps({"Name": "itemgraph", "Data": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAAB"}),
+                encoding="utf-8",
+            )
+            (site_dir / "Rune Sword.gif").write_bytes(b"site asset")
+            (site_dir / "manifest.json").write_text(
+                json.dumps(["images/weapons/Rune Sword.gif"]),
+                encoding="utf-8",
+            )
+
+            report = build_asset_change_report(AssetTarget("weapons", client_dir, site_dir))
+
+        self.assertEqual([], report.removed)
+        messages = "\n".join(issue.message for issue in report.issues)
+        self.assertIn("embedded gf_json PNG atlas source found", messages)
+        self.assertIn("itemgraph.json", messages)
+
     def test_sync_asset_changes_dry_run_reports_without_writing(self):
         from tools.codex_pipeline.assets import AssetTarget, sync_asset_changes
 

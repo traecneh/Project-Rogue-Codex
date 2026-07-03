@@ -19,6 +19,7 @@ from tools.codex_pipeline.validators.site import ValidationIssue
 
 
 IMAGE_EXTENSIONS = {".gif", ".png", ".jpg", ".jpeg", ".webp", ".ico"}
+PNG_BASE64_PREFIX = "iVBORw0KGgo"
 
 
 @dataclass(frozen=True)
@@ -134,11 +135,52 @@ def _manifest_image_names(target: AssetTarget, issues: list[ValidationIssue]) ->
 
 def _validate_asset_target_paths(target: AssetTarget) -> list[ValidationIssue]:
     issues: list[ValidationIssue] = []
-    if not target.client_dir.is_dir():
-        issues.append(ValidationIssue("error", f"{target.name} client image folder not found: {target.client_dir}"))
     if not target.site_dir.is_dir():
         issues.append(ValidationIssue("error", f"{target.name} site image folder not found: {target.site_dir}"))
     return issues
+
+
+def _find_gf_json_dir(path: Path) -> Path | None:
+    for candidate in (path, *path.parents):
+        if candidate.name.casefold() == "gf_json" and candidate.is_dir():
+            return candidate
+        child = candidate / "gf_json"
+        if child.is_dir():
+            return child
+    return None
+
+
+def _embedded_gf_json_png_sources(path: Path) -> list[Path]:
+    gf_json_dir = _find_gf_json_dir(path)
+    if gf_json_dir is None:
+        return []
+
+    sources: list[Path] = []
+    for json_path in sorted(gf_json_dir.glob("*.json")):
+        try:
+            raw = json.loads(json_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        data = raw.get("Data") if isinstance(raw, dict) else None
+        if isinstance(data, str) and data.lstrip().startswith(PNG_BASE64_PREFIX):
+            sources.append(json_path)
+    return sources
+
+
+def _format_missing_client_asset_source_message(target: AssetTarget) -> str:
+    message = f"{target.name} asset comparison skipped because client image folder not found: {target.client_dir}"
+    embedded_sources = _embedded_gf_json_png_sources(target.client_dir)
+    if not embedded_sources:
+        return message
+
+    names = [source.name for source in embedded_sources[:5]]
+    if len(embedded_sources) > len(names):
+        names.append(f"... {len(embedded_sources) - len(names)} more")
+    gf_json_dir = embedded_sources[0].parent
+    return (
+        f"{message}; embedded gf_json PNG atlas source found: {gf_json_dir} "
+        f"({len(embedded_sources)} file(s): {', '.join(names)}); atlas extraction not implemented yet"
+    )
 
 
 def _manifest_entries_for(target: AssetTarget, image_names: Iterable[str]) -> list[str]:
@@ -249,9 +291,30 @@ def validate_asset_data_parity(target_name: str, data_path: Path, manifest_path:
 
 def build_asset_change_report(target: AssetTarget) -> AssetChangeReport:
     issues = _validate_asset_target_paths(target)
+    client_source_available = target.client_dir.is_dir()
     client_files = _collect_image_files(target.client_dir)
     site_files = _collect_image_files(target.site_dir)
     manifest_entries = _manifest_image_names(target, issues)
+
+    if not client_source_available:
+        issues.append(
+            ValidationIssue(
+                "error",
+                _format_missing_client_asset_source_message(target),
+            )
+        )
+        return AssetChangeReport(
+            target_name=target.name,
+            client_dir=target.client_dir,
+            site_dir=target.site_dir,
+            client_count=0,
+            site_count=len(site_files),
+            manifest_count=len(manifest_entries),
+            added=[],
+            removed=[],
+            changed=[],
+            issues=issues,
+        )
 
     added = sorted(set(client_files) - set(site_files))
     removed = sorted(set(site_files) - set(client_files))
