@@ -13,7 +13,33 @@ def _write_image(path: Path, color: tuple[int, int, int, int]) -> None:
     Image.new("RGBA", (8, 8), color).save(path)
 
 
+def _sprite_image(background: tuple[int, int, int, int], sprite: tuple[int, int, int, int]) -> Image.Image:
+    image = Image.new("RGBA", (8, 8), background)
+    for x in range(2, 6):
+        for y in range(2, 6):
+            image.putpixel((x, y), sprite)
+    return image
+
+
 class AssetImageReviewTests(unittest.TestCase):
+    def test_classify_image_change_separates_encoding_background_and_sprite_changes(self):
+        from tools.codex_pipeline.asset_review import classify_image_change
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            transparent_sprite = root / "transparent_sprite.png"
+            magenta_sprite = root / "magenta_sprite.png"
+            changed_sprite = root / "changed_sprite.png"
+            same_visible_gif = root / "same_visible.gif"
+            _sprite_image((0, 0, 0, 0), (30, 60, 90, 255)).save(transparent_sprite)
+            _sprite_image((255, 0, 255, 255), (30, 60, 90, 255)).save(magenta_sprite)
+            _sprite_image((255, 0, 255, 255), (200, 60, 90, 255)).save(changed_sprite)
+            _sprite_image((0, 0, 0, 0), (30, 60, 90, 255)).save(same_visible_gif, save_all=False)
+
+            self.assertEqual("encoding-only", classify_image_change(transparent_sprite, same_visible_gif))
+            self.assertEqual("background-only", classify_image_change(transparent_sprite, magenta_sprite))
+            self.assertEqual("meaningful", classify_image_change(transparent_sprite, changed_sprite))
+
     def test_write_asset_review_artifacts_creates_markdown_and_contact_sheet(self):
         from tools.codex_pipeline.asset_review import write_asset_review_artifacts
 
@@ -22,9 +48,10 @@ class AssetImageReviewTests(unittest.TestCase):
             client_dir = root / "generated" / "weapons"
             site_dir = root / "site" / "images" / "weapons"
             output_dir = root / "review"
+            site_dir.mkdir(parents=True)
             _write_image(client_dir / "New Sword.png", (0, 0, 255, 255))
-            _write_image(client_dir / "Changed Sword.png", (255, 255, 0, 255))
-            _write_image(site_dir / "Changed Sword.png", (0, 255, 0, 255))
+            _sprite_image((255, 0, 255, 255), (20, 30, 40, 255)).save(client_dir / "Changed Sword.png")
+            _sprite_image((0, 0, 0, 0), (20, 30, 40, 255)).save(site_dir / "Changed Sword.png")
             _write_image(site_dir / "Removed Sword.png", (255, 0, 0, 255))
             (site_dir / "manifest.json").write_text(
                 json.dumps(["images/weapons/Changed Sword.png", "images/weapons/Removed Sword.png"]),
@@ -54,6 +81,7 @@ class AssetImageReviewTests(unittest.TestCase):
         self.assertIn("# Project Rogue Codex Image Review", markdown)
         self.assertIn("## Weapons", markdown)
         self.assertIn("- Totals: +1 -1 ~1", markdown)
+        self.assertIn("- Changed classifications: meaningful=0, background-only=1, encoding-only=0, unreadable=0", markdown)
         self.assertIn("![Weapons contact sheet](weapons_contact_sheet.png)", markdown)
         self.assertGreater(sheet.size[0], 200)
         self.assertGreater(sheet.size[1], 80)

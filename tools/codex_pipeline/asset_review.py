@@ -24,7 +24,18 @@ STATUS_COLORS = {
     "ADDED": (22, 101, 52),
     "REMOVED": (153, 27, 27),
     "CHANGED": (30, 64, 175),
+    "MEANINGFUL": (30, 64, 175),
+    "BG ONLY": (120, 53, 15),
+    "ENCODING": (82, 82, 91),
+    "UNREADABLE": (153, 27, 27),
 }
+CLASSIFICATION_LABELS = {
+    "meaningful": "MEANINGFUL",
+    "background-only": "BG ONLY",
+    "encoding-only": "ENCODING",
+    "unreadable": "UNREADABLE",
+}
+CLASSIFICATION_ORDER = ["meaningful", "background-only", "encoding-only", "unreadable"]
 
 
 @dataclass(frozen=True)
@@ -39,6 +50,7 @@ class AssetImageChange:
     file_name: str
     before_path: Path | None
     after_path: Path | None
+    classification: str | None = None
 
 
 def _change_rows(report: AssetChangeReport) -> list[AssetImageChange]:
@@ -52,10 +64,67 @@ def _change_rows(report: AssetChangeReport) -> list[AssetImageChange]:
         for file_name in sorted(report.removed)
     )
     rows.extend(
-        AssetImageChange("CHANGED", file_name, report.site_dir / file_name, report.client_dir / file_name)
+        _changed_row(file_name, report.site_dir / file_name, report.client_dir / file_name)
         for file_name in sorted(report.changed)
     )
     return rows
+
+
+def _changed_row(file_name: str, before_path: Path, after_path: Path) -> AssetImageChange:
+    classification = classify_image_change(before_path, after_path)
+    return AssetImageChange(
+        CLASSIFICATION_LABELS[classification],
+        file_name,
+        before_path,
+        after_path,
+        classification,
+    )
+
+
+def _load_rgba_frame(path: Path) -> Image.Image:
+    with Image.open(path) as image:
+        frame = image.convert("RGBA")
+        frame.load()
+        return frame
+
+
+def _is_magic_magenta(pixel: tuple[int, int, int, int]) -> bool:
+    red, green, blue, alpha = pixel
+    return alpha > 0 and red >= 248 and green <= 8 and blue >= 248
+
+
+def _canonical_pixels(image: Image.Image, *, normalize_background: bool) -> list[tuple[int, int, int, int]]:
+    pixels: list[tuple[int, int, int, int]] = []
+    for pixel in image.getdata():
+        red, green, blue, alpha = pixel
+        if normalize_background and (alpha == 0 or _is_magic_magenta(pixel)):
+            pixels.append((0, 0, 0, 0))
+        elif alpha == 0:
+            pixels.append((0, 0, 0, 0))
+        else:
+            pixels.append((red, green, blue, alpha))
+    return pixels
+
+
+def classify_image_change(before_path: Path, after_path: Path) -> str:
+    try:
+        before = _load_rgba_frame(before_path)
+        after = _load_rgba_frame(after_path)
+    except OSError:
+        return "unreadable"
+    if before.size != after.size:
+        return "meaningful"
+
+    before_pixels = _canonical_pixels(before, normalize_background=False)
+    after_pixels = _canonical_pixels(after, normalize_background=False)
+    if before_pixels == after_pixels:
+        return "encoding-only"
+
+    normalized_before = _canonical_pixels(before, normalize_background=True)
+    normalized_after = _canonical_pixels(after, normalize_background=True)
+    if normalized_before == normalized_after:
+        return "background-only"
+    return "meaningful"
 
 
 def _load_thumbnail(path: Path | None) -> Image.Image | None:
@@ -124,7 +193,25 @@ def _target_title(name: str) -> str:
     return name[:1].upper() + name[1:]
 
 
-def _build_markdown(reports: list[AssetChangeReport], sheet_paths_by_target: dict[str, Path], output_dir: Path) -> str:
+def _classification_counts(rows: list[AssetImageChange]) -> dict[str, int]:
+    counts = {classification: 0 for classification in CLASSIFICATION_ORDER}
+    for row in rows:
+        if row.classification in counts:
+            counts[row.classification] += 1
+    return counts
+
+
+def _classification_summary(rows: list[AssetImageChange]) -> str:
+    counts = _classification_counts(rows)
+    return ", ".join(f"{classification}={counts[classification]}" for classification in CLASSIFICATION_ORDER)
+
+
+def _build_markdown(
+    reports: list[AssetChangeReport],
+    rows_by_target: dict[str, list[AssetImageChange]],
+    sheet_paths_by_target: dict[str, Path],
+    output_dir: Path,
+) -> str:
     changed_reports = [report for report in reports if report.has_changes]
     lines = [
         "# Project Rogue Codex Image Review",
@@ -143,6 +230,8 @@ def _build_markdown(reports: list[AssetChangeReport], sheet_paths_by_target: dic
                 f"- Totals: +{len(report.added)} -{len(report.removed)} ~{len(report.changed)}",
             ]
         )
+        if report.changed:
+            lines.append(f"- Changed classifications: {_classification_summary(rows_by_target.get(report.target_name, []))}")
         sheet_path = sheet_paths_by_target.get(report.target_name)
         if sheet_path is not None:
             rel_path = sheet_path.relative_to(output_dir).as_posix()
@@ -159,8 +248,10 @@ def write_asset_review_artifacts(
     report_list = list(reports)
     output_dir.mkdir(parents=True, exist_ok=True)
     sheet_paths_by_target: dict[str, Path] = {}
+    rows_by_target: dict[str, list[AssetImageChange]] = {}
     for report in report_list:
         rows = _change_rows(report)
+        rows_by_target[report.target_name] = rows
         if not rows:
             continue
         sheet_path = output_dir / f"{report.target_name}_contact_sheet.png"
@@ -168,7 +259,7 @@ def write_asset_review_artifacts(
 
     markdown_path = output_dir / "asset_image_review.md"
     markdown_path.write_text(
-        _build_markdown(report_list, sheet_paths_by_target, output_dir),
+        _build_markdown(report_list, rows_by_target, sheet_paths_by_target, output_dir),
         encoding="utf-8",
         newline="\n",
     )
