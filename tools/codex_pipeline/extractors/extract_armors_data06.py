@@ -90,11 +90,6 @@ def parse_data06(path: Path):
     for rec_index, rec_words in enumerate(records):
         fields = build_fields(rec_words, varying_indices, ARMOR_FIELD_NAMES)
 
-        # Skip disabled slots (not enabled in game)
-        if rec_words[19] in (15, 16):
-            skipped += 1
-            continue
-
         # Armor name = first printable chunk up to first null
         name = extract_ascii_name(rec_words)
         if not name or name.lower() == "unused":

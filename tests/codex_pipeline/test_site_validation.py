@@ -1,3 +1,4 @@
+import json
 import re
 import tempfile
 import unittest
@@ -443,6 +444,30 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn("const formatRequirement", script)
         self.assertIn('if (numeric === 0) return "None";', script)
         self.assertIn("[\"Requirement\", formatRequirement(item.skillRequirement)]", script)
+
+    def test_item_data_labels_new_ranged_types_and_ammo_slots(self):
+        from tools.codex_pipeline.config import ARMORS_DATA_PATH, WEAPONS_DATA_PATH
+
+        weapons = json.loads(WEAPONS_DATA_PATH.read_text(encoding="utf-8"))
+        armors = json.loads(ARMORS_DATA_PATH.read_text(encoding="utf-8"))
+
+        weapon_labels = {7: "Bow", 8: "Crossbow"}
+        armor_labels = {15: "Arrows", 16: "Bolts"}
+        weapon_mismatches = [
+            (record.get("name"), fields.get("subtype"), fields.get("subtype_label"))
+            for record in weapons
+            if (fields := record.get("fields", {})).get("subtype") in weapon_labels
+            and fields.get("subtype_label") != weapon_labels[fields.get("subtype")]
+        ]
+        armor_mismatches = [
+            (record.get("name"), fields.get("slot"), fields.get("slot_label"))
+            for record in armors
+            if (fields := record.get("fields", {})).get("slot") in armor_labels
+            and fields.get("slot_label") != armor_labels[fields.get("slot")]
+        ]
+
+        self.assertEqual([], weapon_mismatches)
+        self.assertEqual([], armor_mismatches)
 
     def test_build_planner_uses_external_assets(self):
         from tools.codex_pipeline import cli

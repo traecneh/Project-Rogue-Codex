@@ -143,26 +143,34 @@ class ExtractorBinaryFixtureTests(unittest.TestCase):
         self.assertEqual("Frozen Heart (Tier 2)", fields["corrupted_perk_label"])
         self.assertEqual(9, fields["cold_resistance"])
 
-    def test_single_disabled_weapon_record_is_skipped_even_without_varying_fields(self):
+    def test_weapon_fixture_keeps_bow_and_crossbow_records(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "data05.dat"
-            record = _record_with_name("Hidden Bow", extract_weapons_data05.WORDS_PER_RECORD)
-            record[22] = 8
-            _write_encoded_records(path, [record])
+            bow = _record_with_name("Wooden Bow", extract_weapons_data05.WORDS_PER_RECORD)
+            crossbow = _record_with_name("Crossbow", extract_weapons_data05.WORDS_PER_RECORD)
+            bow[22] = 7
+            crossbow[22] = 8
+            _write_encoded_records(path, [bow, crossbow])
 
             weapons, skipped = extract_weapons_data05.parse_data05(path)
 
-        self.assertEqual([], weapons)
-        self.assertEqual(1, skipped)
+        self.assertEqual(0, skipped)
+        self.assertEqual(["Wooden Bow", "Crossbow"], [weapon["name"] for weapon in weapons])
+        self.assertEqual("Bow", weapons[0]["fields"]["subtype_label"])
+        self.assertEqual("Crossbow", weapons[1]["fields"]["subtype_label"])
 
-    def test_single_disabled_armor_record_is_skipped_even_without_varying_fields(self):
+    def test_armor_fixture_keeps_arrows_and_bolts_records(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "data06.dat"
-            record = _record_with_name("Hidden Slot", extract_armors_data06.WORDS_PER_RECORD)
-            record[19] = 15
-            _write_encoded_records(path, [record])
+            arrows = _record_with_name("Arrows", extract_armors_data06.WORDS_PER_RECORD)
+            bolts = _record_with_name("Bolts", extract_armors_data06.WORDS_PER_RECORD)
+            arrows[19] = 15
+            bolts[19] = 16
+            _write_encoded_records(path, [arrows, bolts])
 
             armors, skipped = extract_armors_data06.parse_data06(path)
 
-        self.assertEqual([], armors)
-        self.assertEqual(1, skipped)
+        self.assertEqual(0, skipped)
+        self.assertEqual(["Arrows", "Bolts"], [armor["name"] for armor in armors])
+        self.assertEqual("Arrows", armors[0]["fields"]["slot_label"])
+        self.assertEqual("Bolts", armors[1]["fields"]["slot_label"])

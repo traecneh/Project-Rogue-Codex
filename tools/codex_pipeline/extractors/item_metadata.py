@@ -107,6 +107,8 @@ WEAPON_SUBTYPE_LABELS = {
     3: "Axe",
     4: "Blunt",
     5: "Polearm",
+    7: "Bow",
+    8: "Crossbow",
 }
 
 WEAPON_SPECIALTY_LABELS = {
@@ -145,6 +147,8 @@ ARMOR_SLOT_LABELS = {
     12: "Shield",
     13: "Leggings",
     14: "Gauntlets",
+    15: "Arrows",
+    16: "Bolts",
     18: "Cosmetic",
 }
 

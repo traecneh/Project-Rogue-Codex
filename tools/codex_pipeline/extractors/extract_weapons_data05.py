@@ -90,11 +90,6 @@ def parse_data05(path: Path):
     for rec_index, rec_words in enumerate(records):
         fields = build_fields(rec_words, varying_indices, WEAPON_FIELD_NAMES)
 
-        # Skip disabled weapon types (bows/crossbows) before name extraction/output.
-        if rec_words[22] in (7, 8):
-            skipped += 1
-            continue
-
         # Weapon name = first printable chunk up to first null
         name = extract_ascii_name(rec_words)
         if not name or name.lower() == "unused":

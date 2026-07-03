@@ -207,11 +207,15 @@ class ExtractorModuleTests(unittest.TestCase):
         self.assertEqual("Cold", WEAPON_ELEMENT_LABELS[4])
         self.assertEqual("Strength", WEAPON_SPECIALTY_LABELS[1])
         self.assertEqual("Sword", WEAPON_SUBTYPE_LABELS[1])
+        self.assertEqual("Bow", WEAPON_SUBTYPE_LABELS[7])
+        self.assertEqual("Crossbow", WEAPON_SUBTYPE_LABELS[8])
         self.assertEqual("Helmet", ARMOR_SLOT_LABELS[10])
+        self.assertEqual("Arrows", ARMOR_SLOT_LABELS[15])
+        self.assertEqual("Bolts", ARMOR_SLOT_LABELS[16])
         weapon_fields = {
             "value_low": 500,
             "value_high": 1,
-            "subtype": 1,
+            "subtype": 7,
             "specialty": 1,
             "element": 4,
             "max_rarity": 3,
@@ -221,7 +225,7 @@ class ExtractorModuleTests(unittest.TestCase):
         armor_fields = {
             "value_low": 300,
             "value_high": 0,
-            "slot": 10,
+            "slot": 15,
             "max_rarity": 2,
             "perk": 22,
             "corrupted_perk": 278,
@@ -231,14 +235,14 @@ class ExtractorModuleTests(unittest.TestCase):
         enrich_armor_fields(armor_fields)
 
         self.assertEqual(66036, weapon_fields["value"])
-        self.assertEqual("Sword", weapon_fields["subtype_label"])
+        self.assertEqual("Bow", weapon_fields["subtype_label"])
         self.assertEqual("Strength", weapon_fields["specialty_label"])
         self.assertEqual("Cold", weapon_fields["element_label"])
         self.assertEqual("Epic", weapon_fields["max_rarity_label"])
         self.assertEqual("Frozen Heart (Tier 1)", weapon_fields["perk_label"])
         self.assertEqual("Frozen Heart (Tier 2)", weapon_fields["corrupted_perk_label"])
         self.assertEqual(300, armor_fields["value"])
-        self.assertEqual("Helmet", armor_fields["slot_label"])
+        self.assertEqual("Arrows", armor_fields["slot_label"])
         self.assertEqual("Rare", armor_fields["max_rarity_label"])
         self.assertEqual("Frozen Heart (Tier 1)", armor_fields["perk_label"])
         self.assertEqual("Frozen Heart (Tier 2)", armor_fields["corrupted_perk_label"])
