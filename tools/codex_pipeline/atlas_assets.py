@@ -22,6 +22,8 @@ ATLAS_FILENAMES_BY_TARGET = {
 }
 INVALID_FILENAME_CHARS = re.compile(r'[<>:"/\\|?*]')
 IMAGE_EXTENSIONS = {".gif", ".png", ".jpg", ".jpeg", ".webp"}
+CHROMA_KEY_MIN_RED_BLUE = 250
+CHROMA_KEY_MAX_GREEN = 5
 
 
 @dataclass(frozen=True)
@@ -170,8 +172,31 @@ def _crop_frames(atlas: Image.Image, frames: Sequence[AtlasFrame], record_name: 
                 )
             )
             continue
-        crops.append(atlas.crop((frame.x, frame.y, frame.x + frame.width, frame.y + frame.height)))
+        crops.append(
+            _apply_chroma_key_transparency(
+                atlas.crop((frame.x, frame.y, frame.x + frame.width, frame.y + frame.height))
+            )
+        )
     return crops
+
+
+def _apply_chroma_key_transparency(image: Image.Image) -> Image.Image:
+    rgba = image.convert("RGBA")
+    pixels = []
+    changed = False
+    for red, green, blue, alpha in rgba.getdata():
+        if _is_transparent_chroma_key(red, green, blue) and alpha:
+            pixels.append((red, green, blue, 0))
+            changed = True
+        else:
+            pixels.append((red, green, blue, alpha))
+    if changed:
+        rgba.putdata(pixels)
+    return rgba
+
+
+def _is_transparent_chroma_key(red: int, green: int, blue: int) -> bool:
+    return red >= CHROMA_KEY_MIN_RED_BLUE and blue >= CHROMA_KEY_MIN_RED_BLUE and green <= CHROMA_KEY_MAX_GREEN
 
 
 def _save_frames(frames: Sequence[Image.Image], path: Path) -> None:

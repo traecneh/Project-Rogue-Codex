@@ -2,19 +2,19 @@
   "assets": {
     "armors": {
       "entries": 255,
-      "files_sha256": "b496073ca487ed0ece0000a0cbb2503acb834e13af3e09929ae0f6bf5ae2c93e",
+      "files_sha256": "4f58b20d77da8d98c7eb433a4fbe1c7cb633aa6bd8187e1948cedd2cf0acd9bf",
       "manifest_path": "images/armors/manifest.json",
       "manifest_sha256": "bcedc6bbef27f8bd97e83d3ec649c27ab87629e2a92089a4fc37aeecc42028f4"
     },
     "monsters": {
       "entries": 190,
-      "files_sha256": "7f045c5c506fdf80c6e46b5a8ec0179873b248b21deb0a75bf37c1b2f25e414a",
+      "files_sha256": "3bb8b2fc271dec36f5018b3279d7905177434fcea3b96308bafa152041122973",
       "manifest_path": "images/monsters/manifest.json",
       "manifest_sha256": "cd4d1f58165428c6e7e94f717b56d38587be9805001e542dee76ef8bd2e28972"
     },
     "weapons": {
       "entries": 242,
-      "files_sha256": "07ab9b84136d3cc514b2a8e80d6a85c012e8ac8bd1edba0cfb8d818432b7253b",
+      "files_sha256": "c7d71ee5ea9df0090f86240bd8d52bac5c2212163b9fee50e413304e8429eb4c",
       "manifest_path": "images/weapons/manifest.json",
       "manifest_sha256": "2cb657949a217f5fc1f9fd90b843ec944fd863b3b555aa080180ff0d381aa07f"
     }
@@ -36,12 +36,12 @@
       "sha256": "0b726c48c53bd5ad82f71624222c7813cf6ec873e69af799d1003d791d921551"
     }
   },
-  "generated_at_utc": "2026-07-03T20:28:20Z",
+  "generated_at_utc": "2026-07-03T21:27:59Z",
   "schema": "project-rogue-codex-manifest",
-  "source_commit": "65052352658b00a3f24ba9b3b95210f6e0fba850",
+  "source_commit": "1565135a2bbf1ce5be209f6b845efeff888518d2",
   "summary": {
     "asset_entries": 687,
-    "content_sha256": "703fbbf42274d376d571a48316a0f6a90579a0775b565beacd2848f9120782ff",
+    "content_sha256": "e39ad6727b172f1bc6b947b4507ffb3ba62817bce44902a075fd54bcb1cb00bf",
     "data_records": 691
   },
   "version": 1

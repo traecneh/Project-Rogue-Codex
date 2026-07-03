@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from PIL import Image
+from PIL import Image, ImageSequence
 
 
 def _write_gf_json_png(path: Path, image: Image.Image) -> None:
@@ -32,11 +32,12 @@ class AtlasAssetTests(unittest.TestCase):
             data_path.parent.mkdir()
             site_dir.mkdir(parents=True)
 
-            atlas = Image.new("RGBA", (4, 2), (0, 0, 0, 0))
+            atlas = Image.new("RGBA", (4, 2), (254, 0, 254, 255))
             for x in range(2):
                 for y in range(2):
-                    atlas.putpixel((x, y), (255, 0, 0, 255))
-                    atlas.putpixel((x + 2, y), (0, 0, 255, 255))
+                    if x == y:
+                        atlas.putpixel((x, y), (255, 0, 0, 255))
+                        atlas.putpixel((x + 2, y), (0, 0, 255, 255))
             _write_gf_json_png(gf_json_dir / "itemgraph.json", atlas)
             data_path.write_text(
                 json.dumps(
@@ -73,7 +74,8 @@ class AtlasAssetTests(unittest.TestCase):
                 new_bow = image.convert("RGBA")
                 new_bow.load()
             with Image.open(output_dir / "Rune Sword.gif") as image:
-                rune_sword_size = image.size
+                rune_sword = image.convert("RGBA")
+                rune_sword.load()
 
         self.assertEqual("itemgraph.json", report.atlas_path.name)
         self.assertEqual(["New Bow.png", "Rune Sword.gif"], sorted(report.written))
@@ -82,7 +84,69 @@ class AtlasAssetTests(unittest.TestCase):
         self.assertEqual(["images/weapons/New Bow.png", "images/weapons/Rune Sword.gif"], manifest_entries)
         self.assertEqual((2, 2), new_bow.size)
         self.assertEqual((0, 0, 255, 255), new_bow.getpixel((0, 0)))
-        self.assertEqual((2, 2), rune_sword_size)
+        self.assertEqual(0, new_bow.getpixel((1, 0))[3])
+        self.assertEqual(0, rune_sword.getpixel((1, 0))[3])
+        self.assertEqual((255, 0, 0, 255), rune_sword.getpixel((0, 0)))
+
+    def test_extract_atlas_assets_preserves_transparency_in_animated_gifs(self):
+        from tools.codex_pipeline.atlas_assets import extract_atlas_assets_for_target
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            gf_json_dir = root / "client" / "gf_json"
+            data_path = root / "generated" / "weapons_data05.json"
+            output_dir = root / "atlas-assets" / "weapons"
+            site_dir = root / "site" / "images" / "weapons"
+            gf_json_dir.mkdir(parents=True)
+            data_path.parent.mkdir()
+            site_dir.mkdir(parents=True)
+
+            atlas = Image.new("RGBA", (4, 2), (255, 0, 255, 255))
+            atlas.putpixel((0, 0), (255, 0, 0, 255))
+            atlas.putpixel((2, 0), (0, 0, 255, 255))
+            _write_gf_json_png(gf_json_dir / "itemgraph.json", atlas)
+            data_path.write_text(
+                json.dumps(
+                    [
+                        {
+                            "id": 1,
+                            "name": "Trident",
+                            "fields": {
+                                "frame_1_x": 0,
+                                "frame_1_y": 0,
+                                "frame_1_width": 2,
+                                "frame_1_height": 2,
+                                "frame_2_x": 2,
+                                "frame_2_y": 0,
+                                "frame_2_width": 2,
+                                "frame_2_height": 2,
+                            },
+                        }
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            (site_dir / "manifest.json").write_text(
+                json.dumps(["images/weapons/Trident.gif"]),
+                encoding="utf-8",
+            )
+
+            extract_atlas_assets_for_target(
+                "weapons",
+                data_path=data_path,
+                gf_json_dir=gf_json_dir,
+                output_dir=output_dir,
+                site_dir=site_dir,
+            )
+
+            with Image.open(output_dir / "Trident.gif") as image:
+                frames = [frame.convert("RGBA").copy() for frame in ImageSequence.Iterator(image)]
+
+        self.assertEqual(2, len(frames))
+        self.assertEqual((255, 0, 0, 255), frames[0].getpixel((0, 0)))
+        self.assertEqual(0, frames[0].getpixel((1, 0))[3])
+        self.assertEqual((0, 0, 255, 255), frames[1].getpixel((0, 0)))
+        self.assertEqual(0, frames[1].getpixel((1, 0))[3])
 
     def test_extract_atlas_assets_uses_avatar_atlas_for_monsters(self):
         from tools.codex_pipeline.atlas_assets import extract_atlas_assets_for_target
