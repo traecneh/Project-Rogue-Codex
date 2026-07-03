@@ -19,6 +19,8 @@ class GitHubActionsWorkflowTests(unittest.TestCase):
         self.assertIn("pillow", workflow)
         self.assertIn("npm ci", workflow)
         self.assertIn("python -m unittest discover -s tests -v", workflow)
+        self.assertIn("unittest-output.txt", workflow)
+        self.assertIn("::error title=Unit tests failed::", workflow)
         self.assertIn("python -m tools.codex_pipeline validate", workflow)
         self.assertIn(
             "python -m tools.codex_pipeline smoke-site --smoke-timeout-ms 60000",
