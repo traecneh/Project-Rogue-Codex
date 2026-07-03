@@ -29,7 +29,7 @@ jobs:
           cache: "npm"
 
       - name: Install Python dependencies
-        run: python -m pip install cryptography
+        run: python -m pip install cryptography pillow
 
       - name: Install browser smoke dependencies
         run: npm ci
