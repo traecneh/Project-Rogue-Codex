@@ -8,7 +8,9 @@ from tools.codex_pipeline.config import (
     ARMOR_IMAGES_DIR,
     ARMORS_DATA_PATH,
     CODEX_MANIFEST_PATH,
+    CLIENT_GF_JSON_DIR,
     DROP_SOURCES_PATH,
+    GENERATED_ATLAS_ASSET_DIR,
     GENERATED_OUTPUT_DIR,
     CLIENT_LOG_PATH,
     CLIENT_PACK_PATH,
@@ -19,6 +21,7 @@ from tools.codex_pipeline.config import (
     WEAPON_IMAGES_DIR,
     WEAPONS_DATA_PATH,
 )
+from tools.codex_pipeline.atlas_assets import extract_atlas_assets_for_targets
 from tools.codex_pipeline.assets import resolve_asset_targets, sync_asset_targets
 from tools.codex_pipeline.drop_audit import build_drop_source_audit_report
 from tools.codex_pipeline.drops import load_drop_sources
@@ -181,6 +184,7 @@ def build_parser() -> argparse.ArgumentParser:
             "drop-report",
             "game-update-report",
             "sync-assets",
+            "extract-atlas-assets",
             "refresh-manifest",
             "game-update-workflow",
             "smoke-site",
@@ -199,6 +203,18 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=GENERATED_OUTPUT_DIR,
         help="Intermediate generated-output directory.",
+    )
+    parser.add_argument(
+        "--asset-output-dir",
+        type=Path,
+        default=GENERATED_ATLAS_ASSET_DIR,
+        help="Generated atlas image output directory for extract-atlas-assets.",
+    )
+    parser.add_argument(
+        "--gf-json-dir",
+        type=Path,
+        default=CLIENT_GF_JSON_DIR,
+        help="Client gf_json directory for extract-atlas-assets.",
     )
     parser.add_argument(
         "--write-summary",
@@ -1043,6 +1059,17 @@ def _print_asset_sync_reports(reports) -> None:
             print(f"ASSET SYNC ISSUE {issue.severity.upper()}: {issue.message}")
 
 
+def _print_atlas_extraction_reports(reports) -> None:
+    for report in reports:
+        print(
+            f"ATLAS EXTRACT {report.target_name}: "
+            f"wrote {len(report.written)}, skipped {len(report.skipped)}, issues={len(report.issues)} "
+            f"({report.atlas_path} -> {report.output_dir})"
+        )
+        for issue in report.issues:
+            print(f"ATLAS ISSUE {issue.severity.upper()}: {issue.message}")
+
+
 def _print_game_update_report(report) -> None:
     print(f"GAME UPDATE REPORT: {report.output_dir}")
     for check in report.source_checks:
@@ -1106,6 +1133,24 @@ def run_sync_assets(args: argparse.Namespace) -> int:
     if not args.dry_run:
         return run_refresh_manifest()
     return 0
+
+
+def run_extract_atlas_assets(args: argparse.Namespace) -> int:
+    try:
+        export_targets = resolve_targets(args.targets)
+        asset_targets = resolve_asset_targets(args.targets)
+    except (ExportError, ValueError) as exc:
+        print(f"ERROR: {exc}")
+        return 1
+    reports = extract_atlas_assets_for_targets(
+        export_targets,
+        asset_targets,
+        output_dir=args.output_dir,
+        gf_json_dir=args.gf_json_dir,
+        asset_output_dir=args.asset_output_dir,
+    )
+    _print_atlas_extraction_reports(reports)
+    return 1 if any(report.has_errors for report in reports) else 0
 
 
 def _args_with(args: argparse.Namespace, **overrides) -> argparse.Namespace:
@@ -1198,6 +1243,8 @@ def main(argv: list[str] | None = None) -> int:
         return run_game_update_report(args)
     if args.command == "sync-assets":
         return run_sync_assets(args)
+    if args.command == "extract-atlas-assets":
+        return run_extract_atlas_assets(args)
     if args.command == "refresh-manifest":
         return run_refresh_manifest(args)
     if args.command == "game-update-workflow":

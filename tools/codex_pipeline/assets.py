@@ -179,7 +179,7 @@ def _format_missing_client_asset_source_message(target: AssetTarget) -> str:
     gf_json_dir = embedded_sources[0].parent
     return (
         f"{message}; embedded gf_json PNG atlas source found: {gf_json_dir} "
-        f"({len(embedded_sources)} file(s): {', '.join(names)}); atlas extraction not implemented yet"
+        f"({len(embedded_sources)} file(s): {', '.join(names)}); run extract-atlas-assets to generate review images"
     )
 
 
