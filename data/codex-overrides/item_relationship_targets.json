@@ -7,11 +7,11 @@
     },
     {
       "target": "Blacksmithing",
-      "href": "pages/stats/skills.html"
+      "href": "pages/stats/skills.html#blacksmithing"
     },
     {
       "target": "Carpentry",
-      "href": "pages/stats/skills.html"
+      "href": "pages/stats/skills.html#carpentry"
     },
     {
       "target": "Craft System",
@@ -27,12 +27,11 @@
     },
     {
       "target": "Farming",
-      "textOnly": true,
-      "reason": "No farming system page exists yet"
+      "href": "pages/stats/skills.html#farming"
     },
     {
       "target": "Fishing",
-      "href": "pages/stats/skills.html"
+      "href": "pages/stats/skills.html#fishing"
     },
     {
       "target": "Imbuements System",
@@ -40,11 +39,11 @@
     },
     {
       "target": "Milling",
-      "href": "pages/stats/skills.html"
+      "href": "pages/stats/skills.html#milling"
     },
     {
       "target": "Mining",
-      "href": "pages/stats/skills.html"
+      "href": "pages/stats/skills.html#mining"
     },
     {
       "target": "Monster loot",
@@ -66,7 +65,7 @@
     },
     {
       "target": "Tinkering",
-      "href": "pages/stats/skills.html"
+      "href": "pages/stats/skills.html#tinkering"
     },
     {
       "target": "Travel",
@@ -75,7 +74,7 @@
     },
     {
       "target": "Woodcutting",
-      "href": "pages/stats/skills.html"
+      "href": "pages/stats/skills.html#woodcutting"
     }
   ]
 }

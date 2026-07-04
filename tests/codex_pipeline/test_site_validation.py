@@ -282,9 +282,14 @@ class SiteValidationTests(unittest.TestCase):
         self.assertEqual("pages/systems/deconstruct.html", target_links["Deconstruct System"])
         self.assertEqual("pages/systems/re-roll.html", target_links["Re-Roll System"])
         self.assertEqual("pages/systems/imbuements.html", target_links["Imbuements System"])
-        self.assertEqual("pages/stats/skills.html", target_links["Carpentry"])
-        self.assertEqual("pages/stats/skills.html", target_links["Fishing"])
-        self.assertEqual("pages/stats/skills.html", target_links["Tinkering"])
+        self.assertEqual("pages/stats/skills.html#blacksmithing", target_links["Blacksmithing"])
+        self.assertEqual("pages/stats/skills.html#carpentry", target_links["Carpentry"])
+        self.assertEqual("pages/stats/skills.html#farming", target_links["Farming"])
+        self.assertEqual("pages/stats/skills.html#fishing", target_links["Fishing"])
+        self.assertEqual("pages/stats/skills.html#milling", target_links["Milling"])
+        self.assertEqual("pages/stats/skills.html#mining", target_links["Mining"])
+        self.assertEqual("pages/stats/skills.html#tinkering", target_links["Tinkering"])
+        self.assertEqual("pages/stats/skills.html#woodcutting", target_links["Woodcutting"])
         self.assertIn(".relationship-pill:hover", css)
         self.assertIn(".relationship-pill:focus-visible", css)
 
@@ -2048,6 +2053,7 @@ class SiteValidationTests(unittest.TestCase):
         for expected in [
             "Skills at a Glance",
             "Melee Skill Set",
+            "Trade &amp; Gathering Skills",
             "Requirement Preview",
             "Skill XP Requirements",
             "Related Pages",
@@ -2056,6 +2062,24 @@ class SiteValidationTests(unittest.TestCase):
             "Blunts",
             "Polearms",
             "Small Blades",
+            'id="blacksmithing"',
+            'id="carpentry"',
+            'id="farming"',
+            'id="fishing"',
+            'id="milling"',
+            'id="mining"',
+            'id="tinkering"',
+            'id="woodcutting"',
+            "Blacksmithing",
+            "Carpentry",
+            "Farming",
+            "Fishing",
+            "Milling",
+            "Mining",
+            "Tinkering",
+            "Woodcutting",
+            "Tool / Material Link",
+            "Gathering Link",
             "Base Max",
             "110",
             "Race Bonus",
@@ -2078,6 +2102,8 @@ class SiteValidationTests(unittest.TestCase):
 
         self.assertIn(".skills-summary-grid", css)
         self.assertIn(".skills-list-grid", css)
+        self.assertIn(".skills-trade-grid", css)
+        self.assertIn(".skills-trade-card", css)
         self.assertIn(".skills-requirement-widget", css)
         self.assertIn(".skills-chart-card", css)
         self.assertIn(".skills-link-grid", css)

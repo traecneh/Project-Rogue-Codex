@@ -57,7 +57,7 @@ const smokeSpecs = [
     detailLinkSelector: "",
     duplicateRoute: { id: "76", detailName: "Scroll of Imbuement" },
     detailTextIncludes: ["Relationships", "Used In", "Carpentry"],
-    detailHrefIncludes: ["pages/stats/skills.html"],
+    detailHrefIncludes: ["pages/stats/skills.html#carpentry"],
     queryKey: "useable",
   },
   {

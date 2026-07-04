@@ -275,7 +275,7 @@ class SiteSmokeTests(unittest.TestCase):
             'detailQuery: "10"',
             'duplicateRoute: { id: "76", detailName: "Scroll of Imbuement" }',
             'detailTextIncludes: ["Relationships", "Used In", "Carpentry"]',
-            'detailHrefIncludes: ["pages/stats/skills.html"]',
+            'detailHrefIncludes: ["pages/stats/skills.html#carpentry"]',
             'label: "useables"',
             "/pages/items/collectables.html",
             "/pages/items/useables.html",

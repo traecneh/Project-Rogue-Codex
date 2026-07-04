@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 from tools.codex_pipeline.config import (
     COLLECTABLES_DATA_PATH,
@@ -162,6 +163,17 @@ class _SystemPageParser(HTMLParser):
     @property
     def text(self) -> str:
         return " ".join(self.text_parts)
+
+
+class _HtmlIdParser(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__()
+        self.ids: set[str] = set()
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        for name, value in attrs:
+            if name.lower() == "id" and value:
+                self.ids.add(value)
 
 
 COLLECTABLE_USE_TYPE_LABELS = {
@@ -483,11 +495,25 @@ def _record_item_label(record: ItemRelationshipRecord) -> str:
     return f"{record.item_kind} {record.item_name}"
 
 
-def _relationship_href_exists(repo_root: Path, href: str) -> bool:
-    href_path = href.split("#", 1)[0].split("?", 1)[0]
+def _relationship_href_issue(repo_root: Path, href: str) -> str:
+    href_parts = urlsplit(href)
+    href_path = href_parts.path
     if not href_path:
-        return False
-    return (repo_root / href_path).is_file()
+        return f"target link does not exist: {href}"
+    target_path = repo_root / href_path
+    if not target_path.is_file():
+        return f"target link does not exist: {href}"
+    if not href_parts.fragment:
+        return ""
+
+    parser = _HtmlIdParser()
+    try:
+        parser.feed(target_path.read_text(encoding="utf-8"))
+    except OSError as exc:
+        return f"target link is not readable: {href} ({exc})"
+    if href_parts.fragment not in parser.ids:
+        return f"missing target anchor: #{href_parts.fragment}"
+    return ""
 
 
 def _build_target_coverage(
@@ -540,7 +566,8 @@ def _build_target_coverage(
                 )
             )
             continue
-        if not _relationship_href_exists(repo_root, policy.href):
+        link_issue = _relationship_href_issue(repo_root, policy.href)
+        if link_issue:
             coverage.append(
                 ItemRelationshipTargetCoverage(
                     target=target,
@@ -548,7 +575,7 @@ def _build_target_coverage(
                     relationship_count=relationship_count,
                     href=policy.href,
                     item_labels=item_labels,
-                    issue=f"target link does not exist: {policy.href}",
+                    issue=link_issue,
                 )
             )
             continue

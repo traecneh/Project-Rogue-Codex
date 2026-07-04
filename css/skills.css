@@ -1,5 +1,6 @@
 .skills-summary-grid,
 .skills-list-grid,
+.skills-trade-grid,
 .skills-output-grid,
 .skills-link-grid {
   display: grid;
@@ -7,11 +8,13 @@
 }
 
 .skills-summary-grid,
-.skills-list-grid {
+.skills-list-grid,
+.skills-trade-grid {
   grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
 }
 
 .skills-list-card,
+.skills-trade-card,
 .skills-requirement-widget,
 .skills-chart-card {
   border: 1px solid var(--border-soft);
@@ -19,18 +22,31 @@
   background: var(--bg-panel-dark);
 }
 
-.skills-list-card {
+.skills-list-card,
+.skills-trade-card {
   padding: 0.85rem;
 }
 
-.skills-list-card h3 {
+.skills-list-card h3,
+.skills-trade-card h3 {
   margin: 0.2rem 0 0.4rem;
 }
 
-.skills-list-card p {
+.skills-list-card p,
+.skills-trade-card p {
   margin: 0;
   color: var(--text-muted);
   line-height: 1.5;
+}
+
+.skills-trade-card {
+  scroll-margin-top: 1rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.skills-trade-card:target {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px rgba(75, 255, 75, 0.18);
 }
 
 .skills-requirement-widget {

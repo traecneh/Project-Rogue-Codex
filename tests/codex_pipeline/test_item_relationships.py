@@ -203,6 +203,46 @@ class ItemRelationshipInventoryTests(unittest.TestCase):
         self.assertEqual(1, report.text_only_target_count)
         self.assertEqual(2, report.target_issue_count)
 
+    def test_build_item_relationship_inventory_rejects_missing_target_anchor(self):
+        from tools.codex_pipeline.item_relationships import build_item_relationship_inventory
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _write_json(
+                root / "pages" / "items" / "collectables_data.json",
+                [{"id": 1, "name": "Fishing Bait", "fields": {}}],
+            )
+            _write_json(root / "pages" / "items" / "useables_data.json", [])
+            _write_json(
+                root / "data" / "codex-overrides" / "item_relationships.json",
+                {
+                    "schemaVersion": 1,
+                    "relationships": [
+                        {
+                            "kind": "collectable",
+                            "name": "Fishing Bait",
+                            "relationships": [{"type": "used_in", "target": "Fishing"}],
+                        }
+                    ],
+                },
+            )
+            _write_json(
+                root / "data" / "codex-overrides" / "item_relationship_targets.json",
+                {
+                    "schemaVersion": 1,
+                    "targets": [{"target": "Fishing", "href": "pages/stats/skills.html#fishing"}],
+                },
+            )
+            stats = root / "pages" / "stats"
+            stats.mkdir(parents=True)
+            (stats / "skills.html").write_text('<section id="carpentry"></section>', encoding="utf-8")
+
+            report = build_item_relationship_inventory(repo_root=root)
+
+        by_target = {coverage.target: coverage for coverage in report.target_coverage}
+        self.assertEqual("broken_link", by_target["Fishing"].status)
+        self.assertIn("missing target anchor: #fishing", by_target["Fishing"].issue)
+
     def test_build_item_relationship_inventory_rejects_stale_manual_overrides(self):
         from tools.codex_pipeline.exports import ExportError
         from tools.codex_pipeline.item_relationships import build_item_relationship_inventory
