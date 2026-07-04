@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 1,
+  "targets": [
+    {
+      "target": "Ascend System",
+      "href": "pages/systems/ascend.html"
+    },
+    {
+      "target": "Blacksmithing",
+      "href": "pages/stats/skills.html"
+    },
+    {
+      "target": "Carpentry",
+      "href": "pages/stats/skills.html"
+    },
+    {
+      "target": "Craft System",
+      "href": "pages/systems/craft.html"
+    },
+    {
+      "target": "Crafting System",
+      "href": "pages/systems/crafting.html"
+    },
+    {
+      "target": "Deconstruct System",
+      "href": "pages/systems/deconstruct.html"
+    },
+    {
+      "target": "Farming",
+      "textOnly": true,
+      "reason": "No farming system page exists yet"
+    },
+    {
+      "target": "Fishing",
+      "href": "pages/stats/skills.html"
+    },
+    {
+      "target": "Imbuements System",
+      "href": "pages/systems/imbuements.html"
+    },
+    {
+      "target": "Milling",
+      "href": "pages/stats/skills.html"
+    },
+    {
+      "target": "Mining",
+      "href": "pages/stats/skills.html"
+    },
+    {
+      "target": "Monster loot",
+      "textOnly": true,
+      "reason": "No item-to-monster source page exists yet"
+    },
+    {
+      "target": "Purge System",
+      "href": "pages/systems/purge.html"
+    },
+    {
+      "target": "Re-Roll System",
+      "href": "pages/systems/re-roll.html"
+    },
+    {
+      "target": "Seasonal Events",
+      "textOnly": true,
+      "reason": "No seasonal event page exists yet"
+    },
+    {
+      "target": "Tinkering",
+      "href": "pages/stats/skills.html"
+    },
+    {
+      "target": "Travel",
+      "textOnly": true,
+      "reason": "No travel system page exists yet"
+    },
+    {
+      "target": "Woodcutting",
+      "href": "pages/stats/skills.html"
+    }
+  ]
+}

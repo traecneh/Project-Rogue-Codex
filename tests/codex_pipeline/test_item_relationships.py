@@ -127,6 +127,82 @@ class ItemRelationshipInventoryTests(unittest.TestCase):
         self.assertEqual("confirmed", scroll_76.status)
         self.assertEqual("used_in", scroll_76.confirmed[0].relationship_type)
 
+    def test_build_item_relationship_inventory_reports_target_coverage(self):
+        from tools.codex_pipeline.item_relationships import build_item_relationship_inventory
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _write_json(
+                root / "pages" / "items" / "collectables_data.json",
+                [
+                    {"id": 1, "name": "Ascendancy Shard", "fields": {}},
+                    {"id": 2, "name": "Balron Skull", "fields": {}},
+                    {"id": 3, "name": "Ship Deed", "fields": {}},
+                    {"id": 4, "name": "Broken Charm", "fields": {}},
+                ],
+            )
+            _write_json(root / "pages" / "items" / "useables_data.json", [])
+            _write_json(
+                root / "data" / "codex-overrides" / "item_relationships.json",
+                {
+                    "schemaVersion": 1,
+                    "relationships": [
+                        {
+                            "kind": "collectable",
+                            "name": "Ascendancy Shard",
+                            "relationships": [{"type": "used_in", "target": "Ascend System"}],
+                        },
+                        {
+                            "kind": "collectable",
+                            "name": "Balron Skull",
+                            "relationships": [{"type": "found_from", "target": "Monster loot"}],
+                        },
+                        {
+                            "kind": "collectable",
+                            "name": "Ship Deed",
+                            "relationships": [{"type": "related_system", "target": "Travel"}],
+                        },
+                        {
+                            "kind": "collectable",
+                            "name": "Broken Charm",
+                            "relationships": [{"type": "related_system", "target": "Missing Page"}],
+                        },
+                    ],
+                },
+            )
+            _write_json(
+                root / "data" / "codex-overrides" / "item_relationship_targets.json",
+                {
+                    "schemaVersion": 1,
+                    "targets": [
+                        {"target": "Ascend System", "href": "pages/systems/ascend.html"},
+                        {
+                            "target": "Monster loot",
+                            "textOnly": True,
+                            "reason": "No item-to-monster source page yet",
+                        },
+                        {"target": "Missing Page", "href": "pages/systems/missing.html"},
+                    ],
+                },
+            )
+            systems = root / "pages" / "systems"
+            systems.mkdir(parents=True)
+            (systems / "ascend.html").write_text("<h1>Ascend System</h1>", encoding="utf-8")
+
+            report = build_item_relationship_inventory(repo_root=root)
+
+        by_target = {coverage.target: coverage for coverage in report.target_coverage}
+        self.assertEqual("linked", by_target["Ascend System"].status)
+        self.assertEqual("pages/systems/ascend.html", by_target["Ascend System"].href)
+        self.assertEqual(1, by_target["Ascend System"].relationship_count)
+        self.assertEqual("text_only", by_target["Monster loot"].status)
+        self.assertEqual("No item-to-monster source page yet", by_target["Monster loot"].reason)
+        self.assertEqual("unclassified", by_target["Travel"].status)
+        self.assertEqual("broken_link", by_target["Missing Page"].status)
+        self.assertEqual(1, report.linked_target_count)
+        self.assertEqual(1, report.text_only_target_count)
+        self.assertEqual(2, report.target_issue_count)
+
     def test_build_item_relationship_inventory_rejects_stale_manual_overrides(self):
         from tools.codex_pipeline.exports import ExportError
         from tools.codex_pipeline.item_relationships import build_item_relationship_inventory
@@ -228,6 +304,58 @@ class ItemRelationshipInventoryTests(unittest.TestCase):
         )
         self.assertIn("GAP collectable Holiday Gift: no relationship evidence", output)
         self.assertIn("UNKNOWN collectable use_type 99: 1 item(s): Odd Relic", output)
+
+    def test_cli_prints_item_relationship_target_coverage(self):
+        from tools.codex_pipeline import cli
+        from tools.codex_pipeline.item_relationships import (
+            ItemRelationshipReport,
+            ItemRelationshipTargetCoverage,
+        )
+
+        report = ItemRelationshipReport(
+            records=[],
+            target_coverage=[
+                ItemRelationshipTargetCoverage(
+                    target="Crafting System",
+                    status="linked",
+                    relationship_count=2,
+                    href="pages/systems/crafting.html",
+                    item_labels=["collectable Ice Crystal", "useable Hammer"],
+                ),
+                ItemRelationshipTargetCoverage(
+                    target="Monster loot",
+                    status="text_only",
+                    relationship_count=1,
+                    reason="No item-to-monster source page yet",
+                    item_labels=["collectable Balron Skull"],
+                ),
+                ItemRelationshipTargetCoverage(
+                    target="Travel",
+                    status="unclassified",
+                    relationship_count=1,
+                    item_labels=["useable Ship Deed"],
+                    issue="not listed in item_relationship_targets.json",
+                ),
+            ],
+        )
+
+        with patch.object(cli, "build_item_relationship_inventory", return_value=report):
+            stdout = io.StringIO()
+            with redirect_stdout(stdout):
+                exit_code = cli.main(["item-relationships"])
+
+        self.assertEqual(0, exit_code)
+        output = stdout.getvalue()
+        self.assertIn("TARGET COVERAGE: 3 targets, 1 linked, 1 text-only, 1 issue(s)", output)
+        self.assertIn("TARGET LINKED Crafting System: pages/systems/crafting.html (2 relationship(s))", output)
+        self.assertIn(
+            "TARGET TEXT-ONLY Monster loot: No item-to-monster source page yet (1 relationship(s))",
+            output,
+        )
+        self.assertIn(
+            "TARGET UNCLASSIFIED Travel: not listed in item_relationship_targets.json (1 relationship(s))",
+            output,
+        )
 
     def test_cli_prints_duplicate_item_ids_when_names_repeat(self):
         from tools.codex_pipeline import cli

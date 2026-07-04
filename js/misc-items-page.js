@@ -13,7 +13,9 @@
 
   const dataUrl = new URL(page.dataFile, window.location.href);
   const RELATIONSHIP_DATA_URL = "data/codex-overrides/item_relationships.json";
+  const RELATIONSHIP_TARGETS_URL = "data/codex-overrides/item_relationship_targets.json";
   const relationshipDataUrl = new URL(RELATIONSHIP_DATA_URL, document.baseURI || window.location.href);
+  const relationshipTargetsUrl = new URL(RELATIONSHIP_TARGETS_URL, document.baseURI || window.location.href);
   const searchInput = document.getElementById("item-search");
   const useTypeFilter = document.getElementById("filter-use-type");
   const traitFilter = document.getElementById("filter-trait");
@@ -101,23 +103,6 @@
     { type: "related_system", label: "Related Systems" },
   ];
 
-  const RELATIONSHIP_TARGET_LINKS = {
-    "Ascend System": "pages/systems/ascend.html",
-    "Deconstruct System": "pages/systems/deconstruct.html",
-    "Re-Roll System": "pages/systems/re-roll.html",
-    "Imbuements System": "pages/systems/imbuements.html",
-    "Purge System": "pages/systems/purge.html",
-    "Craft System": "pages/systems/craft.html",
-    "Crafting System": "pages/systems/crafting.html",
-    "Carpentry": "pages/stats/skills.html",
-    "Fishing": "pages/stats/skills.html",
-    "Tinkering": "pages/stats/skills.html",
-    "Mining": "pages/stats/skills.html",
-    "Woodcutting": "pages/stats/skills.html",
-    "Blacksmithing": "pages/stats/skills.html",
-    "Milling": "pages/stats/skills.html",
-  };
-
   const COLUMNS = [
     { key: "image", label: "Image", sortable: false },
     { key: "name", label: "Name" },
@@ -133,6 +118,7 @@
   let selectedUseTypes = new Set();
   let selectedTraits = new Set();
   let relationshipDataByKey = new Map();
+  let relationshipTargetLinksByName = new Map();
 
   const urlParams = new URLSearchParams(window.location.search);
   const initialItemQuery = (urlParams.get(page.queryKey) || urlParams.get(`${page.queryKey}Name`) || "").trim();
@@ -215,6 +201,21 @@
     return map;
   };
 
+  const createRelationshipTargetLinksByName = (rawData) => {
+    const targets = rawData && Array.isArray(rawData.targets) ? rawData.targets : [];
+    const map = new Map();
+
+    targets.forEach((target) => {
+      const name = String(target?.target || "").trim();
+      const href = String(target?.href || "").trim();
+      if (name && href) {
+        map.set(name, href);
+      }
+    });
+
+    return map;
+  };
+
   const getRelationshipsForItem = (item) => {
     if (!item || !relationshipDataByKey.size) return [];
     const kind = normalizeFilterValue(page.queryKey);
@@ -239,7 +240,7 @@
   const formatRelationshipType = (type) =>
     RELATIONSHIP_GROUPS.find((group) => group.type === type)?.label || titleCase(type);
 
-  const getRelationshipHref = (relationship) => RELATIONSHIP_TARGET_LINKS[relationship?.target] || "";
+  const getRelationshipHref = (relationship) => relationshipTargetLinksByName.get(relationship?.target) || "";
 
   const normalizeItem = (raw) => {
     if (!raw || typeof raw !== "object") return null;
@@ -670,9 +671,14 @@
   });
 
   const init = () => {
-    Promise.all([fetchJsonCached(dataUrl.toString()), fetchJsonCached(relationshipDataUrl.toString())])
-      .then(([data, relationshipData]) => {
+    Promise.all([
+      fetchJsonCached(dataUrl.toString()),
+      fetchJsonCached(relationshipDataUrl.toString()),
+      fetchJsonCached(relationshipTargetsUrl.toString()),
+    ])
+      .then(([data, relationshipData, relationshipTargets]) => {
         relationshipDataByKey = createRelationshipDataByKey(relationshipData);
+        relationshipTargetLinksByName = createRelationshipTargetLinksByName(relationshipTargets);
         items = (Array.isArray(data) ? data : []).map((row) => normalizeItem(row)).filter(Boolean);
         if (!items.length) {
           renderEmpty(`Add ${page.dataFile} beside this page to see ${page.countLabel}.`);

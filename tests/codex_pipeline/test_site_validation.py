@@ -258,24 +258,64 @@ class SiteValidationTests(unittest.TestCase):
 
         script = (REPO_ROOT / "js" / "misc-items-page.js").read_text(encoding="utf-8")
         css = (REPO_ROOT / "css" / "misc-items.css").read_text(encoding="utf-8")
+        target_policy = json.loads(
+            (REPO_ROOT / "data" / "codex-overrides" / "item_relationship_targets.json").read_text(encoding="utf-8")
+        )
 
         for expected in [
-            "RELATIONSHIP_TARGET_LINKS",
-            '"Ascend System": "pages/systems/ascend.html"',
-            '"Deconstruct System": "pages/systems/deconstruct.html"',
-            '"Re-Roll System": "pages/systems/re-roll.html"',
-            '"Imbuements System": "pages/systems/imbuements.html"',
-            '"Carpentry": "pages/stats/skills.html"',
-            '"Fishing": "pages/stats/skills.html"',
-            '"Tinkering": "pages/stats/skills.html"',
+            "RELATIONSHIP_TARGETS_URL",
+            "data/codex-overrides/item_relationship_targets.json",
+            "createRelationshipTargetLinksByName",
+            "relationshipTargetLinksByName",
             "getRelationshipHref",
             'document.createElement("a")',
             "itemUtils.stopTooltipLinkPropagation",
         ]:
             self.assertIn(expected, script)
 
+        target_links = {
+            row["target"]: row.get("href")
+            for row in target_policy["targets"]
+            if isinstance(row, dict) and row.get("href")
+        }
+        self.assertEqual("pages/systems/ascend.html", target_links["Ascend System"])
+        self.assertEqual("pages/systems/deconstruct.html", target_links["Deconstruct System"])
+        self.assertEqual("pages/systems/re-roll.html", target_links["Re-Roll System"])
+        self.assertEqual("pages/systems/imbuements.html", target_links["Imbuements System"])
+        self.assertEqual("pages/stats/skills.html", target_links["Carpentry"])
+        self.assertEqual("pages/stats/skills.html", target_links["Fishing"])
+        self.assertEqual("pages/stats/skills.html", target_links["Tinkering"])
         self.assertIn(".relationship-pill:hover", css)
         self.assertIn(".relationship-pill:focus-visible", css)
+
+    def test_cli_reports_item_relationship_target_coverage_issues(self):
+        from tools.codex_pipeline import cli
+        from tools.codex_pipeline.item_relationships import ItemRelationshipReport, ItemRelationshipTargetCoverage
+
+        report = ItemRelationshipReport(
+            records=[],
+            target_coverage=[
+                ItemRelationshipTargetCoverage(
+                    target="Travel",
+                    status="unclassified",
+                    relationship_count=1,
+                    issue="not listed in item_relationship_targets.json",
+                ),
+                ItemRelationshipTargetCoverage(
+                    target="Missing Page",
+                    status="broken_link",
+                    relationship_count=1,
+                    href="pages/systems/missing.html",
+                    issue="target link does not exist: pages/systems/missing.html",
+                ),
+            ],
+        )
+
+        issues = cli._item_relationship_target_coverage_issues(report)
+
+        messages = "\n".join(issue.message for issue in issues)
+        self.assertIn("unclassified item relationship target: Travel", messages)
+        self.assertIn("broken item relationship target link: Missing Page -> pages/systems/missing.html", messages)
 
     def test_nav_and_site_search_include_collectables_and_useables(self):
         from tools.codex_pipeline.config import REPO_ROOT

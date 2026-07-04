@@ -10,6 +10,7 @@ from tools.codex_pipeline.config import (
     CODEX_MANIFEST_PATH,
     CLIENT_GF_JSON_DIR,
     DROP_SOURCES_PATH,
+    ITEM_RELATIONSHIP_TARGETS_PATH,
     GENERATED_ATLAS_ASSET_DIR,
     GENERATED_IMAGE_REVIEW_DIR,
     GENERATED_OUTPUT_DIR,
@@ -357,6 +358,27 @@ def _print_issues(issues: list[ValidationIssue]) -> int:
     return 1 if any(issue.severity == "error" for issue in issues) else 0
 
 
+def _item_relationship_target_coverage_issues(report) -> list[ValidationIssue]:
+    issues: list[ValidationIssue] = []
+    for coverage in report.target_coverage:
+        if coverage.status == "unclassified":
+            issues.append(
+                ValidationIssue(
+                    "error",
+                    f"unclassified item relationship target: {coverage.target}; "
+                    f"add it to {ITEM_RELATIONSHIP_TARGETS_PATH.relative_to(REPO_ROOT).as_posix()}",
+                )
+            )
+        elif coverage.status == "broken_link":
+            issues.append(
+                ValidationIssue(
+                    "error",
+                    f"broken item relationship target link: {coverage.target} -> {coverage.href}; {coverage.issue}",
+                )
+            )
+    return issues
+
+
 def _read_json_issue(path: Path, label: str) -> tuple[object | None, ValidationIssue | None]:
     try:
         return read_json(path), None
@@ -478,6 +500,12 @@ def collect_validation_issues() -> list[ValidationIssue]:
         except ValueError:
             label = str(path)
         issues.extend(validate_javascript_file(label, path))
+    try:
+        relationship_report = build_item_relationship_inventory()
+    except ExportError as exc:
+        issues.append(ValidationIssue("error", f"item relationship target validation failed: {exc}"))
+    else:
+        issues.extend(_item_relationship_target_coverage_issues(relationship_report))
     issues.extend(validate_codex_manifest(manifest_path=CODEX_MANIFEST_PATH))
     return issues
 
@@ -1061,6 +1089,25 @@ def _print_item_relationship_report(report) -> None:
             f"UNKNOWN {group.item_kind} {group.field_name} {group.value}: "
             f"{len(group.item_names)} item(s): {', '.join(group.item_names)}"
         )
+
+    if report.target_coverage:
+        print(
+            f"TARGET COVERAGE: {len(report.target_coverage)} targets, "
+            f"{report.linked_target_count} linked, {report.text_only_target_count} text-only, "
+            f"{report.target_issue_count} issue(s)"
+        )
+    for coverage in report.target_coverage:
+        if coverage.status == "linked":
+            print(f"TARGET LINKED {coverage.target}: {coverage.href} ({coverage.relationship_count} relationship(s))")
+        elif coverage.status == "text_only":
+            print(f"TARGET TEXT-ONLY {coverage.target}: {coverage.reason} ({coverage.relationship_count} relationship(s))")
+        elif coverage.status == "broken_link":
+            print(
+                f"TARGET BROKEN-LINK {coverage.target}: {coverage.href} "
+                f"({coverage.issue}; {coverage.relationship_count} relationship(s))"
+            )
+        else:
+            print(f"TARGET UNCLASSIFIED {coverage.target}: {coverage.issue} ({coverage.relationship_count} relationship(s))")
 
 
 def run_item_relationships() -> int:

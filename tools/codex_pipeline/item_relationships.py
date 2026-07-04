@@ -10,6 +10,7 @@ from typing import Any
 from tools.codex_pipeline.config import (
     COLLECTABLES_DATA_PATH,
     ITEM_RELATIONSHIP_OVERRIDES_PATH,
+    ITEM_RELATIONSHIP_TARGETS_PATH,
     REPO_ROOT,
     USEABLES_DATA_PATH,
 )
@@ -42,9 +43,21 @@ class UnknownUseTypeGroup:
 
 
 @dataclass(frozen=True)
+class ItemRelationshipTargetCoverage:
+    target: str
+    status: str
+    relationship_count: int
+    href: str = ""
+    reason: str = ""
+    item_labels: list[str] = field(default_factory=list)
+    issue: str = ""
+
+
+@dataclass(frozen=True)
 class ItemRelationshipReport:
     records: list[ItemRelationshipRecord]
     unknown_use_types: list[UnknownUseTypeGroup] = field(default_factory=list)
+    target_coverage: list[ItemRelationshipTargetCoverage] = field(default_factory=list)
 
     @property
     def total_items(self) -> int:
@@ -61,6 +74,18 @@ class ItemRelationshipReport:
     @property
     def gap_count(self) -> int:
         return sum(1 for record in self.records if record.status == "gap")
+
+    @property
+    def linked_target_count(self) -> int:
+        return sum(1 for coverage in self.target_coverage if coverage.status == "linked")
+
+    @property
+    def text_only_target_count(self) -> int:
+        return sum(1 for coverage in self.target_coverage if coverage.status == "text_only")
+
+    @property
+    def target_issue_count(self) -> int:
+        return sum(1 for coverage in self.target_coverage if coverage.issue)
 
 
 @dataclass(frozen=True)
@@ -84,6 +109,14 @@ class _ManualRelationshipOverride:
     item_name: str
     item_id: str | None
     relationships: list[ItemRelationship]
+
+
+@dataclass(frozen=True)
+class _RelationshipTargetPolicy:
+    target: str
+    href: str
+    text_only: bool
+    reason: str
 
 
 class _SystemPageParser(HTMLParser):
@@ -271,6 +304,41 @@ def _load_manual_overrides(path: Path) -> list[_ManualRelationshipOverride]:
     return overrides
 
 
+def _load_target_policies(path: Path) -> dict[str, _RelationshipTargetPolicy]:
+    if not path.is_file():
+        return {}
+    raw = _read_json_object(path, "item relationship targets")
+    if raw.get("schemaVersion") != 1:
+        raise ExportError(f"Unsupported item relationship target schemaVersion: {raw.get('schemaVersion')!r}")
+    raw_targets = raw.get("targets")
+    if not isinstance(raw_targets, list):
+        raise ExportError("item relationship targets must include a targets list")
+
+    policies: dict[str, _RelationshipTargetPolicy] = {}
+    for index, raw_target in enumerate(raw_targets):
+        if not isinstance(raw_target, dict):
+            raise ExportError(f"item relationship target #{index + 1} must be an object")
+        target = _normalize_spaces(str(raw_target.get("target") or ""))
+        href = str(raw_target.get("href") or "").strip()
+        text_only = bool(raw_target.get("textOnly", False))
+        reason = _normalize_spaces(str(raw_target.get("reason") or ""))
+        if not target:
+            raise ExportError(f"item relationship target #{index + 1} must include a target")
+        if _normalize_key(target) in policies:
+            raise ExportError(f"duplicate item relationship target policy: {target}")
+        if bool(href) == text_only:
+            raise ExportError(f"item relationship target {target} must include either href or textOnly")
+        if text_only and not reason:
+            raise ExportError(f"item relationship target {target} textOnly policy must include a reason")
+        policies[_normalize_key(target)] = _RelationshipTargetPolicy(
+            target=target,
+            href=href,
+            text_only=text_only,
+            reason=reason,
+        )
+    return policies
+
+
 def _load_system_pages(repo_root: Path) -> list[_SystemPage]:
     systems_dir = repo_root / "pages" / "systems"
     if not systems_dir.is_dir():
@@ -411,17 +479,104 @@ def _build_unknown_use_types(items: list[_ItemRow]) -> list[UnknownUseTypeGroup]
     ]
 
 
+def _record_item_label(record: ItemRelationshipRecord) -> str:
+    return f"{record.item_kind} {record.item_name}"
+
+
+def _relationship_href_exists(repo_root: Path, href: str) -> bool:
+    href_path = href.split("#", 1)[0].split("?", 1)[0]
+    if not href_path:
+        return False
+    return (repo_root / href_path).is_file()
+
+
+def _build_target_coverage(
+    records: list[ItemRelationshipRecord],
+    policies: dict[str, _RelationshipTargetPolicy],
+    repo_root: Path,
+) -> list[ItemRelationshipTargetCoverage]:
+    grouped: dict[str, dict[str, Any]] = {}
+    for record in records:
+        for relationship in record.confirmed:
+            target = _normalize_spaces(relationship.target)
+            if not target:
+                continue
+            entry = grouped.setdefault(
+                _normalize_key(target),
+                {
+                    "target": target,
+                    "relationship_count": 0,
+                    "item_labels": set(),
+                },
+            )
+            entry["relationship_count"] += 1
+            entry["item_labels"].add(_record_item_label(record))
+
+    coverage: list[ItemRelationshipTargetCoverage] = []
+    for target_key, entry in sorted(grouped.items(), key=lambda item: _normalize_key(item[1]["target"])):
+        target = entry["target"]
+        relationship_count = int(entry["relationship_count"])
+        item_labels = sorted(entry["item_labels"], key=_normalize_key)
+        policy = policies.get(target_key)
+        if policy is None:
+            coverage.append(
+                ItemRelationshipTargetCoverage(
+                    target=target,
+                    status="unclassified",
+                    relationship_count=relationship_count,
+                    item_labels=item_labels,
+                    issue="not listed in item_relationship_targets.json",
+                )
+            )
+            continue
+        if policy.text_only:
+            coverage.append(
+                ItemRelationshipTargetCoverage(
+                    target=target,
+                    status="text_only",
+                    relationship_count=relationship_count,
+                    reason=policy.reason,
+                    item_labels=item_labels,
+                )
+            )
+            continue
+        if not _relationship_href_exists(repo_root, policy.href):
+            coverage.append(
+                ItemRelationshipTargetCoverage(
+                    target=target,
+                    status="broken_link",
+                    relationship_count=relationship_count,
+                    href=policy.href,
+                    item_labels=item_labels,
+                    issue=f"target link does not exist: {policy.href}",
+                )
+            )
+            continue
+        coverage.append(
+            ItemRelationshipTargetCoverage(
+                target=target,
+                status="linked",
+                relationship_count=relationship_count,
+                href=policy.href,
+                item_labels=item_labels,
+            )
+        )
+    return coverage
+
+
 def build_item_relationship_inventory(
     *,
     repo_root: Path = REPO_ROOT,
     collectables_data_path: Path | None = None,
     useables_data_path: Path | None = None,
     overrides_path: Path | None = None,
+    target_policies_path: Path | None = None,
 ) -> ItemRelationshipReport:
     repo_root = Path(repo_root)
     collectables_path = collectables_data_path or repo_root / COLLECTABLES_DATA_PATH.relative_to(REPO_ROOT)
     useables_path = useables_data_path or repo_root / USEABLES_DATA_PATH.relative_to(REPO_ROOT)
     manual_overrides_path = overrides_path or repo_root / ITEM_RELATIONSHIP_OVERRIDES_PATH.relative_to(REPO_ROOT)
+    target_policy_path = target_policies_path or repo_root / ITEM_RELATIONSHIP_TARGETS_PATH.relative_to(REPO_ROOT)
 
     items = [
         *_load_items(collectables_path, "collectable"),
@@ -430,6 +585,7 @@ def build_item_relationship_inventory(
     item_names = {_normalize_key(item.name) for item in items}
     system_pages = _load_system_pages(repo_root)
     manual_overrides = _load_manual_overrides(manual_overrides_path)
+    target_policies = _load_target_policies(target_policy_path)
     _validate_manual_overrides(items, manual_overrides)
 
     records: list[ItemRelationshipRecord] = []
@@ -454,4 +610,8 @@ def build_item_relationship_inventory(
             )
         )
 
-    return ItemRelationshipReport(records=records, unknown_use_types=_build_unknown_use_types(items))
+    return ItemRelationshipReport(
+        records=records,
+        unknown_use_types=_build_unknown_use_types(items),
+        target_coverage=_build_target_coverage(records, target_policies, repo_root),
+    )

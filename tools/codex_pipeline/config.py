@@ -18,6 +18,7 @@ EXTRACTORS_DIR = REPO_ROOT / "tools" / "codex_pipeline" / "extractors"
 
 DROP_SOURCES_PATH = REPO_ROOT / "data" / "codex-overrides" / "drop_sources.json"
 ITEM_RELATIONSHIP_OVERRIDES_PATH = REPO_ROOT / "data" / "codex-overrides" / "item_relationships.json"
+ITEM_RELATIONSHIP_TARGETS_PATH = REPO_ROOT / "data" / "codex-overrides" / "item_relationship_targets.json"
 PERK_LABEL_OVERRIDES_PATH = REPO_ROOT / "data" / "codex-overrides" / "perk_labels.json"
 GENERATED_OUTPUT_DIR = REPO_ROOT / "generated-output" / "codex-data"
 GENERATED_ATLAS_ASSET_DIR = REPO_ROOT / "generated-output" / "atlas-assets"
