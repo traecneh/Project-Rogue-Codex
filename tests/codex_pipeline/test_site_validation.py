@@ -244,13 +244,14 @@ class SiteValidationTests(unittest.TestCase):
             '["useables", "usables", "tools", "scrolls", "pickaxe", "fishing"]',
             "pages/items/collectables_data.json",
             "pages/items/useables_data.json",
+            'url: "pages/items/collectables.html"',
+            'url: "pages/items/useables.html"',
             'queryKey: "collectable"',
             'queryKey: "useable"',
             'category: "Collectables"',
             'category: "Useables"',
             "loadMiscItemSearchIndex",
-            "pages/items/collectables.html?collectable=",
-            "pages/items/useables.html?useable=",
+            'url: `${config.url}?${config.queryKey}=${encodeURIComponent(routeKey)}`',
         ]:
             self.assertIn(expected, script)
 

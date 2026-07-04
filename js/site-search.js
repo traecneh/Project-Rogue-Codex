@@ -280,7 +280,6 @@ const COLLECTABLE_SEARCH_CONFIG = {
   queryKey: "collectable",
   category: "Collectables",
   description: "Collectable items, materials, consumables, values, and traits.",
-  detailUrlPrefix: "pages/items/collectables.html?collectable=",
   index: [],
   promise: null,
 };
@@ -290,7 +289,6 @@ const USEABLE_SEARCH_CONFIG = {
   queryKey: "useable",
   category: "Useables",
   description: "Useable tools, scrolls, shards, and utility items.",
-  detailUrlPrefix: "pages/items/useables.html?useable=",
   index: [],
   promise: null,
 };
