@@ -55,10 +55,20 @@ class ItemRelationshipTargetCoverage:
 
 
 @dataclass(frozen=True)
+class ItemRelationshipTargetReview:
+    target: str
+    relationship_count: int
+    reason: str
+    item_labels: list[str]
+    next_step: str
+
+
+@dataclass(frozen=True)
 class ItemRelationshipReport:
     records: list[ItemRelationshipRecord]
     unknown_use_types: list[UnknownUseTypeGroup] = field(default_factory=list)
     target_coverage: list[ItemRelationshipTargetCoverage] = field(default_factory=list)
+    target_reviews: list[ItemRelationshipTargetReview] = field(default_factory=list)
 
     @property
     def total_items(self) -> int:
@@ -87,6 +97,14 @@ class ItemRelationshipReport:
     @property
     def target_issue_count(self) -> int:
         return sum(1 for coverage in self.target_coverage if coverage.issue)
+
+    @property
+    def target_review_count(self) -> int:
+        return len(self.target_reviews)
+
+    @property
+    def target_review_relationship_count(self) -> int:
+        return sum(review.relationship_count for review in self.target_reviews)
 
 
 @dataclass(frozen=True)
@@ -118,6 +136,7 @@ class _RelationshipTargetPolicy:
     href: str
     text_only: bool
     reason: str
+    review_next_step: str
 
 
 class _SystemPageParser(HTMLParser):
@@ -338,6 +357,7 @@ def _load_target_policies(path: Path) -> dict[str, _RelationshipTargetPolicy]:
         href = str(raw_target.get("href") or "").strip()
         text_only = bool(raw_target.get("textOnly", False))
         reason = _normalize_spaces(str(raw_target.get("reason") or ""))
+        review_next_step = _normalize_spaces(str(raw_target.get("reviewNextStep") or ""))
         if not target:
             raise ExportError(f"item relationship target #{index + 1} must include a target")
         if _normalize_key(target) in policies:
@@ -351,6 +371,7 @@ def _load_target_policies(path: Path) -> dict[str, _RelationshipTargetPolicy]:
             href=href,
             text_only=text_only,
             reason=reason,
+            review_next_step=review_next_step,
         )
     return policies
 
@@ -614,6 +635,43 @@ def _build_target_coverage(
     return coverage
 
 
+def _default_target_review_next_step(target: str) -> str:
+    target_key = _normalize_key(target)
+    if target_key == "monster loot":
+        return "Review client loot data for exact monster sources before linking remaining drops."
+    if target_key == "seasonal events":
+        return "Create or confirm a seasonal-events destination before linking holiday items."
+    if target_key == "travel":
+        return "Create or confirm a travel destination before linking ship items."
+    return "Confirm source evidence and a destination page before converting this text-only target to a link."
+
+
+def _build_target_reviews(
+    target_coverage: list[ItemRelationshipTargetCoverage],
+    policies: dict[str, _RelationshipTargetPolicy],
+) -> list[ItemRelationshipTargetReview]:
+    reviews: list[ItemRelationshipTargetReview] = []
+    for coverage in target_coverage:
+        if coverage.status != "text_only":
+            continue
+        policy = policies.get(_normalize_key(coverage.target))
+        next_step = (
+            policy.review_next_step
+            if policy and policy.review_next_step
+            else _default_target_review_next_step(coverage.target)
+        )
+        reviews.append(
+            ItemRelationshipTargetReview(
+                target=coverage.target,
+                relationship_count=coverage.relationship_count,
+                reason=coverage.reason,
+                item_labels=coverage.item_labels,
+                next_step=next_step,
+            )
+        )
+    return reviews
+
+
 def build_item_relationship_inventory(
     *,
     repo_root: Path = REPO_ROOT,
@@ -660,8 +718,10 @@ def build_item_relationship_inventory(
             )
         )
 
+    target_coverage = _build_target_coverage(records, target_policies, repo_root)
     return ItemRelationshipReport(
         records=records,
         unknown_use_types=_build_unknown_use_types(items),
-        target_coverage=_build_target_coverage(records, target_policies, repo_root),
+        target_coverage=target_coverage,
+        target_reviews=_build_target_reviews(target_coverage, target_policies),
     )

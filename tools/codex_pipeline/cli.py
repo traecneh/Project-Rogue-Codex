@@ -1109,6 +1109,17 @@ def _print_item_relationship_report(report) -> None:
         else:
             print(f"TARGET UNCLASSIFIED {coverage.target}: {coverage.issue} ({coverage.relationship_count} relationship(s))")
 
+    if report.target_reviews:
+        print(
+            f"TARGET REVIEW: {report.target_review_count} text-only target(s), "
+            f"{report.target_review_relationship_count} relationship(s) need source confirmation"
+        )
+    for review in report.target_reviews:
+        print(
+            f"TARGET REVIEW {review.target}: {review.next_step} "
+            f"({review.relationship_count} relationship(s): {', '.join(review.item_labels)})"
+        )
+
 
 def run_item_relationships() -> int:
     try:

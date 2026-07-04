@@ -60,7 +60,8 @@
     {
       "target": "Monster loot",
       "textOnly": true,
-      "reason": "Ambiguous monster-source drops remain text-only until source evidence is confirmed"
+      "reason": "Ambiguous monster-source drops remain text-only until source evidence is confirmed",
+      "reviewNextStep": "Review client loot data for exact monster sources before linking remaining drops."
     },
     {
       "target": "Purge System",
@@ -73,7 +74,8 @@
     {
       "target": "Seasonal Events",
       "textOnly": true,
-      "reason": "No seasonal event page exists yet"
+      "reason": "No seasonal event page exists yet",
+      "reviewNextStep": "Create or confirm a seasonal-events destination before linking holiday items."
     },
     {
       "target": "Tinkering",
@@ -82,7 +84,8 @@
     {
       "target": "Travel",
       "textOnly": true,
-      "reason": "No travel system page exists yet"
+      "reason": "No travel system page exists yet",
+      "reviewNextStep": "Create or confirm a travel destination before linking ship items."
     },
     {
       "target": "Woodcutting",

@@ -203,6 +203,83 @@ class ItemRelationshipInventoryTests(unittest.TestCase):
         self.assertEqual(1, report.text_only_target_count)
         self.assertEqual(2, report.target_issue_count)
 
+    def test_build_item_relationship_inventory_reports_text_only_target_reviews(self):
+        from tools.codex_pipeline.item_relationships import build_item_relationship_inventory
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _write_json(
+                root / "pages" / "items" / "collectables_data.json",
+                [
+                    {"id": 1, "name": "Feather", "fields": {}},
+                    {"id": 2, "name": "Holiday Gift", "fields": {}},
+                ],
+            )
+            _write_json(
+                root / "pages" / "items" / "useables_data.json",
+                [{"id": 3, "name": "Ship Deed", "fields": {}}],
+            )
+            _write_json(
+                root / "data" / "codex-overrides" / "item_relationships.json",
+                {
+                    "schemaVersion": 1,
+                    "relationships": [
+                        {
+                            "kind": "collectable",
+                            "name": "Feather",
+                            "relationships": [{"type": "found_from", "target": "Monster loot"}],
+                        },
+                        {
+                            "kind": "collectable",
+                            "name": "Holiday Gift",
+                            "relationships": [{"type": "related_system", "target": "Seasonal Events"}],
+                        },
+                        {
+                            "kind": "useable",
+                            "name": "Ship Deed",
+                            "relationships": [{"type": "related_system", "target": "Travel"}],
+                        },
+                    ],
+                },
+            )
+            _write_json(
+                root / "data" / "codex-overrides" / "item_relationship_targets.json",
+                {
+                    "schemaVersion": 1,
+                    "targets": [
+                        {
+                            "target": "Monster loot",
+                            "textOnly": True,
+                            "reason": "ambiguous source",
+                            "reviewNextStep": "Review client loot data for exact monster sources.",
+                        },
+                        {
+                            "target": "Seasonal Events",
+                            "textOnly": True,
+                            "reason": "no event page",
+                            "reviewNextStep": "Create or confirm a seasonal-events destination.",
+                        },
+                        {
+                            "target": "Travel",
+                            "textOnly": True,
+                            "reason": "no travel page",
+                            "reviewNextStep": "Create or confirm a travel destination.",
+                        },
+                    ],
+                },
+            )
+
+            report = build_item_relationship_inventory(repo_root=root)
+
+        by_target = {review.target: review for review in report.target_reviews}
+        self.assertEqual(3, report.target_review_count)
+        self.assertEqual(3, report.target_review_relationship_count)
+        self.assertEqual(["collectable Feather"], by_target["Monster loot"].item_labels)
+        self.assertEqual("ambiguous source", by_target["Monster loot"].reason)
+        self.assertEqual("Review client loot data for exact monster sources.", by_target["Monster loot"].next_step)
+        self.assertEqual(["collectable Holiday Gift"], by_target["Seasonal Events"].item_labels)
+        self.assertEqual(["useable Ship Deed"], by_target["Travel"].item_labels)
+
     def test_build_item_relationship_inventory_rejects_missing_target_anchor(self):
         from tools.codex_pipeline.item_relationships import build_item_relationship_inventory
 
@@ -417,6 +494,7 @@ class ItemRelationshipInventoryTests(unittest.TestCase):
         from tools.codex_pipeline.item_relationships import (
             ItemRelationshipReport,
             ItemRelationshipTargetCoverage,
+            ItemRelationshipTargetReview,
         )
 
         report = ItemRelationshipReport(
@@ -444,6 +522,15 @@ class ItemRelationshipInventoryTests(unittest.TestCase):
                     issue="not listed in item_relationship_targets.json",
                 ),
             ],
+            target_reviews=[
+                ItemRelationshipTargetReview(
+                    target="Monster loot",
+                    relationship_count=1,
+                    reason="No item-to-monster source page yet",
+                    item_labels=["collectable Balron Skull"],
+                    next_step="Review client loot data for exact monster sources.",
+                )
+            ],
         )
 
         with patch.object(cli, "build_item_relationship_inventory", return_value=report):
@@ -461,6 +548,12 @@ class ItemRelationshipInventoryTests(unittest.TestCase):
         )
         self.assertIn(
             "TARGET UNCLASSIFIED Travel: not listed in item_relationship_targets.json (1 relationship(s))",
+            output,
+        )
+        self.assertIn("TARGET REVIEW: 1 text-only target(s), 1 relationship(s) need source confirmation", output)
+        self.assertIn(
+            "TARGET REVIEW Monster loot: Review client loot data for exact monster sources. "
+            "(1 relationship(s): collectable Balron Skull)",
             output,
         )
 
