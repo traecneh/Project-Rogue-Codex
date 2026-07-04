@@ -221,6 +221,28 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn("Animated", script)
         self.assertIn("Crafting Data", script)
         self.assertIn("getItemSearchText(item).includes(searchTerm.toLowerCase())", script)
+
+    def test_nav_and_site_search_include_collectables_and_useables(self):
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        nav = (REPO_ROOT / "nav.html").read_text(encoding="utf-8")
+        script = (REPO_ROOT / "js" / "site-search.js").read_text(encoding="utf-8")
+
+        for expected in [
+            'href="pages/items/collectables.html">Collectables</a>',
+            'href="pages/items/useables.html">Useables</a>',
+        ]:
+            self.assertIn(expected, nav)
+
+        for expected in [
+            'title: "Collectables"',
+            'title: "Useables"',
+            "loadMiscItemSearchIndex",
+            "pages/items/collectables.html?collectable=",
+            "pages/items/useables.html?useable=",
+        ]:
+            self.assertIn(expected, script)
+
     def test_home_page_has_timeline_filters_without_countdown(self):
         from tools.codex_pipeline import cli
         from tools.codex_pipeline.config import REPO_ROOT

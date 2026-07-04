@@ -258,3 +258,18 @@ class SiteSmokeTests(unittest.TestCase):
         self.assertIn("SMOKE OK crafting", runner)
         self.assertIn("[data-set-option=\"black\"]", runner)
         self.assertIn("[data-materials-range]", runner)
+
+    def test_smoke_specs_include_collectables_and_useables(self):
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        runner = (REPO_ROOT / "tools" / "codex_pipeline" / "site_smoke.mjs").read_text(encoding="utf-8")
+
+        for expected in [
+            'label: "collectables"',
+            'label: "useables"',
+            "/pages/items/collectables.html",
+            "/pages/items/useables.html",
+            'queryKey: "collectable"',
+            'queryKey: "useable"',
+        ]:
+            self.assertIn(expected, runner)

@@ -52,6 +52,20 @@ const SITE_SEARCH_INDEX = [
     keywords: ["monsters", "enemies", "bestiary", "drops"],
   },
   {
+    title: "Collectables",
+    url: "pages/items/collectables.html",
+    category: "Items",
+    description: "Collectable items, materials, consumables, values, and traits.",
+    keywords: ["collectables", "collectibles", "materials", "potions", "ores", "shards"],
+  },
+  {
+    title: "Useables",
+    url: "pages/items/useables.html",
+    category: "Items",
+    description: "Useable tools, scrolls, shards, and utility items.",
+    keywords: ["useables", "usables", "tools", "scrolls", "pickaxe", "fishing"],
+  },
+  {
     title: "Strength",
     url: "pages/stats/strength.html",
     category: "Stats",
@@ -260,6 +274,26 @@ let WEAPON_INDEX_PROMISE = null;
 let WEAPON_DATA_PROMISE = null;
 let ARMOR_SEARCH_INDEX = [];
 let ARMOR_INDEX_PROMISE = null;
+const COLLECTABLE_SEARCH_CONFIG = {
+  dataFile: "pages/items/collectables_data.json",
+  url: "pages/items/collectables.html",
+  queryKey: "collectable",
+  category: "Collectables",
+  description: "Collectable items, materials, consumables, values, and traits.",
+  detailUrlPrefix: "pages/items/collectables.html?collectable=",
+  index: [],
+  promise: null,
+};
+const USEABLE_SEARCH_CONFIG = {
+  dataFile: "pages/items/useables_data.json",
+  url: "pages/items/useables.html",
+  queryKey: "useable",
+  category: "Useables",
+  description: "Useable tools, scrolls, shards, and utility items.",
+  detailUrlPrefix: "pages/items/useables.html?useable=",
+  index: [],
+  promise: null,
+};
 let PERK_INDEX_PROMISE = null;
 let PERK_NAME_INDEX = new Map();
 let MONSTER_TATTER_INDEX = new Map();
@@ -717,6 +751,90 @@ function buildArmorSearchEntry(armor) {
   });
 }
 
+function formatMiscItemUseType(value) {
+  if (value === null || value === undefined || value === "") return "";
+  const numeric = Number(value);
+  if (Number.isFinite(numeric)) {
+    return numeric === 0 ? "None" : `Use Type ${numeric.toLocaleString("en-US")}`;
+  }
+  return titleCaseWords(value);
+}
+
+function cleanMiscKeyword(value) {
+  if (value === null || value === undefined || value === "") return "";
+  if (Array.isArray(value)) return value.filter(Boolean).join(" ");
+  if (typeof value === "object") return "";
+  return String(value);
+}
+
+function buildMiscItemSearchEntry(item, config) {
+  if (!item || typeof item !== "object" || !config) return null;
+  const fields = item.fields && typeof item.fields === "object" ? item.fields : {};
+  const name = item.name || item.Name || fields.name_label || "";
+  const id = item.id ?? item.ID ?? item.itemId ?? null;
+  const title = String(name || id || "").trim();
+  const routeKey = id !== null && id !== undefined ? id : title;
+  if (!title || routeKey === "") return null;
+
+  const value = fields.value ?? item.value;
+  const useType = fields.use_type ?? item.use_type ?? item.useType;
+  const useTypeLabel = formatMiscItemUseType(useType);
+  const emitsLight = Number(fields.emits_light ?? item.emitsLight ?? 0) === 1;
+  const animated = Number(fields.animated ?? item.animated ?? 0) === 1;
+  const craftingFields = [
+    fields.crafting_material_type,
+    fields.crafting_material_amount,
+    fields.crafting_difficulty,
+    fields.crafting_requirement,
+  ];
+
+  const parts = [];
+  if (value !== null && value !== undefined && value !== "") parts.push(`Value ${value}`);
+  if (useTypeLabel) parts.push(`Use: ${useTypeLabel}`);
+  if (emitsLight) parts.push("Emits Light");
+  if (animated) parts.push("Animated");
+
+  const keywords = [
+    name,
+    id,
+    useType,
+    useTypeLabel,
+    value,
+    emitsLight ? "emits light" : "",
+    animated ? "animated" : "",
+    ...craftingFields,
+  ]
+    .map(cleanMiscKeyword)
+    .filter(Boolean);
+
+  return normalizeSearchEntry({
+    title,
+    url: `${config.url}?${config.queryKey}=${encodeURIComponent(routeKey)}`,
+    category: config.category,
+    description: parts.join(" | ") || config.description,
+    keywords,
+    isMiscItem: true,
+    itemId: String(routeKey),
+  });
+}
+
+function loadMiscItemSearchIndex(config) {
+  if (!config) return Promise.resolve([]);
+  if (config.promise) return config.promise;
+  const absoluteUrl = getAbsoluteUrl(config.dataFile);
+  config.promise = fetchJsonMaybeCached(absoluteUrl, `Failed to fetch ${config.dataFile}`)
+    .then((data) => {
+      const list = Array.isArray(data) ? data : [];
+      config.index = list.map((item) => buildMiscItemSearchEntry(item, config)).filter(Boolean);
+      return config.index;
+    })
+    .catch(() => {
+      config.index = [];
+      return config.index;
+    });
+  return config.promise;
+}
+
 function loadArmorSearchIndex() {
   if (ARMOR_INDEX_PROMISE) return ARMOR_INDEX_PROMISE;
   const absoluteUrl = getAbsoluteUrl("pages/items/armors_data06.json");
@@ -967,6 +1085,8 @@ function runSiteSearch(query) {
   loadMonsterSearchIndex();
   loadWeaponSearchIndex();
   loadArmorSearchIndex();
+  loadMiscItemSearchIndex(COLLECTABLE_SEARCH_CONFIG);
+  loadMiscItemSearchIndex(USEABLE_SEARCH_CONFIG);
   if (!terms.length) {
     return [];
   }
@@ -975,7 +1095,13 @@ function runSiteSearch(query) {
   }
 
   const matches = [];
-  const corpus = NORMALIZED_SEARCH_INDEX.concat(MONSTER_SEARCH_INDEX, WEAPON_SEARCH_INDEX, ARMOR_SEARCH_INDEX);
+  const corpus = NORMALIZED_SEARCH_INDEX.concat(
+    MONSTER_SEARCH_INDEX,
+    WEAPON_SEARCH_INDEX,
+    ARMOR_SEARCH_INDEX,
+    COLLECTABLE_SEARCH_CONFIG.index,
+    USEABLE_SEARCH_CONFIG.index
+  );
   corpus.forEach((entry) => {
     const baseScore = scoreSearchEntry(entry, terms);
     const canUseFullText =
@@ -1128,6 +1254,12 @@ function initializeSiteSearch() {
     }
     if (ARMOR_INDEX_PROMISE) {
       pendingFetches.push(ARMOR_INDEX_PROMISE);
+    }
+    if (COLLECTABLE_SEARCH_CONFIG.promise) {
+      pendingFetches.push(COLLECTABLE_SEARCH_CONFIG.promise);
+    }
+    if (USEABLE_SEARCH_CONFIG.promise) {
+      pendingFetches.push(USEABLE_SEARCH_CONFIG.promise);
     }
     if (PERK_INDEX_PROMISE) {
       pendingFetches.push(PERK_INDEX_PROMISE);

@@ -35,6 +35,26 @@ const smokeSpecs = [
     queryKey: "armor",
   },
   {
+    detailName: "Soul of Flame",
+    detailQuery: "24",
+    label: "collectables",
+    listPath: "/pages/items/collectables.html",
+    detailSelector: "#item-details",
+    rowSelector: "#items-body tr[data-id]",
+    detailLinkSelector: "",
+    queryKey: "collectable",
+  },
+  {
+    detailName: "Carpentry Saw",
+    detailQuery: "10",
+    label: "useables",
+    listPath: "/pages/items/useables.html",
+    detailSelector: "#item-details",
+    rowSelector: "#items-body tr[data-id]",
+    detailLinkSelector: "",
+    queryKey: "useable",
+  },
+  {
     detailName: "Bat",
     detailQuery: "bat",
     label: "monsters",
@@ -3385,6 +3405,7 @@ async function assertUrlHasQuery(page, queryKey) {
 }
 
 async function assertDetailLinks(page, spec) {
+  if (!spec.detailLinkSelector) return;
   await page.locator(spec.detailLinkSelector).first().waitFor({ state: "attached" });
   const linkCount = await page.locator(spec.detailLinkSelector).count();
   if (!linkCount) throw new Error("detail panel did not render expected cross-page links");
