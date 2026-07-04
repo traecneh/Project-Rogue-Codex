@@ -7,7 +7,12 @@ from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any
 
-from tools.codex_pipeline.config import COLLECTABLES_DATA_PATH, REPO_ROOT, USEABLES_DATA_PATH
+from tools.codex_pipeline.config import (
+    COLLECTABLES_DATA_PATH,
+    ITEM_RELATIONSHIP_OVERRIDES_PATH,
+    REPO_ROOT,
+    USEABLES_DATA_PATH,
+)
 from tools.codex_pipeline.exports import ExportError
 
 
@@ -71,6 +76,14 @@ class _SystemPage:
     title: str
     relative_path: str
     text: str
+
+
+@dataclass(frozen=True)
+class _ManualRelationshipOverride:
+    item_kind: str
+    item_name: str
+    item_id: str | None
+    relationships: list[ItemRelationship]
 
 
 class _SystemPageParser(HTMLParser):
@@ -154,6 +167,16 @@ def _read_json_list(path: Path, label: str) -> list[Any]:
     return data
 
 
+def _read_json_object(path: Path, label: str) -> dict[str, Any]:
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ExportError(f"{label} relationship source is not readable JSON at {path}: {exc}") from exc
+    if not isinstance(data, dict):
+        raise ExportError(f"{label} relationship source must be a JSON object: {path}")
+    return data
+
+
 def _normalize_spaces(value: str) -> str:
     return " ".join(value.split())
 
@@ -187,6 +210,65 @@ def _load_items(path: Path, item_kind: str) -> list[_ItemRow]:
             )
         )
     return rows
+
+
+def _load_manual_overrides(path: Path) -> list[_ManualRelationshipOverride]:
+    if not path.is_file():
+        return []
+    raw = _read_json_object(path, "item relationship overrides")
+    if raw.get("schemaVersion") != 1:
+        raise ExportError(f"Unsupported item relationship override schemaVersion: {raw.get('schemaVersion')!r}")
+    relationships = raw.get("relationships")
+    if not isinstance(relationships, list):
+        raise ExportError("item relationship overrides must include a relationships list")
+
+    overrides: list[_ManualRelationshipOverride] = []
+    for index, raw_override in enumerate(relationships):
+        if not isinstance(raw_override, dict):
+            raise ExportError(f"item relationship override #{index + 1} must be an object")
+        item_kind = _normalize_key(raw_override.get("kind"))
+        if item_kind not in {"collectable", "useable"}:
+            raise ExportError(f"item relationship override #{index + 1} has unsupported kind: {raw_override.get('kind')!r}")
+        item_name = _normalize_spaces(str(raw_override.get("name") or ""))
+        if not item_name:
+            raise ExportError(f"item relationship override #{index + 1} must include a name")
+        item_id = raw_override.get("id")
+        normalized_id = str(item_id) if item_id is not None else None
+        raw_relationships = raw_override.get("relationships")
+        if not isinstance(raw_relationships, list) or not raw_relationships:
+            raise ExportError(f"item relationship override #{index + 1} must include at least one relationship")
+
+        parsed_relationships: list[ItemRelationship] = []
+        for relationship_index, raw_relationship in enumerate(raw_relationships):
+            if not isinstance(raw_relationship, dict):
+                raise ExportError(
+                    f"item relationship override #{index + 1} relationship #{relationship_index + 1} must be an object"
+                )
+            relationship_type = _normalize_spaces(str(raw_relationship.get("type") or ""))
+            target = _normalize_spaces(str(raw_relationship.get("target") or ""))
+            evidence = _normalize_spaces(str(raw_relationship.get("evidence") or "manual review"))
+            if not relationship_type or not target:
+                raise ExportError(
+                    f"item relationship override #{index + 1} relationship #{relationship_index + 1} "
+                    "must include type and target"
+                )
+            parsed_relationships.append(
+                ItemRelationship(
+                    relationship_type=relationship_type,
+                    target=target,
+                    evidence=f"manual override: {evidence}",
+                )
+            )
+
+        overrides.append(
+            _ManualRelationshipOverride(
+                item_kind=item_kind,
+                item_name=item_name,
+                item_id=normalized_id,
+                relationships=parsed_relationships,
+            )
+        )
+    return overrides
 
 
 def _load_system_pages(repo_root: Path) -> list[_SystemPage]:
@@ -231,6 +313,34 @@ def _system_page_relationships(item: _ItemRow, pages: list[_SystemPage]) -> list
                 )
             )
     return relationships
+
+
+def _manual_relationships(item: _ItemRow, overrides: list[_ManualRelationshipOverride]) -> list[ItemRelationship]:
+    relationships: list[ItemRelationship] = []
+    for override in overrides:
+        if override.item_kind != item.item_kind or _normalize_key(override.item_name) != _normalize_key(item.name):
+            continue
+        if override.item_id is not None and override.item_id != item.item_id:
+            continue
+        relationships.extend(override.relationships)
+    return relationships
+
+
+def _validate_manual_overrides(items: list[_ItemRow], overrides: list[_ManualRelationshipOverride]) -> None:
+    for override in overrides:
+        matches = [
+            item
+            for item in items
+            if item.item_kind == override.item_kind
+            and _normalize_key(item.name) == _normalize_key(override.item_name)
+            and (override.item_id is None or override.item_id == item.item_id)
+        ]
+        if not matches:
+            suffix = f" #{override.item_id}" if override.item_id is not None else ""
+            raise ExportError(
+                f"item relationship override {override.item_kind} {override.item_name}{suffix} "
+                "does not match any item"
+            )
 
 
 def _name_chain_candidates(item: _ItemRow, item_names: set[str]) -> list[ItemRelationship]:
@@ -306,10 +416,12 @@ def build_item_relationship_inventory(
     repo_root: Path = REPO_ROOT,
     collectables_data_path: Path | None = None,
     useables_data_path: Path | None = None,
+    overrides_path: Path | None = None,
 ) -> ItemRelationshipReport:
     repo_root = Path(repo_root)
     collectables_path = collectables_data_path or repo_root / COLLECTABLES_DATA_PATH.relative_to(REPO_ROOT)
     useables_path = useables_data_path or repo_root / USEABLES_DATA_PATH.relative_to(REPO_ROOT)
+    manual_overrides_path = overrides_path or repo_root / ITEM_RELATIONSHIP_OVERRIDES_PATH.relative_to(REPO_ROOT)
 
     items = [
         *_load_items(collectables_path, "collectable"),
@@ -317,10 +429,15 @@ def build_item_relationship_inventory(
     ]
     item_names = {_normalize_key(item.name) for item in items}
     system_pages = _load_system_pages(repo_root)
+    manual_overrides = _load_manual_overrides(manual_overrides_path)
+    _validate_manual_overrides(items, manual_overrides)
 
     records: list[ItemRelationshipRecord] = []
     for item in sorted(items, key=lambda row: (row.item_kind, _normalize_key(row.name), row.item_id)):
-        confirmed = _system_page_relationships(item, system_pages)
+        confirmed = [
+            *_system_page_relationships(item, system_pages),
+            *_manual_relationships(item, manual_overrides),
+        ]
         candidates = _name_chain_candidates(item, item_names)
         use_type_candidate = _use_type_candidate(item)
         if use_type_candidate:

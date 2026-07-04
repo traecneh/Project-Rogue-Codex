@@ -65,6 +65,117 @@ class ItemRelationshipInventoryTests(unittest.TestCase):
         self.assertEqual([99], [group.value for group in report.unknown_use_types])
         self.assertEqual(["Odd Relic"], report.unknown_use_types[0].item_names)
 
+    def test_build_item_relationship_inventory_applies_manual_overrides(self):
+        from tools.codex_pipeline.item_relationships import build_item_relationship_inventory
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _write_json(
+                root / "pages" / "items" / "collectables_data.json",
+                [{"id": 4, "name": "Holiday Gift", "fields": {"use_type": 0}}],
+            )
+            _write_json(
+                root / "pages" / "items" / "useables_data.json",
+                [
+                    {"id": 75, "name": "Scroll of Imbuement", "fields": {"use_type": 0}},
+                    {"id": 76, "name": "Scroll of Imbuement", "fields": {"use_type": 0}},
+                ],
+            )
+            _write_json(
+                root / "data" / "codex-overrides" / "item_relationships.json",
+                {
+                    "schemaVersion": 1,
+                    "relationships": [
+                        {
+                            "kind": "collectable",
+                            "name": "Holiday Gift",
+                            "relationships": [
+                                {
+                                    "type": "related_system",
+                                    "target": "Seasonal Events",
+                                    "evidence": "manual review",
+                                }
+                            ],
+                        },
+                        {
+                            "kind": "useable",
+                            "id": 76,
+                            "name": "Scroll of Imbuement",
+                            "relationships": [
+                                {
+                                    "type": "used_in",
+                                    "target": "Imbuements System",
+                                    "evidence": "manual review",
+                                }
+                            ],
+                        },
+                    ],
+                },
+            )
+
+            report = build_item_relationship_inventory(repo_root=root)
+
+        by_key = {(record.item_kind, record.item_id): record for record in report.records}
+        holiday = by_key[("collectable", "4")]
+        scroll_75 = by_key[("useable", "75")]
+        scroll_76 = by_key[("useable", "76")]
+
+        self.assertEqual("confirmed", holiday.status)
+        self.assertEqual("Seasonal Events", holiday.confirmed[0].target)
+        self.assertEqual("manual override: manual review", holiday.confirmed[0].evidence)
+        self.assertEqual("gap", scroll_75.status)
+        self.assertEqual("confirmed", scroll_76.status)
+        self.assertEqual("used_in", scroll_76.confirmed[0].relationship_type)
+
+    def test_build_item_relationship_inventory_rejects_stale_manual_overrides(self):
+        from tools.codex_pipeline.exports import ExportError
+        from tools.codex_pipeline.item_relationships import build_item_relationship_inventory
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _write_json(root / "pages" / "items" / "collectables_data.json", [])
+            _write_json(root / "pages" / "items" / "useables_data.json", [])
+            _write_json(
+                root / "data" / "codex-overrides" / "item_relationships.json",
+                {
+                    "schemaVersion": 1,
+                    "relationships": [
+                        {
+                            "kind": "useable",
+                            "name": "Missing Tool",
+                            "relationships": [{"type": "used_in", "target": "Tinkering"}],
+                        }
+                    ],
+                },
+            )
+
+            with self.assertRaisesRegex(ExportError, "does not match any item"):
+                build_item_relationship_inventory(repo_root=root)
+
+    def test_item_relationship_override_file_references_existing_items(self):
+        from tools.codex_pipeline.item_relationships import build_item_relationship_inventory
+
+        report = build_item_relationship_inventory()
+
+        by_name = {record.item_name: record for record in report.records}
+        holiday = by_name["Holiday Gift"]
+        hammer = by_name["Hammer"]
+
+        self.assertEqual("confirmed", holiday.status)
+        self.assertTrue(
+            any(
+                relationship.target == "Seasonal Events"
+                and relationship.evidence == "manual override: reviewed holiday item family"
+                for relationship in holiday.confirmed
+            )
+        )
+        self.assertTrue(
+            any(
+                relationship.relationship_type == "used_in" and relationship.target == "Blacksmithing"
+                for relationship in hammer.confirmed
+            )
+        )
+
     def test_cli_prints_item_relationship_inventory(self):
         from tools.codex_pipeline import cli
         from tools.codex_pipeline.item_relationships import (

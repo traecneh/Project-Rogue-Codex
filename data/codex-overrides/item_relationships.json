@@ -1,0 +1,571 @@
+{
+  "schemaVersion": 1,
+  "relationships": [
+    {
+      "kind": "collectable",
+      "name": "Ascendancy Shard",
+      "relationships": [
+        {
+          "type": "used_in",
+          "target": "Ascend System",
+          "evidence": "reviewed shard currency used by Ascend"
+        },
+        {
+          "type": "found_from",
+          "target": "Deconstruct System",
+          "evidence": "reviewed shard currency produced by Deconstruct"
+        }
+      ]
+    },
+    {
+      "kind": "collectable",
+      "name": "Balron Skull",
+      "relationships": [
+        {
+          "type": "found_from",
+          "target": "Monster loot",
+          "evidence": "reviewed monster trophy item"
+        }
+      ]
+    },
+    {
+      "kind": "collectable",
+      "name": "Beholder Eye",
+      "relationships": [
+        {
+          "type": "found_from",
+          "target": "Monster loot",
+          "evidence": "reviewed monster trophy item"
+        }
+      ]
+    },
+    {
+      "kind": "collectable",
+      "name": "Demon Bones",
+      "relationships": [
+        {
+          "type": "found_from",
+          "target": "Monster loot",
+          "evidence": "reviewed monster trophy item"
+        }
+      ]
+    },
+    {
+      "kind": "collectable",
+      "name": "Demon Skull",
+      "relationships": [
+        {
+          "type": "found_from",
+          "target": "Monster loot",
+          "evidence": "reviewed monster trophy item"
+        }
+      ]
+    },
+    {
+      "kind": "collectable",
+      "name": "Demonic Remains",
+      "relationships": [
+        {
+          "type": "found_from",
+          "target": "Monster loot",
+          "evidence": "reviewed monster trophy item"
+        }
+      ]
+    },
+    {
+      "kind": "collectable",
+      "name": "Feather",
+      "relationships": [
+        {
+          "type": "found_from",
+          "target": "Monster loot",
+          "evidence": "reviewed creature drop item"
+        }
+      ]
+    },
+    {
+      "kind": "collectable",
+      "name": "Holiday Gift",
+      "relationships": [
+        {
+          "type": "related_system",
+          "target": "Seasonal Events",
+          "evidence": "reviewed holiday item family"
+        }
+      ]
+    },
+    {
+      "kind": "collectable",
+      "name": "Human Bones",
+      "relationships": [
+        {
+          "type": "found_from",
+          "target": "Monster loot",
+          "evidence": "reviewed creature drop item"
+        }
+      ]
+    },
+    {
+      "kind": "collectable",
+      "name": "Plank",
+      "relationships": [
+        {
+          "type": "used_in",
+          "target": "Carpentry",
+          "evidence": "reviewed processed wood material"
+        }
+      ]
+    },
+    {
+      "kind": "useable",
+      "name": "Ascendant Reroll Shard",
+      "relationships": [
+        {
+          "type": "used_in",
+          "target": "Re-Roll System",
+          "evidence": "reviewed reroll shard item family"
+        }
+      ]
+    },
+    {
+      "kind": "useable",
+      "name": "Carpentry Saw",
+      "relationships": [
+        {
+          "type": "used_in",
+          "target": "Carpentry",
+          "evidence": "reviewed tool use type"
+        }
+      ]
+    },
+    {
+      "kind": "useable",
+      "name": "Epic Reroll Shard",
+      "relationships": [
+        {
+          "type": "used_in",
+          "target": "Re-Roll System",
+          "evidence": "reviewed reroll shard item family"
+        }
+      ]
+    },
+    {
+      "kind": "useable",
+      "name": "Fishing Rod",
+      "relationships": [
+        {
+          "type": "used_in",
+          "target": "Fishing",
+          "evidence": "reviewed tool use type"
+        }
+      ]
+    },
+    {
+      "kind": "useable",
+      "name": "Hammer",
+      "relationships": [
+        {
+          "type": "used_in",
+          "target": "Blacksmithing",
+          "evidence": "reviewed tool use type"
+        }
+      ]
+    },
+    {
+      "kind": "useable",
+      "name": "Legendary Reroll Shard",
+      "relationships": [
+        {
+          "type": "used_in",
+          "target": "Re-Roll System",
+          "evidence": "reviewed reroll shard item family"
+        }
+      ]
+    },
+    {
+      "kind": "useable",
+      "name": "Magical Pickaxe",
+      "relationships": [
+        {
+          "type": "used_in",
+          "target": "Mining",
+          "evidence": "reviewed tool use type"
+        }
+      ]
+    },
+    {
+      "kind": "useable",
+      "name": "Magical Woodcutter's Axe",
+      "relationships": [
+        {
+          "type": "used_in",
+          "target": "Woodcutting",
+          "evidence": "reviewed tool use type"
+        }
+      ]
+    },
+    {
+      "kind": "useable",
+      "name": "Milling Saw",
+      "relationships": [
+        {
+          "type": "used_in",
+          "target": "Milling",
+          "evidence": "reviewed tool use type"
+        }
+      ]
+    },
+    {
+      "kind": "useable",
+      "name": "Miner's Friend",
+      "relationships": [
+        {
+          "type": "used_in",
+          "target": "Mining",
+          "evidence": "reviewed tool use type"
+        }
+      ]
+    },
+    {
+      "kind": "useable",
+      "name": "Mythical Reroll Shard",
+      "relationships": [
+        {
+          "type": "used_in",
+          "target": "Re-Roll System",
+          "evidence": "reviewed reroll shard item family"
+        }
+      ]
+    },
+    {
+      "kind": "useable",
+      "name": "Pickaxe",
+      "relationships": [
+        {
+          "type": "used_in",
+          "target": "Mining",
+          "evidence": "reviewed tool use type"
+        }
+      ]
+    },
+    {
+      "kind": "useable",
+      "name": "Ship Deed",
+      "relationships": [
+        {
+          "type": "related_system",
+          "target": "Travel",
+          "evidence": "reviewed ship utility item"
+        }
+      ]
+    },
+    {
+      "kind": "useable",
+      "name": "Tinker Tools",
+      "relationships": [
+        {
+          "type": "used_in",
+          "target": "Tinkering",
+          "evidence": "reviewed tool item family"
+        }
+      ]
+    },
+    {
+      "kind": "useable",
+      "name": "Woodcutter's Axe",
+      "relationships": [
+        {
+          "type": "used_in",
+          "target": "Woodcutting",
+          "evidence": "reviewed tool use type"
+        }
+      ]
+    },
+    {
+      "kind": "collectable",
+      "name": "Fish1",
+      "relationships": [
+        {
+          "type": "found_from",
+          "target": "Fishing",
+          "evidence": "reviewed fish item family"
+        }
+      ]
+    },
+    {
+      "kind": "collectable",
+      "name": "Fish2",
+      "relationships": [
+        {
+          "type": "found_from",
+          "target": "Fishing",
+          "evidence": "reviewed fish item family"
+        }
+      ]
+    },
+    {
+      "kind": "collectable",
+      "name": "Fish3",
+      "relationships": [
+        {
+          "type": "found_from",
+          "target": "Fishing",
+          "evidence": "reviewed fish item family"
+        }
+      ]
+    },
+    {
+      "kind": "collectable",
+      "name": "Fish4",
+      "relationships": [
+        {
+          "type": "found_from",
+          "target": "Fishing",
+          "evidence": "reviewed fish item family"
+        }
+      ]
+    },
+    {
+      "kind": "collectable",
+      "name": "Fish5",
+      "relationships": [
+        {
+          "type": "found_from",
+          "target": "Fishing",
+          "evidence": "reviewed fish item family"
+        }
+      ]
+    },
+    {
+      "kind": "collectable",
+      "name": "Fish6",
+      "relationships": [
+        {
+          "type": "found_from",
+          "target": "Fishing",
+          "evidence": "reviewed fish item family"
+        }
+      ]
+    },
+    {
+      "kind": "collectable",
+      "name": "Fish7",
+      "relationships": [
+        {
+          "type": "found_from",
+          "target": "Fishing",
+          "evidence": "reviewed fish item family"
+        }
+      ]
+    },
+    {
+      "kind": "collectable",
+      "name": "Fish8",
+      "relationships": [
+        {
+          "type": "found_from",
+          "target": "Fishing",
+          "evidence": "reviewed fish item family"
+        }
+      ]
+    },
+    {
+      "kind": "collectable",
+      "name": "Fish9",
+      "relationships": [
+        {
+          "type": "found_from",
+          "target": "Fishing",
+          "evidence": "reviewed fish item family"
+        }
+      ]
+    },
+    {
+      "kind": "collectable",
+      "name": "Fish10",
+      "relationships": [
+        {
+          "type": "found_from",
+          "target": "Fishing",
+          "evidence": "reviewed fish item family"
+        }
+      ]
+    },
+    {
+      "kind": "collectable",
+      "name": "Fish11",
+      "relationships": [
+        {
+          "type": "found_from",
+          "target": "Fishing",
+          "evidence": "reviewed fish item family"
+        }
+      ]
+    },
+    {
+      "kind": "collectable",
+      "name": "Fish12",
+      "relationships": [
+        {
+          "type": "found_from",
+          "target": "Fishing",
+          "evidence": "reviewed fish item family"
+        }
+      ]
+    },
+    {
+      "kind": "collectable",
+      "name": "Fish13",
+      "relationships": [
+        {
+          "type": "found_from",
+          "target": "Fishing",
+          "evidence": "reviewed fish item family"
+        }
+      ]
+    },
+    {
+      "kind": "collectable",
+      "name": "Fish14",
+      "relationships": [
+        {
+          "type": "found_from",
+          "target": "Fishing",
+          "evidence": "reviewed fish item family"
+        }
+      ]
+    },
+    {
+      "kind": "collectable",
+      "name": "Fish15",
+      "relationships": [
+        {
+          "type": "found_from",
+          "target": "Fishing",
+          "evidence": "reviewed fish item family"
+        }
+      ]
+    },
+    {
+      "kind": "collectable",
+      "name": "Fish16",
+      "relationships": [
+        {
+          "type": "found_from",
+          "target": "Fishing",
+          "evidence": "reviewed fish item family"
+        }
+      ]
+    },
+    {
+      "kind": "collectable",
+      "name": "Seed1",
+      "relationships": [
+        {
+          "type": "found_from",
+          "target": "Farming",
+          "evidence": "reviewed seed item family"
+        }
+      ]
+    },
+    {
+      "kind": "collectable",
+      "name": "Seed2",
+      "relationships": [
+        {
+          "type": "found_from",
+          "target": "Farming",
+          "evidence": "reviewed seed item family"
+        }
+      ]
+    },
+    {
+      "kind": "collectable",
+      "name": "Seed3",
+      "relationships": [
+        {
+          "type": "found_from",
+          "target": "Farming",
+          "evidence": "reviewed seed item family"
+        }
+      ]
+    },
+    {
+      "kind": "collectable",
+      "name": "Seed4",
+      "relationships": [
+        {
+          "type": "found_from",
+          "target": "Farming",
+          "evidence": "reviewed seed item family"
+        }
+      ]
+    },
+    {
+      "kind": "collectable",
+      "name": "Seed5",
+      "relationships": [
+        {
+          "type": "found_from",
+          "target": "Farming",
+          "evidence": "reviewed seed item family"
+        }
+      ]
+    },
+    {
+      "kind": "collectable",
+      "name": "Seed6",
+      "relationships": [
+        {
+          "type": "found_from",
+          "target": "Farming",
+          "evidence": "reviewed seed item family"
+        }
+      ]
+    },
+    {
+      "kind": "collectable",
+      "name": "Seed7",
+      "relationships": [
+        {
+          "type": "found_from",
+          "target": "Farming",
+          "evidence": "reviewed seed item family"
+        }
+      ]
+    },
+    {
+      "kind": "collectable",
+      "name": "Seed8",
+      "relationships": [
+        {
+          "type": "found_from",
+          "target": "Farming",
+          "evidence": "reviewed seed item family"
+        }
+      ]
+    },
+    {
+      "kind": "collectable",
+      "name": "Seed9",
+      "relationships": [
+        {
+          "type": "found_from",
+          "target": "Farming",
+          "evidence": "reviewed seed item family"
+        }
+      ]
+    },
+    {
+      "kind": "collectable",
+      "name": "Seed10",
+      "relationships": [
+        {
+          "type": "found_from",
+          "target": "Farming",
+          "evidence": "reviewed seed item family"
+        }
+      ]
+    }
+  ]
+}
