@@ -210,6 +210,11 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
         self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
 
+        for html_path in [collectables_html, useables_html]:
+            html = html_path.read_text(encoding="utf-8")
+            self.assertIn('<link rel="stylesheet" href="css/misc-items.css?v=compact-detail-panel" />', html)
+            self.assertIn('<script src="js/misc-items-page.js?v=compact-detail-panel" defer></script>', html)
+
     def test_misc_items_page_supports_id_deep_links_and_trait_filters(self):
         from tools.codex_pipeline.config import REPO_ROOT
 
@@ -250,6 +255,35 @@ class SiteValidationTests(unittest.TestCase):
             ".relationship-section",
             ".relationship-pill",
             ".detail-pill .detail-tooltip",
+        ]:
+            self.assertIn(expected, css)
+
+    def test_misc_items_page_renders_compact_detail_summary(self):
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        script = (REPO_ROOT / "js" / "misc-items-page.js").read_text(encoding="utf-8")
+        css = (REPO_ROOT / "css" / "misc-items.css").read_text(encoding="utf-8")
+
+        for expected in [
+            "createDetailSummary",
+            "createSummaryChip",
+            "misc-detail-summary",
+            "detail-summary-chip",
+            "createRelationshipPanel",
+            "relationship-panel",
+            "Item Context",
+        ]:
+            self.assertIn(expected, script)
+
+        for expected in [
+            ".misc-detail-summary",
+            ".detail-summary-chip",
+            ".detail-summary-label",
+            ".detail-summary-value",
+            ".relationship-panel",
+            ".relationship-panel-header",
+            ".relationship-panel-title",
+            ".relationship-panel-count",
         ]:
             self.assertIn(expected, css)
 

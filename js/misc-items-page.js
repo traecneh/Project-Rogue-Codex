@@ -334,6 +334,31 @@
     return wrapper;
   };
 
+  const createSummaryChip = (label, value, options = {}) => {
+    const chip = document.createElement("div");
+    chip.className = `detail-summary-chip${options.wide ? " is-wide" : ""}`;
+    const labelEl = document.createElement("span");
+    labelEl.className = "detail-summary-label";
+    labelEl.textContent = label;
+    const valueEl = document.createElement("div");
+    valueEl.className = "detail-summary-value";
+    if (value instanceof Node) valueEl.appendChild(value);
+    else valueEl.textContent = formatValue(value);
+    chip.appendChild(labelEl);
+    chip.appendChild(valueEl);
+    return chip;
+  };
+
+  const createDetailSummary = (item) => {
+    const summary = document.createElement("div");
+    summary.className = "misc-detail-summary";
+    summary.appendChild(createSummaryChip("ID", item.id));
+    summary.appendChild(createSummaryChip("Use Type", item.useTypeLabel));
+    summary.appendChild(createSummaryChip("Value", formatNumber(item.value)));
+    summary.appendChild(createSummaryChip("Traits", createTraitList(item.traits), { wide: true }));
+    return summary;
+  };
+
   const createImageThumb = (item) => {
     const wrapper = document.createDocumentFragment();
     const img = document.createElement("img");
@@ -511,6 +536,31 @@
     return wrapper.children.length ? wrapper : null;
   };
 
+  const createRelationshipPanel = (item) => {
+    const relationships = getRelationshipsForItem(item);
+    if (!relationships.length) return null;
+    const relationshipSections = createRelationshipSections(item);
+    if (!relationshipSections) return null;
+
+    const panel = document.createElement("section");
+    panel.className = "relationship-panel";
+    const header = document.createElement("div");
+    header.className = "relationship-panel-header";
+    const title = document.createElement("span");
+    title.className = "relationship-panel-title";
+    title.textContent = "Item Context";
+    const count = document.createElement("span");
+    count.className = "relationship-panel-count";
+    count.textContent = `${formatNumber(relationships.length)} ${
+      relationships.length === 1 ? "relationship" : "relationships"
+    }`;
+    header.appendChild(title);
+    header.appendChild(count);
+    panel.appendChild(header);
+    panel.appendChild(relationshipSections);
+    return panel;
+  };
+
   const setDetails = (item, options = {}) => {
     if (!item) return;
     detailFields.name.textContent = item.name || "Unknown";
@@ -519,24 +569,13 @@
 
     const container = detailFields.properties;
     container.innerHTML = "";
-    appendRow(
-      container,
-      [
-        ["ID", formatValue(item.id)],
-        ["Use Type", item.useTypeLabel],
-        ["Value", formatNumber(item.value)],
-      ],
-      3
-    );
-    appendRow(container, [["Traits", createTraitList(item.traits)]], 1);
-    appendDivider(container);
+    container.appendChild(createDetailSummary(item));
+    const relationshipPanel = createRelationshipPanel(item);
+    if (relationshipPanel) {
+      container.appendChild(relationshipPanel);
+    }
     appendRow(container, [["Crafting Data", createCraftingSummary(item)]], 1);
     appendDivider(container);
-    const relationshipSections = createRelationshipSections(item);
-    if (relationshipSections) {
-      appendRow(container, [["Relationships", relationshipSections]], 1);
-      appendDivider(container);
-    }
     appendRow(
       container,
       [
