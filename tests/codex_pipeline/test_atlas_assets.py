@@ -291,6 +291,65 @@ class AtlasAssetTests(unittest.TestCase):
         self.assertEqual(["images/useables/Carpentry Saw.png"], manifest_entries)
         self.assertEqual((180, 180, 180, 255), saw.getpixel((0, 0)))
 
+    def test_extract_atlas_assets_keeps_duplicate_item_names_distinct(self):
+        from tools.codex_pipeline.atlas_assets import extract_atlas_assets_for_target
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            gf_json_dir = root / "client" / "gf_json"
+            data_path = root / "generated" / "collectables_data.json"
+            output_dir = root / "atlas-assets" / "collectables"
+            gf_json_dir.mkdir(parents=True)
+            data_path.parent.mkdir()
+            output_dir.mkdir(parents=True)
+            (output_dir / "Demonic Remains.png").write_bytes(b"stale")
+
+            atlas = Image.new("RGBA", (4, 2), (255, 0, 255, 255))
+            atlas.putpixel((0, 0), (255, 215, 0, 255))
+            atlas.putpixel((2, 0), (128, 64, 32, 255))
+            _write_gf_json_png(gf_json_dir / "itemgraph.json", atlas)
+            data_path.write_text(
+                json.dumps(
+                    [
+                        {
+                            "id": 35,
+                            "name": "Demonic Remains",
+                            "fields": {"frame_1_x": 0, "frame_1_y": 0, "frame_1_width": 2, "frame_1_height": 2},
+                        },
+                        {
+                            "id": 36,
+                            "name": "Demonic Remains",
+                            "fields": {"frame_1_x": 2, "frame_1_y": 0, "frame_1_width": 2, "frame_1_height": 2},
+                        },
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            report = extract_atlas_assets_for_target(
+                "collectables",
+                data_path=data_path,
+                gf_json_dir=gf_json_dir,
+                output_dir=output_dir,
+            )
+
+            manifest_entries = json.loads((output_dir / "manifest.json").read_text(encoding="utf-8"))
+            with Image.open(output_dir / "Demonic Remains-35.png") as image:
+                first = image.convert("RGBA")
+                first.load()
+            with Image.open(output_dir / "Demonic Remains-36.png") as image:
+                second = image.convert("RGBA")
+                second.load()
+
+        self.assertEqual(["Demonic Remains-35.png", "Demonic Remains-36.png"], report.written)
+        self.assertEqual(
+            ["images/collectables/Demonic Remains-35.png", "images/collectables/Demonic Remains-36.png"],
+            manifest_entries,
+        )
+        self.assertFalse((output_dir / "Demonic Remains.png").exists())
+        self.assertEqual((255, 215, 0, 255), first.getpixel((0, 0)))
+        self.assertEqual((128, 64, 32, 255), second.getpixel((0, 0)))
+
     def test_cli_extract_atlas_assets_prints_summary(self):
         from tools.codex_pipeline import cli
         from tools.codex_pipeline.atlas_assets import AtlasExtractionReport

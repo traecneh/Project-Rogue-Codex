@@ -4,6 +4,7 @@ import base64
 import io
 import json
 import re
+from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable, Sequence
@@ -135,8 +136,19 @@ def _manifest_site_name_map(site_dir: Path | None) -> dict[str, str]:
     return names
 
 
-def _output_file_name(record_name: str, site_names: dict[str, str]) -> str:
+def _record_id_suffix(record: Any, fallback_index: int) -> str:
+    if isinstance(record, dict):
+        record_id = record.get("id")
+        if record_id is not None and str(record_id).strip():
+            return _sanitize_filename_stem(str(record_id))
+    return str(fallback_index + 1)
+
+
+def _output_file_name(record_name: str, site_names: dict[str, str], *, duplicate_suffix: str | None = None) -> str:
     stem = _sanitize_filename_stem(record_name)
+    if duplicate_suffix:
+        duplicate_stem = f"{stem}-{duplicate_suffix}"
+        return site_names.get(duplicate_stem.casefold()) or f"{duplicate_stem}.png"
     return site_names.get(stem.casefold()) or f"{stem}.png"
 
 
@@ -217,6 +229,14 @@ def _write_manifest(output_dir: Path, target_name: str, file_names: Iterable[str
     (output_dir / "manifest.json").write_text(json.dumps(entries, indent=2) + "\n", encoding="utf-8", newline="\n")
 
 
+def _clear_generated_output_images(output_dir: Path) -> None:
+    if not output_dir.is_dir():
+        return
+    for path in output_dir.rglob("*"):
+        if path.is_file() and path.suffix.lower() in IMAGE_EXTENSIONS:
+            path.unlink()
+
+
 def extract_atlas_assets_for_target(
     target_name: str,
     *,
@@ -244,8 +264,11 @@ def extract_atlas_assets_for_target(
 
     site_names = _manifest_site_name_map(site_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
+    _clear_generated_output_images(output_dir)
+    record_names = [_record_name(record, index) for index, record in enumerate(records)]
+    name_counts = Counter(_sanitize_filename_stem(name).casefold() for name in record_names)
     for index, record in enumerate(records):
-        name = _record_name(record, index)
+        name = record_names[index]
         frames = _record_frames(record)
         if not frames:
             skipped.append(name)
@@ -254,7 +277,12 @@ def extract_atlas_assets_for_target(
         if not crops:
             skipped.append(name)
             continue
-        file_name = _output_file_name(name, site_names)
+        duplicate_suffix = (
+            _record_id_suffix(record, index)
+            if name_counts[_sanitize_filename_stem(name).casefold()] > 1
+            else None
+        )
+        file_name = _output_file_name(name, site_names, duplicate_suffix=duplicate_suffix)
         try:
             _save_frames(crops, output_dir / file_name)
         except OSError as exc:
