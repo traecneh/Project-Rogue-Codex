@@ -394,6 +394,13 @@
   border-color: rgba(120, 205, 255, 0.32);
   color: #d8f0ff;
   max-width: 100%;
+  text-decoration: none;
+}
+
+.relationship-pill:hover,
+.relationship-pill:focus-visible {
+  border-color: rgba(75, 255, 75, 0.55);
+  color: var(--accent);
 }
 
 .table-empty {

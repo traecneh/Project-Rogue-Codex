@@ -253,6 +253,30 @@ class SiteValidationTests(unittest.TestCase):
         ]:
             self.assertIn(expected, css)
 
+    def test_misc_items_page_links_obvious_relationship_targets(self):
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        script = (REPO_ROOT / "js" / "misc-items-page.js").read_text(encoding="utf-8")
+        css = (REPO_ROOT / "css" / "misc-items.css").read_text(encoding="utf-8")
+
+        for expected in [
+            "RELATIONSHIP_TARGET_LINKS",
+            '"Ascend System": "pages/systems/ascend.html"',
+            '"Deconstruct System": "pages/systems/deconstruct.html"',
+            '"Re-Roll System": "pages/systems/re-roll.html"',
+            '"Imbuements System": "pages/systems/imbuements.html"',
+            '"Carpentry": "pages/stats/skills.html"',
+            '"Fishing": "pages/stats/skills.html"',
+            '"Tinkering": "pages/stats/skills.html"',
+            "getRelationshipHref",
+            'document.createElement("a")',
+            "itemUtils.stopTooltipLinkPropagation",
+        ]:
+            self.assertIn(expected, script)
+
+        self.assertIn(".relationship-pill:hover", css)
+        self.assertIn(".relationship-pill:focus-visible", css)
+
     def test_nav_and_site_search_include_collectables_and_useables(self):
         from tools.codex_pipeline.config import REPO_ROOT
 

@@ -64,6 +64,11 @@
     });
   const setOptions = itemUtils.setOptions || (() => {});
   const enableToggleSelect = itemUtils.enableToggleSelect || (() => {});
+  const stopTooltipLinkPropagation =
+    itemUtils.stopTooltipLinkPropagation ||
+    ((event) => {
+      event.stopPropagation();
+    });
   const createCell = itemUtils.createCell;
   const addDivider = itemUtils.addDivider;
   const addRow = itemUtils.addRow;
@@ -95,6 +100,23 @@
     { type: "found_from", label: "Found From" },
     { type: "related_system", label: "Related Systems" },
   ];
+
+  const RELATIONSHIP_TARGET_LINKS = {
+    "Ascend System": "pages/systems/ascend.html",
+    "Deconstruct System": "pages/systems/deconstruct.html",
+    "Re-Roll System": "pages/systems/re-roll.html",
+    "Imbuements System": "pages/systems/imbuements.html",
+    "Purge System": "pages/systems/purge.html",
+    "Craft System": "pages/systems/craft.html",
+    "Crafting System": "pages/systems/crafting.html",
+    "Carpentry": "pages/stats/skills.html",
+    "Fishing": "pages/stats/skills.html",
+    "Tinkering": "pages/stats/skills.html",
+    "Mining": "pages/stats/skills.html",
+    "Woodcutting": "pages/stats/skills.html",
+    "Blacksmithing": "pages/stats/skills.html",
+    "Milling": "pages/stats/skills.html",
+  };
 
   const COLUMNS = [
     { key: "image", label: "Image", sortable: false },
@@ -216,6 +238,8 @@
 
   const formatRelationshipType = (type) =>
     RELATIONSHIP_GROUPS.find((group) => group.type === type)?.label || titleCase(type);
+
+  const getRelationshipHref = (relationship) => RELATIONSHIP_TARGET_LINKS[relationship?.target] || "";
 
   const normalizeItem = (raw) => {
     if (!raw || typeof raw !== "object") return null;
@@ -422,15 +446,22 @@
   };
 
   const createRelationshipPill = (relationship) => {
-    const pill = document.createElement("span");
+    const href = getRelationshipHref(relationship);
+    const pill = document.createElement(href ? "a" : "span");
     pill.className = "detail-pill relationship-pill";
     pill.textContent = relationship.target;
+    if (href) {
+      pill.href = href;
+      pill.setAttribute("aria-label", `Open ${relationship.target}`);
+      pill.addEventListener("click", stopTooltipLinkPropagation);
+    }
     if (relationship.evidence) {
       pill.tabIndex = 0;
       const tooltip = document.createElement("span");
       tooltip.className = "detail-tooltip relationship-tooltip";
       tooltip.role = "tooltip";
       tooltip.textContent = relationship.evidence;
+      tooltip.addEventListener("click", stopTooltipLinkPropagation);
       pill.appendChild(tooltip);
     }
     return pill;

@@ -44,6 +44,7 @@ const smokeSpecs = [
     detailLinkSelector: "",
     duplicateRoute: { id: "36", detailName: "Demonic Remains" },
     detailTextIncludes: ["Relationships", "Used In", "Ascend System", "Found From", "Deconstruct System"],
+    detailHrefIncludes: ["pages/systems/ascend.html", "pages/systems/deconstruct.html"],
     queryKey: "collectable",
   },
   {
@@ -56,6 +57,7 @@ const smokeSpecs = [
     detailLinkSelector: "",
     duplicateRoute: { id: "76", detailName: "Scroll of Imbuement" },
     detailTextIncludes: ["Relationships", "Used In", "Carpentry"],
+    detailHrefIncludes: ["pages/stats/skills.html"],
     queryKey: "useable",
   },
   {
@@ -316,6 +318,7 @@ async function runSpec(browser, baseUrl, spec) {
     await assertDetailState(page, spec, "deep link");
     await assertDetailLinks(page, spec);
     await assertDetailTextIncludes(page, spec);
+    await assertDetailHrefIncludes(page, spec);
     if (typeof spec.assertDetail === "function") {
       await spec.assertDetail(page);
     }
@@ -3431,6 +3434,18 @@ async function assertDetailTextIncludes(page, spec) {
   for (const expected of spec.detailTextIncludes) {
     if (!detailText.includes(expected)) {
       throw new Error(`${spec.label} detail missing "${expected}": "${detailText}"`);
+    }
+  }
+}
+
+async function assertDetailHrefIncludes(page, spec) {
+  if (!Array.isArray(spec.detailHrefIncludes) || !spec.detailHrefIncludes.length) return;
+  const hrefs = await page.locator("#details-properties a.relationship-pill").evaluateAll((links) =>
+    links.map((link) => link.getAttribute("href") || "")
+  );
+  for (const expected of spec.detailHrefIncludes) {
+    if (!hrefs.some((href) => href.includes(expected))) {
+      throw new Error(`${spec.label} detail missing relationship href "${expected}": ${hrefs.join(", ")}`);
     }
   }
 }
