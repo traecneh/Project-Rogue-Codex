@@ -18,10 +18,12 @@ class GitHubActionsWorkflowTests(unittest.TestCase):
         self.assertIn("python -m pip install cryptography", workflow)
         self.assertIn("pillow", workflow)
         self.assertIn("npm ci", workflow)
+        self.assertIn('output_file="$RUNNER_TEMP/unittest-output.txt"', workflow)
         self.assertIn("python -m unittest discover -s tests -v", workflow)
-        self.assertIn("unittest-output.txt", workflow)
+        self.assertIn("$output_file", workflow)
         self.assertIn("::error title=Unit tests failed::", workflow)
-        self.assertIn("python -m tools.codex_pipeline validate", workflow)
+        self.assertIn("python -m tools.codex_pipeline release-check", workflow)
+        self.assertNotIn("run: python -m tools.codex_pipeline validate", workflow)
         self.assertIn(
             "python -m tools.codex_pipeline smoke-site --smoke-timeout-ms 60000",
             workflow,
