@@ -252,6 +252,7 @@ class ItemRelationshipInventoryTests(unittest.TestCase):
                             "textOnly": True,
                             "reason": "ambiguous source",
                             "reviewNextStep": "Review client loot data for exact monster sources.",
+                            "reviewEvidence": "Current VPACK has no item-to-monster drop table.",
                         },
                         {
                             "target": "Seasonal Events",
@@ -277,6 +278,7 @@ class ItemRelationshipInventoryTests(unittest.TestCase):
         self.assertEqual(["collectable Feather"], by_target["Monster loot"].item_labels)
         self.assertEqual("ambiguous source", by_target["Monster loot"].reason)
         self.assertEqual("Review client loot data for exact monster sources.", by_target["Monster loot"].next_step)
+        self.assertEqual("Current VPACK has no item-to-monster drop table.", by_target["Monster loot"].evidence)
         self.assertEqual(["collectable Holiday Gift"], by_target["Seasonal Events"].item_labels)
         self.assertEqual(["useable Ship Deed"], by_target["Travel"].item_labels)
 
@@ -402,6 +404,8 @@ class ItemRelationshipInventoryTests(unittest.TestCase):
         balron_skull = by_name["Balron Skull"]
         beholder_eye = by_name["Beholder Eye"]
         demon_skull = by_name["Demon Skull"]
+        feather = by_name["Feather"]
+        human_bones = by_name["Human Bones"]
 
         self.assertEqual("confirmed", holiday.status)
         self.assertTrue(
@@ -433,6 +437,20 @@ class ItemRelationshipInventoryTests(unittest.TestCase):
             any(
                 relationship.relationship_type == "found_from" and relationship.target == "Demon"
                 for relationship in demon_skull.confirmed
+            )
+        )
+        self.assertTrue(
+            any(
+                relationship.target == "Monster loot"
+                and relationship.evidence == "manual override: reviewed current VPACK; exact monster source not exported"
+                for relationship in feather.confirmed
+            )
+        )
+        self.assertTrue(
+            any(
+                relationship.target == "Monster loot"
+                and relationship.evidence == "manual override: reviewed current VPACK; exact monster source not exported"
+                for relationship in human_bones.confirmed
             )
         )
 
@@ -529,6 +547,7 @@ class ItemRelationshipInventoryTests(unittest.TestCase):
                     reason="No item-to-monster source page yet",
                     item_labels=["collectable Balron Skull"],
                     next_step="Review client loot data for exact monster sources.",
+                    evidence="Current VPACK has no item-to-monster drop table.",
                 )
             ],
         )
@@ -554,6 +573,10 @@ class ItemRelationshipInventoryTests(unittest.TestCase):
         self.assertIn(
             "TARGET REVIEW Monster loot: Review client loot data for exact monster sources. "
             "(1 relationship(s): collectable Balron Skull)",
+            output,
+        )
+        self.assertIn(
+            "TARGET REVIEW EVIDENCE Monster loot: Current VPACK has no item-to-monster drop table.",
             output,
         )
 

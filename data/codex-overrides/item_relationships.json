@@ -79,7 +79,7 @@
         {
           "type": "found_from",
           "target": "Monster loot",
-          "evidence": "reviewed creature drop item"
+          "evidence": "reviewed current VPACK; exact monster source not exported"
         }
       ]
     },
@@ -101,7 +101,7 @@
         {
           "type": "found_from",
           "target": "Monster loot",
-          "evidence": "reviewed creature drop item"
+          "evidence": "reviewed current VPACK; exact monster source not exported"
         }
       ]
     },

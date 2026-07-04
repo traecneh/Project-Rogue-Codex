@@ -61,6 +61,7 @@ class ItemRelationshipTargetReview:
     reason: str
     item_labels: list[str]
     next_step: str
+    evidence: str = ""
 
 
 @dataclass(frozen=True)
@@ -137,6 +138,7 @@ class _RelationshipTargetPolicy:
     text_only: bool
     reason: str
     review_next_step: str
+    review_evidence: str
 
 
 class _SystemPageParser(HTMLParser):
@@ -358,6 +360,7 @@ def _load_target_policies(path: Path) -> dict[str, _RelationshipTargetPolicy]:
         text_only = bool(raw_target.get("textOnly", False))
         reason = _normalize_spaces(str(raw_target.get("reason") or ""))
         review_next_step = _normalize_spaces(str(raw_target.get("reviewNextStep") or ""))
+        review_evidence = _normalize_spaces(str(raw_target.get("reviewEvidence") or ""))
         if not target:
             raise ExportError(f"item relationship target #{index + 1} must include a target")
         if _normalize_key(target) in policies:
@@ -372,6 +375,7 @@ def _load_target_policies(path: Path) -> dict[str, _RelationshipTargetPolicy]:
             text_only=text_only,
             reason=reason,
             review_next_step=review_next_step,
+            review_evidence=review_evidence,
         )
     return policies
 
@@ -667,6 +671,7 @@ def _build_target_reviews(
                 reason=coverage.reason,
                 item_labels=coverage.item_labels,
                 next_step=next_step,
+                evidence=policy.review_evidence if policy else "",
             )
         )
     return reviews

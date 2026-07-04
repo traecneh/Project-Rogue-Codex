@@ -61,7 +61,8 @@
       "target": "Monster loot",
       "textOnly": true,
       "reason": "Ambiguous monster-source drops remain text-only until source evidence is confirmed",
-      "reviewNextStep": "Review client loot data for exact monster sources before linking remaining drops."
+      "reviewNextStep": "Keep remaining drops text-only until a client drop table or confirmed monster source is available.",
+      "reviewEvidence": "Reviewed current rogue_data.vpack JSON: Feather and Human Bones only appear in collectables.json; monsters.json exposes no drop/loot table."
     },
     {
       "target": "Purge System",

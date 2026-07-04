@@ -1119,6 +1119,8 @@ def _print_item_relationship_report(report) -> None:
             f"TARGET REVIEW {review.target}: {review.next_step} "
             f"({review.relationship_count} relationship(s): {', '.join(review.item_labels)})"
         )
+        if review.evidence:
+            print(f"TARGET REVIEW EVIDENCE {review.target}: {review.evidence}")
 
 
 def run_item_relationships() -> int:
