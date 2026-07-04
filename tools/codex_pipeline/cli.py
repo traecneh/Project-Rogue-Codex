@@ -45,6 +45,7 @@ from tools.codex_pipeline.exports import (
 )
 from tools.codex_pipeline.game_update import build_game_update_report
 from tools.codex_pipeline.freshness import build_codex_manifest, validate_codex_manifest, write_codex_manifest
+from tools.codex_pipeline.item_relationships import build_item_relationship_inventory
 from tools.codex_pipeline.perks import load_perk_label_overrides
 from tools.codex_pipeline.sources import inspect_export_source_package, validate_export_sources
 from tools.codex_pipeline.site_smoke import run_site_smoke as run_site_smoke_command
@@ -188,6 +189,7 @@ def build_parser() -> argparse.ArgumentParser:
             "vpack-info",
             "vpack-extract",
             "unknown-fields",
+            "item-relationships",
             "drop-report",
             "game-update-report",
             "sync-assets",
@@ -1023,6 +1025,54 @@ def run_unknown_fields(args: argparse.Namespace) -> int:
     return 0
 
 
+def _print_item_relationship_report(report) -> None:
+    print(
+        f"RELATIONSHIP SUMMARY: {report.total_items} items, "
+        f"{report.confirmed_count} confirmed, {report.candidate_count} candidates, {report.gap_count} gaps"
+    )
+    name_counts = {}
+    for record in report.records:
+        key = (record.item_kind, record.item_name)
+        name_counts[key] = name_counts.get(key, 0) + 1
+
+    def item_label(record) -> str:
+        duplicate_suffix = f" #{record.item_id}" if name_counts.get((record.item_kind, record.item_name), 0) > 1 else ""
+        return f"{record.item_kind} {record.item_name}{duplicate_suffix}"
+
+    for record in report.records:
+        if record.status == "confirmed":
+            for relationship in record.confirmed:
+                print(
+                    f"CONFIRMED {item_label(record)}: "
+                    f"{relationship.relationship_type} -> {relationship.target} ({relationship.evidence})"
+                )
+            continue
+        if record.status == "candidate":
+            for relationship in record.candidates:
+                print(
+                    f"CANDIDATE {item_label(record)}: "
+                    f"{relationship.relationship_type} -> {relationship.target} ({relationship.evidence})"
+                )
+            continue
+        print(f"GAP {item_label(record)}: no relationship evidence")
+
+    for group in report.unknown_use_types:
+        print(
+            f"UNKNOWN {group.item_kind} {group.field_name} {group.value}: "
+            f"{len(group.item_names)} item(s): {', '.join(group.item_names)}"
+        )
+
+
+def run_item_relationships() -> int:
+    try:
+        report = build_item_relationship_inventory()
+    except ExportError as exc:
+        print(f"ERROR: {exc}")
+        return 1
+    _print_item_relationship_report(report)
+    return 0
+
+
 def _print_drop_report(report) -> None:
     print(
         f"DROP SOURCES: {report.item_override_count} item override(s), "
@@ -1323,6 +1373,8 @@ def main(argv: list[str] | None = None) -> int:
         return run_vpack_extract(args)
     if args.command == "unknown-fields":
         return run_unknown_fields(args)
+    if args.command == "item-relationships":
+        return run_item_relationships()
     if args.command == "drop-report":
         return run_drop_report()
     if args.command == "game-update-report":
