@@ -1,11 +1,14 @@
 (() => {
   const pageRoot = document.querySelector(".misc-items-page");
+  if (!pageRoot) return;
+
   const page = {
-    title: pageRoot?.dataset.pageTitle || "Items",
-    dataFile: pageRoot?.dataset.dataFile || "",
-    imageFolder: pageRoot?.dataset.imageFolder || "items",
-    queryKey: pageRoot?.dataset.queryKey || "item",
-    countLabel: pageRoot?.dataset.countLabel || "items",
+    title: pageRoot.dataset.pageTitle || "Items",
+    dataFile: pageRoot.dataset.dataFile || "",
+    imageFolder: pageRoot.dataset.imageFolder || "items",
+    queryKey: pageRoot.dataset.queryKey || "item",
+    countLabel: pageRoot.dataset.countLabel || "items",
+    searchPlaceholder: pageRoot.dataset.searchPlaceholder || "Search items by any field...",
   };
 
   const dataUrl = new URL(page.dataFile, window.location.href);
@@ -518,6 +521,7 @@
   };
 
   if (searchInput) {
+    searchInput.placeholder = page.searchPlaceholder;
     searchInput.addEventListener("input", (event) => {
       searchTerm = event.target.value || "";
       applyFilterAndSort();
