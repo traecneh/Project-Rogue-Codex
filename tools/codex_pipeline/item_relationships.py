@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlsplit
+from urllib.parse import parse_qs, urlsplit
 
 from tools.codex_pipeline.config import (
     COLLECTABLES_DATA_PATH,
@@ -228,6 +228,10 @@ def _normalize_spaces(value: str) -> str:
 
 def _normalize_key(value: Any) -> str:
     return _normalize_spaces(str(value or "")).lower()
+
+
+def _normalize_route_slug(value: Any) -> str:
+    return re.sub(r"^-+|-+$", "", re.sub(r"[^a-z0-9_-]+", "-", str(value or "").lower()))
 
 
 def _field_int(fields: dict[str, Any], name: str) -> int | None:
@@ -503,6 +507,25 @@ def _relationship_href_issue(repo_root: Path, href: str) -> str:
     target_path = repo_root / href_path
     if not target_path.is_file():
         return f"target link does not exist: {href}"
+    if href_path == "pages/enemies/monsters.html":
+        query = parse_qs(href_parts.query)
+        monster_slugs = query.get("monster") or []
+        if monster_slugs:
+            monster_slug = _normalize_route_slug(monster_slugs[0])
+            monsters_path = repo_root / "pages" / "enemies" / "monsters_data03.json"
+            try:
+                raw_monsters = json.loads(monsters_path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError) as exc:
+                return f"monster route data is not readable: {monsters_path} ({exc})"
+            if not isinstance(raw_monsters, list):
+                return f"monster route data must be a JSON list: {monsters_path}"
+            valid_slugs = {
+                _normalize_route_slug(raw_monster.get("name") or raw_monster.get("id"))
+                for raw_monster in raw_monsters
+                if isinstance(raw_monster, dict)
+            }
+            if monster_slug not in valid_slugs:
+                return f"missing monster route: {monster_slug}"
     if not href_parts.fragment:
         return ""
 

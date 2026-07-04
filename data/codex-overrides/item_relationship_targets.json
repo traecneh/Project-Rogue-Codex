@@ -6,6 +6,14 @@
       "href": "pages/systems/ascend.html"
     },
     {
+      "target": "Balron",
+      "href": "pages/enemies/monsters.html?monster=balron"
+    },
+    {
+      "target": "Beholder",
+      "href": "pages/enemies/monsters.html?monster=beholder"
+    },
+    {
       "target": "Blacksmithing",
       "href": "pages/stats/skills.html#blacksmithing"
     },
@@ -24,6 +32,10 @@
     {
       "target": "Deconstruct System",
       "href": "pages/systems/deconstruct.html"
+    },
+    {
+      "target": "Demon",
+      "href": "pages/enemies/monsters.html?monster=demon"
     },
     {
       "target": "Farming",
@@ -48,7 +60,7 @@
     {
       "target": "Monster loot",
       "textOnly": true,
-      "reason": "No item-to-monster source page exists yet"
+      "reason": "Ambiguous monster-source drops remain text-only until source evidence is confirmed"
     },
     {
       "target": "Purge System",

@@ -290,6 +290,9 @@ class SiteValidationTests(unittest.TestCase):
         self.assertEqual("pages/stats/skills.html#mining", target_links["Mining"])
         self.assertEqual("pages/stats/skills.html#tinkering", target_links["Tinkering"])
         self.assertEqual("pages/stats/skills.html#woodcutting", target_links["Woodcutting"])
+        self.assertEqual("pages/enemies/monsters.html?monster=balron", target_links["Balron"])
+        self.assertEqual("pages/enemies/monsters.html?monster=beholder", target_links["Beholder"])
+        self.assertEqual("pages/enemies/monsters.html?monster=demon", target_links["Demon"])
         self.assertIn(".relationship-pill:hover", css)
         self.assertIn(".relationship-pill:focus-visible", css)
 

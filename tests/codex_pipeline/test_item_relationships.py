@@ -243,6 +243,52 @@ class ItemRelationshipInventoryTests(unittest.TestCase):
         self.assertEqual("broken_link", by_target["Fishing"].status)
         self.assertIn("missing target anchor: #fishing", by_target["Fishing"].issue)
 
+    def test_build_item_relationship_inventory_rejects_missing_monster_route(self):
+        from tools.codex_pipeline.item_relationships import build_item_relationship_inventory
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _write_json(
+                root / "pages" / "items" / "collectables_data.json",
+                [{"id": 1, "name": "Balron Skull", "fields": {}}],
+            )
+            _write_json(root / "pages" / "items" / "useables_data.json", [])
+            _write_json(
+                root / "pages" / "enemies" / "monsters_data03.json",
+                [{"id": 93, "name": "Balron"}],
+            )
+            enemies = root / "pages" / "enemies"
+            enemies.mkdir(parents=True, exist_ok=True)
+            (enemies / "monsters.html").write_text("<h1>Monsters</h1>", encoding="utf-8")
+            _write_json(
+                root / "data" / "codex-overrides" / "item_relationships.json",
+                {
+                    "schemaVersion": 1,
+                    "relationships": [
+                        {
+                            "kind": "collectable",
+                            "name": "Balron Skull",
+                            "relationships": [{"type": "found_from", "target": "Balron"}],
+                        }
+                    ],
+                },
+            )
+            _write_json(
+                root / "data" / "codex-overrides" / "item_relationship_targets.json",
+                {
+                    "schemaVersion": 1,
+                    "targets": [
+                        {"target": "Balron", "href": "pages/enemies/monsters.html?monster=missing-balron"}
+                    ],
+                },
+            )
+
+            report = build_item_relationship_inventory(repo_root=root)
+
+        by_target = {coverage.target: coverage for coverage in report.target_coverage}
+        self.assertEqual("broken_link", by_target["Balron"].status)
+        self.assertIn("missing monster route: missing-balron", by_target["Balron"].issue)
+
     def test_build_item_relationship_inventory_rejects_stale_manual_overrides(self):
         from tools.codex_pipeline.exports import ExportError
         from tools.codex_pipeline.item_relationships import build_item_relationship_inventory
@@ -276,6 +322,9 @@ class ItemRelationshipInventoryTests(unittest.TestCase):
         by_name = {record.item_name: record for record in report.records}
         holiday = by_name["Holiday Gift"]
         hammer = by_name["Hammer"]
+        balron_skull = by_name["Balron Skull"]
+        beholder_eye = by_name["Beholder Eye"]
+        demon_skull = by_name["Demon Skull"]
 
         self.assertEqual("confirmed", holiday.status)
         self.assertTrue(
@@ -289,6 +338,24 @@ class ItemRelationshipInventoryTests(unittest.TestCase):
             any(
                 relationship.relationship_type == "used_in" and relationship.target == "Blacksmithing"
                 for relationship in hammer.confirmed
+            )
+        )
+        self.assertTrue(
+            any(
+                relationship.relationship_type == "found_from" and relationship.target == "Balron"
+                for relationship in balron_skull.confirmed
+            )
+        )
+        self.assertTrue(
+            any(
+                relationship.relationship_type == "found_from" and relationship.target == "Beholder"
+                for relationship in beholder_eye.confirmed
+            )
+        )
+        self.assertTrue(
+            any(
+                relationship.relationship_type == "found_from" and relationship.target == "Demon"
+                for relationship in demon_skull.confirmed
             )
         )
 

@@ -23,8 +23,8 @@
       "relationships": [
         {
           "type": "found_from",
-          "target": "Monster loot",
-          "evidence": "reviewed monster trophy item"
+          "target": "Balron",
+          "evidence": "reviewed exact monster trophy item"
         }
       ]
     },
@@ -34,8 +34,8 @@
       "relationships": [
         {
           "type": "found_from",
-          "target": "Monster loot",
-          "evidence": "reviewed monster trophy item"
+          "target": "Beholder",
+          "evidence": "reviewed exact monster trophy item"
         }
       ]
     },
@@ -45,8 +45,8 @@
       "relationships": [
         {
           "type": "found_from",
-          "target": "Monster loot",
-          "evidence": "reviewed monster trophy item"
+          "target": "Demon",
+          "evidence": "reviewed exact monster trophy item"
         }
       ]
     },
@@ -56,8 +56,8 @@
       "relationships": [
         {
           "type": "found_from",
-          "target": "Monster loot",
-          "evidence": "reviewed monster trophy item"
+          "target": "Demon",
+          "evidence": "reviewed exact monster trophy item"
         }
       ]
     },
@@ -67,8 +67,8 @@
       "relationships": [
         {
           "type": "found_from",
-          "target": "Monster loot",
-          "evidence": "reviewed monster trophy item"
+          "target": "Demon",
+          "evidence": "reviewed exact monster trophy item"
         }
       ]
     },
