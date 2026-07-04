@@ -12,9 +12,13 @@ from tools.codex_pipeline.config import (
     ARMOR_IMAGES_DIR,
     ARMORS_DATA_PATH,
     CODEX_MANIFEST_PATH,
+    COLLECTABLES_DATA_PATH,
+    COLLECTABLE_IMAGES_DIR,
     MONSTER_IMAGES_DIR,
     MONSTERS_DATA_PATH,
     REPO_ROOT,
+    USEABLES_DATA_PATH,
+    USEABLE_IMAGES_DIR,
     WEAPON_IMAGES_DIR,
     WEAPONS_DATA_PATH,
 )
@@ -43,6 +47,8 @@ class ManifestAssetTarget:
 DEFAULT_MANIFEST_DATA_TARGETS = [
     ManifestDataTarget("weapons", WEAPONS_DATA_PATH, "pages/items/weapons_data05.json"),
     ManifestDataTarget("armors", ARMORS_DATA_PATH, "pages/items/armors_data06.json"),
+    ManifestDataTarget("collectables", COLLECTABLES_DATA_PATH, "pages/items/collectables_data.json"),
+    ManifestDataTarget("useables", USEABLES_DATA_PATH, "pages/items/useables_data.json"),
     ManifestDataTarget("monsters", MONSTERS_DATA_PATH, "pages/enemies/monsters_data03.json"),
 ]
 
@@ -58,6 +64,18 @@ DEFAULT_MANIFEST_ASSET_TARGETS = [
         ARMOR_IMAGES_DIR,
         ARMOR_IMAGES_DIR / "manifest.json",
         "images/armors/manifest.json",
+    ),
+    ManifestAssetTarget(
+        "collectables",
+        COLLECTABLE_IMAGES_DIR,
+        COLLECTABLE_IMAGES_DIR / "manifest.json",
+        "images/collectables/manifest.json",
+    ),
+    ManifestAssetTarget(
+        "useables",
+        USEABLE_IMAGES_DIR,
+        USEABLE_IMAGES_DIR / "manifest.json",
+        "images/useables/manifest.json",
     ),
     ManifestAssetTarget(
         "monsters",

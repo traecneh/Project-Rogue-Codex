@@ -19,7 +19,10 @@ from tools.codex_pipeline.exports import (
 class ExportCommandTests(unittest.TestCase):
     def test_resolve_targets_defaults_to_site_data_exports(self):
         targets = resolve_targets()
-        self.assertEqual([target.name for target in targets], ["monsters", "weapons", "armors"])
+        self.assertEqual(
+            [target.name for target in targets],
+            ["monsters", "weapons", "armors", "collectables", "useables"],
+        )
 
     def test_export_client_data_writes_generated_output_not_site_output(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -170,6 +173,44 @@ class ExportCommandTests(unittest.TestCase):
             self.assertEqual(9, exported[0]["fields"]["max_damage"])
             self.assertEqual(400, exported[0]["fields"]["value"])
             self.assertEqual(1, exported[0]["fields"]["weight"])
+
+    def test_export_client_data_uses_packed_vpack_without_legacy_extractor(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = root / "data" / "collectables.dat"
+            vpack = root / "data" / "ClientPack" / "rogue_data.vpack"
+            site_path = root / "site" / "collectables.json"
+            output_dir = root / "generated"
+            vpack.parent.mkdir(parents=True)
+            vpack.write_bytes(b"VPACK test pack")
+            target = ExportTarget(
+                name="collectables",
+                extractor_script=root / "missing_extract_collectables.py",
+                source_data=source,
+                output_filename="collectables_data.json",
+                site_path=site_path,
+            )
+            packed_files = {
+                "collectables.json": {
+                    "collectables": [
+                        {
+                            "id": 1,
+                            "name": "Gold",
+                            "value": 1,
+                            "use_type": 0,
+                            "frames": [],
+                        }
+                    ]
+                }
+            }
+
+            with patch("tools.codex_pipeline.exports.read_packed_json_files", return_value=packed_files):
+                results = export_client_data([target], output_dir=output_dir, python_executable=sys.executable)
+
+            self.assertIn("mapped packed VPACK JSON source", results[0].stdout)
+            exported = json.loads((output_dir / "collectables_data.json").read_text(encoding="utf-8"))
+            self.assertEqual("Gold", exported[0]["name"])
+            self.assertEqual(1, exported[0]["fields"]["value"])
 
     def test_sync_generated_outputs_copies_generated_json_to_site_path(self):
         with tempfile.TemporaryDirectory() as tmp:

@@ -96,6 +96,32 @@ class SourceDoctorTests(unittest.TestCase):
         self.assertIn(str(vpack), source_check.message)
         self.assertIn("using packed JSON mapper", source_check.message)
 
+    def test_validate_export_sources_allows_packed_only_supported_target_without_extractor(self):
+        from tools.codex_pipeline.sources import validate_export_sources
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            site_path = root / "site" / "collectables_data.json"
+            source_data = root / "data" / "collectables.dat"
+            vpack = root / "data" / "ClientPack" / "rogue_data.vpack"
+            site_path.parent.mkdir(parents=True)
+            vpack.parent.mkdir(parents=True)
+            vpack.write_bytes(b"VPACK test pack")
+            target = ExportTarget(
+                name="collectables",
+                extractor_script=root / "missing.py",
+                source_data=source_data,
+                output_filename="collectables_data.json",
+                site_path=site_path,
+            )
+
+            results = validate_export_sources([target])
+
+        messages = "\n".join(result.message for result in results)
+        self.assertNotIn("extractor not found", messages)
+        self.assertIn("using packed JSON mapper", messages)
+        self.assertTrue(all(result.ok for result in results))
+
     def test_inspect_export_source_package_reports_vpack_metadata(self):
         from tools.codex_pipeline.sources import inspect_export_source_package
 

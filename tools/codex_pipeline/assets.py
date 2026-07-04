@@ -13,7 +13,10 @@ from tools.codex_pipeline.config import (
     CLIENT_ARMOR_IMAGES_DIR,
     CLIENT_MONSTER_IMAGES_DIR,
     CLIENT_WEAPON_IMAGES_DIR,
+    COLLECTABLE_IMAGES_DIR,
+    GENERATED_ATLAS_ASSET_DIR,
     MONSTER_IMAGES_DIR,
+    USEABLE_IMAGES_DIR,
     WEAPON_IMAGES_DIR,
 )
 from tools.codex_pipeline.validators.site import ValidationIssue
@@ -81,6 +84,8 @@ class AssetSyncReport:
 DEFAULT_ASSET_TARGETS = [
     AssetTarget("weapons", CLIENT_WEAPON_IMAGES_DIR, WEAPON_IMAGES_DIR),
     AssetTarget("armors", CLIENT_ARMOR_IMAGES_DIR, ARMOR_IMAGES_DIR),
+    AssetTarget("collectables", GENERATED_ATLAS_ASSET_DIR / "collectables", COLLECTABLE_IMAGES_DIR),
+    AssetTarget("useables", GENERATED_ATLAS_ASSET_DIR / "useables", USEABLE_IMAGES_DIR),
     AssetTarget("monsters", CLIENT_MONSTER_IMAGES_DIR, MONSTER_IMAGES_DIR),
 ]
 DEFAULT_ASSET_TARGETS_BY_NAME = {target.name: target for target in DEFAULT_ASSET_TARGETS}

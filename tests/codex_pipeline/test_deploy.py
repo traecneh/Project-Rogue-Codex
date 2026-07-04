@@ -7,6 +7,14 @@ from unittest.mock import patch
 
 
 class LiveDeploymentTests(unittest.TestCase):
+    def test_default_live_targets_include_collectables_and_useables(self):
+        from tools.codex_pipeline.deploy import DEFAULT_LIVE_ASSET_TARGETS, DEFAULT_LIVE_DATA_TARGETS
+
+        self.assertIn("collectables", [target.name for target in DEFAULT_LIVE_DATA_TARGETS])
+        self.assertIn("useables", [target.name for target in DEFAULT_LIVE_DATA_TARGETS])
+        self.assertIn("collectables", [target.name for target in DEFAULT_LIVE_ASSET_TARGETS])
+        self.assertIn("useables", [target.name for target in DEFAULT_LIVE_ASSET_TARGETS])
+
     def test_verify_live_site_compares_public_data_files(self):
         from tools.codex_pipeline.deploy import LiveDataTarget, verify_live_site
 

@@ -189,6 +189,16 @@ class AtlasAssetTests(unittest.TestCase):
         self.assertEqual(["Ice Devil.png"], report.written)
         self.assertEqual((12, 34, 56, 255), monster_image.getpixel((0, 0)))
 
+    def test_extract_atlas_assets_uses_itemgraph_for_collectables_and_useables(self):
+        from tools.codex_pipeline.atlas_assets import has_atlas_source
+
+        with tempfile.TemporaryDirectory() as tmp:
+            gf_json_dir = Path(tmp)
+            (gf_json_dir / "itemgraph.json").write_text('{"Data": ""}', encoding="utf-8")
+
+            self.assertTrue(has_atlas_source("collectables", gf_json_dir=gf_json_dir))
+            self.assertTrue(has_atlas_source("useables", gf_json_dir=gf_json_dir))
+
     def test_cli_extract_atlas_assets_prints_summary(self):
         from tools.codex_pipeline import cli
         from tools.codex_pipeline.atlas_assets import AtlasExtractionReport

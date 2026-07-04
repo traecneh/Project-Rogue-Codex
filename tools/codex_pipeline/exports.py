@@ -12,10 +12,12 @@ from typing import Any, Iterable, Sequence
 from tools.codex_pipeline.config import (
     ARMORS_DATA_PATH,
     CLIENT_DATA_DIR,
+    COLLECTABLES_DATA_PATH,
     EXTRACTORS_DIR,
     GENERATED_OUTPUT_DIR,
     MONSTERS_DATA_PATH,
     PERK_LABEL_OVERRIDES_PATH,
+    USEABLES_DATA_PATH,
     WEAPONS_DATA_PATH,
 )
 from tools.codex_pipeline.packed_json import (
@@ -110,6 +112,20 @@ DEFAULT_EXPORT_TARGETS: dict[str, ExportTarget] = {
         source_data=CLIENT_DATA_DIR / "data06.dat",
         output_filename="armors_data06.json",
         site_path=ARMORS_DATA_PATH,
+    ),
+    "collectables": ExportTarget(
+        name="collectables",
+        extractor_script=EXTRACTORS_DIR / "extract_collectables_data.py",
+        source_data=CLIENT_DATA_DIR / "collectables.dat",
+        output_filename="collectables_data.json",
+        site_path=COLLECTABLES_DATA_PATH,
+    ),
+    "useables": ExportTarget(
+        name="useables",
+        extractor_script=EXTRACTORS_DIR / "extract_useables_data.py",
+        source_data=CLIENT_DATA_DIR / "useables.dat",
+        output_filename="useables_data.json",
+        site_path=USEABLES_DATA_PATH,
     ),
 }
 
@@ -390,9 +406,6 @@ def export_client_data(
     results: list[ExportResult] = []
     packed_file_cache: dict[Path, dict[str, Any]] = {}
     for target in targets:
-        if not target.extractor_script.is_file():
-            raise ExportError(f"{target.name} extractor not found: {target.extractor_script}")
-
         generated_path = target.generated_path(output_dir)
         _prepare_generated_path(generated_path)
         if not target.source_data.is_file():
@@ -429,6 +442,9 @@ def export_client_data(
                 )
             )
             continue
+
+        if not target.extractor_script.is_file():
+            raise ExportError(f"{target.name} extractor not found: {target.extractor_script}")
 
         completed = subprocess.run(
             [

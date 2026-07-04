@@ -18,6 +18,8 @@ from tools.codex_pipeline.validators.site import ValidationIssue
 ATLAS_FILENAMES_BY_TARGET = {
     "weapons": "itemgraph.json",
     "armors": "itemgraph.json",
+    "collectables": "itemgraph.json",
+    "useables": "itemgraph.json",
     "monsters": "avatars.json",
 }
 INVALID_FILENAME_CHARS = re.compile(r'[<>:"/\\|?*]')

@@ -25,8 +25,12 @@ CODEX_MANIFEST_PATH = REPO_ROOT / "data" / "codex_manifest.json"
 
 WEAPONS_DATA_PATH = REPO_ROOT / "pages" / "items" / "weapons_data05.json"
 ARMORS_DATA_PATH = REPO_ROOT / "pages" / "items" / "armors_data06.json"
+COLLECTABLES_DATA_PATH = REPO_ROOT / "pages" / "items" / "collectables_data.json"
+USEABLES_DATA_PATH = REPO_ROOT / "pages" / "items" / "useables_data.json"
 MONSTERS_DATA_PATH = REPO_ROOT / "pages" / "enemies" / "monsters_data03.json"
 
 WEAPON_IMAGES_DIR = REPO_ROOT / "images" / "weapons"
 ARMOR_IMAGES_DIR = REPO_ROOT / "images" / "armors"
+COLLECTABLE_IMAGES_DIR = REPO_ROOT / "images" / "collectables"
+USEABLE_IMAGES_DIR = REPO_ROOT / "images" / "useables"
 MONSTER_IMAGES_DIR = REPO_ROOT / "images" / "monsters"

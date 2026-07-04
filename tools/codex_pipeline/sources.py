@@ -213,11 +213,21 @@ def _syntax_check(target: ExportTarget) -> SourceCheckResult:
     return SourceCheckResult(target.name, "extractor syntax", path, True, f"extractor syntax ok: {path}")
 
 
+def _requires_legacy_extractor(target: ExportTarget) -> bool:
+    if target.source_data.is_file():
+        return True
+    vpack_path = find_packed_vpack_source(target.source_data)
+    return vpack_path is None or not is_packed_json_target_supported(target.name)
+
+
 def validate_export_sources(targets: Iterable[ExportTarget]) -> list[SourceCheckResult]:
     results: list[SourceCheckResult] = []
     for target in targets:
-        results.append(_file_check(target.name, "extractor", target.extractor_script, "extractor not found"))
+        requires_legacy_extractor = _requires_legacy_extractor(target)
+        if requires_legacy_extractor:
+            results.append(_file_check(target.name, "extractor", target.extractor_script, "extractor not found"))
         results.append(_source_data_check(target))
         results.append(_site_destination_check(target))
-        results.append(_syntax_check(target))
+        if requires_legacy_extractor:
+            results.append(_syntax_check(target))
     return results
