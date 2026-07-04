@@ -8,12 +8,28 @@ from unittest.mock import patch
 
 class LiveDeploymentTests(unittest.TestCase):
     def test_default_live_targets_include_collectables_and_useables(self):
+        from tools.codex_pipeline.config import (
+            COLLECTABLES_DATA_PATH,
+            COLLECTABLE_IMAGES_DIR,
+            USEABLES_DATA_PATH,
+            USEABLE_IMAGES_DIR,
+        )
         from tools.codex_pipeline.deploy import DEFAULT_LIVE_ASSET_TARGETS, DEFAULT_LIVE_DATA_TARGETS
 
-        self.assertIn("collectables", [target.name for target in DEFAULT_LIVE_DATA_TARGETS])
-        self.assertIn("useables", [target.name for target in DEFAULT_LIVE_DATA_TARGETS])
-        self.assertIn("collectables", [target.name for target in DEFAULT_LIVE_ASSET_TARGETS])
-        self.assertIn("useables", [target.name for target in DEFAULT_LIVE_ASSET_TARGETS])
+        data_targets = {target.name: target for target in DEFAULT_LIVE_DATA_TARGETS}
+        asset_targets = {target.name: target for target in DEFAULT_LIVE_ASSET_TARGETS}
+
+        self.assertEqual(COLLECTABLES_DATA_PATH, data_targets["collectables"].local_path)
+        self.assertEqual("pages/items/collectables_data.json", data_targets["collectables"].site_relative_path)
+        self.assertEqual(USEABLES_DATA_PATH, data_targets["useables"].local_path)
+        self.assertEqual("pages/items/useables_data.json", data_targets["useables"].site_relative_path)
+
+        self.assertEqual(COLLECTABLE_IMAGES_DIR, asset_targets["collectables"].local_dir)
+        self.assertEqual(COLLECTABLE_IMAGES_DIR / "manifest.json", asset_targets["collectables"].manifest_path)
+        self.assertEqual("images/collectables/manifest.json", asset_targets["collectables"].site_manifest_relative_path)
+        self.assertEqual(USEABLE_IMAGES_DIR, asset_targets["useables"].local_dir)
+        self.assertEqual(USEABLE_IMAGES_DIR / "manifest.json", asset_targets["useables"].manifest_path)
+        self.assertEqual("images/useables/manifest.json", asset_targets["useables"].site_manifest_relative_path)
 
     def test_verify_live_site_compares_public_data_files(self):
         from tools.codex_pipeline.deploy import LiveDataTarget, verify_live_site

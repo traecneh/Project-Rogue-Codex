@@ -199,6 +199,52 @@ class AtlasAssetTests(unittest.TestCase):
             self.assertTrue(has_atlas_source("collectables", gf_json_dir=gf_json_dir))
             self.assertTrue(has_atlas_source("useables", gf_json_dir=gf_json_dir))
 
+    def test_extract_atlas_assets_writes_collectables_from_itemgraph(self):
+        from tools.codex_pipeline.atlas_assets import extract_atlas_assets_for_target
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            gf_json_dir = root / "client" / "gf_json"
+            data_path = root / "generated" / "collectables_data.json"
+            output_dir = root / "atlas-assets" / "collectables"
+            gf_json_dir.mkdir(parents=True)
+            data_path.parent.mkdir()
+
+            atlas = Image.new("RGBA", (2, 2), (255, 0, 255, 255))
+            atlas.putpixel((0, 0), (255, 215, 0, 255))
+            _write_gf_json_png(gf_json_dir / "itemgraph.json", atlas)
+            data_path.write_text(
+                json.dumps(
+                    [
+                        {
+                            "id": 1,
+                            "name": "Gold",
+                            "fields": {"frame_1_x": 0, "frame_1_y": 0, "frame_1_width": 2, "frame_1_height": 2},
+                        }
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            report = extract_atlas_assets_for_target(
+                "collectables",
+                data_path=data_path,
+                gf_json_dir=gf_json_dir,
+                output_dir=output_dir,
+            )
+
+            manifest_entries = json.loads((output_dir / "manifest.json").read_text(encoding="utf-8"))
+            with Image.open(output_dir / "Gold.png") as image:
+                gold = image.convert("RGBA")
+                gold.load()
+
+        self.assertEqual("itemgraph.json", report.atlas_path.name)
+        self.assertEqual(["Gold.png"], report.written)
+        self.assertEqual([], report.skipped)
+        self.assertEqual([], report.issues)
+        self.assertEqual(["images/collectables/Gold.png"], manifest_entries)
+        self.assertEqual((255, 215, 0, 255), gold.getpixel((0, 0)))
+
     def test_cli_extract_atlas_assets_prints_summary(self):
         from tools.codex_pipeline import cli
         from tools.codex_pipeline.atlas_assets import AtlasExtractionReport
