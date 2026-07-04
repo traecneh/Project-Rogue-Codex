@@ -6,11 +6,7 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
-from tools.codex_pipeline.extractors.item_metadata import (
-    apply_item_visibility_metadata,
-    enrich_armor_fields,
-    enrich_weapon_fields,
-)
+from tools.codex_pipeline.extractors.item_metadata import enrich_armor_fields, enrich_weapon_fields
 from tools.codex_pipeline.extractors.monster_metadata import enrich_monster_fields
 from tools.codex_pipeline.vpack import VpackError, decrypt_vpack
 
@@ -47,25 +43,6 @@ SITE_DERIVED_FIELD_NAMES = {
     "is_target_when_blocked",
     "is_immobile",
     "has_thorns",
-    "unknown_18",
-    "unknown_21",
-    "unknown_27",
-    "unknown_30",
-    "unknown_31",
-    "unknown_33",
-    "unknown_34",
-    "unknown_35",
-    "unknown_37",
-    "unknown_70",
-    "unknown_81",
-    "unknown_85",
-    "unknown_88",
-    "unknown_89",
-    "unknown_93",
-    "unknown_94",
-    "unknown_98",
-    "unknown_166",
-    "unknown_168",
 }
 
 
@@ -132,8 +109,10 @@ def map_packed_json_target(
         records = _map_armors(data, site_index)
     elif target_name == "monsters":
         records = _map_monsters(data, site_index)
-    elif target_name in {"collectables", "useables"}:
-        records = _map_simple_items(data, target_name)
+    elif target_name == "collectables":
+        records = _map_simple_items(data, "collectables")
+    elif target_name == "useables":
+        records = _map_simple_items(data, "useables")
     else:
         raise VpackError(f"{target_name} does not support packed JSON mapping")
     return sorted(records, key=lambda record: _sort_record_id(record["id"]))
@@ -322,21 +301,15 @@ def _map_weapons(data: Mapping[str, Any], site_index: Mapping[str, Any]) -> list
             "min_damage": _int_value(item, "dam_min"),
             "max_damage": _int_value(item, "dam_max"),
             "attack_speed": _int_value(item, "speed"),
-            "minimum_rarity": _int_value(item, "minimum_rarity"),
-            "sale_value": _int_value(item, "sale_value"),
             "skill_requirement": _int_value(item, "use_req_amnt"),
-            "use_requirement_type": _int_value(item, "use_req_type"),
-            "crafting_requirement": _int_value(item, "crafting_requirement"),
-            "crafting_material_type": _int_value(item, "crafting_material_type"),
-            "crafting_material_amount": _int_value(item, "crafting_material_amount"),
-            "crafting_difficulty": _int_value(item, "crafting_difficulty"),
+            "unknown_21": _int_value(item, "use_req_type"),
             "subtype": _int_value(item, "subtype"),
             "level_requirement": _int_value(item, "level"),
             "element": _int_value(item, "elemental_damage_type"),
             "proc_chance": _int_value(item, "elemental_damage_max"),
-            "animated": _int_value(item, "animated"),
-            "animation_frame_count": _int_value(item, "animation_frame_count"),
-            "animation_type": _int_value(item, "animation_type"),
+            "unknown_34": _int_value(item, "animated"),
+            "unknown_35": _int_value(item, "animation_frame_count"),
+            "unknown_37": _int_value(item, "animation_type"),
             "max_rarity": _int_value(item, "maximum_rarity"),
             "shard_decomposition_amount": _int_value(item, "shards_deconstruction"),
             "shard_promotion_amount": _int_value(item, "shards_promotion"),
@@ -347,22 +320,18 @@ def _map_weapons(data: Mapping[str, Any], site_index: Mapping[str, Any]) -> list
             "acid_resistance": _int_value(item, "resistance_acid"),
             "poison_resistance": _int_value(item, "resistance_poison"),
             "disease_resistance": _int_value(item, "resistance_disease"),
-            "holy_resistance": _int_value(item, "resistance_holy"),
-            "dark_resistance": _int_value(item, "resistance_dark"),
+            "unknown_88": _int_value(item, "resistance_holy"),
+            "unknown_89": _int_value(item, "resistance_dark"),
             "strength": _int_value(item, "bonus_strength"),
             "dexterity": _int_value(item, "bonus_dexterity"),
             "constitution": _int_value(item, "bonus_constitution"),
-            "bonus_intelligence": _int_value(item, "bonus_intelligence"),
             "to_hit": _int_value(item, "to_hit"),
-            "emits_light": _int_value(item, "emits_light"),
         }
         _add_value_fields(fields, _int_value(item, "value"))
         _add_frames(fields, item.get("frames"))
         _merge_site_only_fields(fields, site_record)
         enrich_weapon_fields(fields)
-        record = {"id": packed_id, "name": name, "fields": fields}
-        apply_item_visibility_metadata(record)
-        records.append(record)
+        records.append({"id": packed_id, "name": name, "fields": fields})
     return records
 
 
@@ -374,19 +343,13 @@ def _map_armors(data: Mapping[str, Any], site_index: Mapping[str, Any]) -> list[
         site_record = _site_record_by_id_or_name(site_index, packed_id, name)
         fields = {
             "armor": _int_value(item, "ac"),
-            "minimum_rarity": _int_value(item, "minimum_rarity"),
-            "sale_value": _int_value(item, "sale_value"),
             "player_level_requirement": _int_value(item, "use_req_amnt"),
-            "use_requirement_type": _int_value(item, "use_req_type"),
-            "crafting_requirement": _int_value(item, "crafting_requirement"),
-            "crafting_material_type": _int_value(item, "crafting_material_type"),
-            "crafting_material_amount": _int_value(item, "crafting_material_amount"),
-            "crafting_difficulty": _int_value(item, "crafting_difficulty"),
+            "unknown_18": _int_value(item, "use_req_type"),
             "slot": _int_value(item, "subtype"),
             "level": _int_value(item, "level"),
-            "animated": _int_value(item, "animated"),
-            "animation_frame_count": _int_value(item, "animation_frame_count"),
-            "animation_type": _int_value(item, "animation_type"),
+            "unknown_30": _int_value(item, "animated"),
+            "unknown_31": _int_value(item, "animation_frame_count"),
+            "unknown_33": _int_value(item, "animation_type"),
             "max_rarity": _int_value(item, "maximum_rarity"),
             "deconstruction": _int_value(item, "shards_deconstruction"),
             "promotion": _int_value(item, "shards_promotion"),
@@ -397,23 +360,18 @@ def _map_armors(data: Mapping[str, Any], site_index: Mapping[str, Any]) -> list[
             "acid_resistance": _int_value(item, "resistance_acid"),
             "poison_resistance": _int_value(item, "resistance_poison"),
             "disease_resistance": _int_value(item, "resistance_disease"),
-            "holy_resistance": _int_value(item, "resistance_holy"),
-            "dark_resistance": _int_value(item, "resistance_dark"),
+            "unknown_81": _int_value(item, "resistance_holy"),
+            "unknown_85": _int_value(item, "resistance_dark"),
             "strength": _int_value(item, "bonus_strength"),
             "dexterity": _int_value(item, "bonus_dexterity"),
             "constitution": _int_value(item, "bonus_constitution"),
-            "bonus_intelligence": _int_value(item, "bonus_intelligence"),
             "to_hit": _int_value(item, "to_hit"),
-            "avatar": _int_value(item, "avatar"),
-            "emits_light": _int_value(item, "emits_light"),
         }
         _add_value_fields(fields, _int_value(item, "value"))
         _add_frames(fields, item.get("frames"))
         _merge_site_only_fields(fields, site_record)
         enrich_armor_fields(fields)
-        record = {"id": packed_id, "name": name, "fields": fields}
-        apply_item_visibility_metadata(record)
-        records.append(record)
+        records.append({"id": packed_id, "name": name, "fields": fields})
     return records
 
 
@@ -434,8 +392,6 @@ def _map_monsters(data: Mapping[str, Any], site_index: Mapping[str, Any]) -> lis
         monster_type = _int_value(item, "mon_type")
         site_record = _monster_site_record(site_index, name, level, monster_type)
         flags = _int_value(item, "flags")
-        animation_frame_count = _int_value(item, "animation_frame_count")
-        animation_type = _int_value(item, "animation_type")
         fields = {
             "type": monster_type,
             "min_damage": _int_value(item, "dam_min"),
@@ -445,12 +401,10 @@ def _map_monsters(data: Mapping[str, Any], site_index: Mapping[str, Any]) -> lis
             "attack_speed": _int_value(item, "attack_speed"),
             "level": level,
             "total_flags": flags & 0xFFFF,
-            "extra_flags": flags >> 16,
+            "unknown_27": flags >> 16,
             "elemental_attack": _int_value(item, "element"),
-            "animated": _int_value(item, "animated"),
-            "animation_frame_count": animation_frame_count,
-            "animation_type": animation_type,
-            "animation_metadata": animation_frame_count + (animation_type << 8),
+            "unknown_166": _int_value(item, "animated"),
+            "unknown_168": _int_value(item, "animation_frame_count") + (_int_value(item, "animation_type") << 8),
         }
         _add_frames(fields, item.get("frames"))
         _merge_site_only_fields(fields, site_record)
