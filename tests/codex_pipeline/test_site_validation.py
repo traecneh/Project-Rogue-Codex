@@ -8,6 +8,9 @@ from unittest.mock import patch
 from tools.codex_pipeline.config import DROP_SOURCES_PATH
 
 
+STATIC_ASSET_VERSION = "codex-2026-07-04"
+
+
 class SiteValidationTests(unittest.TestCase):
     def test_inline_style_parser_reports_unmatched_closing_brace(self):
         from tools.codex_pipeline.validators.site import validate_inline_styles
@@ -39,6 +42,51 @@ class SiteValidationTests(unittest.TestCase):
             messages.extend(issue.message for issue in validate_style_attributes(label, html))
 
         self.assertEqual([], messages)
+
+    def test_validated_pages_version_local_styles_and_scripts(self):
+        from tools.codex_pipeline import cli
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        local_asset_re = re.compile(
+            r"<(?:link|script)\b[^>]*(?:href|src)=\"(?P<url>(?:css|js)/[^\"]+)\"",
+            flags=re.IGNORECASE,
+        )
+        unversioned = []
+        mismatched = []
+
+        for path in cli.VALIDATED_HTML_PATHS:
+            label = str(path.relative_to(REPO_ROOT))
+            html = path.read_text(encoding="utf-8")
+            for match in local_asset_re.finditer(html):
+                url = match.group("url")
+                expected_suffix = f"?v={STATIC_ASSET_VERSION}"
+                if "?v=" not in url:
+                    unversioned.append(f"{label}: {url}")
+                elif not url.endswith(expected_suffix):
+                    mismatched.append(f"{label}: {url}")
+
+        self.assertEqual([], unversioned)
+        self.assertEqual([], mismatched)
+
+    def test_validated_pages_mark_html_as_no_cache(self):
+        from tools.codex_pipeline import cli
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        missing = []
+        expected = [
+            '<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />',
+            '<meta http-equiv="Pragma" content="no-cache" />',
+            '<meta http-equiv="Expires" content="0" />',
+        ]
+
+        for path in cli.VALIDATED_HTML_PATHS:
+            label = str(path.relative_to(REPO_ROOT))
+            html = path.read_text(encoding="utf-8")
+            for tag in expected:
+                if tag not in html:
+                    missing.append(f"{label}: {tag}")
+
+        self.assertEqual([], missing)
 
     def test_css_file_parser_reports_unmatched_closing_brace(self):
         from tools.codex_pipeline.validators.site import validate_css_file
@@ -84,7 +132,7 @@ class SiteValidationTests(unittest.TestCase):
             if style.strip()
         ]
 
-        self.assertIn('<link rel="stylesheet" href="css/monsters.css" />', html)
+        self.assertIn('<link rel="stylesheet" href="css/monsters.css?v=codex-2026-07-04" />', html)
         self.assertTrue(css_path.is_file())
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
         self.assertEqual([], inline_styles)
@@ -106,7 +154,7 @@ class SiteValidationTests(unittest.TestCase):
             if script.strip()
         ]
 
-        self.assertIn('<script src="js/monsters-page.js" defer></script>', html)
+        self.assertIn('<script src="js/monsters-page.js?v=codex-2026-07-04" defer></script>', html)
         self.assertTrue(script_path.is_file())
         self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
         self.assertEqual([], inline_scripts)
@@ -130,7 +178,7 @@ class SiteValidationTests(unittest.TestCase):
                     if style.strip()
                 ]
 
-                self.assertIn(f'<link rel="stylesheet" href="css/{page_name}.css" />', html)
+                self.assertIn(f'<link rel="stylesheet" href="css/{page_name}.css?v=codex-2026-07-04" />', html)
                 self.assertTrue(css_path.is_file())
                 self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
                 self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
@@ -156,7 +204,7 @@ class SiteValidationTests(unittest.TestCase):
                     if script.strip()
                 ]
 
-                self.assertIn(f'<script src="js/{page_name}-page.js" defer></script>', html)
+                self.assertIn(f'<script src="js/{page_name}-page.js?v=codex-2026-07-04" defer></script>', html)
                 self.assertTrue(script_path.is_file())
                 self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
                 self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
@@ -186,7 +234,7 @@ class SiteValidationTests(unittest.TestCase):
                 html = html_path.read_text(encoding="utf-8")
                 script = script_path.read_text(encoding="utf-8")
 
-                self.assertIn('<script src="js/items-page-utils.js"></script>', html)
+                self.assertIn('<script src="js/items-page-utils.js?v=codex-2026-07-04"></script>', html)
                 self.assertIn("const itemUtils = window.RogueCodexItemPageUtils || {};", script)
                 self.assertIn("itemUtils.createRouteHelpers", script)
                 self.assertIn("itemUtils.createTooltipPinningController", script)
@@ -212,8 +260,8 @@ class SiteValidationTests(unittest.TestCase):
 
         for html_path in [collectables_html, useables_html]:
             html = html_path.read_text(encoding="utf-8")
-            self.assertIn('<link rel="stylesheet" href="css/misc-items.css?v=compact-detail-panel" />', html)
-            self.assertIn('<script src="js/misc-items-page.js?v=compact-detail-panel" defer></script>', html)
+            self.assertIn('<link rel="stylesheet" href="css/misc-items.css?v=codex-2026-07-04" />', html)
+            self.assertIn('<script src="js/misc-items-page.js?v=codex-2026-07-04" defer></script>', html)
 
     def test_misc_items_page_supports_id_deep_links_and_trait_filters(self):
         from tools.codex_pipeline.config import REPO_ROOT
@@ -444,9 +492,9 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
         self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
-        self.assertIn('<link rel="stylesheet" href="css/home.css" />', html)
-        self.assertIn('<script src="js/home.js" defer></script>', html)
-        self.assertNotIn('<script src="js/release-countdown.js" defer></script>', html)
+        self.assertIn('<link rel="stylesheet" href="css/home.css?v=codex-2026-07-04" />', html)
+        self.assertIn('<script src="js/home.js?v=codex-2026-07-04" defer></script>', html)
+        self.assertNotIn('<script src="js/release-countdown.js?v=codex-2026-07-04" defer></script>', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -717,8 +765,8 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
         self.assertTrue(css_path.exists())
         self.assertTrue(script_path.exists())
-        self.assertIn('<link rel="stylesheet" href="css/build-planner.css" />', html)
-        self.assertIn('<script src="js/build-planner.js" defer></script>', html)
+        self.assertIn('<link rel="stylesheet" href="css/build-planner.css?v=codex-2026-07-04" />', html)
+        self.assertIn('<script src="js/build-planner.js?v=codex-2026-07-04" defer></script>', html)
         self.assertNotIn("<style>", html)
         self.assertNotIn("const RARITY_TIERS = [", html)
         self.assertNotIn("var LZString=function()", html)
@@ -880,9 +928,9 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
         self.assertIn(calc_script_path, cli.VALIDATED_SCRIPT_PATHS)
         self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
-        self.assertIn('<link rel="stylesheet" href="css/perks.css" />', html)
-        self.assertIn('<script src="js/perk-calculations.js" defer></script>', html)
-        self.assertIn('<script src="js/perks-page.js" defer></script>', html)
+        self.assertIn('<link rel="stylesheet" href="css/perks.css?v=codex-2026-07-04" />', html)
+        self.assertIn('<script src="js/perk-calculations.js?v=codex-2026-07-04" defer></script>', html)
+        self.assertIn('<script src="js/perks-page.js?v=codex-2026-07-04" defer></script>', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -992,7 +1040,7 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
         self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
-        self.assertIn('<link rel="stylesheet" href="css/rarity.css" />', html)
+        self.assertIn('<link rel="stylesheet" href="css/rarity.css?v=codex-2026-07-04" />', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -1046,7 +1094,7 @@ class SiteValidationTests(unittest.TestCase):
 
         self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
-        self.assertIn('<link rel="stylesheet" href="css/reroll.css" />', html)
+        self.assertIn('<link rel="stylesheet" href="css/reroll.css?v=codex-2026-07-04" />', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -1098,7 +1146,7 @@ class SiteValidationTests(unittest.TestCase):
 
         self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
-        self.assertIn('<link rel="stylesheet" href="css/deconstruct.css" />', html)
+        self.assertIn('<link rel="stylesheet" href="css/deconstruct.css?v=codex-2026-07-04" />', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -1151,7 +1199,7 @@ class SiteValidationTests(unittest.TestCase):
 
         self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
-        self.assertIn('<link rel="stylesheet" href="css/ascend.css" />', html)
+        self.assertIn('<link rel="stylesheet" href="css/ascend.css?v=codex-2026-07-04" />', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -1203,7 +1251,7 @@ class SiteValidationTests(unittest.TestCase):
 
         self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
-        self.assertIn('<link rel="stylesheet" href="css/craft.css" />', html)
+        self.assertIn('<link rel="stylesheet" href="css/craft.css?v=codex-2026-07-04" />', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -1257,7 +1305,7 @@ class SiteValidationTests(unittest.TestCase):
 
         self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
-        self.assertIn('<link rel="stylesheet" href="css/imbuements.css" />', html)
+        self.assertIn('<link rel="stylesheet" href="css/imbuements.css?v=codex-2026-07-04" />', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -1316,7 +1364,7 @@ class SiteValidationTests(unittest.TestCase):
 
         self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
-        self.assertIn('<link rel="stylesheet" href="css/purge.css" />', html)
+        self.assertIn('<link rel="stylesheet" href="css/purge.css?v=codex-2026-07-04" />', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -1369,7 +1417,7 @@ class SiteValidationTests(unittest.TestCase):
 
         self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
-        self.assertIn('<link rel="stylesheet" href="css/corruption.css" />', html)
+        self.assertIn('<link rel="stylesheet" href="css/corruption.css?v=codex-2026-07-04" />', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -1419,7 +1467,7 @@ class SiteValidationTests(unittest.TestCase):
 
         self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
-        self.assertIn('<link rel="stylesheet" href="css/encounter.css" />', html)
+        self.assertIn('<link rel="stylesheet" href="css/encounter.css?v=codex-2026-07-04" />', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -1477,7 +1525,7 @@ class SiteValidationTests(unittest.TestCase):
 
         self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
-        self.assertIn('<link rel="stylesheet" href="css/pvp.css" />', html)
+        self.assertIn('<link rel="stylesheet" href="css/pvp.css?v=codex-2026-07-04" />', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -1542,8 +1590,8 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
         self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
-        self.assertIn('<link rel="stylesheet" href="css/anti-zerg.css" />', html)
-        self.assertIn('<script src="js/anti-zerg.js" defer></script>', html)
+        self.assertIn('<link rel="stylesheet" href="css/anti-zerg.css?v=codex-2026-07-04" />', html)
+        self.assertIn('<script src="js/anti-zerg.js?v=codex-2026-07-04" defer></script>', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -1613,8 +1661,8 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
         self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
-        self.assertIn('<link rel="stylesheet" href="css/monster-damage-reduction.css" />', html)
-        self.assertIn('<script src="js/monster-damage-reduction.js" defer></script>', html)
+        self.assertIn('<link rel="stylesheet" href="css/monster-damage-reduction.css?v=codex-2026-07-04" />', html)
+        self.assertIn('<script src="js/monster-damage-reduction.js?v=codex-2026-07-04" defer></script>', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -1686,8 +1734,8 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
         self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
-        self.assertIn('<link rel="stylesheet" href="css/experience.css" />', html)
-        self.assertIn('<script src="js/experience.js" defer></script>', html)
+        self.assertIn('<link rel="stylesheet" href="css/experience.css?v=codex-2026-07-04" />', html)
+        self.assertIn('<script src="js/experience.js?v=codex-2026-07-04" defer></script>', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -1761,8 +1809,8 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
         self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
-        self.assertIn('<link rel="stylesheet" href="css/guild.css" />', html)
-        self.assertIn('<script src="js/guild.js" defer></script>', html)
+        self.assertIn('<link rel="stylesheet" href="css/guild.css?v=codex-2026-07-04" />', html)
+        self.assertIn('<script src="js/guild.js?v=codex-2026-07-04" defer></script>', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -1836,8 +1884,8 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
         self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
-        self.assertIn('<link rel="stylesheet" href="css/chat.css" />', html)
-        self.assertIn('<script src="js/chat.js" defer></script>', html)
+        self.assertIn('<link rel="stylesheet" href="css/chat.css?v=codex-2026-07-04" />', html)
+        self.assertIn('<script src="js/chat.js?v=codex-2026-07-04" defer></script>', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -1909,8 +1957,8 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
         self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
-        self.assertIn('<link rel="stylesheet" href="css/floor-cleanup.css" />', html)
-        self.assertIn('<script src="js/floor-cleanup.js" defer></script>', html)
+        self.assertIn('<link rel="stylesheet" href="css/floor-cleanup.css?v=codex-2026-07-04" />', html)
+        self.assertIn('<script src="js/floor-cleanup.js?v=codex-2026-07-04" defer></script>', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -1981,8 +2029,8 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
         self.assertFalse(endless_page_path.exists())
         self.assertFalse(endless_script_path.exists())
-        self.assertIn('<link rel="stylesheet" href="css/play-the-game.css" />', html)
-        self.assertIn('<script src="js/play-the-game.js" defer></script>', html)
+        self.assertIn('<link rel="stylesheet" href="css/play-the-game.css?v=codex-2026-07-04" />', html)
+        self.assertIn('<script src="js/play-the-game.js?v=codex-2026-07-04" defer></script>', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -2042,8 +2090,8 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
         self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
-        self.assertIn('<link rel="stylesheet" href="css/level.css" />', html)
-        self.assertIn('<script src="js/level.js" defer></script>', html)
+        self.assertIn('<link rel="stylesheet" href="css/level.css?v=codex-2026-07-04" />', html)
+        self.assertIn('<script src="js/level.js?v=codex-2026-07-04" defer></script>', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -2108,8 +2156,8 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
         self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
-        self.assertIn('<link rel="stylesheet" href="css/skills.css" />', html)
-        self.assertIn('<script src="js/skills.js" defer></script>', html)
+        self.assertIn('<link rel="stylesheet" href="css/skills.css?v=codex-2026-07-04" />', html)
+        self.assertIn('<script src="js/skills.js?v=codex-2026-07-04" defer></script>', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -2203,8 +2251,8 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
         self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
-        self.assertIn('<link rel="stylesheet" href="css/races.css" />', html)
-        self.assertIn('<script src="js/races.js" defer></script>', html)
+        self.assertIn('<link rel="stylesheet" href="css/races.css?v=codex-2026-07-04" />', html)
+        self.assertIn('<script src="js/races.js?v=codex-2026-07-04" defer></script>', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -2279,8 +2327,8 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
         self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
-        self.assertIn('<link rel="stylesheet" href="css/strength.css" />', html)
-        self.assertIn('<script src="js/strength.js" defer></script>', html)
+        self.assertIn('<link rel="stylesheet" href="css/strength.css?v=codex-2026-07-04" />', html)
+        self.assertIn('<script src="js/strength.js?v=codex-2026-07-04" defer></script>', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -2360,8 +2408,8 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
         self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
-        self.assertIn('<link rel="stylesheet" href="css/constitution.css" />', html)
-        self.assertIn('<script src="js/constitution.js" defer></script>', html)
+        self.assertIn('<link rel="stylesheet" href="css/constitution.css?v=codex-2026-07-04" />', html)
+        self.assertIn('<script src="js/constitution.js?v=codex-2026-07-04" defer></script>', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -2436,8 +2484,8 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
         self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
-        self.assertIn('<link rel="stylesheet" href="css/dexterity.css" />', html)
-        self.assertIn('<script src="js/dexterity.js" defer></script>', html)
+        self.assertIn('<link rel="stylesheet" href="css/dexterity.css?v=codex-2026-07-04" />', html)
+        self.assertIn('<script src="js/dexterity.js?v=codex-2026-07-04" defer></script>', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -2517,8 +2565,8 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
         self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
-        self.assertIn('<link rel="stylesheet" href="css/resistances.css" />', html)
-        self.assertIn('<script src="js/resistances.js" defer></script>', html)
+        self.assertIn('<link rel="stylesheet" href="css/resistances.css?v=codex-2026-07-04" />', html)
+        self.assertIn('<script src="js/resistances.js?v=codex-2026-07-04" defer></script>', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -2591,8 +2639,8 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
         self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
-        self.assertIn('<link rel="stylesheet" href="css/crafting.css" />', html)
-        self.assertIn('<script src="js/crafting-page.js" defer></script>', html)
+        self.assertIn('<link rel="stylesheet" href="css/crafting.css?v=codex-2026-07-04" />', html)
+        self.assertIn('<script src="js/crafting-page.js?v=codex-2026-07-04" defer></script>', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
