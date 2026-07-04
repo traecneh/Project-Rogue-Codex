@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import subprocess
 from pathlib import Path
 
 from tools.codex_pipeline.config import (
@@ -206,6 +207,7 @@ def build_parser() -> argparse.ArgumentParser:
             "extract-atlas-assets",
             "refresh-manifest",
             "bump-static-version",
+            "release-check",
             "game-update-workflow",
             "smoke-site",
             "site-coverage",
@@ -291,7 +293,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--verify-live",
         action="store_true",
-        help="For game-update-workflow, run verify-live after review/apply steps.",
+        help="For game-update-workflow/release-check, run verify-live after local checks.",
     )
     parser.add_argument(
         "--github-repo",
@@ -373,10 +375,17 @@ def _print_issues(issues: list[ValidationIssue]) -> int:
 
 
 def _format_path_label(path: Path) -> str:
+    if not path.is_absolute():
+        return path.as_posix()
     try:
         return path.relative_to(REPO_ROOT).as_posix()
     except ValueError:
         return path.name
+
+
+def git_status_lines() -> list[str]:
+    output = subprocess.check_output(["git", "status", "--short"], cwd=REPO_ROOT, text=True)
+    return [line for line in output.splitlines() if line.strip()]
 
 
 def run_bump_static_version(args: argparse.Namespace) -> int:
@@ -404,6 +413,61 @@ def run_bump_static_version(args: argparse.Namespace) -> int:
     for result in changed_results:
         print(f"STATIC ASSET {verb} {_format_path_label(result.path)}: {result.asset_reference_count} asset reference(s)")
     return 0
+
+
+def run_release_check(args: argparse.Namespace) -> int:
+    exit_code = 0
+
+    print("RELEASE CHECK validate")
+    validate_code = run_validate()
+    if validate_code == 0:
+        print("RELEASE OK validate")
+    else:
+        print(f"RELEASE ERROR validate: exit code {validate_code}")
+        exit_code = 1
+
+    try:
+        asset_version = load_static_asset_version(STATIC_ASSET_VERSION_PATH)
+        asset_results = update_static_asset_versions(VALIDATED_HTML_PATHS, asset_version, dry_run=True)
+    except (OSError, ValueError) as exc:
+        print(f"RELEASE ERROR static-assets: {exc}")
+        exit_code = 1
+    else:
+        stale_pages = [result for result in asset_results if result.changed]
+        if stale_pages:
+            print(f"RELEASE ERROR static-assets: {len(stale_pages)} page(s) would change for version {asset_version}")
+            for result in stale_pages:
+                print(f"RELEASE STALE {_format_path_label(result.path)}: {result.asset_reference_count} asset reference(s)")
+            exit_code = 1
+        else:
+            print(f"RELEASE OK static-assets: version {asset_version}")
+
+    try:
+        dirty_lines = git_status_lines()
+    except (OSError, subprocess.CalledProcessError) as exc:
+        print(f"RELEASE ERROR git-status: {exc}")
+        exit_code = 1
+    else:
+        if dirty_lines:
+            print(f"RELEASE ERROR git-status: dirty worktree ({len(dirty_lines)} changed path(s))")
+            for line in dirty_lines:
+                print(f"RELEASE DIRTY {line.strip()}")
+            exit_code = 1
+        else:
+            print("RELEASE OK git-status: clean")
+
+    if args.verify_live:
+        print("RELEASE CHECK verify-live")
+        live_code = run_verify_live(args)
+        if live_code == 0:
+            print("RELEASE OK verify-live")
+        else:
+            print(f"RELEASE ERROR verify-live: exit code {live_code}")
+            exit_code = 1
+
+    status = "ready" if exit_code == 0 else "blocked"
+    print(f"RELEASE CHECK COMPLETE: {status}")
+    return exit_code
 
 
 def _item_relationship_target_coverage_issues(report) -> list[ValidationIssue]:
@@ -1495,6 +1559,8 @@ def main(argv: list[str] | None = None) -> int:
         return run_refresh_manifest(args)
     if args.command == "bump-static-version":
         return run_bump_static_version(args)
+    if args.command == "release-check":
+        return run_release_check(args)
     if args.command == "game-update-workflow":
         return run_game_update_workflow(args)
     parser.error(f"Unsupported command: {args.command}")
