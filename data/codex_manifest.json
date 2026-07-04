@@ -35,7 +35,7 @@
     "armors": {
       "path": "pages/items/armors_data06.json",
       "records": 255,
-      "sha256": "ab17d83612bcfa4a2decc0c98d2ad1559785e338bf52690f67743e09877f2e21"
+      "sha256": "c04ef21a0ec2c8c3c55fe889ff33dcc24a00d1b443656c2cb97d2224ae7e0403"
     },
     "collectables": {
       "path": "pages/items/collectables_data.json",
@@ -45,7 +45,7 @@
     "monsters": {
       "path": "pages/enemies/monsters_data03.json",
       "records": 191,
-      "sha256": "0bd58b9f0b739fa5971bf2c34aff61354bf91631f56a80adf8400e7a77ed5579"
+      "sha256": "75a676e35c09a8c445a324275f3d488e253bb30d58218bf3f43321d1d5607903"
     },
     "useables": {
       "path": "pages/items/useables_data.json",
@@ -55,15 +55,15 @@
     "weapons": {
       "path": "pages/items/weapons_data05.json",
       "records": 245,
-      "sha256": "0b726c48c53bd5ad82f71624222c7813cf6ec873e69af799d1003d791d921551"
+      "sha256": "17c733a0837fdd73bda0854ae8b06933678072cde71a0494e937de45c2c761b6"
     }
   },
-  "generated_at_utc": "2026-07-04T01:59:04Z",
+  "generated_at_utc": "2026-07-04T02:49:21Z",
   "schema": "project-rogue-codex-manifest",
-  "source_commit": "16350e7a8d831a9150d8ff834f312890ea5ebb7c",
+  "source_commit": "fa395d8d082d9fb1e83db4a740b1bec2e31c1ade",
   "summary": {
     "asset_entries": 801,
-    "content_sha256": "45048bfb6ac71f8115c717045711feccfc0a28031b6bacf927a5b802ebdcba04",
+    "content_sha256": "ca43e6db222ec097a90e2802fad7546efc08de47c583ebd7cf135a2fee85720d",
     "data_records": 805
   },
   "version": 1
