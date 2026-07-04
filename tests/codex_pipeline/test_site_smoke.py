@@ -265,10 +265,17 @@ class SiteSmokeTests(unittest.TestCase):
         runner = (REPO_ROOT / "tools" / "codex_pipeline" / "site_smoke.mjs").read_text(encoding="utf-8")
 
         for expected in [
+            'detailName: "Soul of Flame"',
+            'detailQuery: "24"',
             'label: "collectables"',
+            'detailName: "Carpentry Saw"',
+            'detailQuery: "10"',
             'label: "useables"',
             "/pages/items/collectables.html",
             "/pages/items/useables.html",
+            'detailSelector: "#item-details"',
+            'rowSelector: "#items-body tr[data-id]"',
+            'detailLinkSelector: ""',
             'queryKey: "collectable"',
             'queryKey: "useable"',
         ]:
