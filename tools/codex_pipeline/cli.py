@@ -51,6 +51,13 @@ from tools.codex_pipeline.perks import load_perk_label_overrides
 from tools.codex_pipeline.sources import inspect_export_source_package, validate_export_sources
 from tools.codex_pipeline.site_smoke import run_site_smoke as run_site_smoke_command
 from tools.codex_pipeline.site_coverage import SiteCoverageReport, build_site_coverage_report
+from tools.codex_pipeline.static_assets import (
+    STATIC_ASSET_VERSION_PATH,
+    load_static_asset_version,
+    update_static_asset_versions,
+    validate_static_asset_version,
+    write_static_asset_version,
+)
 from tools.codex_pipeline.unknowns import build_unknown_field_reports
 from tools.codex_pipeline.vpack import VpackError, decrypt_vpack, inspect_vpack, resolve_vpack_output_path
 from tools.codex_pipeline.validators.site import (
@@ -198,6 +205,7 @@ def build_parser() -> argparse.ArgumentParser:
             "sync-assets",
             "extract-atlas-assets",
             "refresh-manifest",
+            "bump-static-version",
             "game-update-workflow",
             "smoke-site",
             "site-coverage",
@@ -264,7 +272,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--dry-run",
         action="store_true",
-        help="For sync-generated/export-sync/sync-assets, report site file changes without copying.",
+        help="For sync-generated/export-sync/sync-assets/bump-static-version, report site file changes without copying.",
+    )
+    parser.add_argument(
+        "--asset-version",
+        help="For bump-static-version, the static CSS/JS cache-busting token to write.",
     )
     parser.add_argument(
         "--apply",
@@ -358,6 +370,40 @@ def _print_issues(issues: list[ValidationIssue]) -> int:
     for issue in issues:
         print(f"{issue.severity.upper()}: {issue.message}")
     return 1 if any(issue.severity == "error" for issue in issues) else 0
+
+
+def _format_path_label(path: Path) -> str:
+    try:
+        return path.relative_to(REPO_ROOT).as_posix()
+    except ValueError:
+        return path.name
+
+
+def run_bump_static_version(args: argparse.Namespace) -> int:
+    try:
+        current_version = load_static_asset_version(STATIC_ASSET_VERSION_PATH)
+        if not args.asset_version:
+            print(f"STATIC ASSET VERSION CURRENT: {current_version}")
+            return 0
+        target_version = validate_static_asset_version(args.asset_version)
+        results = update_static_asset_versions(VALIDATED_HTML_PATHS, target_version, dry_run=args.dry_run)
+        if not args.dry_run:
+            write_static_asset_version(target_version, STATIC_ASSET_VERSION_PATH)
+    except (OSError, ValueError) as exc:
+        print(f"ERROR: {exc}")
+        return 1
+
+    mode = "DRY-RUN" if args.dry_run else "UPDATED"
+    print(f"STATIC ASSET VERSION {mode}: {current_version} -> {target_version}")
+    changed_results = [result for result in results if result.changed]
+    if not changed_results:
+        print("STATIC ASSET NO CHANGES")
+        return 0
+
+    verb = "WOULD UPDATE" if args.dry_run else "UPDATED"
+    for result in changed_results:
+        print(f"STATIC ASSET {verb} {_format_path_label(result.path)}: {result.asset_reference_count} asset reference(s)")
+    return 0
 
 
 def _item_relationship_target_coverage_issues(report) -> list[ValidationIssue]:
@@ -1447,6 +1493,8 @@ def main(argv: list[str] | None = None) -> int:
         return run_extract_atlas_assets(args)
     if args.command == "refresh-manifest":
         return run_refresh_manifest(args)
+    if args.command == "bump-static-version":
+        return run_bump_static_version(args)
     if args.command == "game-update-workflow":
         return run_game_update_workflow(args)
     parser.error(f"Unsupported command: {args.command}")
