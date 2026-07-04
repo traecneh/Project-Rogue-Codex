@@ -200,6 +200,13 @@ const SITE_SEARCH_INDEX = [
     keywords: ["experience", "xp", "pool", "progression"],
   },
   {
+    title: "Travel",
+    url: "pages/systems/travel.html",
+    category: "Systems",
+    description: "Travel-related utility items and current Ship Deed reference.",
+    keywords: ["travel", "ship deed", "ship", "deed", "boat"],
+  },
+  {
     title: "Deconstruct",
     url: "pages/systems/deconstruct.html",
     category: "Ascendancy",

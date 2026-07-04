@@ -435,6 +435,21 @@ def _manual_relationships(item: _ItemRow, overrides: list[_ManualRelationshipOve
     return relationships
 
 
+def _merge_confirmed_relationships(
+    system_relationships: list[ItemRelationship],
+    manual_relationships: list[ItemRelationship],
+) -> list[ItemRelationship]:
+    merged: list[ItemRelationship] = []
+    seen: set[tuple[str, str]] = set()
+    for relationship in [*manual_relationships, *system_relationships]:
+        key = (_normalize_key(relationship.relationship_type), _normalize_key(relationship.target))
+        if key in seen:
+            continue
+        seen.add(key)
+        merged.append(relationship)
+    return merged
+
+
 def _validate_manual_overrides(items: list[_ItemRow], overrides: list[_ManualRelationshipOverride]) -> None:
     for override in overrides:
         matches = [
@@ -703,10 +718,10 @@ def build_item_relationship_inventory(
 
     records: list[ItemRelationshipRecord] = []
     for item in sorted(items, key=lambda row: (row.item_kind, _normalize_key(row.name), row.item_id)):
-        confirmed = [
-            *_system_page_relationships(item, system_pages),
-            *_manual_relationships(item, manual_overrides),
-        ]
+        confirmed = _merge_confirmed_relationships(
+            _system_page_relationships(item, system_pages),
+            _manual_relationships(item, manual_overrides),
+        )
         candidates = _name_chain_candidates(item, item_names)
         use_type_candidate = _use_type_candidate(item)
         if use_type_candidate:

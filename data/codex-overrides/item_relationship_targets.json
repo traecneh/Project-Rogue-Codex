@@ -84,9 +84,7 @@
     },
     {
       "target": "Travel",
-      "textOnly": true,
-      "reason": "No travel system page exists yet",
-      "reviewNextStep": "Create or confirm a travel destination before linking ship items."
+      "href": "pages/systems/travel.html"
     },
     {
       "target": "Woodcutting",

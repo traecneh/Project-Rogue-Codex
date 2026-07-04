@@ -87,6 +87,7 @@ VALIDATED_HTML_PATHS = [
     REPO_ROOT / "pages" / "systems" / "anti-zerg.html",
     REPO_ROOT / "pages" / "systems" / "monster-damage-reduction.html",
     REPO_ROOT / "pages" / "systems" / "experience.html",
+    REPO_ROOT / "pages" / "systems" / "travel.html",
     REPO_ROOT / "pages" / "stats" / "level.html",
     REPO_ROOT / "pages" / "stats" / "skills.html",
     REPO_ROOT / "pages" / "stats" / "races.html",
