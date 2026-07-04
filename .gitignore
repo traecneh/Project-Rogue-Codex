@@ -15,6 +15,7 @@ htmlcov/
 build/
 dist/
 .worktrees/
+.superpowers/
 generated-output/
 node_modules/
 *.log
