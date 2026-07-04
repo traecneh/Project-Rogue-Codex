@@ -61,6 +61,7 @@ Client .dat files
   -> sync-generated / export-sync
   -> pages/** site JSON
   -> validate
+  -> release-check
   -> push main
   -> GitHub Pages
   -> verify-deploy
@@ -78,6 +79,8 @@ python -m tools.codex_pipeline sync-generated --dry-run
 python -m tools.codex_pipeline sync-generated
 python -m tools.codex_pipeline validate
 python -m tools.codex_pipeline smoke-site
+git commit
+python -m tools.codex_pipeline release-check
 ```
 
 After pushing `main`, confirm the public site:
@@ -117,9 +120,16 @@ Important commands:
 - `sync-assets`: copies reviewed client image changes into site image folders,
   removes stale site images, and regenerates manifests when filenames change.
 - `export-sync`: runs export and sync in one step.
+- `bump-static-version`: updates validated HTML `css/` and `js/` links to a
+  shared cache-busting token, writes
+  `data/codex-overrides/static_asset_version.txt`, and ensures HTML no-cache
+  meta tags are present.
 - `validate`: validates site JSON, overrides, image manifests, inline page
   scripts, configured JavaScript files, drop references, and corrupted perk
   labels.
+- `release-check`: runs local release gates: `validate`, static asset version
+  drift detection, and clean git status. Use `--verify-live` to include the
+  public live-site verification step.
 - `smoke-site`: starts a temporary local static server and uses Playwright to
   verify Monsters, Weapons, and Armors deep links, reload persistence,
   row-click URL updates, Close URL clearing, and detail-panel cross-links. Use
@@ -153,6 +163,8 @@ Core package:
 - `tools/codex_pipeline/sources.py`: pre-export source checks used by `doctor`.
 - `tools/codex_pipeline/deploy.py`: live GitHub Pages data, manifest, and image
   hash comparison.
+- `tools/codex_pipeline/static_assets.py`: static CSS/JS asset versioning and
+  HTML no-cache helpers.
 - `tools/codex_pipeline/drops.py`: drop-source override loading, name
   normalization, and reverse monster-drop derivation.
 - `tools/codex_pipeline/perks.py`: corrupted perk label override loading.
@@ -201,6 +213,22 @@ During export normalization, explicit labels are applied and configured unknowns
 remove generated labels. This prevents uncertain corrupted perk values from being
 published as misleading text.
 
+The frontend static asset cache-busting token is centralized in:
+
+```text
+data/codex-overrides/static_asset_version.txt
+```
+
+When CSS or JavaScript changes, run:
+
+```powershell
+python -m tools.codex_pipeline bump-static-version --asset-version codex-YYYY-MM-DD
+```
+
+Use a new token per frontend release that changes local `css/` or `js/` files.
+The command rewrites validated HTML references and preserves external URLs,
+images, and data files.
+
 ## Generated Output Rules
 
 Generated records are normalized before review and sync:
@@ -221,12 +249,24 @@ npm install
 python -m unittest discover -s tests -v
 python -m tools.codex_pipeline validate
 python -m tools.codex_pipeline smoke-site
-python -m tools.codex_pipeline verify-deploy
 git diff --check
 ```
 
-GitHub Actions runs the Codex data checks on pushes and pull requests targeting
-`main`. GitHub Pages deployment then publishes the static site from `main`.
+Before pushing a release commit, run this from a clean worktree:
+
+```powershell
+python -m tools.codex_pipeline release-check
+```
+
+After pushing `main`, confirm the public site:
+
+```powershell
+python -m tools.codex_pipeline verify-deploy
+```
+
+GitHub Actions runs `release-check`, unit tests, local smoke checks, and
+whitespace checks on pushes and pull requests targeting `main`. GitHub Pages
+deployment then publishes the static site from `main`.
 
 ## Safe Change Pattern
 
@@ -236,16 +276,20 @@ For data or extractor changes:
 2. Review generated-vs-site diffs, asset image diffs, and update warnings.
 3. Sync only intentional generated data and asset changes, or rerun with
    `--apply` after review.
-4. Run unit tests and `validate`.
-5. Commit and push.
-6. Run `verify-deploy`.
+4. Run unit tests, `validate`, and `smoke-site`.
+5. If CSS or JavaScript changed, run `bump-static-version`.
+6. Commit.
+7. Run `release-check` from the clean worktree.
+8. Push and run `verify-deploy`.
 
 For override-only changes:
 
 1. Edit the override JSON.
 2. Run unit tests and `validate`.
 3. Confirm affected pages still derive data from the shared override file.
-4. Commit, push, and run `verify-deploy`.
+4. Commit.
+5. Run `release-check` from the clean worktree.
+6. Push and run `verify-deploy`.
 
 ## Current Boundary
 

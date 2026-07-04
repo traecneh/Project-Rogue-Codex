@@ -33,7 +33,7 @@ npm install
 python -m tools.codex_pipeline smoke-site
 ```
 
-GitHub Actions also runs the unit tests, Codex validation, local browser smoke checks, and whitespace checks on pushes and pull requests targeting `main`.
+GitHub Actions also runs the unit tests, `release-check`, local browser smoke checks, and whitespace checks on pushes and pull requests targeting `main`.
 
 The first pipeline slice validates weapons, armors, monsters, image manifests, inline page scripts, special drop-source overrides from `data/codex-overrides/drop_sources.json`, and corrupted perk label overrides from `data/codex-overrides/perk_labels.json`.
 
@@ -109,6 +109,22 @@ python -m tools.codex_pipeline export-sync
 ```
 
 Use `--target monsters`, `--target weapons`, or `--target armors` to run a narrower export or sync.
+
+When CSS or JavaScript changes, bump the shared static asset version so browsers fetch the new files instead of serving stale cached assets:
+
+```powershell
+python -m tools.codex_pipeline bump-static-version --asset-version codex-YYYY-MM-DD
+```
+
+The command updates local `css/` and `js/` links in validated HTML pages, writes `data/codex-overrides/static_asset_version.txt`, and ensures the HTML no-cache meta tags are present. Use a new token for each frontend release that changes static assets.
+
+Before pushing a release commit, run the release gate from a clean worktree:
+
+```powershell
+python -m tools.codex_pipeline release-check
+```
+
+`release-check` runs Codex validation, confirms validated HTML pages are already on the configured static asset version, and fails if Git reports uncommitted changes. Add `--verify-live` only when you intentionally want to include live-site checks in the same command.
 
 The static site is published from `origin/main` to:
 
