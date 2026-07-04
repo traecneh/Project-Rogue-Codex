@@ -6,11 +6,23 @@
       "manifest_path": "images/armors/manifest.json",
       "manifest_sha256": "bcedc6bbef27f8bd97e83d3ec649c27ab87629e2a92089a4fc37aeecc42028f4"
     },
+    "collectables": {
+      "entries": 92,
+      "files_sha256": "2088dcc28e4253494c6c4b56de54b338e3d8bdcd653b5afcccab5fdf903483de",
+      "manifest_path": "images/collectables/manifest.json",
+      "manifest_sha256": "84e666e63037828e5857efaf7ce80848c7e80244426a1a6dbcc7fd3bb1df3f25"
+    },
     "monsters": {
       "entries": 190,
       "files_sha256": "3bb8b2fc271dec36f5018b3279d7905177434fcea3b96308bafa152041122973",
       "manifest_path": "images/monsters/manifest.json",
       "manifest_sha256": "cd4d1f58165428c6e7e94f717b56d38587be9805001e542dee76ef8bd2e28972"
+    },
+    "useables": {
+      "entries": 22,
+      "files_sha256": "c01e8694c81ae828971496ed607c105df0fbf0451d7330868929021fe57a288f",
+      "manifest_path": "images/useables/manifest.json",
+      "manifest_sha256": "ce4e1f56b3d03e258645b16258a027064cd4bbdfb5aa77f0cdfa714d1aa13a8d"
     },
     "weapons": {
       "entries": 242,
@@ -25,10 +37,20 @@
       "records": 255,
       "sha256": "ab17d83612bcfa4a2decc0c98d2ad1559785e338bf52690f67743e09877f2e21"
     },
+    "collectables": {
+      "path": "pages/items/collectables_data.json",
+      "records": 92,
+      "sha256": "ec5b9fad1431046d00bd7961bdd5a239b847cce5ce4c7cfb7ed3c6283972eaa6"
+    },
     "monsters": {
       "path": "pages/enemies/monsters_data03.json",
       "records": 191,
       "sha256": "0bd58b9f0b739fa5971bf2c34aff61354bf91631f56a80adf8400e7a77ed5579"
+    },
+    "useables": {
+      "path": "pages/items/useables_data.json",
+      "records": 22,
+      "sha256": "afa835c270fc5895abb8f3eceaeadf8313ddfb2fa4e320cf57c8878ebbd99ad3"
     },
     "weapons": {
       "path": "pages/items/weapons_data05.json",
@@ -36,13 +58,13 @@
       "sha256": "0b726c48c53bd5ad82f71624222c7813cf6ec873e69af799d1003d791d921551"
     }
   },
-  "generated_at_utc": "2026-07-03T21:27:59Z",
+  "generated_at_utc": "2026-07-04T01:59:04Z",
   "schema": "project-rogue-codex-manifest",
-  "source_commit": "1565135a2bbf1ce5be209f6b845efeff888518d2",
+  "source_commit": "16350e7a8d831a9150d8ff834f312890ea5ebb7c",
   "summary": {
-    "asset_entries": 687,
-    "content_sha256": "e39ad6727b172f1bc6b947b4507ffb3ba62817bce44902a075fd54bcb1cb00bf",
-    "data_records": 691
+    "asset_entries": 801,
+    "content_sha256": "45048bfb6ac71f8115c717045711feccfc0a28031b6bacf927a5b802ebdcba04",
+    "data_records": 805
   },
   "version": 1
 }
