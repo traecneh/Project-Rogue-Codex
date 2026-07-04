@@ -690,4 +690,4 @@ class GameUpdateReportTests(unittest.TestCase):
         self.assertIn("[ ] Review player data changes", printed)
         self.assertIn("[ ] Review image changes", printed)
         self.assertIn("[ ] Review warnings or skipped sections", printed)
-        self.assertIn("[ ] Confirm --apply decision: blocked - review image changes before applying", printed)
+        self.assertIn("[ ] Confirm --apply decision: blocked - review priority image changes before applying", printed)

@@ -19,6 +19,7 @@ from tools.codex_pipeline.config import (
     USEABLE_IMAGES_DIR,
     WEAPON_IMAGES_DIR,
 )
+from tools.codex_pipeline.hidden_items import HiddenItemRules, load_hidden_item_rules
 from tools.codex_pipeline.validators.site import ValidationIssue
 
 
@@ -54,6 +55,9 @@ class AssetChangeReport:
     removed: list[str]
     changed: list[str]
     issues: list[ValidationIssue]
+    hidden_added: list[str] = field(default_factory=list)
+    hidden_removed: list[str] = field(default_factory=list)
+    hidden_changed: list[str] = field(default_factory=list)
 
     @property
     def has_changes(self) -> bool:
@@ -90,6 +94,48 @@ DEFAULT_ASSET_TARGETS = [
 ]
 DEFAULT_ASSET_TARGETS_BY_NAME = {target.name: target for target in DEFAULT_ASSET_TARGETS}
 ChangedImageFilter = Callable[[Path, Path, str], bool]
+
+
+def _visible_image_files(target: AssetTarget, files: dict[str, Path], hidden_item_rules: HiddenItemRules) -> dict[str, Path]:
+    return {
+        image_name: path
+        for image_name, path in files.items()
+        if not hidden_item_rules.is_hidden_image(target.name, image_name)
+    }
+
+
+def _visible_manifest_image_names(target: AssetTarget, image_names: set[str], hidden_item_rules: HiddenItemRules) -> set[str]:
+    return {
+        image_name
+        for image_name in image_names
+        if not hidden_item_rules.is_hidden_image(target.name, image_name)
+    }
+
+
+def _hidden_manifest_entries(target: AssetTarget, hidden_item_rules: HiddenItemRules) -> set[str]:
+    current_entries = _read_manifest_entries(target) or []
+    entries: set[str] = set()
+    for entry in current_entries:
+        image_name = Path(entry.replace("\\", "/")).name
+        if hidden_item_rules.is_hidden_image(target.name, image_name):
+            entries.add(f"{target.manifest_entry_prefix}/{image_name}")
+    return entries
+
+
+def _hidden_image_files(target: AssetTarget, files: dict[str, Path], hidden_item_rules: HiddenItemRules) -> dict[str, Path]:
+    return {
+        image_name: path
+        for image_name, path in files.items()
+        if hidden_item_rules.is_hidden_image(target.name, image_name)
+    }
+
+
+def _changed_image_names(client_files: dict[str, Path], site_files: dict[str, Path]) -> list[str]:
+    return [
+        name
+        for name in sorted(set(client_files) & set(site_files))
+        if _file_hash(client_files[name]) != _file_hash(site_files[name])
+    ]
 
 
 def _is_image_file(path: Path) -> bool:
@@ -312,12 +358,25 @@ def validate_asset_data_parity(target_name: str, data_path: Path, manifest_path:
     return issues
 
 
-def build_asset_change_report(target: AssetTarget) -> AssetChangeReport:
+def build_asset_change_report(
+    target: AssetTarget,
+    *,
+    hidden_item_rules: HiddenItemRules | None = None,
+) -> AssetChangeReport:
+    hidden_item_rules = hidden_item_rules or load_hidden_item_rules()
     issues = _validate_asset_target_paths(target)
     client_source_available = target.client_dir.is_dir()
-    client_files = _collect_image_files(target.client_dir)
-    site_files = _collect_image_files(target.site_dir)
-    manifest_entries = _manifest_image_names(target, issues)
+    raw_client_files = _collect_image_files(target.client_dir)
+    raw_site_files = _collect_image_files(target.site_dir)
+    raw_manifest_entries = _manifest_image_names(target, issues)
+    client_files = _visible_image_files(target, raw_client_files, hidden_item_rules)
+    site_files = _visible_image_files(target, raw_site_files, hidden_item_rules)
+    manifest_entries = _visible_manifest_image_names(target, raw_manifest_entries, hidden_item_rules)
+    hidden_client_files = _hidden_image_files(target, raw_client_files, hidden_item_rules)
+    hidden_site_files = _hidden_image_files(target, raw_site_files, hidden_item_rules)
+    hidden_added = sorted(set(hidden_client_files) - set(hidden_site_files))
+    hidden_removed = sorted(set(hidden_site_files) - set(hidden_client_files))
+    hidden_changed = _changed_image_names(hidden_client_files, hidden_site_files)
 
     if not client_source_available:
         issues.append(
@@ -337,15 +396,14 @@ def build_asset_change_report(target: AssetTarget) -> AssetChangeReport:
             removed=[],
             changed=[],
             issues=issues,
+            hidden_added=hidden_added,
+            hidden_removed=hidden_removed,
+            hidden_changed=hidden_changed,
         )
 
     added = sorted(set(client_files) - set(site_files))
     removed = sorted(set(site_files) - set(client_files))
-    changed = [
-        name
-        for name in sorted(set(client_files) & set(site_files))
-        if _file_hash(client_files[name]) != _file_hash(site_files[name])
-    ]
+    changed = _changed_image_names(client_files, site_files)
 
     for entry in sorted(manifest_entries - set(site_files)):
         issues.append(ValidationIssue("error", f"{target.name} manifest lists missing image {entry}"))
@@ -363,11 +421,19 @@ def build_asset_change_report(target: AssetTarget) -> AssetChangeReport:
         removed=removed,
         changed=changed,
         issues=issues,
+        hidden_added=hidden_added,
+        hidden_removed=hidden_removed,
+        hidden_changed=hidden_changed,
     )
 
 
-def build_asset_change_reports(targets: Iterable[AssetTarget] = DEFAULT_ASSET_TARGETS) -> list[AssetChangeReport]:
-    return [build_asset_change_report(target) for target in targets]
+def build_asset_change_reports(
+    targets: Iterable[AssetTarget] = DEFAULT_ASSET_TARGETS,
+    *,
+    hidden_item_rules: HiddenItemRules | None = None,
+) -> list[AssetChangeReport]:
+    hidden_item_rules = hidden_item_rules or load_hidden_item_rules()
+    return [build_asset_change_report(target, hidden_item_rules=hidden_item_rules) for target in targets]
 
 
 def resolve_asset_targets(names: Sequence[str] | None = None) -> list[AssetTarget]:
@@ -392,7 +458,9 @@ def sync_asset_changes(
     *,
     dry_run: bool = False,
     changed_filter: ChangedImageFilter | None = None,
+    hidden_item_rules: HiddenItemRules | None = None,
 ) -> AssetSyncReport:
+    hidden_item_rules = hidden_item_rules or load_hidden_item_rules()
     issues = _asset_sync_path_issues(target)
     if issues:
         return AssetSyncReport(
@@ -406,8 +474,8 @@ def sync_asset_changes(
             issues=issues,
         )
 
-    client_files = _collect_image_files(target.client_dir)
-    site_files = _collect_image_files(target.site_dir)
+    client_files = _visible_image_files(target, _collect_image_files(target.client_dir), hidden_item_rules)
+    site_files = _visible_image_files(target, _collect_image_files(target.site_dir), hidden_item_rules)
     added = sorted(set(client_files) - set(site_files))
     changed = sorted(
         name
@@ -423,7 +491,7 @@ def sync_asset_changes(
             skipped_changed.append(image_name)
     copied = sorted(set(added) | set(selected_changed))
     removed = sorted(set(site_files) - set(client_files))
-    manifest_entries = _manifest_entries_for(target, client_files)
+    manifest_entries = sorted(set(_manifest_entries_for(target, client_files)) | _hidden_manifest_entries(target, hidden_item_rules))
 
     if not dry_run:
         target.site_dir.mkdir(parents=True, exist_ok=True)
@@ -435,9 +503,9 @@ def sync_asset_changes(
             site_files[image_name].unlink()
         if added or removed or not _manifest_entries_match(_read_manifest_entries(target), manifest_entries):
             _write_manifest_entries(target, manifest_entries)
-        issues.extend(build_asset_change_report(target).issues)
+        issues.extend(build_asset_change_report(target, hidden_item_rules=hidden_item_rules).issues)
     elif target.site_dir.is_dir() and target.manifest_path.is_file():
-        issues.extend(build_asset_change_report(target).issues)
+        issues.extend(build_asset_change_report(target, hidden_item_rules=hidden_item_rules).issues)
 
     return AssetSyncReport(
         target_name=target.name,
@@ -457,5 +525,15 @@ def sync_asset_targets(
     *,
     dry_run: bool = False,
     changed_filter: ChangedImageFilter | None = None,
+    hidden_item_rules: HiddenItemRules | None = None,
 ) -> list[AssetSyncReport]:
-    return [sync_asset_changes(target, dry_run=dry_run, changed_filter=changed_filter) for target in targets]
+    hidden_item_rules = hidden_item_rules or load_hidden_item_rules()
+    return [
+        sync_asset_changes(
+            target,
+            dry_run=dry_run,
+            changed_filter=changed_filter,
+            hidden_item_rules=hidden_item_rules,
+        )
+        for target in targets
+    ]

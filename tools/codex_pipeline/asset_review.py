@@ -36,6 +36,7 @@ CLASSIFICATION_LABELS = {
     "unreadable": "UNREADABLE",
 }
 CLASSIFICATION_ORDER = ["meaningful", "background-only", "encoding-only", "unreadable"]
+PRIORITY_IMAGE_CHANGE_CLASSIFICATIONS = {"meaningful", "unreadable"}
 
 
 @dataclass(frozen=True)
@@ -127,6 +128,21 @@ def classify_image_change(before_path: Path, after_path: Path) -> str:
     return "meaningful"
 
 
+def asset_report_image_classification_counts(report: AssetChangeReport) -> dict[str, int]:
+    counts = {classification: 0 for classification in CLASSIFICATION_ORDER}
+    for image_name in report.changed:
+        classification = classify_image_change(report.site_dir / image_name, report.client_dir / image_name)
+        counts[classification] = counts.get(classification, 0) + 1
+    return counts
+
+
+def asset_report_has_priority_image_changes(report: AssetChangeReport) -> bool:
+    if report.added or report.removed:
+        return True
+    counts = asset_report_image_classification_counts(report)
+    return any(counts.get(classification, 0) for classification in PRIORITY_IMAGE_CHANGE_CLASSIFICATIONS)
+
+
 def _load_thumbnail(path: Path | None) -> Image.Image | None:
     if path is None or not path.is_file():
         return None
@@ -210,7 +226,7 @@ def _priority_rows(rows: list[AssetImageChange]) -> list[AssetImageChange]:
     return [
         row
         for row in rows
-        if row.status in {"ADDED", "REMOVED"} or row.classification in {"meaningful", "unreadable"}
+        if row.status in {"ADDED", "REMOVED"} or row.classification in PRIORITY_IMAGE_CHANGE_CLASSIFICATIONS
     ]
 
 

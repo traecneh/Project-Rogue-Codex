@@ -25,6 +25,7 @@ from tools.codex_pipeline.assets import (
     build_asset_change_reports,
     validate_asset_data_parity,
 )
+from tools.codex_pipeline.asset_review import asset_report_has_priority_image_changes
 from tools.codex_pipeline.drop_audit import DropSourceAuditReport, build_drop_source_audit_report
 from tools.codex_pipeline.exports import (
     DataDiffReport,
@@ -79,7 +80,10 @@ class GameUpdateReport:
 
     @property
     def safe_to_sync(self) -> bool:
-        return not self.has_errors and not any(report.has_changes for report in self.asset_reports)
+        return not self.has_errors and not any(
+            asset_report_has_priority_image_changes(report)
+            for report in self.asset_reports
+        )
 
 
 def _target_by_name(targets: Iterable[ExportTarget]) -> dict[str, ExportTarget]:

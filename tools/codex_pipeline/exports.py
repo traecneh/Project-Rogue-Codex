@@ -5,7 +5,7 @@ import shutil
 import subprocess
 import sys
 from copy import deepcopy
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Iterable, Sequence
 
@@ -20,6 +20,7 @@ from tools.codex_pipeline.config import (
     USEABLES_DATA_PATH,
     WEAPONS_DATA_PATH,
 )
+from tools.codex_pipeline.hidden_items import HiddenItemRules, load_hidden_item_rules
 from tools.codex_pipeline.packed_json import (
     find_packed_vpack_source,
     is_packed_json_target_supported,
@@ -85,6 +86,9 @@ class DataDiffReport:
     added: list[str]
     removed: list[str]
     changed: list[RecordChange]
+    hidden_added: list[str] = field(default_factory=list)
+    hidden_removed: list[str] = field(default_factory=list)
+    hidden_changed: list[RecordChange] = field(default_factory=list)
 
     @property
     def has_changes(self) -> bool:
@@ -221,6 +225,30 @@ def _index_records(records: list[Any]) -> dict[str, Any]:
     return indexed
 
 
+def _visible_indexed_records(
+    target: ExportTarget,
+    indexed: dict[str, Any],
+    hidden_item_rules: HiddenItemRules,
+) -> dict[str, Any]:
+    return {
+        key: record
+        for key, record in indexed.items()
+        if not hidden_item_rules.is_hidden_record(target.name, record)
+    }
+
+
+def _hidden_indexed_records(
+    target: ExportTarget,
+    indexed: dict[str, Any],
+    hidden_item_rules: HiddenItemRules,
+) -> dict[str, Any]:
+    return {
+        key: record
+        for key, record in indexed.items()
+        if hidden_item_rules.is_hidden_record(target.name, record)
+    }
+
+
 def _int_or_none(value: Any) -> int | None:
     if isinstance(value, bool):
         return None
@@ -347,7 +375,32 @@ def _field_changes(old_value: Any, new_value: Any, path: str = "") -> list[Field
     return []
 
 
-def build_generated_diff_report(target: ExportTarget, *, output_dir: Path = GENERATED_OUTPUT_DIR) -> DataDiffReport:
+def _record_changes_for_common_keys(
+    keys: Iterable[str],
+    site_by_key: dict[str, Any],
+    generated_by_key: dict[str, Any],
+) -> list[RecordChange]:
+    changed: list[RecordChange] = []
+    for key in keys:
+        changes = _field_changes(site_by_key[key], generated_by_key[key])
+        if changes:
+            changed.append(
+                RecordChange(
+                    key=key,
+                    label=_record_label(generated_by_key[key], key),
+                    field_changes=changes,
+                )
+            )
+    return changed
+
+
+def build_generated_diff_report(
+    target: ExportTarget,
+    *,
+    output_dir: Path = GENERATED_OUTPUT_DIR,
+    hidden_item_rules: HiddenItemRules | None = None,
+) -> DataDiffReport:
+    hidden_item_rules = hidden_item_rules or load_hidden_item_rules()
     output_dir = _resolve_output_dir(output_dir)
     generated_path = target.generated_path(output_dir)
     if not generated_path.is_file():
@@ -358,25 +411,24 @@ def build_generated_diff_report(target: ExportTarget, *, output_dir: Path = GENE
     _normalize_generated_output_for_site(target, generated_path)
     generated_records = _read_json_list(generated_path, target, "generated output")
     site_records = _read_json_list(target.site_path, target, "site output")
-    generated_by_key = _index_records(generated_records)
-    site_by_key = _index_records(site_records)
+    raw_generated_by_key = _index_records(generated_records)
+    raw_site_by_key = _index_records(site_records)
+    generated_by_key = _visible_indexed_records(target, raw_generated_by_key, hidden_item_rules)
+    site_by_key = _visible_indexed_records(target, raw_site_by_key, hidden_item_rules)
+    hidden_generated_by_key = _hidden_indexed_records(target, raw_generated_by_key, hidden_item_rules)
+    hidden_site_by_key = _hidden_indexed_records(target, raw_site_by_key, hidden_item_rules)
 
     generated_keys = set(generated_by_key)
     site_keys = set(site_by_key)
     added_keys = sorted(generated_keys - site_keys, key=_sort_record_key)
     removed_keys = sorted(site_keys - generated_keys, key=_sort_record_key)
     common_keys = sorted(generated_keys & site_keys, key=_sort_record_key)
-    changed: list[RecordChange] = []
-    for key in common_keys:
-        changes = _field_changes(site_by_key[key], generated_by_key[key])
-        if changes:
-            changed.append(
-                RecordChange(
-                    key=key,
-                    label=_record_label(generated_by_key[key], key),
-                    field_changes=changes,
-                )
-            )
+    changed = _record_changes_for_common_keys(common_keys, site_by_key, generated_by_key)
+    hidden_generated_keys = set(hidden_generated_by_key)
+    hidden_site_keys = set(hidden_site_by_key)
+    hidden_added_keys = sorted(hidden_generated_keys - hidden_site_keys, key=_sort_record_key)
+    hidden_removed_keys = sorted(hidden_site_keys - hidden_generated_keys, key=_sort_record_key)
+    hidden_common_keys = sorted(hidden_generated_keys & hidden_site_keys, key=_sort_record_key)
 
     return DataDiffReport(
         target=target,
@@ -385,6 +437,13 @@ def build_generated_diff_report(target: ExportTarget, *, output_dir: Path = GENE
         added=_display_records(generated_by_key, added_keys),
         removed=_display_records(site_by_key, removed_keys),
         changed=changed,
+        hidden_added=_display_records(hidden_generated_by_key, hidden_added_keys),
+        hidden_removed=_display_records(hidden_site_by_key, hidden_removed_keys),
+        hidden_changed=_record_changes_for_common_keys(
+            hidden_common_keys,
+            hidden_site_by_key,
+            hidden_generated_by_key,
+        ),
     )
 
 
@@ -392,8 +451,13 @@ def build_generated_diff_reports(
     targets: Iterable[ExportTarget],
     *,
     output_dir: Path = GENERATED_OUTPUT_DIR,
+    hidden_item_rules: HiddenItemRules | None = None,
 ) -> list[DataDiffReport]:
-    return [build_generated_diff_report(target, output_dir=output_dir) for target in targets]
+    hidden_item_rules = hidden_item_rules or load_hidden_item_rules()
+    return [
+        build_generated_diff_report(target, output_dir=output_dir, hidden_item_rules=hidden_item_rules)
+        for target in targets
+    ]
 
 
 def export_client_data(

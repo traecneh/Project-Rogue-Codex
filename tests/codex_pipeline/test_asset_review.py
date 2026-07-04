@@ -40,6 +40,61 @@ class AssetImageReviewTests(unittest.TestCase):
             self.assertEqual("background-only", classify_image_change(transparent_sprite, magenta_sprite))
             self.assertEqual("meaningful", classify_image_change(transparent_sprite, changed_sprite))
 
+    def test_asset_report_priority_helper_ignores_low_priority_changed_images(self):
+        from tools.codex_pipeline.asset_review import (
+            asset_report_has_priority_image_changes,
+            asset_report_image_classification_counts,
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            client_dir = root / "client" / "weapons"
+            site_dir = root / "site" / "weapons"
+            _write_image(site_dir / "Encoding.png", (10, 20, 30, 255))
+            _write_image(client_dir / "Encoding.png", (10, 20, 30, 255))
+            _sprite_image((0, 0, 0, 0), (30, 60, 90, 255)).save(site_dir / "Background.png")
+            _sprite_image((255, 0, 255, 255), (30, 60, 90, 255)).save(client_dir / "Background.png")
+            low_priority_report = AssetChangeReport(
+                target_name="weapons",
+                client_dir=client_dir,
+                site_dir=site_dir,
+                client_count=2,
+                site_count=2,
+                manifest_count=2,
+                added=[],
+                removed=[],
+                changed=["Background.png", "Encoding.png"],
+                issues=[],
+            )
+            added_report = AssetChangeReport(
+                target_name="weapons",
+                client_dir=client_dir,
+                site_dir=site_dir,
+                client_count=3,
+                site_count=2,
+                manifest_count=2,
+                added=["New Bow.png"],
+                removed=[],
+                changed=[],
+                issues=[],
+            )
+
+            counts = asset_report_image_classification_counts(low_priority_report)
+            low_priority_has_priority_changes = asset_report_has_priority_image_changes(low_priority_report)
+            added_has_priority_changes = asset_report_has_priority_image_changes(added_report)
+
+        self.assertEqual(
+            {
+                "meaningful": 0,
+                "background-only": 1,
+                "encoding-only": 1,
+                "unreadable": 0,
+            },
+            counts,
+        )
+        self.assertFalse(low_priority_has_priority_changes)
+        self.assertTrue(added_has_priority_changes)
+
     def test_write_asset_review_artifacts_creates_markdown_and_contact_sheet(self):
         from tools.codex_pipeline.asset_review import write_asset_review_artifacts
 

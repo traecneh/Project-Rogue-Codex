@@ -13,10 +13,10 @@
       "manifest_sha256": "84e666e63037828e5857efaf7ce80848c7e80244426a1a6dbcc7fd3bb1df3f25"
     },
     "monsters": {
-      "entries": 190,
-      "files_sha256": "3bb8b2fc271dec36f5018b3279d7905177434fcea3b96308bafa152041122973",
+      "entries": 191,
+      "files_sha256": "655befc2e42926f32a9f3b26c45aa977d1cc8216c14340e3bae77109cf50bffb",
       "manifest_path": "images/monsters/manifest.json",
-      "manifest_sha256": "cd4d1f58165428c6e7e94f717b56d38587be9805001e542dee76ef8bd2e28972"
+      "manifest_sha256": "1c9a729b36651632270f7d97fc7e706c9beb2dfa789b4de3428c9a1fa5f52b6f"
     },
     "useables": {
       "entries": 22,
@@ -25,10 +25,10 @@
       "manifest_sha256": "ce4e1f56b3d03e258645b16258a027064cd4bbdfb5aa77f0cdfa714d1aa13a8d"
     },
     "weapons": {
-      "entries": 242,
-      "files_sha256": "c7d71ee5ea9df0090f86240bd8d52bac5c2212163b9fee50e413304e8429eb4c",
+      "entries": 244,
+      "files_sha256": "ffad29dbb54b0d00398ba6257ec7ca195c4023e287e7ba6a8b66aa7d265b7764",
       "manifest_path": "images/weapons/manifest.json",
-      "manifest_sha256": "2cb657949a217f5fc1f9fd90b843ec944fd863b3b555aa080180ff0d381aa07f"
+      "manifest_sha256": "b1a4ffd11d32a46a1ba44ea6f51edaffaa80107676e8de4acb2f5ec6956a192a"
     }
   },
   "data": {
@@ -58,12 +58,12 @@
       "sha256": "0b726c48c53bd5ad82f71624222c7813cf6ec873e69af799d1003d791d921551"
     }
   },
-  "generated_at_utc": "2026-07-04T02:52:53Z",
+  "generated_at_utc": "2026-07-04T17:50:00Z",
   "schema": "project-rogue-codex-manifest",
-  "source_commit": "6a25b75d9d0a01cd14782e79ee9abf1b4180b75e",
+  "source_commit": "163d846d66eb12a43d185a2946ca062a2299052e",
   "summary": {
-    "asset_entries": 801,
-    "content_sha256": "45048bfb6ac71f8115c717045711feccfc0a28031b6bacf927a5b802ebdcba04",
+    "asset_entries": 804,
+    "content_sha256": "02ffe3a61993cd489815c135593783df3f6721925fceb04e4e1080518fbecf8b",
     "data_records": 805
   },
   "version": 1

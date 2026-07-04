@@ -2,13 +2,16 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 from pathlib import Path
 
 from tools.codex_pipeline.config import (
     ARMOR_IMAGES_DIR,
     ARMORS_DATA_PATH,
+    CLIENT_INVENTORY_SNAPSHOT_PATH,
     CODEX_MANIFEST_PATH,
+    CLIENT_ROOT,
     CLIENT_GF_JSON_DIR,
     DROP_SOURCES_PATH,
     ITEM_RELATIONSHIP_TARGETS_PATH,
@@ -24,9 +27,24 @@ from tools.codex_pipeline.config import (
     WEAPON_IMAGES_DIR,
     WEAPONS_DATA_PATH,
 )
-from tools.codex_pipeline.asset_review import classify_image_change, write_asset_review_artifacts
+from tools.codex_pipeline.asset_review import (
+    CLASSIFICATION_ORDER,
+    PRIORITY_IMAGE_CHANGE_CLASSIFICATIONS,
+    asset_report_has_priority_image_changes,
+    asset_report_image_classification_counts,
+    classify_image_change,
+    write_asset_review_artifacts,
+)
 from tools.codex_pipeline.atlas_assets import extract_atlas_assets_for_targets, generated_atlas_asset_targets
 from tools.codex_pipeline.assets import resolve_asset_targets, sync_asset_targets
+from tools.codex_pipeline.client_inventory import (
+    ClientInventoryDiffReport,
+    build_client_inventory_report,
+    build_client_inventory_snapshot,
+    diff_client_inventory_snapshots,
+    load_client_inventory_snapshot,
+    write_client_inventory_snapshot,
+)
 from tools.codex_pipeline.drop_audit import build_drop_source_audit_report
 from tools.codex_pipeline.drops import load_drop_sources
 from tools.codex_pipeline.deploy import (
@@ -177,9 +195,6 @@ VALIDATED_SCRIPT_PATHS = [
     REPO_ROOT / "js" / "floor-cleanup.js",
     REPO_ROOT / "js" / "crafting-page.js",
 ]
-PRIORITY_IMAGE_CHANGE_CLASSIFICATIONS = {"meaningful", "unreadable"}
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Project Rogue Codex data pipeline")
     parser.add_argument(
@@ -197,6 +212,7 @@ def build_parser() -> argparse.ArgumentParser:
             "doctor",
             "validate-sources",
             "source-inventory",
+            "client-inventory",
             "vpack-info",
             "vpack-extract",
             "unknown-fields",
@@ -235,8 +251,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--gf-json-dir",
         type=Path,
-        default=CLIENT_GF_JSON_DIR,
-        help="Client gf_json directory for extract-atlas-assets.",
+        help="Client gf_json directory for atlas extraction and client-inventory. Defaults to the configured client gf_json directory.",
     )
     parser.add_argument(
         "--asset-source",
@@ -247,13 +262,15 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--image-sync-scope",
         choices=["all", "priority"],
-        default="all",
-        help="For sync-assets/game-update-workflow, priority sync applies added/removed images plus meaningful or unreadable changed images.",
+        help=(
+            "For sync-assets/game-update-workflow, priority sync applies added/removed images plus meaningful or unreadable changed images. "
+            "Defaults to all for sync-assets and priority for game-update-workflow."
+        ),
     )
     parser.add_argument(
         "--write-summary",
         action="store_true",
-        help="For game-update-report, write a Markdown review summary artifact.",
+        help="For game-update-report/game-update-workflow, write a Markdown review summary artifact.",
     )
     parser.add_argument(
         "--write-image-review",
@@ -358,12 +375,34 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--pack-path",
         type=Path,
-        help="For vpack-info, inspect this VPACK file instead of the configured client pack.",
+        help="For vpack-info/client-inventory, inspect this VPACK file instead of the configured client pack.",
     )
     parser.add_argument(
         "--log-path",
         type=Path,
-        help="For vpack-info, read this client log for observed packed file loads.",
+        help="For vpack-info/client-inventory, read this client log for observed packed file loads.",
+    )
+    parser.add_argument(
+        "--client-root",
+        type=Path,
+        default=CLIENT_ROOT,
+        help="For client-inventory, inspect this client install root.",
+    )
+    parser.add_argument(
+        "--snapshot-path",
+        type=Path,
+        default=CLIENT_INVENTORY_SNAPSHOT_PATH,
+        help="For client-inventory, read/write this persisted inventory snapshot.",
+    )
+    parser.add_argument(
+        "--write-snapshot",
+        action="store_true",
+        help="For client-inventory, write the current inventory to --snapshot-path.",
+    )
+    parser.add_argument(
+        "--diff-snapshot",
+        action="store_true",
+        help="For client-inventory, compare the current inventory with --snapshot-path.",
     )
     return parser
 
@@ -745,10 +784,10 @@ def _review_note_count(report) -> int:
 def _format_apply_decision(report) -> str:
     if report.has_errors:
         return "blocked - resolve errors before applying"
-    if any(asset.has_changes for asset in report.asset_reports):
-        return "blocked - review image changes before applying"
+    if any(asset_report_has_priority_image_changes(asset) for asset in report.asset_reports):
+        return "blocked - review priority image changes before applying"
     if report.has_changes:
-        return "safe after reviewing data changes"
+        return "safe after reviewing data changes or low-priority image churn"
     return "safe - no player-facing changes detected"
 
 
@@ -844,6 +883,376 @@ def build_game_update_summary_markdown(report, *, max_records: int = 12, max_fie
 def _write_game_update_summary(report, path: Path) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(build_game_update_summary_markdown(report), encoding="utf-8", newline="\n")
+    return path
+
+
+def _workflow_recommended_next_action(inventory_diff_report: ClientInventoryDiffReport | None, report) -> str:
+    if inventory_diff_report is not None and inventory_diff_report.has_errors:
+        return "Resolve client inventory diff issues before applying site updates."
+    if report.has_errors:
+        return "Resolve game update errors before applying site updates."
+    if any(asset_report_has_priority_image_changes(asset) for asset in report.asset_reports):
+        return "Review image changes; if priority image changes are accepted, rerun game-update-workflow --apply --force-apply --image-sync-scope priority."
+    if any(diff.has_changes for diff in report.diff_reports):
+        return "Review generated data changes, then rerun game-update-workflow --apply."
+    if any(asset.has_changes for asset in report.asset_reports):
+        return "Only low-priority image churn remains; no apply step is needed unless you intentionally want to sync it."
+    if inventory_diff_report is not None and inventory_diff_report.has_changes:
+        return "Client package changed but generated site data did not; review inventory details before refreshing the snapshot."
+    return "No generated site changes detected; no apply step is needed."
+
+
+def _workflow_issue_lines(inventory_diff_report: ClientInventoryDiffReport | None, report) -> list[str]:
+    lines: list[str] = []
+    if inventory_diff_report is not None:
+        lines.extend(f"CLIENT INVENTORY: {issue}" for issue in inventory_diff_report.issues)
+    lines.extend(
+        f"SOURCE CHECK: {check.target} {check.check}: {check.message}"
+        for check in report.source_checks
+        if not check.ok
+    )
+    lines.extend(f"VALIDATION {issue.severity.upper()}: {issue.message}" for issue in report.validation_issues)
+    lines.extend(f"EXPORT ERROR: {error}" for error in report.export_errors)
+    lines.extend(f"SKIPPED: {section}" for section in report.skipped_sections)
+    for asset in report.asset_reports:
+        lines.extend(f"ASSET {asset.target_name} {issue.severity.upper()}: {issue.message}" for issue in asset.issues)
+    if report.drop_report is not None:
+        lines.extend(
+            f"DROPS {issue.severity.upper()}: {issue.message}"
+            for issue in report.drop_report.validation_issues
+        )
+    if any(asset_report_has_priority_image_changes(asset) for asset in report.asset_reports):
+        lines.append("SYNC READINESS: priority image changes require human review before applying.")
+    return lines
+
+
+def _extend_workflow_inventory_diff(
+    lines: list[str],
+    inventory_diff_report: ClientInventoryDiffReport | None,
+    *,
+    max_records: int,
+) -> None:
+    lines.extend(["", "## Client Inventory Diff"])
+    if inventory_diff_report is None:
+        lines.append("- Not available.")
+        return
+    if inventory_diff_report.issues:
+        for issue in inventory_diff_report.issues:
+            lines.append(f"- Issue: {issue}")
+    if not inventory_diff_report.entries:
+        lines.append("- No client inventory changes.")
+        return
+    for entry in inventory_diff_report.entries[:max_records]:
+        label = entry.change_type[:1].upper() + entry.change_type[1:]
+        lines.append(f"- {label}: {entry.section} {entry.key}: {entry.summary}")
+    if len(inventory_diff_report.entries) > max_records:
+        lines.append(f"- ... {len(inventory_diff_report.entries) - max_records} more")
+
+
+def _extend_workflow_data_diff(lines: list[str], report, *, max_records: int, max_fields: int) -> None:
+    lines.extend(["", "## Generated Data Diff"])
+    data_sections = [diff for diff in report.diff_reports if diff.has_changes]
+    if not data_sections:
+        lines.append("- No generated data changes.")
+        return
+    for diff in data_sections:
+        lines.extend(
+            [
+                "",
+                f"### {_target_heading(diff.target.name)}",
+                f"- Totals: +{len(diff.added)} -{len(diff.removed)} ~{len(diff.changed)}",
+            ]
+        )
+        _extend_markdown_values(lines, "Added", diff.added, max_records=max_records)
+        _extend_markdown_values(lines, "Removed", diff.removed, max_records=max_records)
+        for record in diff.changed[:max_records]:
+            fields = _format_player_field_paths(record, max_fields=max_fields)
+            lines.append(f"- Changed: {record.label}: {fields}")
+        if len(diff.changed) > max_records:
+            lines.append(f"- Changed: ... {len(diff.changed) - max_records} more")
+
+
+def _hidden_data_counts(report) -> tuple[int, int, int]:
+    return (
+        sum(len(getattr(diff, "hidden_added", [])) for diff in report.diff_reports),
+        sum(len(getattr(diff, "hidden_removed", [])) for diff in report.diff_reports),
+        sum(len(getattr(diff, "hidden_changed", [])) for diff in report.diff_reports),
+    )
+
+
+def _hidden_image_counts(report) -> tuple[int, int, int]:
+    return (
+        sum(len(getattr(asset, "hidden_added", [])) for asset in report.asset_reports),
+        sum(len(getattr(asset, "hidden_removed", [])) for asset in report.asset_reports),
+        sum(len(getattr(asset, "hidden_changed", [])) for asset in report.asset_reports),
+    )
+
+
+def _extend_workflow_hidden_exclusions(lines: list[str], report) -> None:
+    hidden_data_added, hidden_data_removed, hidden_data_changed = _hidden_data_counts(report)
+    hidden_image_added, hidden_image_removed, hidden_image_changed = _hidden_image_counts(report)
+    if not any(
+        [
+            hidden_data_added,
+            hidden_data_removed,
+            hidden_data_changed,
+            hidden_image_added,
+            hidden_image_removed,
+            hidden_image_changed,
+        ]
+    ):
+        return
+
+    lines.extend(
+        [
+            "",
+            "## Hidden Exclusions",
+            f"- Data hidden by `data/allowlists.json`: +{hidden_data_added} -{hidden_data_removed} ~{hidden_data_changed}",
+            f"- Images hidden by `data/allowlists.json`: +{hidden_image_added} -{hidden_image_removed} ~{hidden_image_changed}",
+        ]
+    )
+    for diff in report.diff_reports:
+        added = len(getattr(diff, "hidden_added", []))
+        removed = len(getattr(diff, "hidden_removed", []))
+        changed = len(getattr(diff, "hidden_changed", []))
+        if any([added, removed, changed]):
+            lines.append(f"- {_target_heading(diff.target.name)} data: +{added} -{removed} ~{changed}")
+    for asset in report.asset_reports:
+        added = len(getattr(asset, "hidden_added", []))
+        removed = len(getattr(asset, "hidden_removed", []))
+        changed = len(getattr(asset, "hidden_changed", []))
+        if any([added, removed, changed]):
+            lines.append(f"- {_target_heading(asset.target_name)} images: +{added} -{removed} ~{changed}")
+
+
+def _workflow_image_classification_counts(asset) -> dict[str, int]:
+    return asset_report_image_classification_counts(asset)
+
+
+def _workflow_image_review_rows(report) -> list[dict[str, object]]:
+    rows: list[dict[str, object]] = []
+    for asset in report.asset_reports:
+        if not asset.has_changes:
+            continue
+        counts = _workflow_image_classification_counts(asset)
+        priority_changed = sum(counts.get(classification, 0) for classification in PRIORITY_IMAGE_CHANGE_CLASSIFICATIONS)
+        low_priority_changed = counts.get("background-only", 0) + counts.get("encoding-only", 0)
+        rows.append(
+            {
+                "asset": asset,
+                "counts": counts,
+                "priority_changed": priority_changed,
+                "priority_total": len(asset.added) + len(asset.removed) + priority_changed,
+                "low_priority_changed": low_priority_changed,
+            }
+        )
+    return rows
+
+
+def _workflow_classification_summary(counts: dict[str, int]) -> str:
+    return ", ".join(f"{classification}={counts.get(classification, 0)}" for classification in CLASSIFICATION_ORDER)
+
+
+def _workflow_low_priority_summary(counts: dict[str, int]) -> str:
+    return f"background-only={counts.get('background-only', 0)}, encoding-only={counts.get('encoding-only', 0)}"
+
+
+def _workflow_priority_image_details(report) -> list[tuple[str, str, str]]:
+    details: list[tuple[str, str, str]] = []
+    for asset in report.asset_reports:
+        if not asset.has_changes:
+            continue
+        target_name = _target_heading(asset.target_name)
+        details.extend((target_name, "added", image_name) for image_name in asset.added)
+        details.extend((target_name, "removed", image_name) for image_name in asset.removed)
+        for image_name in asset.changed:
+            classification = classify_image_change(asset.site_dir / image_name, asset.client_dir / image_name)
+            if classification in PRIORITY_IMAGE_CHANGE_CLASSIFICATIONS:
+                details.append((target_name, f"changed {classification}", image_name))
+    return details
+
+
+def _extend_workflow_image_review_decision(lines: list[str], report) -> None:
+    lines.extend(["", "## Image Review Decision"])
+    rows = _workflow_image_review_rows(report)
+    if not rows:
+        lines.append("- No image changes.")
+        return
+
+    total_added = sum(len(row["asset"].added) for row in rows)
+    total_removed = sum(len(row["asset"].removed) for row in rows)
+    priority_changed = sum(int(row["priority_changed"]) for row in rows)
+    priority_total = sum(int(row["priority_total"]) for row in rows)
+    low_priority_changed = sum(int(row["low_priority_changed"]) for row in rows)
+    low_priority_counts = {
+        "background-only": sum(row["counts"].get("background-only", 0) for row in rows),
+        "encoding-only": sum(row["counts"].get("encoding-only", 0) for row in rows),
+    }
+
+    lines.append(f"- Priority image changes: {priority_total} (+{total_added} -{total_removed} ~{priority_changed})")
+    lines.append(f"- Low-priority changed images: {low_priority_changed} ({_workflow_low_priority_summary(low_priority_counts)})")
+    if priority_total:
+        lines.append(
+            "- Recommended apply command: "
+            "python -m tools.codex_pipeline game-update-workflow --apply --force-apply --image-sync-scope priority"
+        )
+    elif low_priority_changed:
+        lines.append("- Recommended apply command: skip apply unless you intentionally want to sync low-priority changed-image churn.")
+    else:
+        lines.append("- Recommended apply command: no image apply step is needed.")
+
+    for row in rows:
+        asset = row["asset"]
+        counts = row["counts"]
+        lines.append(
+            f"- {_target_heading(asset.target_name)}: "
+            f"priority={row['priority_total']}, low-priority={row['low_priority_changed']}, "
+            f"changed classifications: {_workflow_classification_summary(counts)}"
+        )
+
+
+def _extend_workflow_priority_image_details(lines: list[str], report, *, max_records: int) -> None:
+    lines.extend(["", "## Priority Image Details"])
+    details = _workflow_priority_image_details(report)
+    if not details:
+        lines.append("- No priority image changes.")
+        return
+
+    for target_name, change_type, image_name in details[:max_records]:
+        lines.append(f"- {target_name} {change_type}: {image_name}")
+    if len(details) > max_records:
+        lines.append(f"- ... {len(details) - max_records} more priority image change(s)")
+
+
+def _workflow_markdown_link_path(path: Path, *, summary_path: Path | None) -> str:
+    if summary_path is None:
+        return path.as_posix()
+    try:
+        return Path(os.path.relpath(path, start=summary_path.parent)).as_posix()
+    except ValueError:
+        return path.as_posix()
+
+
+def _extend_workflow_image_review_artifacts(lines: list[str], artifact, *, summary_path: Path | None) -> None:
+    if artifact is None:
+        return
+
+    lines.extend(["", "## Image Review Artifacts"])
+    markdown_path = artifact.markdown_path
+    lines.append(
+        f"- Full image review: [{markdown_path.name}]"
+        f"({_workflow_markdown_link_path(markdown_path, summary_path=summary_path)})"
+    )
+    for sheet_path in artifact.sheet_paths:
+        lines.append(
+            f"- Contact sheet: [{sheet_path.name}]"
+            f"({_workflow_markdown_link_path(sheet_path, summary_path=summary_path)})"
+        )
+
+
+def _extend_workflow_image_diff(lines: list[str], report, *, max_records: int) -> None:
+    lines.extend(["", "## Image Diff"])
+    image_sections = [asset for asset in report.asset_reports if asset.has_changes]
+    if not image_sections:
+        lines.append("- No image changes.")
+        return
+    for asset in image_sections:
+        lines.extend(
+            [
+                "",
+                f"### {_target_heading(asset.target_name)}",
+                f"- Totals: +{len(asset.added)} -{len(asset.removed)} ~{len(asset.changed)}",
+            ]
+        )
+        _extend_markdown_values(lines, "Added", asset.added, max_records=max_records)
+        _extend_markdown_values(lines, "Removed", asset.removed, max_records=max_records)
+        _extend_markdown_values(lines, "Changed", asset.changed, max_records=max_records)
+
+
+def _extend_workflow_unknown_fields(lines: list[str], report, *, max_fields: int) -> None:
+    lines.extend(["", "## Unknown Fields"])
+    if not report.unknown_reports:
+        lines.append("- No unknown-field inventory was produced.")
+        return
+    for unknown_report in report.unknown_reports:
+        nonzero_fields = sum(1 for field in unknown_report.fields if field.nonzero_count)
+        lines.append(
+            f"- {unknown_report.target_name}: {len(unknown_report.fields)} unknown field(s), "
+            f"{nonzero_fields} with nonzero values across {unknown_report.record_count} record(s)"
+        )
+        for field in unknown_report.fields[:max_fields]:
+            lines.append(
+                f"  - {field.name}: {field.nonzero_count}/{field.record_count} nonzero"
+            )
+        if len(unknown_report.fields) > max_fields:
+            lines.append(f"  - ... {len(unknown_report.fields) - max_fields} more")
+
+
+def build_game_update_workflow_summary_markdown(
+    inventory_diff_report: ClientInventoryDiffReport | None,
+    report,
+    *,
+    apply_requested: bool,
+    image_review_artifact=None,
+    summary_path: Path | None = None,
+    max_records: int = 12,
+    max_fields: int = 8,
+) -> str:
+    data_added, data_removed, data_changed, image_added, image_removed, image_changed = _player_change_counts(report)
+    inventory_change_count = 0 if inventory_diff_report is None else len(inventory_diff_report.entries)
+    inventory_issue_count = 0 if inventory_diff_report is None else len(inventory_diff_report.issues)
+    lines = [
+        "# Project Rogue Codex Workflow Summary",
+        "",
+        "## Recommended Next Action",
+        f"- {_workflow_recommended_next_action(inventory_diff_report, report)}",
+        f"- Sync readiness: {'OK' if report.safe_to_sync else 'BLOCKED'}",
+        f"- Apply requested: {'yes' if apply_requested else 'no'}",
+        "",
+        "## Review Totals",
+        f"- Client inventory: {inventory_change_count} change(s), {inventory_issue_count} issue(s)",
+        f"- Data: +{data_added} -{data_removed} ~{data_changed}",
+        f"- Images: +{image_added} -{image_removed} ~{image_changed}",
+        f"- Review notes: {_review_note_count(report) + inventory_issue_count}",
+    ]
+    _extend_workflow_inventory_diff(lines, inventory_diff_report, max_records=max_records)
+    _extend_workflow_data_diff(lines, report, max_records=max_records, max_fields=max_fields)
+    _extend_workflow_hidden_exclusions(lines, report)
+    _extend_workflow_image_review_decision(lines, report)
+    _extend_workflow_image_review_artifacts(lines, image_review_artifact, summary_path=summary_path)
+    _extend_workflow_priority_image_details(lines, report, max_records=max_records)
+    _extend_workflow_image_diff(lines, report, max_records=max_records)
+    _extend_workflow_unknown_fields(lines, report, max_fields=max_fields)
+
+    lines.extend(["", "## Blockers And Notes"])
+    issue_lines = _workflow_issue_lines(inventory_diff_report, report)
+    if issue_lines:
+        lines.extend(f"- {line}" for line in issue_lines)
+    else:
+        lines.append("- No blockers or skipped review sections.")
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def _write_game_update_workflow_summary(
+    inventory_diff_report: ClientInventoryDiffReport | None,
+    report,
+    path: Path,
+    *,
+    apply_requested: bool,
+    image_review_artifact=None,
+) -> Path:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        build_game_update_workflow_summary_markdown(
+            inventory_diff_report,
+            report,
+            apply_requested=apply_requested,
+            image_review_artifact=image_review_artifact,
+            summary_path=path,
+        ),
+        encoding="utf-8",
+        newline="\n",
+    )
     return path
 
 
@@ -1028,6 +1437,151 @@ def run_source_inventory(args: argparse.Namespace) -> int:
     else:
         print("EXPORT READINESS: BLOCKED - source data is missing")
     return 1
+
+
+def _format_optional(value) -> str:
+    return "unknown" if value is None else str(value)
+
+
+def _format_field_list(fields: list[str], *, max_fields: int = 24) -> str:
+    if not fields:
+        return "none"
+    visible = fields[:max_fields]
+    suffix = f", ... +{len(fields) - max_fields}" if len(fields) > max_fields else ""
+    return ", ".join(visible) + suffix
+
+
+def _format_inventory_path(path: Path) -> str:
+    return path.as_posix()
+
+
+def _configured_gf_json_dir(args: argparse.Namespace) -> Path:
+    return args.gf_json_dir or CLIENT_GF_JSON_DIR
+
+
+def _print_client_inventory_diff(report) -> None:
+    for issue in report.issues:
+        print(f"CLIENT INVENTORY DIFF ISSUE ERROR: {issue}")
+    for entry in report.entries:
+        print(
+            f"DIFF {entry.change_type.upper()} {entry.section} {entry.key}: "
+            f"{entry.summary}"
+        )
+    status = "changes detected" if report.has_changes else "no changes"
+    if report.has_errors:
+        status = f"blocked - {len(report.issues)} issue(s)"
+    print(f"CLIENT INVENTORY DIFF STATUS: {status}")
+
+
+def run_client_inventory(args: argparse.Namespace) -> int:
+    client_root = args.client_root or CLIENT_ROOT
+    pack_path = args.pack_path or (client_root / "Data" / "ClientPack" / "rogue_data.vpack")
+    log_path = args.log_path or (client_root / "ProjectRogue.log")
+    gf_json_dir = args.gf_json_dir or (client_root / "gf_json")
+    report = build_client_inventory_report(
+        client_root,
+        pack_path=pack_path,
+        log_path=log_path,
+        gf_json_dir=gf_json_dir,
+    )
+    setattr(args, "_client_inventory_report", report)
+
+    print(f"CLIENT INVENTORY: {report.client_root}")
+    print(
+        "ROOT FILES: "
+        f"{report.root_file_count} file(s), diagnostics={report.diagnostic_file_count}, "
+        f"runtime={report.runtime_file_count}, zeroed-binary={report.zeroed_binary_count}"
+    )
+    for file in report.root_files:
+        zeroed = " zeroed=yes" if file.zeroed_binary else ""
+        print(f"ROOT FILE {file.path}: kind={file.kind} size={file.size_bytes}{zeroed}")
+
+    if report.vpack_exists:
+        print(
+            "VPACK: "
+            f"{_format_inventory_path(report.vpack_path)} size={_format_optional(report.vpack_size_bytes)} "
+            f"sha256={_format_optional(report.vpack_sha256)} "
+            f"schema={_format_optional(report.vpack_schema_version)} "
+            f"build={_format_optional(report.vpack_build_version)} "
+            f"files={len(report.vpack_files)}"
+        )
+        if report.vpack_compression:
+            print(f"VPACK COMPRESSION: {report.vpack_compression}")
+        if report.vpack_log_build_version is not None or report.vpack_log_file_count is not None:
+            print(
+                "VPACK LOG: "
+                f"build={_format_optional(report.vpack_log_build_version)} "
+                f"files={_format_optional(report.vpack_log_file_count)} "
+                f"observed={len(report.vpack_log_loaded_files)}"
+            )
+        for file in report.vpack_files:
+            sha_status = "ok" if file.sha256_ok else "error"
+            print(
+                f"VPACK FILE {file.path}: "
+                f"original={file.original_size} compressed={file.compressed_size} sha256={sha_status}"
+            )
+    else:
+        print(f"VPACK: missing ({_format_inventory_path(report.vpack_path)})")
+
+    for summary in report.json_files:
+        print(
+            f"PACKED JSON {summary.path}: "
+            f"collection={summary.primary_collection or 'none'} "
+            f"groups={summary.group_count} records={summary.record_count} "
+            f"fields={_format_field_list(summary.fields)}"
+        )
+        for issue in summary.issues:
+            print(f"PACKED JSON ISSUE {summary.path}: {issue}")
+
+    print(f"ATLASES: {len(report.atlases)} file(s)")
+    for atlas in report.atlases:
+        size = f"{atlas.width}x{atlas.height}" if atlas.width is not None and atlas.height is not None else "unknown"
+        print(
+            f"ATLAS {atlas.path}: "
+            f"name={atlas.name or 'unknown'} size={size} "
+            f"bytes={atlas.size_bytes} sha256={atlas.sha256 or 'unknown'}"
+        )
+        if atlas.issue:
+            print(f"ATLAS ISSUE {atlas.path}: {atlas.issue}")
+
+    for diagnostic in report.diagnostics:
+        print(
+            f"DIAGNOSTIC {diagnostic.path}: "
+            f"keys={_format_field_list(diagnostic.keys)} ({diagnostic.note})"
+        )
+
+    for issue in report.issues:
+        print(f"CLIENT INVENTORY ISSUE ERROR: {issue}")
+
+    exit_code = 0 if report.ready else 1
+    current_snapshot = build_client_inventory_snapshot(report)
+    if args.diff_snapshot:
+        print(f"CLIENT INVENTORY DIFF: {args.snapshot_path}")
+        try:
+            previous_snapshot = load_client_inventory_snapshot(args.snapshot_path)
+            diff_report = diff_client_inventory_snapshots(previous_snapshot, current_snapshot)
+        except (OSError, json.JSONDecodeError, ValueError) as exc:
+            setattr(args, "_client_inventory_diff_report", ClientInventoryDiffReport([], [str(exc)]))
+            print(f"CLIENT INVENTORY DIFF ISSUE ERROR: {exc}")
+            print("CLIENT INVENTORY DIFF STATUS: blocked - 1 issue(s)")
+            exit_code = 1
+        else:
+            setattr(args, "_client_inventory_diff_report", diff_report)
+            _print_client_inventory_diff(diff_report)
+            if diff_report.has_errors:
+                exit_code = 1
+
+    if args.write_snapshot:
+        try:
+            written_path = write_client_inventory_snapshot(report, args.snapshot_path)
+        except OSError as exc:
+            print(f"CLIENT INVENTORY SNAPSHOT ISSUE ERROR: {exc}")
+            exit_code = 1
+        else:
+            print(f"WROTE CLIENT INVENTORY SNAPSHOT: {written_path}")
+
+    print(f"CLIENT INVENTORY READINESS: {'READY' if report.ready else 'BLOCKED'}")
+    return exit_code
 
 
 def run_vpack_info(args: argparse.Namespace) -> int:
@@ -1363,13 +1917,14 @@ def run_game_update_report(args: argparse.Namespace) -> int:
             targets,
             output_dir=args.output_dir,
             asset_source=args.asset_source,
-            gf_json_dir=args.gf_json_dir,
+            gf_json_dir=_configured_gf_json_dir(args),
             asset_output_dir=args.asset_output_dir,
         )
     except ExportError as exc:
         print(f"ERROR: {exc}")
         return 1
     _print_game_update_report(report)
+    setattr(args, "_game_update_report", report)
     setattr(args, "_game_update_report_safe_to_sync", report.safe_to_sync)
     if args.review_checklist:
         _print_game_update_review_checklist(report)
@@ -1379,6 +1934,7 @@ def run_game_update_report(args: argparse.Namespace) -> int:
         print(f"WROTE SUMMARY: {written_path}")
     if args.write_image_review:
         artifact = write_asset_review_artifacts(report.asset_reports, output_dir=args.image_review_dir)
+        setattr(args, "_asset_image_review_artifact", artifact)
         print(f"WROTE IMAGE REVIEW: {artifact.markdown_path}")
     return 0 if not report.has_errors else 1
 
@@ -1402,7 +1958,7 @@ def _priority_image_change_filter(before_path: Path, after_path: Path, _image_na
 
 
 def _image_sync_changed_filter(args: argparse.Namespace):
-    if getattr(args, "image_sync_scope", "all") == "priority":
+    if (getattr(args, "image_sync_scope", None) or "all") == "priority":
         return _priority_image_change_filter
     return None
 
@@ -1437,7 +1993,7 @@ def run_extract_atlas_assets(args: argparse.Namespace) -> int:
         export_targets,
         asset_targets,
         output_dir=args.output_dir,
-        gf_json_dir=args.gf_json_dir,
+        gf_json_dir=_configured_gf_json_dir(args),
         asset_output_dir=args.asset_output_dir,
     )
     _print_atlas_extraction_reports(reports)
@@ -1464,8 +2020,15 @@ def _workflow_asset_args(args: argparse.Namespace) -> argparse.Namespace:
     return _args_with(args, asset_source="atlas")
 
 
-def _workflow_asset_steps(label_prefix: str, args: argparse.Namespace, *, dry_run: bool) -> list[tuple[str, object, argparse.Namespace]]:
+def _workflow_asset_sync_args(args: argparse.Namespace) -> argparse.Namespace:
     asset_args = _workflow_asset_args(args)
+    if getattr(asset_args, "image_sync_scope", None) is None:
+        return _args_with(asset_args, image_sync_scope="priority")
+    return asset_args
+
+
+def _workflow_asset_steps(label_prefix: str, args: argparse.Namespace, *, dry_run: bool) -> list[tuple[str, object, argparse.Namespace]]:
+    asset_args = _workflow_asset_sync_args(args)
     if asset_args.asset_source == "client":
         return [(f"{label_prefix}sync-assets" if label_prefix else "sync-assets", run_sync_assets, _args_with(asset_args, dry_run=dry_run))]
     return [
@@ -1476,7 +2039,9 @@ def _workflow_asset_steps(label_prefix: str, args: argparse.Namespace, *, dry_ru
 
 def run_game_update_workflow(args: argparse.Namespace) -> int:
     asset_args = _workflow_asset_args(args)
+    inventory_args = _args_with(args, diff_snapshot=True, write_snapshot=False)
     review_steps = [
+        ("client-inventory --diff-snapshot", run_client_inventory, inventory_args),
         ("doctor", run_doctor, args),
         ("game-update-report", run_game_update_report, asset_args),
         ("sync-generated --dry-run", run_sync_generated, _args_with(args, dry_run=True)),
@@ -1486,6 +2051,23 @@ def run_game_update_workflow(args: argparse.Namespace) -> int:
         code = _run_workflow_step(label, runner, step_args)
         if code != 0:
             return code
+
+    if args.write_summary:
+        game_update_report = getattr(asset_args, "_game_update_report", getattr(args, "_game_update_report", None))
+        if game_update_report is None:
+            print("WORKFLOW SUMMARY ISSUE ERROR: game update report was not captured")
+            return 1
+        inventory_diff_report = getattr(inventory_args, "_client_inventory_diff_report", None)
+        image_review_artifact = getattr(asset_args, "_asset_image_review_artifact", getattr(args, "_asset_image_review_artifact", None))
+        summary_path = args.output_dir / "game_update_workflow_summary.md"
+        written_path = _write_game_update_workflow_summary(
+            inventory_diff_report,
+            game_update_report,
+            summary_path,
+            apply_requested=args.apply,
+            image_review_artifact=image_review_artifact,
+        )
+        print(f"WROTE WORKFLOW SUMMARY: {written_path}")
 
     if args.apply:
         sync_ready = getattr(asset_args, "_game_update_report_safe_to_sync", getattr(args, "_game_update_report_safe_to_sync", None))
@@ -1507,6 +2089,13 @@ def run_game_update_workflow(args: argparse.Namespace) -> int:
         validate_code = _run_workflow_step("validate", run_validate)
         if validate_code != 0:
             return validate_code
+        snapshot_code = _run_workflow_step(
+            "client-inventory --write-snapshot",
+            run_client_inventory,
+            _args_with(args, diff_snapshot=False, write_snapshot=True),
+        )
+        if snapshot_code != 0:
+            return snapshot_code
 
     if args.verify_live:
         return _run_workflow_step("verify-live", run_verify_live, args)
@@ -1539,6 +2128,8 @@ def main(argv: list[str] | None = None) -> int:
         return run_doctor(args)
     if args.command == "source-inventory":
         return run_source_inventory(args)
+    if args.command == "client-inventory":
+        return run_client_inventory(args)
     if args.command == "vpack-info":
         return run_vpack_info(args)
     if args.command == "vpack-extract":

@@ -70,8 +70,6 @@ Client .dat files
 For normal data refreshes, use this sequence:
 
 ```powershell
-python -m tools.codex_pipeline doctor
-python -m tools.codex_pipeline game-update-report
 python -m tools.codex_pipeline game-update-workflow
 python -m tools.codex_pipeline export-client-data
 python -m tools.codex_pipeline diff-generated
@@ -99,6 +97,11 @@ python -m tools.codex_pipeline <command>
 
 Important commands:
 
+- `client-inventory`: inventories the configured client install, packed VPACK
+  files, packed JSON record shapes, atlas dimensions/hashes, and diagnostic
+  file keys. Use `--diff-snapshot` to compare against
+  `data/client_inventory_snapshot.json`; use `--write-snapshot` after accepting a
+  new client baseline.
 - `doctor` / `validate-sources`: confirms extractor scripts, client source data,
   site destination folders, and extractor syntax.
 - `game-update-report`: runs a review-only game update pass: source checks,
@@ -106,9 +109,23 @@ Important commands:
   inventory, client-vs-site asset image diffs, generated drop-source
   validation, and generated corrupted-perk validation.
 - `game-update-workflow`: runs the standard game-update review sequence in
-  order. Use `--apply` to sync reviewed generated data and image assets, and
-  `verify-deploy` after deployment to wait for GitHub Actions/Pages and check
-  the live site.
+  order, starting with `client-inventory --diff-snapshot`. Use `--apply` to sync
+  reviewed generated data and image assets. After apply syncs and validation
+  succeed, the workflow refreshes `data/client_inventory_snapshot.json` with the
+  accepted client install baseline. Use `--write-summary` to write
+  `generated-output/codex-data/game_update_workflow_summary.md`, a compact
+  review artifact covering client inventory changes, generated data diffs,
+  hidden exclusion counts, image diffs, priority-vs-churn image counts, capped
+  priority image details, unknown-field counts, blockers, and the recommended
+  next action. Use it with `--write-image-review` to add links to the generated
+  image-review Markdown and contact sheets. Records and images blocked in
+  `data/allowlists.json` are treated as hidden during generated data diff
+  review, asset review, and asset sync. Low-priority image churn alone does not
+  block sync readiness; added, removed, meaningful, or unreadable images still
+  require review before apply. Workflow asset sync defaults to priority scope;
+  pass `--image-sync-scope all` only when intentionally syncing low-priority
+  changed-image churn. Use `verify-deploy` after deployment to wait for GitHub
+  Actions/Pages and check the live site.
 - `export-client-data`: runs configured extractors and writes generated JSON to
   `generated-output/codex-data/`.
 - `unknown-fields`: inventories `unknown_*` fields in current site data, or in
@@ -273,9 +290,12 @@ deployment then publishes the static site from `main`.
 For data or extractor changes:
 
 1. Run `game-update-workflow`.
-2. Review generated-vs-site diffs, asset image diffs, and update warnings.
+2. Review the client inventory diff, generated-vs-site diffs, asset image diffs,
+   update warnings, or rerun with `--write-summary` for the compact workflow
+   artifact.
 3. Sync only intentional generated data and asset changes, or rerun with
-   `--apply` after review.
+   `--apply` after review. Successful apply refreshes the client inventory
+   snapshot after validation.
 4. Run unit tests, `validate`, and `smoke-site`.
 5. If CSS or JavaScript changed, run `bump-static-version`.
 6. Commit.

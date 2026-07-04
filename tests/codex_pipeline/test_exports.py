@@ -662,3 +662,57 @@ class ExportCommandTests(unittest.TestCase):
             self.assertEqual("fields.level", report.changed[0].field_changes[0].path)
             self.assertEqual(10, report.changed[0].field_changes[0].old_value)
             self.assertEqual(11, report.changed[0].field_changes[0].new_value)
+
+    def test_build_generated_diff_report_ignores_hidden_records(self):
+        from tools.codex_pipeline.hidden_items import HiddenItemRules
+
+        rules = HiddenItemRules.from_allowlists({"weapons": {"block": ["Super Duper"]}})
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            output_dir = root / "generated"
+            generated = output_dir / "weapons.json"
+            site_path = root / "site" / "weapons.json"
+            output_dir.mkdir()
+            site_path.parent.mkdir()
+            site_path.write_text(
+                json.dumps(
+                    [
+                        {"id": 1, "name": "Rune Sword", "fields": {"damage": 10}},
+                        {"id": 2, "name": "Super Duper Bow", "fields": {"damage": 999}},
+                        {"id": 3, "name": "Super Duper Axe", "fields": {"damage": 999}},
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            generated.write_text(
+                json.dumps(
+                    [
+                        {"id": 1, "name": "Rune Sword", "fields": {"damage": 11}},
+                        {"id": 2, "name": "Super Duper Bow", "fields": {"damage": 1000}},
+                        {"id": 4, "name": "Super Duper Blunt", "fields": {"damage": 1000}},
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            target = ExportTarget(
+                name="weapons",
+                extractor_script=root / "unused.py",
+                source_data=root / "unused.dat",
+                output_filename="weapons.json",
+                site_path=site_path,
+            )
+
+            report = build_generated_diff_report(
+                target,
+                output_dir=output_dir,
+                hidden_item_rules=rules,
+            )
+
+        self.assertEqual([], report.added)
+        self.assertEqual([], report.removed)
+        self.assertEqual(1, len(report.changed))
+        self.assertEqual("Rune Sword (1)", report.changed[0].label)
+        self.assertEqual(["Super Duper Blunt (4)"], report.hidden_added)
+        self.assertEqual(["Super Duper Axe (3)"], report.hidden_removed)
+        self.assertEqual(1, len(report.hidden_changed))
+        self.assertEqual("Super Duper Bow (2)", report.hidden_changed[0].label)

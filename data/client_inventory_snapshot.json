@@ -1,0 +1,628 @@
+{
+  "atlases": [
+    {
+      "height": 400,
+      "name": "addgf",
+      "path": "addgf.json",
+      "sha256": "38B153C7FB664671676C58EF854FBB24335E7B8B839BA4F5A90AB0E3BD584436",
+      "size_bytes": 239073,
+      "width": 1294
+    },
+    {
+      "height": 1024,
+      "name": "avatars",
+      "path": "avatars.json",
+      "sha256": "2815EAD63BB0DC4B1AC38B34A968C662C350231BAA1FF04EB67EA078F65E1346",
+      "size_bytes": 207308,
+      "width": 1104
+    },
+    {
+      "height": 479,
+      "name": "charchoose",
+      "path": "charchoose.json",
+      "sha256": "32D99D3424FD103B0B2E0BB3016E78F2FC45DDD1B5582DFB0BD84B159B058C96",
+      "size_bytes": 527670,
+      "width": 853
+    },
+    {
+      "height": 479,
+      "name": "charcreation",
+      "path": "charcreation.json",
+      "sha256": "9D8D243A635BB7FF6AD81C599F3B352B6F11BD2B1BA820503F744D46FD1248EA",
+      "size_bytes": 539082,
+      "width": 853
+    },
+    {
+      "height": 147,
+      "name": "GUI_Header",
+      "path": "GUI_Header.json",
+      "sha256": "AF74D5FB7BCE86C24A66AC917DEB06FC3D480DB70466F83B65940155127E07A8",
+      "size_bytes": 28603,
+      "width": 147
+    },
+    {
+      "height": 133,
+      "name": "GUI_Headless",
+      "path": "GUI_Headless.json",
+      "sha256": "C0102B277ABDE4278D05FC7C4F72F7B4EBF0290342B64791E12FE329F511961A",
+      "size_bytes": 26078,
+      "width": 147
+    },
+    {
+      "height": 150,
+      "name": "identify",
+      "path": "identify.json",
+      "sha256": "2E4468864999F86AA11540E57B8D737F6F82A1DACF9263DED465DAA62E69CD42",
+      "size_bytes": 23848,
+      "width": 120
+    },
+    {
+      "height": 1024,
+      "name": "itemgraph",
+      "path": "itemgraph.json",
+      "sha256": "29EBC48733A91A5B723A749C854DBBBEB5A5C0FBAEE94EE40202F19EE732F326",
+      "size_bytes": 199101,
+      "width": 1024
+    },
+    {
+      "height": 480,
+      "name": "layout-widescreen",
+      "path": "layout-widescreen.json",
+      "sha256": "5CC8231417C0106A730EF039AE70B9798BD54268A721D93B7C927A73CD87D601",
+      "size_bytes": 87866,
+      "width": 854
+    },
+    {
+      "height": 128,
+      "name": "lightmap",
+      "path": "lightmap.json",
+      "sha256": "C8C244C7E9910D8509372C5374A1ECA9713802D8CB35E8D086EE4FA3507E7046",
+      "size_bytes": 13538,
+      "width": 128
+    },
+    {
+      "height": 479,
+      "name": "login",
+      "path": "login.json",
+      "sha256": "230823376CEB24F294A05A4D428DCB124C5A0D0ABA26AF4EB16AB8563326AD21",
+      "size_bytes": 536368,
+      "width": 853
+    },
+    {
+      "height": 479,
+      "name": "main",
+      "path": "main.json",
+      "sha256": "958F06CAA15C30BD43B438038F25C966DD71D1536FEF3A68BB45E6523905C782",
+      "size_bytes": 553525,
+      "width": 853
+    },
+    {
+      "height": 480,
+      "name": "mbexp",
+      "path": "mbexp.json",
+      "sha256": "06CE11E3358BBC796591C5840822DCCC2EBF19B588100C17BBDD5AD6BF23AE6D",
+      "size_bytes": 398064,
+      "width": 640
+    },
+    {
+      "height": 479,
+      "name": "messagebox-widescreen",
+      "path": "messagebox-widescreen.json",
+      "sha256": "EF016DB9EBA534DC9A8DFBCA2AC7D89A344D4B8C5622173415A6866D07606B1F",
+      "size_bytes": 485462,
+      "width": 853
+    },
+    {
+      "height": 23,
+      "name": "mouse",
+      "path": "mouse.json",
+      "sha256": "EB24F4C7F97B03ABD6452E1DE4290D57E88EA2075FA7DFC255F7FE994FDECC21",
+      "size_bytes": 1132,
+      "width": 161
+    },
+    {
+      "height": 640,
+      "name": "objects",
+      "path": "objects.json",
+      "sha256": "83D37B57CA6D528557142000482768978C3336EAB96534D2C20CAA79FC56F46F",
+      "size_bytes": 71529,
+      "width": 512
+    },
+    {
+      "height": 352,
+      "name": "shop",
+      "path": "shop.json",
+      "sha256": "1BF42BDC67BCF9BE65ADCD2D0DAD537F51CA3FEA69EE0D0FEFFEFE9DCF1C1575",
+      "size_bytes": 132993,
+      "width": 296
+    },
+    {
+      "height": 688,
+      "name": "tiles",
+      "path": "tiles.json",
+      "sha256": "DF53E367B6F826E124A736BC9956A654C8AC64057E5AEA2F1A5B75300A2F7494",
+      "size_bytes": 72884,
+      "width": 512
+    },
+    {
+      "height": 203,
+      "name": "trade",
+      "path": "trade.json",
+      "sha256": "EC73A2CD2204D54CADDD9A311A518D66C43D60ED8D0FD0EEBA5E056A99B55D15",
+      "size_bytes": 56667,
+      "width": 237
+    }
+  ],
+  "diagnostics": [
+    {
+      "keys": [
+        "Auction House",
+        "Backpack",
+        "Bank",
+        "Body",
+        "Chat",
+        "Combat Statistics",
+        "Confirmation Dialog",
+        "Crafting",
+        "GM Tool",
+        "Guild",
+        "Help",
+        "Input Dialog",
+        "Map",
+        "Message Dialog",
+        "Party",
+        "Player Statistics",
+        "Power Bars",
+        "Quest Log",
+        "Quick Slots",
+        "Shop",
+        "Skill Exp Bars",
+        "Split Stack",
+        "Tinker Tools"
+      ],
+      "note": "local panel state",
+      "path": "GUI.json"
+    },
+    {
+      "keys": [
+        "Account",
+        "Combat Text",
+        "Display",
+        "Fonts",
+        "Graphics",
+        "Positions",
+        "Settings"
+      ],
+      "note": "local preferences",
+      "path": "Settings.json"
+    }
+  ],
+  "packed_json": [
+    {
+      "fields": [
+        "ac",
+        "animated",
+        "animation_frame_count",
+        "animation_type",
+        "avatar",
+        "bonus_constitution",
+        "bonus_dexterity",
+        "bonus_intelligence",
+        "bonus_strength",
+        "crafting_difficulty",
+        "crafting_material_amount",
+        "crafting_material_type",
+        "crafting_requirement",
+        "emits_light",
+        "frames",
+        "id",
+        "innate_special_effect",
+        "items",
+        "level",
+        "maximum_rarity",
+        "minimum_rarity",
+        "name",
+        "resistance_acid",
+        "resistance_cold",
+        "resistance_dark",
+        "resistance_disease",
+        "resistance_electric",
+        "resistance_fire",
+        "resistance_holy",
+        "resistance_poison",
+        "sale_value",
+        "shards_deconstruction",
+        "shards_promotion",
+        "subtype",
+        "to_hit",
+        "type",
+        "use_req_amnt",
+        "use_req_type",
+        "value"
+      ],
+      "group_count": 10,
+      "path": "armors.json",
+      "primary_collection": "armors",
+      "record_count": 2000
+    },
+    {
+      "fields": [
+        "animated",
+        "animation_frame_count",
+        "animation_type",
+        "crafting_difficulty",
+        "crafting_material_amount",
+        "crafting_material_type",
+        "crafting_requirement",
+        "emits_light",
+        "frames",
+        "id",
+        "name",
+        "use_type",
+        "value"
+      ],
+      "group_count": 0,
+      "path": "collectables.json",
+      "primary_collection": "collectables",
+      "record_count": 107
+    },
+    {
+      "fields": [
+        "element_count",
+        "encoding",
+        "generated_at",
+        "grid",
+        "height",
+        "schema_version",
+        "width"
+      ],
+      "group_count": 0,
+      "path": "locales.json",
+      "primary_collection": null,
+      "record_count": 1
+    },
+    {
+      "fields": [
+        "chunk_count",
+        "chunk_map",
+        "chunk_map_element_count",
+        "chunk_map_height",
+        "chunk_map_width",
+        "chunk_tile_height",
+        "chunk_tile_width",
+        "chunks",
+        "chunks_element_count",
+        "encoding",
+        "generated_at",
+        "layer_count",
+        "schema_version"
+      ],
+      "group_count": 0,
+      "path": "map.json",
+      "primary_collection": null,
+      "record_count": 1
+    },
+    {
+      "fields": [
+        "animated",
+        "animation_frame_count",
+        "animation_type",
+        "attack_speed",
+        "dam_max",
+        "dam_min",
+        "element",
+        "flags",
+        "frames",
+        "hp_max",
+        "id",
+        "mon_type",
+        "monster_level",
+        "moving_speed",
+        "name",
+        "used"
+      ],
+      "group_count": 0,
+      "path": "monsters.json",
+      "primary_collection": "monsters",
+      "record_count": 191
+    },
+    {
+      "fields": [
+        "alignment",
+        "animated",
+        "can_jail",
+        "criminal",
+        "frame_count",
+        "frames",
+        "health_maximum",
+        "id",
+        "is_immune",
+        "name",
+        "show_name"
+      ],
+      "group_count": 0,
+      "path": "npcs.json",
+      "primary_collection": "npcs",
+      "record_count": 126
+    },
+    {
+      "fields": [
+        "animated",
+        "animation_frames",
+        "animation_type",
+        "blocks_movement",
+        "blocks_visibility",
+        "frames",
+        "id",
+        "light",
+        "name",
+        "used"
+      ],
+      "group_count": 0,
+      "path": "objecttypes.json",
+      "primary_collection": "objecttypes",
+      "record_count": 188
+    },
+    {
+      "fields": [
+        "element_count",
+        "encoding",
+        "generated_at",
+        "grid",
+        "height",
+        "schema_version",
+        "width"
+      ],
+      "group_count": 0,
+      "path": "safezones.json",
+      "primary_collection": null,
+      "record_count": 1
+    },
+    {
+      "fields": [
+        "base_override_frame",
+        "blocks_visibility",
+        "color",
+        "emits_light",
+        "emits_shadow",
+        "id",
+        "is_sailable",
+        "is_window",
+        "overlay_frame"
+      ],
+      "group_count": 0,
+      "path": "tiles.json",
+      "primary_collection": "tiles",
+      "record_count": 4096
+    },
+    {
+      "fields": [
+        "animated",
+        "animation_frame_count",
+        "animation_type",
+        "crafting_difficulty",
+        "crafting_material_amount",
+        "crafting_material_type",
+        "crafting_requirement",
+        "emits_light",
+        "frames",
+        "id",
+        "name",
+        "use_type",
+        "value"
+      ],
+      "group_count": 0,
+      "path": "useables.json",
+      "primary_collection": "useables",
+      "record_count": 22
+    },
+    {
+      "fields": [
+        "animated",
+        "animation_frame_count",
+        "animation_type",
+        "bonus_constitution",
+        "bonus_dexterity",
+        "bonus_intelligence",
+        "bonus_strength",
+        "crafting_difficulty",
+        "crafting_material_amount",
+        "crafting_material_type",
+        "crafting_requirement",
+        "dam_max",
+        "dam_min",
+        "elemental_damage_max",
+        "elemental_damage_type",
+        "emits_light",
+        "frames",
+        "id",
+        "innate_special_effect",
+        "items",
+        "level",
+        "maximum_rarity",
+        "minimum_rarity",
+        "name",
+        "resistance_acid",
+        "resistance_cold",
+        "resistance_dark",
+        "resistance_disease",
+        "resistance_electric",
+        "resistance_fire",
+        "resistance_holy",
+        "resistance_poison",
+        "sale_value",
+        "shards_deconstruction",
+        "shards_promotion",
+        "speed",
+        "subtype",
+        "to_hit",
+        "type",
+        "use_req_amnt",
+        "use_req_type",
+        "value"
+      ],
+      "group_count": 6,
+      "path": "weapons.json",
+      "primary_collection": "weapons",
+      "record_count": 1039
+    }
+  ],
+  "root_files": [
+    {
+      "extension": ".json",
+      "kind": "diagnostic",
+      "path": "GUI.json",
+      "size_bytes": 4876,
+      "zeroed_binary": false
+    },
+    {
+      "extension": ".dat",
+      "kind": "data",
+      "path": "kills.dat",
+      "size_bytes": 1024,
+      "zeroed_binary": true
+    },
+    {
+      "extension": ".dll",
+      "kind": "runtime",
+      "path": "libpng16-16.dll",
+      "size_bytes": 230912,
+      "zeroed_binary": false
+    },
+    {
+      "extension": ".exe",
+      "kind": "runtime",
+      "path": "Project Rogue Client.exe",
+      "size_bytes": 1248256,
+      "zeroed_binary": false
+    },
+    {
+      "extension": ".log",
+      "kind": "log",
+      "path": "ProjectRogue.log",
+      "size_bytes": 6516,
+      "zeroed_binary": false
+    },
+    {
+      "extension": ".dll",
+      "kind": "runtime",
+      "path": "SDL3.dll",
+      "size_bytes": 2342912,
+      "zeroed_binary": false
+    },
+    {
+      "extension": ".dll",
+      "kind": "runtime",
+      "path": "SDL3_image.dll",
+      "size_bytes": 294912,
+      "zeroed_binary": false
+    },
+    {
+      "extension": ".dll",
+      "kind": "runtime",
+      "path": "SDL3_ttf.dll",
+      "size_bytes": 1666560,
+      "zeroed_binary": false
+    },
+    {
+      "extension": ".json",
+      "kind": "diagnostic",
+      "path": "Settings.json",
+      "size_bytes": 1381,
+      "zeroed_binary": false
+    }
+  ],
+  "schema_version": 1,
+  "vpack": {
+    "build_version": 1,
+    "compression": "gzip-per-file",
+    "exists": true,
+    "file_count": 11,
+    "log_build_version": 1,
+    "log_file_count": 11,
+    "log_loaded_files": [
+      "Map.json",
+      "armors.json",
+      "collectables.json",
+      "locales.json",
+      "monsters.json",
+      "npcs.json",
+      "objecttypes.json",
+      "safezones.json",
+      "tiles.json",
+      "useables.json",
+      "weapons.json"
+    ],
+    "schema_version": 1,
+    "sha256": "49FBF229AEBF224B2D3D6FB3CE1E7499A80F768CADDCDDDA66565FCC85F14AA9",
+    "size_bytes": 669442
+  },
+  "vpack_files": [
+    {
+      "compressed_size": 54410,
+      "original_size": 4615819,
+      "path": "armors.json",
+      "sha256_ok": true
+    },
+    {
+      "compressed_size": 3157,
+      "original_size": 136096,
+      "path": "collectables.json",
+      "sha256_ok": true
+    },
+    {
+      "compressed_size": 4202,
+      "original_size": 699282,
+      "path": "locales.json",
+      "sha256_ok": true
+    },
+    {
+      "compressed_size": 530299,
+      "original_size": 11884243,
+      "path": "map.json",
+      "sha256_ok": true
+    },
+    {
+      "compressed_size": 10154,
+      "original_size": 250702,
+      "path": "monsters.json",
+      "sha256_ok": true
+    },
+    {
+      "compressed_size": 4618,
+      "original_size": 150575,
+      "path": "npcs.json",
+      "sha256_ok": true
+    },
+    {
+      "compressed_size": 4797,
+      "original_size": 217251,
+      "path": "objecttypes.json",
+      "sha256_ok": true
+    },
+    {
+      "compressed_size": 1690,
+      "original_size": 699266,
+      "path": "safezones.json",
+      "sha256_ok": true
+    },
+    {
+      "compressed_size": 18136,
+      "original_size": 1863557,
+      "path": "tiles.json",
+      "sha256_ok": true
+    },
+    {
+      "compressed_size": 1074,
+      "original_size": 28333,
+      "path": "useables.json",
+      "sha256_ok": true
+    },
+    {
+      "compressed_size": 34334,
+      "original_size": 2512341,
+      "path": "weapons.json",
+      "sha256_ok": true
+    }
+  ]
+}

@@ -13,7 +13,7 @@ Static reference site for Project Rogue game data, including weapons, armors, mo
 
 ## Codex Data Pipeline
 
-Codex-only validation and export tooling lives in `tools/codex_pipeline/`. Extractor scripts are repo-owned under `tools/codex_pipeline/extractors/`; the configured game client `.dat` files remain external inputs under `C:\Users\traec\Desktop\Client\data`.
+Codex-only validation and export tooling lives in `tools/codex_pipeline/`. Extractor scripts are repo-owned under `tools/codex_pipeline/extractors/`; configured game client data remains an external input. Current clients can be read from the packed `Data\ClientPack\rogue_data.vpack` source, with `PROJECT_ROGUE_CLIENT_ROOT` available when the install path differs from the default.
 
 For the current source-of-truth flow, module map, safe change pattern, and verification sequence, see `docs/codex-pipeline-architecture.md`.
 
@@ -57,13 +57,22 @@ After a game update, generate a review-only update report. This exports current 
 python -m tools.codex_pipeline game-update-report
 ```
 
-To run the normal review workflow in one command:
+To run the normal review workflow in one command. This starts with a client install inventory diff against `data/client_inventory_snapshot.json`, then runs the export/data/image review steps:
 
 ```powershell
 python -m tools.codex_pipeline game-update-workflow
 ```
 
-Use `--apply` to sync reviewed generated data and image assets. After a push/deploy, run `verify-deploy` to wait for GitHub Actions/Pages and check the live site.
+Add `--write-summary` when you want a compact review artifact at `generated-output/codex-data/game_update_workflow_summary.md` with client inventory changes, generated data diffs, hidden exclusion counts, image diffs, priority-vs-churn image counts, capped priority image details, unknown-field counts, blockers, and the recommended next action. Use it with `--write-image-review` to add links to the generated image-review Markdown and contact sheets. Records and images blocked in `data/allowlists.json` are treated as hidden during generated data diff review, asset review, and asset sync. Low-priority image churn alone does not block sync readiness; added, removed, meaningful, or unreadable images still require review before apply.
+
+To inspect or refresh the client install baseline directly:
+
+```powershell
+python -m tools.codex_pipeline client-inventory --diff-snapshot
+python -m tools.codex_pipeline client-inventory --write-snapshot
+```
+
+Use `--apply` to sync reviewed generated data and image assets. After apply syncs and local validation succeed, the workflow refreshes `data/client_inventory_snapshot.json` so the accepted client install becomes the new baseline. After a push/deploy, run `verify-deploy` to wait for GitHub Actions/Pages and check the live site.
 
 Export client data into the intermediate generated-output folder without touching site files:
 
@@ -95,11 +104,11 @@ python -m tools.codex_pipeline sync-assets --dry-run
 python -m tools.codex_pipeline sync-assets
 ```
 
-For atlas-based update reviews, use priority image sync to apply added/removed images and meaningful or unreadable changed images while leaving background-only or encoding-only churn untouched:
+For atlas-based update reviews, `game-update-workflow` defaults asset syncing to priority scope, which applies added/removed images and meaningful or unreadable changed images while leaving background-only or encoding-only churn untouched. Use `--image-sync-scope all` only when you intentionally want to sync low-priority changed-image churn:
 
 ```powershell
 python -m tools.codex_pipeline sync-assets --dry-run --asset-source atlas --image-sync-scope priority
-python -m tools.codex_pipeline game-update-workflow --apply --force-apply --image-sync-scope priority
+python -m tools.codex_pipeline game-update-workflow --apply --force-apply
 ```
 
 To export and sync in one step after you are comfortable with the generated output:
