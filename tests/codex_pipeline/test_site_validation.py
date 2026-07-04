@@ -196,6 +196,31 @@ class SiteValidationTests(unittest.TestCase):
                 self.assertNotIn("function attachTooltipPinning", script)
                 self.assertNotIn("function unpinTooltip", script)
 
+    def test_misc_item_pages_are_registered_for_validation(self):
+        from tools.codex_pipeline import cli
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        collectables_html = REPO_ROOT / "pages" / "items" / "collectables.html"
+        useables_html = REPO_ROOT / "pages" / "items" / "useables.html"
+        css_path = REPO_ROOT / "css" / "misc-items.css"
+        script_path = REPO_ROOT / "js" / "misc-items-page.js"
+
+        self.assertIn(collectables_html, cli.VALIDATED_HTML_PATHS)
+        self.assertIn(useables_html, cli.VALIDATED_HTML_PATHS)
+        self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
+        self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
+
+    def test_misc_items_page_supports_id_deep_links_and_trait_filters(self):
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        script = (REPO_ROOT / "js" / "misc-items-page.js").read_text(encoding="utf-8")
+
+        self.assertIn("createRouteHelpers", script)
+        self.assertIn("queryKey", script)
+        self.assertIn("Emits Light", script)
+        self.assertIn("Animated", script)
+        self.assertIn("Crafting Data", script)
+        self.assertIn("getItemSearchText(item).includes(searchTerm.toLowerCase())", script)
     def test_home_page_has_timeline_filters_without_countdown(self):
         from tools.codex_pipeline import cli
         from tools.codex_pipeline.config import REPO_ROOT

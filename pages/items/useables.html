@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Useables - Project Rogue Codex</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <base href="../../" />
+    <link rel="icon" type="image/x-icon" href="images/project-rogue-favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="images/project-rogue-favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="64x64" href="images/project-rogue-favicon-64.png" />
+    <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
+    <link rel="stylesheet" href="css/styles.css" />
+    <script src="js/utils.js"></script>
+    <script src="js/items-page-utils.js"></script>
+    <script src="js/site-search.js" defer></script>
+    <script src="js/weapon-specialty.js" defer></script>
+    <script src="js/stat-widgets.js" defer></script>
+    <script src="js/keyword-links.js" defer></script>
+    <script src="js/cursor-toggle.js" defer></script>
+    <script src="js/perks.js" defer></script>
+    <script src="js/rarity-roller.js" defer></script>
+    <script src="js/nav-core.js" defer></script>
+    <link rel="stylesheet" href="css/misc-items.css" />
+  </head>
+  <body>
+    <div
+      class="layout misc-items-page"
+      data-page-title="Useables"
+      data-data-file="useables_data.json"
+      data-image-folder="useables"
+      data-query-key="useable"
+      data-count-label="useables"
+    >
+      <div id="sidebar-root"></div>
+      <main class="main-content">
+        <header class="content-header">
+          <h1 class="content-title">Useables</h1>
+        </header>
+
+        <section class="item-details" id="item-details" aria-live="polite">
+          <div class="item-details-header">
+            <div class="item-title-group">
+              <div class="details-image-group">
+                <img id="details-image" class="item-thumb" alt="" />
+                <div id="details-image-fallback" class="no-image-fallback">No Image</div>
+              </div>
+              <h2 id="details-name" class="content-title details-title"></h2>
+            </div>
+            <button type="button" class="details-button details-close" id="details-close">Close</button>
+          </div>
+          <div class="item-details-body">
+            <div id="details-properties" class="item-details-grid"></div>
+          </div>
+        </section>
+
+        <div class="content-section">
+          <div class="item-controls">
+            <input
+              type="search"
+              id="item-search"
+              class="item-search"
+              placeholder="Search useables by any field..."
+              aria-label="Search useables"
+            />
+            <p class="item-count" id="item-count"></p>
+          </div>
+
+          <div class="item-filters" aria-label="Filters">
+            <div class="item-filter">
+              <label class="filter-label" for="filter-use-type">Use Type</label>
+              <select id="filter-use-type" class="filter-select" multiple aria-label="Filter by use type"></select>
+            </div>
+            <div class="item-filter">
+              <label class="filter-label" for="filter-trait">Trait</label>
+              <select id="filter-trait" class="filter-select" multiple aria-label="Filter by trait"></select>
+            </div>
+          </div>
+
+          <div class="items-table-wrapper">
+            <table class="items-table" aria-describedby="item-search">
+              <thead>
+                <tr id="items-head-row"></tr>
+              </thead>
+              <tbody id="items-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+    <script src="js/misc-items-page.js" defer></script>
+  </body>
+</html>
