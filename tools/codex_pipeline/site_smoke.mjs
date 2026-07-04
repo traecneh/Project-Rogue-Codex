@@ -42,6 +42,7 @@ const smokeSpecs = [
     detailSelector: "#item-details",
     rowSelector: "#items-body tr[data-id]",
     detailLinkSelector: "",
+    duplicateRoute: { id: "36", detailName: "Demonic Remains" },
     queryKey: "collectable",
   },
   {
@@ -52,6 +53,7 @@ const smokeSpecs = [
     detailSelector: "#item-details",
     rowSelector: "#items-body tr[data-id]",
     detailLinkSelector: "",
+    duplicateRoute: { id: "76", detailName: "Scroll of Imbuement" },
     queryKey: "useable",
   },
   {
@@ -334,6 +336,8 @@ async function runSpec(browser, baseUrl, spec) {
     await page.waitForFunction((queryKey) => !new URL(window.location.href).searchParams.has(queryKey), spec.queryKey);
     const stillVisible = await page.locator(`${spec.detailSelector}.show`).count();
     if (stillVisible) throw new Error("close route left detail panel visible");
+
+    await assertDuplicateRouteStability(page, baseUrl, spec);
 
     if (runtimeErrors.length) {
       throw new Error(`browser errors: ${runtimeErrors.join("; ")}`);
@@ -3404,11 +3408,44 @@ async function assertUrlHasQuery(page, queryKey) {
   if (!hasQuery) throw new Error(`URL is missing ${queryKey} query state`);
 }
 
+async function assertUrlParamEquals(page, queryKey, expectedValue) {
+  const actual = await page.evaluate((key) => new URL(window.location.href).searchParams.get(key), queryKey);
+  if (actual !== expectedValue) {
+    throw new Error(`URL expected ${queryKey}=${expectedValue}, got "${actual}"`);
+  }
+}
+
 async function assertDetailLinks(page, spec) {
   if (!spec.detailLinkSelector) return;
   await page.locator(spec.detailLinkSelector).first().waitFor({ state: "attached" });
   const linkCount = await page.locator(spec.detailLinkSelector).count();
   if (!linkCount) throw new Error("detail panel did not render expected cross-page links");
+}
+
+async function assertDuplicateRouteStability(page, baseUrl, spec) {
+  if (!spec.duplicateRoute) return;
+  const { id, detailName } = spec.duplicateRoute;
+  const row = page.locator(`${spec.rowSelector}[data-id="${id}"]`);
+
+  await page.goto(joinUrl(baseUrl, spec.listPath), { waitUntil: "load" });
+  await waitForRows(page, spec);
+  await row.waitFor({ state: "attached" });
+  await row.click();
+  await page.waitForURL((url) => url.searchParams.get(spec.queryKey) === id, { timeout: timeoutMs });
+  await assertDetailVisible(page, spec);
+  const clickedName = await getDetailName(page);
+  if (clickedName !== detailName) {
+    throw new Error(`${spec.label} duplicate route selected "${clickedName}" instead of "${detailName}"`);
+  }
+
+  await page.reload({ waitUntil: "load" });
+  await waitForRows(page, spec);
+  await assertDetailVisible(page, spec);
+  await assertUrlParamEquals(page, spec.queryKey, id);
+  const reloadedName = await getDetailName(page);
+  if (reloadedName !== detailName) {
+    throw new Error(`${spec.label} duplicate route reload selected "${reloadedName}" instead of "${detailName}"`);
+  }
 }
 
 async function clickFirstRow(page, spec) {

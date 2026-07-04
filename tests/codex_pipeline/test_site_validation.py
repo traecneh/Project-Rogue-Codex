@@ -213,8 +213,12 @@ class SiteValidationTests(unittest.TestCase):
     def test_misc_items_page_supports_id_deep_links_and_trait_filters(self):
         from tools.codex_pipeline.config import REPO_ROOT
 
+        helper_script = (REPO_ROOT / "js" / "items-page-utils.js").read_text(encoding="utf-8")
         script = (REPO_ROOT / "js" / "misc-items-page.js").read_text(encoding="utf-8")
 
+        self.assertIn("const itemId = getItemId ? getItemId(item) : \"\";", helper_script)
+        self.assertIn("const detailKey = itemId || name;", helper_script)
+        self.assertIn("encodeURIComponent(detailKey)", helper_script)
         self.assertIn("createRouteHelpers", script)
         self.assertIn("queryKey", script)
         self.assertIn("Emits Light", script)

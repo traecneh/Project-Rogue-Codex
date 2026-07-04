@@ -1,6 +1,6 @@
 (() => {
   const normalizeItemId = (value) =>
-    (value || "")
+    (value === null || value === undefined ? "" : String(value))
       .toString()
       .toLowerCase()
       .replace(/[^a-z0-9_-]+/g, "-")
@@ -281,9 +281,11 @@
 
     const buildDetailStateUrl = (item) => {
       const name = getDetailName(item);
-      if (!name) return "";
+      const itemId = getItemId ? getItemId(item) : "";
+      const detailKey = itemId || name;
+      if (!detailKey) return "";
       const path = window.location.pathname || fallbackPath;
-      return `${path}?${primaryQueryKey}=${encodeURIComponent(name)}`;
+      return `${path}?${primaryQueryKey}=${encodeURIComponent(detailKey)}`;
     };
 
     const buildListUrl = () => window.location.pathname || fallbackPath;
@@ -306,9 +308,9 @@
     const updateDetailUrl = (item, options = {}) => {
       const itemId = getItemId ? getItemId(item) : normalizeId(getDetailName(item));
       const targetUrl = buildDetailStateUrl(item);
-      if (!itemId || !targetUrl) return;
+      if (!targetUrl) return;
       const state = {};
-      state[stateKey] = itemId;
+      state[stateKey] = itemId || normalizeId(getDetailName(item));
       pushHistoryState(state, targetUrl, options.replace);
     };
 

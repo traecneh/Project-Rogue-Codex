@@ -267,15 +267,18 @@ class SiteSmokeTests(unittest.TestCase):
         for expected in [
             'detailName: "Soul of Flame"',
             'detailQuery: "24"',
+            'duplicateRoute: { id: "36", detailName: "Demonic Remains" }',
             'label: "collectables"',
             'detailName: "Carpentry Saw"',
             'detailQuery: "10"',
+            'duplicateRoute: { id: "76", detailName: "Scroll of Imbuement" }',
             'label: "useables"',
             "/pages/items/collectables.html",
             "/pages/items/useables.html",
             'detailSelector: "#item-details"',
             'rowSelector: "#items-body tr[data-id]"',
             'detailLinkSelector: ""',
+            "assertDuplicateRouteStability",
             'queryKey: "collectable"',
             'queryKey: "useable"',
         ]:
