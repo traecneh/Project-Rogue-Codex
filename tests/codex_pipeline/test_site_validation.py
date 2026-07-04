@@ -226,6 +226,33 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn("Crafting Data", script)
         self.assertIn("getItemSearchText(item).includes(searchTerm.toLowerCase())", script)
 
+    def test_misc_items_page_renders_relationship_sections(self):
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        script = (REPO_ROOT / "js" / "misc-items-page.js").read_text(encoding="utf-8")
+        css = (REPO_ROOT / "css" / "misc-items.css").read_text(encoding="utf-8")
+
+        for expected in [
+            "RELATIONSHIP_DATA_URL",
+            "data/codex-overrides/item_relationships.json",
+            "createRelationshipSections",
+            "getRelationshipsForItem",
+            "Used In",
+            "Found From",
+            "Related Systems",
+            "relationship-section",
+            "relationship-pill",
+        ]:
+            self.assertIn(expected, script)
+
+        for expected in [
+            ".relationship-sections",
+            ".relationship-section",
+            ".relationship-pill",
+            ".detail-pill .detail-tooltip",
+        ]:
+            self.assertIn(expected, css)
+
     def test_nav_and_site_search_include_collectables_and_useables(self):
         from tools.codex_pipeline.config import REPO_ROOT
 

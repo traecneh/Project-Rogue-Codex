@@ -265,13 +265,15 @@ class SiteSmokeTests(unittest.TestCase):
         runner = (REPO_ROOT / "tools" / "codex_pipeline" / "site_smoke.mjs").read_text(encoding="utf-8")
 
         for expected in [
-            'detailName: "Soul of Flame"',
-            'detailQuery: "24"',
+            'detailName: "Ascendancy Shard"',
+            'detailQuery: "54"',
             'duplicateRoute: { id: "36", detailName: "Demonic Remains" }',
+            'detailTextIncludes: ["Relationships", "Used In", "Ascend System", "Found From", "Deconstruct System"]',
             'label: "collectables"',
             'detailName: "Carpentry Saw"',
             'detailQuery: "10"',
             'duplicateRoute: { id: "76", detailName: "Scroll of Imbuement" }',
+            'detailTextIncludes: ["Relationships", "Used In", "Carpentry"]',
             'label: "useables"',
             "/pages/items/collectables.html",
             "/pages/items/useables.html",
@@ -279,6 +281,7 @@ class SiteSmokeTests(unittest.TestCase):
             'rowSelector: "#items-body tr[data-id]"',
             'detailLinkSelector: ""',
             "assertDuplicateRouteStability",
+            "assertDetailTextIncludes",
             'queryKey: "collectable"',
             'queryKey: "useable"',
         ]:

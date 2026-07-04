@@ -294,6 +294,7 @@
 
 .detail-pill,
 .trait-pill {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
@@ -304,6 +305,45 @@
   color: #e8ecf2;
   font-weight: 700;
   letter-spacing: 0.03em;
+}
+
+.detail-pill:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.detail-pill .detail-tooltip {
+  position: absolute;
+  left: 50%;
+  bottom: 115%;
+  z-index: 60;
+  display: none;
+  min-width: 220px;
+  max-width: min(320px, 80vw);
+  transform: translateX(-50%);
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  background: #10141c;
+  color: var(--text-main);
+  box-shadow: 0 14px 26px rgba(0, 0, 0, 0.65);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.35;
+  text-transform: none;
+  white-space: normal;
+  pointer-events: none;
+}
+
+.detail-pill:hover .detail-tooltip,
+.detail-pill:focus-within .detail-tooltip {
+  display: block;
+}
+
+.detail-tooltip.is-pinned {
+  display: block;
+  pointer-events: auto;
 }
 
 .trait-pill {
@@ -322,6 +362,38 @@
 
 .trait-pill.crafting-data {
   border-color: rgba(75, 255, 75, 0.35);
+}
+
+.relationship-sections {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem 1rem;
+}
+
+.relationship-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: min(180px, 100%);
+}
+
+.relationship-heading {
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.relationship-pill-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.relationship-pill {
+  border-color: rgba(120, 205, 255, 0.32);
+  color: #d8f0ff;
+  max-width: 100%;
 }
 
 .table-empty {

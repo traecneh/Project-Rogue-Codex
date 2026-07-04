@@ -35,14 +35,15 @@ const smokeSpecs = [
     queryKey: "armor",
   },
   {
-    detailName: "Soul of Flame",
-    detailQuery: "24",
+    detailName: "Ascendancy Shard",
+    detailQuery: "54",
     label: "collectables",
     listPath: "/pages/items/collectables.html",
     detailSelector: "#item-details",
     rowSelector: "#items-body tr[data-id]",
     detailLinkSelector: "",
     duplicateRoute: { id: "36", detailName: "Demonic Remains" },
+    detailTextIncludes: ["Relationships", "Used In", "Ascend System", "Found From", "Deconstruct System"],
     queryKey: "collectable",
   },
   {
@@ -54,6 +55,7 @@ const smokeSpecs = [
     rowSelector: "#items-body tr[data-id]",
     detailLinkSelector: "",
     duplicateRoute: { id: "76", detailName: "Scroll of Imbuement" },
+    detailTextIncludes: ["Relationships", "Used In", "Carpentry"],
     queryKey: "useable",
   },
   {
@@ -313,6 +315,7 @@ async function runSpec(browser, baseUrl, spec) {
     await openDetail(page, baseUrl, spec);
     await assertDetailState(page, spec, "deep link");
     await assertDetailLinks(page, spec);
+    await assertDetailTextIncludes(page, spec);
     if (typeof spec.assertDetail === "function") {
       await spec.assertDetail(page);
     }
@@ -3420,6 +3423,16 @@ async function assertDetailLinks(page, spec) {
   await page.locator(spec.detailLinkSelector).first().waitFor({ state: "attached" });
   const linkCount = await page.locator(spec.detailLinkSelector).count();
   if (!linkCount) throw new Error("detail panel did not render expected cross-page links");
+}
+
+async function assertDetailTextIncludes(page, spec) {
+  if (!Array.isArray(spec.detailTextIncludes) || !spec.detailTextIncludes.length) return;
+  const detailText = (await page.locator("#details-properties").textContent()).trim();
+  for (const expected of spec.detailTextIncludes) {
+    if (!detailText.includes(expected)) {
+      throw new Error(`${spec.label} detail missing "${expected}": "${detailText}"`);
+    }
+  }
 }
 
 async function assertDuplicateRouteStability(page, baseUrl, spec) {
