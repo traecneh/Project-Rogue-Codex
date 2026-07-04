@@ -418,6 +418,17 @@ class ItemRelationshipInventoryTests(unittest.TestCase):
                 for relationship in holiday.confirmed
             )
         )
+        self.assertEqual("linked", by_target["Seasonal Events"].status)
+        self.assertEqual("pages/systems/seasonal-events.html", by_target["Seasonal Events"].href)
+        self.assertEqual(1, by_target["Seasonal Events"].relationship_count)
+        self.assertEqual(
+            ["manual override: reviewed holiday item family"],
+            [
+                relationship.evidence
+                for relationship in holiday.confirmed
+                if relationship.relationship_type == "related_system" and relationship.target == "Seasonal Events"
+            ],
+        )
         self.assertTrue(
             any(
                 relationship.relationship_type == "used_in" and relationship.target == "Blacksmithing"
@@ -473,6 +484,7 @@ class ItemRelationshipInventoryTests(unittest.TestCase):
                 if relationship.relationship_type == "related_system" and relationship.target == "Travel"
             ],
         )
+        self.assertNotIn("Seasonal Events", review_targets)
         self.assertNotIn("Travel", review_targets)
 
     def test_cli_prints_item_relationship_inventory(self):

@@ -200,6 +200,13 @@ const SITE_SEARCH_INDEX = [
     keywords: ["experience", "xp", "pool", "progression"],
   },
   {
+    title: "Seasonal Events",
+    url: "pages/systems/seasonal-events.html",
+    category: "Systems",
+    description: "Seasonal item reference and current Holiday Gift relationship.",
+    keywords: ["seasonal", "events", "holiday gift", "holiday", "gift"],
+  },
+  {
     title: "Travel",
     url: "pages/systems/travel.html",
     category: "Systems",

@@ -74,9 +74,7 @@
     },
     {
       "target": "Seasonal Events",
-      "textOnly": true,
-      "reason": "No seasonal event page exists yet",
-      "reviewNextStep": "Create or confirm a seasonal-events destination before linking holiday items."
+      "href": "pages/systems/seasonal-events.html"
     },
     {
       "target": "Tinkering",

@@ -293,6 +293,7 @@ class SiteValidationTests(unittest.TestCase):
         self.assertEqual("pages/enemies/monsters.html?monster=balron", target_links["Balron"])
         self.assertEqual("pages/enemies/monsters.html?monster=beholder", target_links["Beholder"])
         self.assertEqual("pages/enemies/monsters.html?monster=demon", target_links["Demon"])
+        self.assertEqual("pages/systems/seasonal-events.html", target_links["Seasonal Events"])
         self.assertEqual("pages/systems/travel.html", target_links["Travel"])
         self.assertIn(".relationship-pill:hover", css)
         self.assertIn(".relationship-pill:focus-visible", css)
@@ -376,6 +377,24 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn("<h1 class=\"content-title\">Travel</h1>", html)
         self.assertIn("Ship Deed", html)
         self.assertIn("pages/items/useables.html?useable=Ship%20Deed", html)
+
+    def test_seasonal_events_page_is_registered_for_navigation_search_and_validation(self):
+        from tools.codex_pipeline import cli
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        html_path = REPO_ROOT / "pages" / "systems" / "seasonal-events.html"
+        nav = (REPO_ROOT / "nav.html").read_text(encoding="utf-8")
+        script = (REPO_ROOT / "js" / "site-search.js").read_text(encoding="utf-8")
+        html = html_path.read_text(encoding="utf-8") if html_path.exists() else ""
+
+        self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
+        self.assertIn('href="pages/systems/seasonal-events.html">Seasonal Events</a>', nav)
+        self.assertIn('title: "Seasonal Events"', script)
+        self.assertIn('url: "pages/systems/seasonal-events.html"', script)
+        self.assertIn('"holiday gift"', script)
+        self.assertIn("<h1 class=\"content-title\">Seasonal Events</h1>", html)
+        self.assertIn("Holiday Gift", html)
+        self.assertIn("pages/items/collectables.html?collectable=Holiday%20Gift", html)
 
     def test_home_page_has_timeline_filters_without_countdown(self):
         from tools.codex_pipeline import cli
