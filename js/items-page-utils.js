@@ -214,6 +214,16 @@
         const encoded = encodeURIComponent(trimmed);
         candidates.push(`images/${folder}/${encoded}.gif`, `images/${folder}/${encoded}.png`);
       }
+      const id = item && item.id !== null && item.id !== undefined ? String(item.id).trim() : "";
+      if (trimmed && id && id !== trimmed) {
+        const nameWithId = `${trimmed}-${id}`;
+        const nameWithIdKey = nameWithId.toLowerCase();
+        if (manifest && manifest.has(nameWithIdKey)) {
+          candidates.push(manifest.get(nameWithIdKey));
+        }
+        const encodedNameWithId = encodeURIComponent(nameWithId);
+        candidates.push(`images/${folder}/${encodedNameWithId}.gif`, `images/${folder}/${encodedNameWithId}.png`);
+      }
       return Array.from(new Set(candidates.filter(Boolean)));
     };
 

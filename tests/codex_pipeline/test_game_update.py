@@ -272,6 +272,32 @@ class GameUpdateReportTests(unittest.TestCase):
         self.assertIn("weapons asset/data parity: image has no matching data record: Orphan Sword.png", messages)
         self.assertFalse(report.has_errors)
 
+    def test_asset_data_parity_accepts_duplicate_name_id_suffixed_images(self):
+        from tools.codex_pipeline.assets import validate_asset_data_parity
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            data_path = root / "collectables_data.json"
+            manifest_path = root / "manifest.json"
+            write_json(
+                data_path,
+                [
+                    {"id": 35, "name": "Demonic Remains", "fields": {}},
+                    {"id": 36, "name": "Demonic Remains", "fields": {}},
+                ],
+            )
+            write_json(
+                manifest_path,
+                [
+                    "images/collectables/Demonic Remains-35.png",
+                    "images/collectables/Demonic Remains-36.png",
+                ],
+            )
+
+            issues = validate_asset_data_parity("collectables", data_path, manifest_path)
+
+        self.assertEqual([], issues)
+
     def test_build_game_update_report_stops_before_export_when_source_checks_fail(self):
         from tools.codex_pipeline.game_update import build_game_update_report
 

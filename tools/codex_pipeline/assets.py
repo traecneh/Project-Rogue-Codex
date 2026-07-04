@@ -245,6 +245,14 @@ def _image_stem_key(value: object) -> tuple[str, str]:
 
 def _expected_image_names_from_data(records: list[Any]) -> dict[str, str]:
     names: dict[str, str] = {}
+    display_name_counts: dict[str, int] = {}
+    for record in records:
+        if not isinstance(record, dict):
+            continue
+        display_name = str(record.get("name") or "").strip()
+        if display_name:
+            display_name_counts[display_name.casefold()] = display_name_counts.get(display_name.casefold(), 0) + 1
+
     for record in records:
         if not isinstance(record, dict):
             continue
@@ -253,10 +261,17 @@ def _expected_image_names_from_data(records: list[Any]) -> dict[str, str]:
         if direct_image:
             key, direct_display = _image_stem_key(direct_image)
             display_name = display_name or direct_display
+        elif display_name_counts.get(display_name.casefold(), 0) > 1:
+            key = ""
         else:
             key = display_name.casefold()
         if key:
             names.setdefault(key, display_name)
+        record_id = record.get("id")
+        if display_name and record_id is not None and display_name_counts.get(display_name.casefold(), 0) > 1:
+            id_suffix = str(record_id).strip()
+            if id_suffix:
+                names.setdefault(f"{display_name}-{id_suffix}".casefold(), f"{display_name}-{id_suffix}")
     return names
 
 
