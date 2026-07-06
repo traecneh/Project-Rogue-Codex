@@ -124,6 +124,7 @@
 
 .resistance-type-card h3 {
   margin: 0.15rem 0 0;
+  text-align: center;
 }
 
 .resistance-loading,
@@ -135,8 +136,10 @@
 .resistance-example-icons {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.35rem;
   min-height: 34px;
+  text-align: center;
 }
 
 .resistance-example-icons a,
