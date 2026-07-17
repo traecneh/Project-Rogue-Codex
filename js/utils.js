@@ -281,6 +281,8 @@
     cold: "#7cc9ff",
     acid: "#b38b00",
     disease: "#ff9c42",
+    holy: "#f2d36b",
+    dark: "#a88cff",
   };
 
   const RESIST_COLORS = { ...ELEMENT_COLORS };

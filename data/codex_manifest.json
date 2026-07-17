@@ -35,7 +35,7 @@
     "armors": {
       "path": "pages/items/armors_data06.json",
       "records": 255,
-      "sha256": "ab17d83612bcfa4a2decc0c98d2ad1559785e338bf52690f67743e09877f2e21"
+      "sha256": "c2d9acd0667018606ca56f992ae9ac823fd0580280e125dfe056b2129315e2c5"
     },
     "collectables": {
       "path": "pages/items/collectables_data.json",
@@ -55,15 +55,15 @@
     "weapons": {
       "path": "pages/items/weapons_data05.json",
       "records": 245,
-      "sha256": "0b726c48c53bd5ad82f71624222c7813cf6ec873e69af799d1003d791d921551"
+      "sha256": "959367fbe8eb9041a5c8e8243126a6228d0fa166119149ea932d117a2b6e4149"
     }
   },
-  "generated_at_utc": "2026-07-04T17:50:00Z",
+  "generated_at_utc": "2026-07-17T20:25:01Z",
   "schema": "project-rogue-codex-manifest",
-  "source_commit": "163d846d66eb12a43d185a2946ca062a2299052e",
+  "source_commit": "063de7058e852ca479ba86fcc0b551995304c9ef",
   "summary": {
     "asset_entries": 804,
-    "content_sha256": "02ffe3a61993cd489815c135593783df3f6721925fceb04e4e1080518fbecf8b",
+    "content_sha256": "033fbb3d246cfaaa5fc6887e3d54e36d057d164047a384a913296237014f5711",
     "data_records": 805
   },
   "version": 1

@@ -532,6 +532,8 @@ const normalizeNavArmor = (armor) => {
     acid: toNumberOrNull(fields.acid_resistance ?? armor.acidResist),
     poison: toNumberOrNull(fields.poison_resistance ?? armor.poisonResist),
     disease: toNumberOrNull(fields.disease_resistance ?? armor.diseaseResist),
+    holy: toNumberOrNull(fields.holy_resistance ?? armor.holyResist),
+    dark: toNumberOrNull(fields.dark_resistance ?? armor.darkResist),
   };
 
   return {

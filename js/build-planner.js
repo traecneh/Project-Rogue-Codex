@@ -73,6 +73,8 @@
           cold: "#7cc9ff",
           acid: "#b38b00",
           disease: "#ff9c42",
+          holy: "#f2d36b",
+          dark: "#a88cff",
         };
 
         const RACES = [
@@ -733,6 +735,8 @@
               acid: toNumber(fields.acid_resistance),
               poison: toNumber(fields.poison_resistance),
               disease: toNumber(fields.disease_resistance),
+              holy: toNumber(fields.holy_resistance),
+              dark: toNumber(fields.dark_resistance),
             },
             perk: fields.perk ? fields.perk_label || fields.perk : null,
             corruptedPerk: fields.corrupted_perk
@@ -774,6 +778,8 @@
               acid: toNumber(fields.acid_resistance),
               poison: toNumber(fields.poison_resistance),
               disease: toNumber(fields.disease_resistance),
+              holy: toNumber(fields.holy_resistance),
+              dark: toNumber(fields.dark_resistance),
             },
             perk: fields.perk ? fields.perk_label || fields.perk : null,
           };
@@ -789,6 +795,8 @@
             acid: "Acid",
             poison: "Poison",
             disease: "Disease",
+            holy: "Holy",
+            dark: "Dark",
           };
           Object.entries(labels).forEach(([key, label]) => {
             const value = toNumber(res ? res[key] : 0);
@@ -812,7 +820,16 @@
           data.bonusDex = stats.dex;
           data.bonusCon = stats.con;
           data.bonusAC = tier.bonusAC;
-          data.bonusResists = { fire: 0, cold: 0, electric: 0, acid: 0, poison: 0, disease: 0 };
+          data.bonusResists = {
+            fire: 0,
+            cold: 0,
+            electric: 0,
+            acid: 0,
+            poison: 0,
+            disease: 0,
+            holy: 0,
+            dark: 0,
+          };
         };
 
         const updateStatAdjustUI = (slot) => {
@@ -1083,7 +1100,7 @@
           const baseStatLimit = getBaseStatLimit(charLevel);
           const baseStatSpent = Math.max(0, baseStatTotal - BASE_STAT_START);
 
-          const resistTotals = ["fire", "cold", "electric", "acid", "poison", "disease"].reduce((acc, key) => {
+          const resistTotals = ["fire", "cold", "electric", "acid", "poison", "disease", "holy", "dark"].reduce((acc, key) => {
             acc[key] =
               selected.reduce((sum, item) => sum + toNumber(item.resistances?.[key]), 0) +
               selected.reduce((sum, item) => sum + toNumber(item.bonusResists?.[key]), 0);

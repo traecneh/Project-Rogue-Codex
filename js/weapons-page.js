@@ -67,6 +67,8 @@
     acid: "Acid Resistance",
     poison: "Poison Resistance",
     disease: "Disease Resistance",
+    holy: "Holy Resistance",
+    dark: "Dark Resistance",
   };
 
   const STAT_LABELS = {
@@ -110,7 +112,7 @@
     return RARITY_KEY_INDEX.has(label) ? RARITY_KEY_INDEX.get(label) : null;
   };
 
-  const RESISTANCES_SCHEMA_VERSION = 1;
+  const RESISTANCES_SCHEMA_VERSION = 2;
   const MONSTER_TYPE_ORDER = [
     "humanoid",
     "giant",
@@ -245,7 +247,16 @@
   const formatNumber = itemUtils.formatNumber;
   const formatRange = itemUtils.formatRange;
 
-  const ELEMENT_KEYS_WITH_MULTIPLIERS = new Set(["fire", "cold", "electric", "poison", "disease", "acid"]);
+  const ELEMENT_KEYS_WITH_MULTIPLIERS = new Set([
+    "fire",
+    "cold",
+    "electric",
+    "poison",
+    "disease",
+    "acid",
+    "holy",
+    "dark",
+  ]);
 
   const formatMonsterTypeLabel = (value) => {
     if (!value) return "-";
@@ -822,6 +833,8 @@
         acid: fields.acid_resistance,
         poison: fields.poison_resistance,
         disease: fields.disease_resistance,
+        holy: fields.holy_resistance,
+        dark: fields.dark_resistance,
       },
       stats: {
         strength: fields.strength,
@@ -992,6 +1005,8 @@
       formatNumber(res.disease ?? 0),
       formatNumber(res.acid ?? 0),
       formatNumber(res.electric ?? 0),
+      formatNumber(res.holy ?? 0),
+      formatNumber(res.dark ?? 0),
       ...getWeaponDropSourceNames(item),
     ]
       .join(" ")
@@ -1074,16 +1089,18 @@
         makeResistEntry("fire", "Fire", res.fire),
         makeResistEntry("poison", "Poison", res.poison),
         makeResistEntry("cold", "Cold", res.cold),
+        makeResistEntry("holy", "Holy", res.holy),
       ],
-      3
+      4
     );
     addRow(
       [
         makeResistEntry("disease", "Disease", res.disease),
         makeResistEntry("acid", "Acid", res.acid),
         makeResistEntry("electric", "Electric", res.electric),
+        makeResistEntry("dark", "Dark", res.dark),
       ],
-      3
+      4
     );
 
     addDivider();

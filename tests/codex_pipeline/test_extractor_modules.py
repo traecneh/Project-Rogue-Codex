@@ -375,8 +375,12 @@ class ExtractorModuleTests(unittest.TestCase):
         self.assertEqual("unknown_777", field_name(MONSTER_FIELD_NAMES, 777))
         self.assertEqual("subtype", WEAPON_FIELD_NAMES[22])
         self.assertEqual("proc_chance", WEAPON_FIELD_NAMES[28])
+        self.assertEqual("holy_resistance", WEAPON_FIELD_NAMES[88])
+        self.assertEqual("dark_resistance", WEAPON_FIELD_NAMES[89])
         self.assertEqual("armor", ARMOR_FIELD_NAMES[13])
         self.assertEqual("player_level_requirement", ARMOR_FIELD_NAMES[17])
+        self.assertEqual("holy_resistance", ARMOR_FIELD_NAMES[81])
+        self.assertEqual("dark_resistance", ARMOR_FIELD_NAMES[85])
         record_words = [0] * 1000
         record_words[22] = 7
         record_words[777] = 99

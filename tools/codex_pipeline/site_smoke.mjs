@@ -2348,7 +2348,7 @@ async function assertResistanceCalculator(page) {
   }
 
   const humanoidText = (await page.locator('[data-resistance-type-card="humanoid"]').textContent()).trim();
-  for (const expected of ["Humanoid", "Poison", "Disease", "Acid", "Cold"]) {
+  for (const expected of ["Humanoid", "Poison", "Disease", "Acid", "Dark", "Cold"]) {
     if (!humanoidText.includes(expected)) {
       throw new Error(`Humanoid resistance card missing "${expected}": "${humanoidText}"`);
     }

@@ -7,7 +7,7 @@ const STAT_MATCHERS = [
   {
     name: "resistances",
     regex:
-      /\b(?:resistances?|fire resistance|electric resistance|poison resistance|cold resistance|acid resistance|disease resistance)\b/i,
+      /\b(?:resistances?|fire resistance|electric resistance|poison resistance|cold resistance|acid resistance|disease resistance|holy resistance|dark resistance)\b/i,
   },
 ];
 

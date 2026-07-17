@@ -2559,9 +2559,11 @@ class SiteValidationTests(unittest.TestCase):
         html_path = REPO_ROOT / "pages" / "stats" / "resistances.html"
         css_path = REPO_ROOT / "css" / "resistances.css"
         script_path = REPO_ROOT / "js" / "resistances.js"
+        data_path = REPO_ROOT / "pages" / "systems" / "resistances.json"
         html = html_path.read_text(encoding="utf-8")
         css = css_path.read_text(encoding="utf-8") if css_path.exists() else ""
         script = script_path.read_text(encoding="utf-8") if script_path.exists() else ""
+        data = json.loads(data_path.read_text(encoding="utf-8"))
 
         self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
@@ -2600,6 +2602,8 @@ class SiteValidationTests(unittest.TestCase):
             "data-resistance-type-grid",
             "data-neutral-toggle",
             "data-perk-stats=\"resistances\"",
+            "Holy",
+            "Dark",
             "pages/items/armors.html",
             "pages/General/build-planner.html",
             "pages/enemies/monsters.html",
@@ -2617,10 +2621,15 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(".resistance-link-grid", css)
 
         self.assertIn("const RESISTANCE_CAP", script)
+        self.assertIn("const RESISTANCES_SCHEMA_VERSION = 2", script)
         self.assertIn("function initResistanceCalculator", script)
         self.assertIn("function renderMonsterTypeResistances", script)
         self.assertIn("function updateNeutralVisibility", script)
         self.assertIn('document.addEventListener("DOMContentLoaded"', script)
+        self.assertEqual(2, data["schemaVersion"])
+        self.assertIn({"element": "Dark", "value": 1.3}, data["typeResistances"]["humanoid"])
+        self.assertIn({"element": "Holy", "value": 1.3}, data["typeResistances"]["undead"])
+        self.assertIn({"element": "Dark", "value": 0.8}, data["typeResistances"]["demon"])
 
         perk_embed_script = (REPO_ROOT / "js" / "perks.js").read_text(encoding="utf-8")
         self.assertIn('name: "resistances"', perk_embed_script)

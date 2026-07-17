@@ -121,6 +121,8 @@
     { key: "diseaseResist", label: "Disease", format: (v) => formatNumber(v) },
     { key: "acidResist", label: "Acid", format: (v) => formatNumber(v) },
     { key: "electricResist", label: "Electric", format: (v) => formatNumber(v) },
+    { key: "holyResist", label: "Holy", format: (v) => formatNumber(v) },
+    { key: "darkResist", label: "Dark", format: (v) => formatNumber(v) },
   ];
 
   let items = [];
@@ -269,6 +271,8 @@
         acid: fields.acid_resistance,
         poison: fields.poison_resistance,
         disease: fields.disease_resistance,
+        holy: fields.holy_resistance,
+        dark: fields.dark_resistance,
       },
       fireResist: fields.fire_resistance,
       poisonResist: fields.poison_resistance,
@@ -276,6 +280,8 @@
       diseaseResist: fields.disease_resistance,
       acidResist: fields.acid_resistance,
       electricResist: fields.lightning_resistance,
+      holyResist: fields.holy_resistance,
+      darkResist: fields.dark_resistance,
       stats: {
         strength: fields.strength,
         constitution: fields.constitution,
@@ -325,6 +331,8 @@
         ["disease", res.disease],
         ["acid", res.acid],
         ["electric", res.electric || res.lightning],
+        ["holy", res.holy],
+        ["dark", res.dark],
       ].forEach(([key, val]) => {
         if (val !== null && val !== undefined && Number(val) !== 0) {
           resistOptions.add(key);
@@ -342,6 +350,8 @@
       disease: "Disease",
       acid: "Acid",
       electric: "Electric",
+      holy: "Holy",
+      dark: "Dark",
     };
     const resistList = Array.from(resistOptions)
       .sort((a, b) => resistLabels[a].localeCompare(resistLabels[b]))
@@ -654,8 +664,9 @@
         makeResistEntry("fire", "Fire", res.fire),
         makeResistEntry("poison", "Poison", res.poison),
         makeResistEntry("cold", "Cold", res.cold),
+        makeResistEntry("holy", "Holy", res.holy),
       ],
-      3
+      4
     );
     addRow(
       container,
@@ -663,8 +674,9 @@
         makeResistEntry("disease", "Disease", res.disease),
         makeResistEntry("acid", "Acid", res.acid),
         makeResistEntry("electric", "Electric", res.lightning ?? res.electric),
+        makeResistEntry("dark", "Dark", res.dark),
       ],
-      3
+      4
     );
 
     addDivider(container);

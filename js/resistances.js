@@ -1,6 +1,6 @@
 (() => {
   const RESISTANCE_CAP = 60;
-  const RESISTANCES_SCHEMA_VERSION = 1;
+  const RESISTANCES_SCHEMA_VERSION = 2;
   const MONSTERS_SCHEMA_VERSION = 3;
   const MONSTER_TYPE_ORDER = Object.freeze([
     "humanoid",

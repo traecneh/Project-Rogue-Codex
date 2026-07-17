@@ -42,6 +42,8 @@
   --resist-cold: #7cc9ff;
   --resist-acid: #b38b00;
   --resist-disease: #ff9c42;
+  --resist-holy: #f2d36b;
+  --resist-dark: #a88cff;
 
   /* Nav section dot colors */
   --nav-dot-default: #ffd65a;

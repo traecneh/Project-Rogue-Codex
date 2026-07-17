@@ -246,6 +246,14 @@
   color: var(--resist-disease);
 }
 
+.resistance-element-holy {
+  color: var(--resist-holy);
+}
+
+.resistance-element-dark {
+  color: var(--resist-dark);
+}
+
 .resistance-context-card {
   padding: 0.85rem;
 }

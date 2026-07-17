@@ -188,8 +188,8 @@ class PackedJsonMapperTests(unittest.TestCase):
         self.assertEqual(9, fields["unknown_78"])
         self.assertEqual(1, fields["unknown_34"])
         self.assertEqual(2, fields["unknown_35"])
-        self.assertEqual(2, fields["unknown_88"])
-        self.assertEqual(3, fields["unknown_89"])
+        self.assertEqual(2, fields["holy_resistance"])
+        self.assertEqual(3, fields["dark_resistance"])
         self.assertEqual(10, fields["frame_1_x"])
         self.assertEqual(16, fields["frame_1_width"])
         self.assertEqual(0, fields["frame_2_width"])
@@ -258,8 +258,8 @@ class PackedJsonMapperTests(unittest.TestCase):
         self.assertEqual(1, fields["weight"])
         self.assertEqual(0, fields["unknown_30"])
         self.assertEqual(1, fields["unknown_31"])
-        self.assertEqual(1, fields["unknown_81"])
-        self.assertEqual(2, fields["unknown_85"])
+        self.assertEqual(1, fields["holy_resistance"])
+        self.assertEqual(2, fields["dark_resistance"])
 
     def test_maps_monster_json_preserving_site_ids_by_name_level_and_type(self):
         from tools.codex_pipeline.packed_json import map_packed_json_target
