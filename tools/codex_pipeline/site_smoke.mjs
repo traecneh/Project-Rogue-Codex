@@ -2353,6 +2353,24 @@ async function assertResistanceCalculator(page) {
       throw new Error(`Humanoid resistance card missing "${expected}": "${humanoidText}"`);
     }
   }
+  const resistanceGroupElements = async (type, group) =>
+    page
+      .locator(`[data-resistance-type-card="${type}"] [data-resistance-group="${group}"] .resistance-element`)
+      .evaluateAll((elements) => elements.map((element) => element.textContent.trim()));
+  const expectedGroupOrders = [
+    ["humanoid", "weakness", ["Dark", "Poison", "Disease", "Acid"]],
+    ["undead", "weakness", ["Holy", "Fire", "Electric"]],
+    ["demon", "weakness", ["Cold", "Holy", "Electric"]],
+    ["demon", "resistance", ["Fire", "Dark"]],
+  ];
+  for (const [type, group, expectedOrder] of expectedGroupOrders) {
+    const actualOrder = await resistanceGroupElements(type, group);
+    if (JSON.stringify(actualOrder) !== JSON.stringify(expectedOrder)) {
+      throw new Error(
+        `Expected ${type} ${group} order ${expectedOrder.join(", ")}, got ${actualOrder.join(", ")}`
+      );
+    }
+  }
 
   let state = await readResistanceCalculatorState(page);
   for (const [key, expected] of Object.entries({

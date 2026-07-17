@@ -30,6 +30,15 @@
     { key: "neutral", label: "Neutral" },
     { key: "resistance", label: "Resistant To" },
   ]);
+  const ELEMENT_SORT_ORDER = Object.freeze(
+    ["Fire", "Electric", "Poison", "Cold", "Acid", "Disease", "Holy", "Dark"].reduce(
+      (acc, element, index) => {
+        acc[element.toLowerCase()] = index;
+        return acc;
+      },
+      {}
+    )
+  );
 
   const utils = window.RogueCodexUtils || {};
   const fetchJsonCached =
@@ -169,6 +178,31 @@
       .replace(/[^a-z0-9]+/g, "-");
   }
 
+  function getElementSortRank(element) {
+    const key = String(element || "").trim().toLowerCase();
+    return Object.prototype.hasOwnProperty.call(ELEMENT_SORT_ORDER, key)
+      ? ELEMENT_SORT_ORDER[key]
+      : Number.MAX_SAFE_INTEGER;
+  }
+
+  function sortResistanceEntries(groupKey, entries) {
+    return [...entries].sort((a, b) => {
+      const aValue = Number(a.value);
+      const bValue = Number(b.value);
+
+      if (groupKey === "weakness" && aValue !== bValue) {
+        return bValue - aValue;
+      }
+      if (groupKey === "resistance" && aValue !== bValue) {
+        return aValue - bValue;
+      }
+
+      const rankDelta = getElementSortRank(a.element) - getElementSortRank(b.element);
+      if (rankDelta !== 0) return rankDelta;
+      return String(a.element || "").localeCompare(String(b.element || ""));
+    });
+  }
+
   function renderMonsterTypeResistances(data, root = document) {
     const grid = root.querySelector("[data-resistance-type-grid]");
     if (!grid) return;
@@ -211,7 +245,7 @@
     STATE_ORDER.forEach((group) => {
       const groupEntries = entries.filter((entry) => getResistanceState(Number(entry.value)) === group.key);
       if (!groupEntries.length) return;
-      card.appendChild(createResistanceGroup(group, groupEntries));
+      card.appendChild(createResistanceGroup(group, sortResistanceEntries(group.key, groupEntries)));
     });
     return card;
   }
