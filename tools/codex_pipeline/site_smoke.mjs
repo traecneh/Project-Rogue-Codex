@@ -1536,6 +1536,21 @@ async function assertLevelXpWidget(page) {
     throw new Error(`Level XP chart expected 105 rows, found ${rowCount}`);
   }
 
+  for (const [level, expectedTotal, expectedDelta] of [
+    [1, "2,000", "(2,000)"],
+    [5, "10,000", "(2,000)"],
+    [95, "214,500,000", "(6,588,000)"],
+    [100, "250,000,000", "(7,100,000)"],
+    [105, "5,000,000,000", "(2,500,000,000)"],
+  ]) {
+    const rowText = (await page.locator("#level-xp-chart .weight-row").nth(level - 1).textContent()).trim();
+    for (const expected of [`Lvl ${level}`, expectedTotal, expectedDelta]) {
+      if (!rowText.includes(expected)) {
+        throw new Error(`Level ${level} XP row missing "${expected}": "${rowText}"`);
+      }
+    }
+  }
+
   let state = await readLevelXpState(page);
   for (const [key, expected] of Object.entries({
     damage: "100",
@@ -1666,6 +1681,21 @@ async function assertSkillsRequirementWidget(page) {
   const rowCount = await page.locator("#skill-xp-chart .weight-row").count();
   if (rowCount !== 111) {
     throw new Error(`Skills XP chart expected 111 rows, found ${rowCount}`);
+  }
+
+  for (const [level, expectedTotal, expectedDelta] of [
+    [0, "0", null],
+    [5, "375", "(75)"],
+    [95, "21,250,000", "(787,500)"],
+    [100, "25,000,000", "(750,000)"],
+    [110, "75,000,000", "(12,700,000)"],
+  ]) {
+    const rowText = (await page.locator("#skill-xp-chart .weight-row").nth(level).textContent()).trim();
+    for (const expected of [`Lvl ${level}`, expectedTotal, expectedDelta].filter(Boolean)) {
+      if (!rowText.includes(expected)) {
+        throw new Error(`Skill ${level} XP row missing "${expected}": "${rowText}"`);
+      }
+    }
   }
 
   let state = await readSkillsRequirementState(page);

@@ -2137,7 +2137,11 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(".level-chart-card", css)
         self.assertIn(".level-link-grid", css)
 
+        self.assertIn("const LEVEL_XP_BANDS", script)
         self.assertIn("const LEVEL_XP_TOTALS", script)
+        self.assertIn("[91, 95, 6588000]", script)
+        self.assertIn("[105, 105, 2500000000]", script)
+        self.assertIn("function buildXpTotals", script)
         self.assertIn("function initLevelXpWidget", script)
         self.assertIn("function renderLevelChart", script)
         self.assertIn("function renderLevelMilestones", script)
@@ -2232,7 +2236,11 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(".skills-chart-card", css)
         self.assertIn(".skills-link-grid", css)
 
+        self.assertIn("const SKILL_XP_BANDS", script)
         self.assertIn("const SKILL_XP_TOTALS", script)
+        self.assertIn("[91, 95, 787500]", script)
+        self.assertIn("[110, 110, 12700000]", script)
+        self.assertIn("function buildXpTotals", script)
         self.assertIn("function initSkillRequirementWidget", script)
         self.assertIn("function renderSkillChart", script)
         self.assertIn("function renderSkillCurve", script)

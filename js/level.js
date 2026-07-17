@@ -1,28 +1,56 @@
 (function () {
-  const LEVEL_XP_TOTALS = Object.freeze([
-    0,
-    2000, 4000, 6000, 8000, 10000, 15000, 20000, 25000, 30000, 40000, 50000, 60000, 80000, 100000, 120000, 140000,
-    160000, 200000, 300000, 400000, 500000, 600000, 750000, 1000000, 1250000, 1500000, 1750000, 2000000, 2250000,
-    2500000, 2750000, 3000000, 3500000, 4000000, 4500000, 5000000, 5500000, 6000000, 7000000, 8000000, 9000000,
-    10000000, 11000000, 12000000, 13000000, 14000000, 15000000, 16000000, 17000000, 18000000, 19000000, 20000000,
-    21000000, 22000000, 23000000, 24000000, 26000000, 28000000, 30000000, 32000000, 34000000, 36000000, 38000000,
-    40000000, 42000000, 44000000, 46000000, 48000000, 51000000, 54000000, 57000000, 60000000, 63000000, 66000000,
-    69000000, 72000000, 75000000, 78000000, 81000000, 84000000, 87000000, 90000000, 93000000, 96000000, 100000000,
-    104000000, 108000000, 113000000, 118000000, 123000000, 128000000, 133000000, 138000000, 143000000, 148000000,
-    153000000, 160000000, 168000000, 178000000, 350000000, 700000000, 1050000000, 1400000000, 1750000000,
+  const LEVEL_XP_BANDS = Object.freeze([
+    [1, 5, 2000],
+    [6, 10, 5000],
+    [11, 15, 15000],
+    [16, 20, 40000],
+    [21, 25, 150000],
+    [26, 30, 250000],
+    [31, 35, 350000],
+    [36, 40, 600000],
+    [41, 45, 1000000],
+    [46, 50, 1550000],
+    [51, 55, 2100000],
+    [56, 60, 2650000],
+    [61, 65, 3200000],
+    [66, 70, 3750000],
+    [71, 75, 4300000],
+    [76, 80, 4900000],
+    [81, 85, 5450000],
+    [86, 90, 6000000],
+    [91, 95, 6588000],
+    [96, 100, 7100000],
+    [101, 101, 150000000],
+    [102, 102, 350000000],
+    [103, 103, 650000000],
+    [104, 104, 1100000000],
+    [105, 105, 2500000000],
   ]);
+  const LEVEL_XP_TOTALS = Object.freeze(buildXpTotals(LEVEL_XP_BANDS));
   const MILESTONE_LEVELS = Object.freeze([1, 10, 25, 50, 75, 100, 105]);
+
+  function buildXpTotals(bands) {
+    const totals = [0];
+    let cumulative = 0;
+    bands.forEach(([start, end, xpPerLevel]) => {
+      for (let level = start; level <= end; level += 1) {
+        cumulative += xpPerLevel;
+        totals[level] = cumulative;
+      }
+    });
+    return totals;
+  }
 
   function formatNumber(value) {
     return Math.round(value).toLocaleString();
   }
 
   function getLevelTotal(level) {
-    return LEVEL_XP_TOTALS[level - 1] || 0;
+    return LEVEL_XP_TOTALS[level] || 0;
   }
 
   function getLevelDelta(level) {
-    if (level <= 1) return 0;
+    if (level <= 0) return 0;
     return getLevelTotal(level) - getLevelTotal(level - 1);
   }
 
@@ -32,9 +60,8 @@
     chart.textContent = "";
     const max = LEVEL_XP_TOTALS[LEVEL_XP_TOTALS.length - 1];
 
-    LEVEL_XP_TOTALS.forEach((total, index) => {
+    LEVEL_XP_TOTALS.slice(1).forEach((total, index) => {
       const level = index + 1;
-      if (level > 105) return;
       const delta = getLevelDelta(level);
 
       const row = document.createElement("div");
@@ -51,12 +78,10 @@
       const value = document.createElement("div");
       value.className = "weight-value";
       value.append(document.createTextNode(formatNumber(total)));
-      if (level > 1) {
-        value.append(document.createElement("br"));
-        const deltaLabel = document.createElement("span");
-        deltaLabel.textContent = `(${formatNumber(delta)})`;
-        value.append(deltaLabel);
-      }
+      value.append(document.createElement("br"));
+      const deltaLabel = document.createElement("span");
+      deltaLabel.textContent = `(${formatNumber(delta)})`;
+      value.append(deltaLabel);
 
       row.append(label, bar, value);
       chart.append(row);
@@ -77,8 +102,8 @@
     ctx.strokeStyle = "#5ab0ff";
     ctx.lineWidth = 2;
     ctx.beginPath();
-    LEVEL_XP_TOTALS.forEach((total, index) => {
-      const x = padding + (width * index) / (LEVEL_XP_TOTALS.length - 1);
+    LEVEL_XP_TOTALS.slice(1).forEach((total, index) => {
+      const x = padding + (width * index) / (LEVEL_XP_TOTALS.length - 2);
       const y = padding + height - (total / max) * height;
       if (index === 0) ctx.moveTo(x, y);
       else ctx.lineTo(x, y);
@@ -106,16 +131,13 @@
 
       const label = document.createElement("p");
       label.className = "stat-label";
-      label.textContent = level === 1 ? "Starting Level" : "Milestone";
+      label.textContent = "Milestone";
 
       const heading = document.createElement("h3");
       heading.textContent = `Level ${level}`;
 
       const copy = document.createElement("p");
-      copy.textContent =
-        level === 1
-          ? "0 total XP."
-          : `${formatNumber(total)} total XP, +${formatNumber(delta)} from the previous level.`;
+      copy.textContent = `${formatNumber(total)} cumulative XP, +${formatNumber(delta)} for this level.`;
 
       card.append(label, heading, copy);
       container.append(card);
