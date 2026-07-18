@@ -1,6 +1,4 @@
 .level-summary-grid,
-.level-output-grid,
-.level-milestone-grid,
 .level-link-grid {
   display: grid;
   gap: 0.75rem;
@@ -10,100 +8,89 @@
   grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
 }
 
-.level-xp-widget,
 .level-chart-card {
   border: 1px solid var(--border-soft);
   border-radius: 8px;
   background: var(--bg-panel-dark);
 }
 
-.level-xp-widget {
-  display: grid;
-  gap: 0.9rem;
-  padding: 1rem;
-}
-
-.level-control-row {
-  display: grid;
-  gap: 0.45rem;
-}
-
-.level-control-row label {
-  color: var(--text-main);
-  font-weight: 700;
-}
-
-.level-control-row input[type="range"] {
-  width: 100%;
-}
-
-.level-boost-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.level-boost-button {
-  border: 1px solid var(--border-soft);
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--text-main);
-  cursor: pointer;
-  font-weight: 700;
-  padding: 0.55rem 0.75rem;
-  transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease;
-}
-
-.level-boost-button:hover,
-.level-boost-button:focus-visible,
-.level-boost-button[aria-pressed="true"] {
-  border-color: var(--accent);
-  background: rgba(75, 255, 75, 0.12);
-  color: var(--accent);
-}
-
-.level-output-grid {
-  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-}
-
-.level-milestone-grid {
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-}
-
-.level-milestone-card {
-  border: 1px solid var(--border-soft);
-  border-radius: 8px;
-  background: var(--bg-panel-dark);
-  padding: 0.8rem;
-}
-
-.level-milestone-card h3 {
-  margin: 0.2rem 0 0.45rem;
-}
-
-.level-milestone-card p {
-  margin: 0;
-  color: var(--text-muted);
-}
-
 .level-chart-card {
-  padding: 0.75rem;
+  padding: 0.85rem;
+}
+
+.level-curve-stage {
+  position: relative;
+  min-width: 0;
 }
 
 .level-xp-canvas {
   display: block;
   width: 100%;
-  height: 140px;
+  height: 240px;
+  cursor: crosshair;
+  outline: none;
+  touch-action: pan-y;
 }
 
-.level-chart-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  justify-content: space-between;
-  margin: 0.35rem 0 0.65rem;
+.level-xp-canvas:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+.level-curve-tooltip {
+  position: absolute;
+  z-index: 3;
+  display: grid;
+  gap: 0.2rem;
+  width: max-content;
+  max-width: min(220px, calc(100% - 12px));
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: rgba(12, 17, 24, 0.97);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.38);
+  pointer-events: none;
+  transform: translate(-50%, calc(-100% - 10px));
+}
+
+.level-curve-tooltip[hidden] {
+  display: none;
+}
+
+.level-curve-tooltip.is-below {
+  transform: translate(-50%, 10px);
+}
+
+.level-curve-tooltip strong {
+  color: var(--text-main);
+}
+
+.level-curve-tooltip span {
   color: var(--text-muted);
   font-size: 0.85rem;
+}
+
+.level-curve-readout {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 0.75rem;
+  border-top: 1px solid var(--border-soft);
+}
+
+.level-curve-metric {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+  padding: 0.75rem;
+}
+
+.level-curve-metric + .level-curve-metric {
+  border-left: 1px solid var(--border-soft);
+}
+
+.level-curve-metric strong {
+  overflow-wrap: anywhere;
+  color: var(--text-main);
+  font-size: 1rem;
 }
 
 .level-link-grid {
@@ -126,7 +113,16 @@
 }
 
 @media (max-width: 560px) {
-  .level-boost-button {
-    width: 100%;
+  .level-xp-canvas {
+    height: 210px;
+  }
+
+  .level-curve-readout {
+    grid-template-columns: 1fr;
+  }
+
+  .level-curve-metric + .level-curve-metric {
+    border-top: 1px solid var(--border-soft);
+    border-left: 0;
   }
 }

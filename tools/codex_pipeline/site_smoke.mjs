@@ -192,7 +192,7 @@ async function main() {
     }
     try {
       await runLevelSpec(browser, baseUrl);
-      console.log("SMOKE OK level: XP rules, calculator, milestones, related links");
+      console.log("SMOKE OK level: XP rules, interactive curve, related links");
     } catch (error) {
       failures.push(`SMOKE ERROR level: ${formatError(error)}`);
     }
@@ -1480,13 +1480,11 @@ async function runLevelSpec(browser, baseUrl) {
 
   try {
     await page.goto(joinUrl(baseUrl, "/pages/stats/level.html"), { waitUntil: "load" });
-    await page.locator(".level-xp-widget").waitFor({ state: "visible" });
+    await page.locator(".level-chart-card").waitFor({ state: "visible" });
     const pageText = (await page.locator(".main-content").textContent()).trim();
     for (const expected of [
       "Level at a Glance",
-      "Damage to XP Preview",
-      "Milestone Reference",
-      "Level XP Requirements",
+      "Level XP Curve",
       "Related Pages",
       "Level 105",
       "1:1 Damage",
@@ -1513,7 +1511,7 @@ async function runLevelSpec(browser, baseUrl) {
       }
     }
 
-    await assertLevelXpWidget(page);
+    await assertLevelCurve(page);
     await assertMobilePageFirstNavigation(page, baseUrl, "/pages/stats/level.html");
 
     if (runtimeErrors.length) {
@@ -1524,100 +1522,81 @@ async function runLevelSpec(browser, baseUrl) {
   }
 }
 
-async function assertLevelXpWidget(page) {
-  await page.locator(".level-milestone-card").first().waitFor({ state: "visible" });
+async function assertLevelCurve(page) {
   const milestoneCount = await page.locator(".level-milestone-card").count();
-  if (milestoneCount !== 7) {
-    throw new Error(`Level page expected 7 milestone cards, found ${milestoneCount}`);
+  if (milestoneCount !== 0) {
+    throw new Error(`Level page expected no milestone cards, found ${milestoneCount}`);
   }
 
   const rowCount = await page.locator("#level-xp-chart .weight-row").count();
-  if (rowCount !== 105) {
-    throw new Error(`Level XP chart expected 105 rows, found ${rowCount}`);
+  if (rowCount !== 0) {
+    throw new Error(`Level XP page expected no long-form rows, found ${rowCount}`);
   }
 
-  for (const [level, expectedTotal, expectedDelta] of [
-    [1, "2,000", "(2,000)"],
-    [5, "10,000", "(2,000)"],
-    [95, "214,500,000", "(6,588,000)"],
-    [100, "250,000,000", "(7,100,000)"],
-    [105, "5,000,000,000", "(2,500,000,000)"],
-  ]) {
-    const rowText = (await page.locator("#level-xp-chart .weight-row").nth(level - 1).textContent()).trim();
-    for (const expected of [`Lvl ${level}`, expectedTotal, expectedDelta]) {
-      if (!rowText.includes(expected)) {
-        throw new Error(`Level ${level} XP row missing "${expected}": "${rowText}"`);
-      }
-    }
-  }
-
-  let state = await readLevelXpState(page);
+  await page.locator("#level-xp-curve").waitFor({ state: "visible" });
+  let curveState = await readLevelCurveState(page);
   for (const [key, expected] of Object.entries({
-    damage: "100",
-    base: "100",
-    boosts: "0",
-    multiplier: "1x",
-    total: "100",
+    level: "Level 100",
+    total: "250,000,000",
+    delta: "7,100,000",
+    ariaLevel: "100",
   })) {
-    if (state[key] !== expected) {
-      throw new Error(`Level XP widget expected ${key}="${expected}", got "${state[key]}"`);
+    if (curveState[key] !== expected) {
+      throw new Error(`Level curve expected ${key}="${expected}", got "${curveState[key]}"`);
     }
   }
 
-  await setLevelDamage(page, 250);
+  await page.locator("#level-xp-curve").focus();
+  await page.locator("#level-xp-curve").press("End");
   await page.waitForFunction(
-    () => document.querySelector("[data-level-total-xp]")?.textContent?.trim() === "250",
+    () => document.querySelector("[data-level-curve-level]")?.textContent?.trim() === "Level 105",
     undefined,
     { timeout: timeoutMs }
   );
-
-  await page.locator('[data-level-boost="pool"]').click();
-  await page.waitForFunction(
-    () => document.querySelector("[data-level-total-xp]")?.textContent?.trim() === "500",
-    undefined,
-    { timeout: timeoutMs }
-  );
-  state = await readLevelXpState(page);
-  if (state.multiplier !== "2x" || state.boosts !== "1") {
-    throw new Error(`Level XP widget expected one active boost after pool click: ${JSON.stringify(state)}`);
+  curveState = await readLevelCurveState(page);
+  if (curveState.total !== "5,000,000,000" || curveState.delta !== "2,500,000,000") {
+    throw new Error(`Level 105 curve values are incorrect: ${JSON.stringify(curveState)}`);
   }
 
-  await page.locator('[data-level-boost="catchup"]').click();
+  await page.locator("#level-xp-curve").press("Home");
   await page.waitForFunction(
-    () => document.querySelector("[data-level-total-xp]")?.textContent?.trim() === "750",
+    () => document.querySelector("[data-level-curve-level]")?.textContent?.trim() === "Level 1",
     undefined,
     { timeout: timeoutMs }
   );
+  curveState = await readLevelCurveState(page);
+  if (curveState.total !== "2,000" || curveState.delta !== "2,000") {
+    throw new Error(`Level 1 curve values are incorrect: ${JSON.stringify(curveState)}`);
+  }
 
-  await page.locator('[data-level-boost="pool"]').click();
+  await page.locator("#level-xp-curve").evaluate((canvas) => {
+    const rect = canvas.getBoundingClientRect();
+    const internalX = 58 + ((canvas.width - 58 - 14) * (75 - 1)) / (105 - 1);
+    const clientX = rect.left + (internalX / canvas.width) * rect.width;
+    canvas.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, clientX, clientY: rect.top + rect.height / 2 }));
+  });
   await page.waitForFunction(
-    () => document.querySelector("[data-level-total-xp]")?.textContent?.trim() === "500",
+    () => document.querySelector("[data-level-curve-level]")?.textContent?.trim() === "Level 75",
     undefined,
     { timeout: timeoutMs }
   );
-  state = await readLevelXpState(page);
-  if (state.poolPressed !== "false" || state.catchupPressed !== "true" || state.multiplier !== "2x") {
-    throw new Error(`Level XP widget did not preserve toggle state correctly: ${JSON.stringify(state)}`);
+  curveState = await readLevelCurveState(page);
+  if (curveState.total !== "99,810,000" || curveState.delta !== "4,300,000" || !curveState.tooltipVisible) {
+    throw new Error(`Level 75 pointer inspection failed: ${JSON.stringify(curveState)}`);
   }
 }
 
-async function setLevelDamage(page, value) {
-  await page.locator("[data-level-damage-slider]").evaluate((input, nextValue) => {
-    input.value = String(nextValue);
-    input.dispatchEvent(new Event("input", { bubbles: true }));
-  }, value);
-}
-
-async function readLevelXpState(page) {
-  return await page.evaluate(() => ({
-    base: document.querySelector("[data-level-base-xp]")?.textContent?.trim() || "",
-    boosts: document.querySelector("[data-level-boost-count]")?.textContent?.trim() || "",
-    catchupPressed: document.querySelector('[data-level-boost="catchup"]')?.getAttribute("aria-pressed") || "",
-    damage: document.querySelector("[data-level-damage-value]")?.textContent?.trim() || "",
-    multiplier: document.querySelector("[data-level-multiplier]")?.textContent?.trim() || "",
-    poolPressed: document.querySelector('[data-level-boost="pool"]')?.getAttribute("aria-pressed") || "",
-    total: document.querySelector("[data-level-total-xp]")?.textContent?.trim() || "",
-  }));
+async function readLevelCurveState(page) {
+  return await page.evaluate(() => {
+    const tooltip = document.querySelector("[data-level-curve-tooltip]");
+    return {
+      ariaLevel: document.querySelector("#level-xp-curve")?.getAttribute("aria-valuenow") || "",
+      delta: document.querySelector("[data-level-curve-delta]")?.textContent?.trim() || "",
+      level: document.querySelector("[data-level-curve-level]")?.textContent?.trim() || "",
+      tooltipVisible: Boolean(tooltip && !tooltip.hidden),
+      total: document.querySelector("[data-level-curve-total]")?.textContent?.trim() || "",
+    };
+  });
 }
 
 async function runSkillsSpec(browser, baseUrl) {

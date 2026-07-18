@@ -13,17 +13,17 @@
     <link rel="icon" type="image/png" sizes="64x64" href="images/project-rogue-favicon-64.png" />
     <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
-    <link rel="stylesheet" href="css/styles.css?v=codex-2026-07-17-xp" />
-    <link rel="stylesheet" href="css/level.css?v=codex-2026-07-17-xp" />
-    <script src="js/site-search.js?v=codex-2026-07-17-xp" defer></script>
-    <script src="js/weapon-specialty.js?v=codex-2026-07-17-xp" defer></script>
-    <script src="js/stat-widgets.js?v=codex-2026-07-17-xp" defer></script>
-    <script src="js/keyword-links.js?v=codex-2026-07-17-xp" defer></script>
-    <script src="js/cursor-toggle.js?v=codex-2026-07-17-xp" defer></script>
-    <script src="js/perks.js?v=codex-2026-07-17-xp" defer></script>
-    <script src="js/rarity-roller.js?v=codex-2026-07-17-xp" defer></script>
-    <script src="js/nav-core.js?v=codex-2026-07-17-xp" defer></script>
-    <script src="js/level.js?v=codex-2026-07-17-xp" defer></script>
+    <link rel="stylesheet" href="css/styles.css?v=codex-2026-07-18-level" />
+    <link rel="stylesheet" href="css/level.css?v=codex-2026-07-18-level" />
+    <script src="js/site-search.js?v=codex-2026-07-18-level" defer></script>
+    <script src="js/weapon-specialty.js?v=codex-2026-07-18-level" defer></script>
+    <script src="js/stat-widgets.js?v=codex-2026-07-18-level" defer></script>
+    <script src="js/keyword-links.js?v=codex-2026-07-18-level" defer></script>
+    <script src="js/cursor-toggle.js?v=codex-2026-07-18-level" defer></script>
+    <script src="js/perks.js?v=codex-2026-07-18-level" defer></script>
+    <script src="js/rarity-roller.js?v=codex-2026-07-18-level" defer></script>
+    <script src="js/nav-core.js?v=codex-2026-07-18-level" defer></script>
+    <script src="js/level.js?v=codex-2026-07-18-level" defer></script>
   </head>
   <body>
     <div class="layout">
@@ -63,72 +63,44 @@
           </div>
         </article>
 
-        <article class="content-section" id="level-xp-preview">
-          <h2>Damage to XP Preview</h2>
-          <p>Set a damage value and toggle the XP sources that apply to see the total XP award.</p>
-
-          <div class="level-xp-widget">
-            <div class="level-control-row">
-              <label for="level-damage-slider">Damage: <span data-level-damage-value>100</span></label>
-              <input
-                type="range"
-                id="level-damage-slider"
-                min="1"
-                max="2000"
-                value="100"
-                data-level-damage-slider
-              />
-            </div>
-
-            <div class="level-boost-row" aria-label="XP boost toggles">
-              <button class="level-boost-button" type="button" data-level-boost="pool" aria-pressed="false">
-                Experience Pool
-              </button>
-              <button class="level-boost-button" type="button" data-level-boost="catchup" aria-pressed="false">
-                Catch-Up
-              </button>
-              <button class="level-boost-button" type="button" data-level-boost="event" aria-pressed="false">
-                Weekend / Event
-              </button>
-            </div>
-
-            <div class="level-output-grid" aria-live="polite">
-              <div class="stat-output">
-                <span class="stat-output-label">Base XP</span>
-                <span class="stat-output-value" data-level-base-xp>100</span>
-              </div>
-              <div class="stat-output">
-                <span class="stat-output-label">Active Boosts</span>
-                <span class="stat-output-value" data-level-boost-count>0</span>
-              </div>
-              <div class="stat-output">
-                <span class="stat-output-label">Multiplier</span>
-                <span class="stat-output-value" data-level-multiplier>1x</span>
-              </div>
-              <div class="stat-output">
-                <span class="stat-output-label">Total XP</span>
-                <span class="stat-output-value" data-level-total-xp>100</span>
-              </div>
-            </div>
-          </div>
-        </article>
-
-        <article class="content-section" id="level-milestones">
-          <h2>Milestone Reference</h2>
-          <p>Key breakpoints show cumulative XP through that level and the XP assigned to the level.</p>
-          <div class="level-milestone-grid" data-level-milestones></div>
-        </article>
-
         <article class="content-section" id="level-requirements">
-          <h2>Level XP Requirements</h2>
-          <p>Bars show cumulative XP through each level. Values in parentheses are that level's XP requirement.</p>
+          <h2>Level XP Curve</h2>
+          <p>Cumulative Player XP across all 105 levels.</p>
           <div class="level-chart-card">
-            <canvas id="level-xp-curve" class="level-xp-canvas" width="800" height="140" aria-label="Level XP curve"></canvas>
-            <div class="level-chart-legend">
-              <span>Cumulative XP through level</span>
-              <span>(XP assigned to level)</span>
+            <div class="level-curve-stage">
+              <canvas
+                id="level-xp-curve"
+                class="level-xp-canvas"
+                width="900"
+                height="260"
+                tabindex="0"
+                role="slider"
+                aria-label="Level XP curve. Use the left and right arrow keys to inspect levels."
+                aria-orientation="horizontal"
+                aria-valuemin="1"
+                aria-valuemax="105"
+                aria-valuenow="100"
+              ></canvas>
+              <div class="level-curve-tooltip" data-level-curve-tooltip role="tooltip" hidden>
+                <strong data-level-curve-tooltip-level>Level 100</strong>
+                <span data-level-curve-tooltip-total>250,000,000 cumulative XP</span>
+                <span data-level-curve-tooltip-delta>7,100,000 XP for this level</span>
+              </div>
             </div>
-            <div class="weight-chart level-xp-chart" id="level-xp-chart"></div>
+            <div class="level-curve-readout" aria-live="polite">
+              <div class="level-curve-metric">
+                <span class="stat-output-label">Selected Level</span>
+                <strong data-level-curve-level>Level 100</strong>
+              </div>
+              <div class="level-curve-metric">
+                <span class="stat-output-label">Cumulative XP</span>
+                <strong data-level-curve-total>250,000,000</strong>
+              </div>
+              <div class="level-curve-metric">
+                <span class="stat-output-label">XP for This Level</span>
+                <strong data-level-curve-delta>7,100,000</strong>
+              </div>
+            </div>
           </div>
         </article>
 

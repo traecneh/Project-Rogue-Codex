@@ -2110,18 +2110,18 @@ class SiteValidationTests(unittest.TestCase):
 
         for expected in [
             "Level at a Glance",
-            "Damage to XP Preview",
-            "Milestone Reference",
-            "Level XP Requirements",
+            "Level XP Curve",
             "Related Pages",
             "Level 105",
             "1:1 Damage",
             "Experience Pool",
             "Catch-Up",
             "Weekend / Event",
-            "data-level-damage-slider",
-            "data-level-total-xp",
-            "data-level-multiplier",
+            "data-level-curve-tooltip",
+            "data-level-curve-level",
+            "data-level-curve-total",
+            "data-level-curve-delta",
+            'role="slider"',
             "pages/systems/experience.html",
             "pages/General/build-planner.html",
             "pages/systems/monster-damage-reduction.html",
@@ -2131,10 +2131,17 @@ class SiteValidationTests(unittest.TestCase):
         ]:
             self.assertIn(expected, html)
 
+        self.assertNotIn("Milestone Reference", html)
+        self.assertNotIn("level-xp-chart", html)
+        self.assertNotIn("Damage to XP Preview", html)
+        self.assertNotIn("data-level-damage-slider", html)
+
         self.assertIn(".level-summary-grid", css)
-        self.assertIn(".level-xp-widget", css)
-        self.assertIn(".level-milestone-grid", css)
         self.assertIn(".level-chart-card", css)
+        self.assertIn(".level-curve-stage", css)
+        self.assertIn(".level-curve-tooltip", css)
+        self.assertIn(".level-curve-readout", css)
+        self.assertIn(".level-curve-metric", css)
         self.assertIn(".level-link-grid", css)
 
         self.assertIn("const LEVEL_XP_BANDS", script)
@@ -2142,10 +2149,63 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn("[91, 95, 6588000]", script)
         self.assertIn("[105, 105, 2500000000]", script)
         self.assertIn("function buildXpTotals", script)
-        self.assertIn("function initLevelXpWidget", script)
-        self.assertIn("function renderLevelChart", script)
-        self.assertIn("function renderLevelMilestones", script)
+        self.assertIn("function drawLevelCurve", script)
+        self.assertIn("function initLevelCurve", script)
+        self.assertNotIn("function initLevelXpWidget", script)
+        self.assertNotIn("function renderLevelChart", script)
+        self.assertNotIn("function renderLevelMilestones", script)
         self.assertIn('document.addEventListener("DOMContentLoaded"', script)
+
+    def test_player_xp_bands_match_published_cumulative_totals(self):
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        script = (REPO_ROOT / "js" / "level.js").read_text(encoding="utf-8")
+        bands_match = re.search(
+            r"const LEVEL_XP_BANDS = Object\.freeze\(\[([\s\S]*?)\n  \]\);",
+            script,
+        )
+        self.assertIsNotNone(bands_match)
+        bands = [
+            tuple(int(value) for value in match.groups())
+            for match in re.finditer(r"\[(\d+),\s*(\d+),\s*(\d+)\]", bands_match.group(1))
+        ]
+        expected_cumulative = {
+            5: 10_000,
+            10: 35_000,
+            15: 110_000,
+            20: 310_000,
+            25: 1_060_000,
+            30: 2_310_000,
+            35: 4_060_000,
+            40: 7_060_000,
+            45: 12_060_000,
+            50: 19_810_000,
+            55: 30_310_000,
+            60: 43_560_000,
+            65: 59_560_000,
+            70: 78_310_000,
+            75: 99_810_000,
+            80: 124_310_000,
+            85: 151_560_000,
+            90: 181_560_000,
+            95: 214_500_000,
+            100: 250_000_000,
+            101: 400_000_000,
+            102: 750_000_000,
+            103: 1_400_000_000,
+            104: 2_500_000_000,
+            105: 5_000_000_000,
+        }
+
+        cumulative = 0
+        previous_end = 0
+        for start, end, xp_per_level in bands:
+            self.assertEqual(previous_end + 1, start)
+            cumulative += (end - start + 1) * xp_per_level
+            self.assertEqual(expected_cumulative[end], cumulative)
+            previous_end = end
+
+        self.assertEqual(105, previous_end)
 
     def test_skills_page_has_compact_melee_reference(self):
         from tools.codex_pipeline import cli
