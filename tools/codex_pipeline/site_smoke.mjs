@@ -192,13 +192,13 @@ async function main() {
     }
     try {
       await runLevelSpec(browser, baseUrl);
-      console.log("SMOKE OK level: XP rules, interactive curve, related links");
+      console.log("SMOKE OK level: summary cards, interactive curve, simplified layout");
     } catch (error) {
       failures.push(`SMOKE ERROR level: ${formatError(error)}`);
     }
     try {
       await runSkillsSpec(browser, baseUrl);
-      console.log("SMOKE OK skills: melee reference, requirement preview, XP chart, related links");
+      console.log("SMOKE OK skills: summary cards, interactive curve, Level 0 start");
     } catch (error) {
       failures.push(`SMOKE ERROR skills: ${formatError(error)}`);
     }
@@ -1483,9 +1483,7 @@ async function runLevelSpec(browser, baseUrl) {
     await page.locator(".level-chart-card").waitFor({ state: "visible" });
     const pageText = (await page.locator(".main-content").textContent()).trim();
     for (const expected of [
-      "Level at a Glance",
       "Level XP Curve",
-      "Related Pages",
       "Level 105",
       "1:1 Damage",
       "Experience Pool",
@@ -1497,18 +1495,14 @@ async function runLevelSpec(browser, baseUrl) {
       }
     }
 
-    for (const href of [
-      "pages/systems/experience.html",
-      "pages/General/build-planner.html",
-      "pages/systems/monster-damage-reduction.html",
-      "pages/items/weapons.html",
-      "pages/items/armors.html",
-      "pages/enemies/monsters.html",
-    ]) {
-      const count = await page.locator(`.level-link-grid a[href="${href}"]`).count();
-      if (count !== 1) {
-        throw new Error(`Level related link expected one "${href}", found ${count}`);
+    for (const removed of ["Level at a Glance", "Related Pages"]) {
+      if (pageText.includes(removed)) {
+        throw new Error(`Level page should not include removed section "${removed}".`);
       }
+    }
+    const linkGridCount = await page.locator(".level-link-grid").count();
+    if (linkGridCount !== 0) {
+      throw new Error(`Level page expected no related link grid, found ${linkGridCount}.`);
     }
 
     await assertLevelCurve(page);
@@ -1537,8 +1531,10 @@ async function assertLevelCurve(page) {
   let curveState = await readLevelCurveState(page);
   for (const [key, expected] of Object.entries({
     level: "Level 100",
-    total: "250,000,000",
-    delta: "7,100,000",
+    total: "242,900,000",
+    nextTotal: "250,000,000",
+    delta: "(+7,100,000)",
+    deltaLabel: "Next Level At",
     ariaLevel: "100",
   })) {
     if (curveState[key] !== expected) {
@@ -1554,7 +1550,12 @@ async function assertLevelCurve(page) {
     { timeout: timeoutMs }
   );
   curveState = await readLevelCurveState(page);
-  if (curveState.total !== "5,000,000,000" || curveState.delta !== "2,500,000,000") {
+  if (
+    curveState.total !== "2,500,000,000" ||
+    curveState.nextTotal !== "5,000,000,000" ||
+    curveState.delta !== "(+2,500,000,000)" ||
+    curveState.deltaLabel !== "Maximum XP"
+  ) {
     throw new Error(`Level 105 curve values are incorrect: ${JSON.stringify(curveState)}`);
   }
 
@@ -1565,8 +1566,26 @@ async function assertLevelCurve(page) {
     { timeout: timeoutMs }
   );
   curveState = await readLevelCurveState(page);
-  if (curveState.total !== "2,000" || curveState.delta !== "2,000") {
+  if (
+    curveState.total !== "0" ||
+    curveState.nextTotal !== "2,000" ||
+    curveState.delta !== "(+2,000)" ||
+    curveState.deltaLabel !== "Next Level At"
+  ) {
     throw new Error(`Level 1 curve values are incorrect: ${JSON.stringify(curveState)}`);
+  }
+
+  for (let step = 0; step < 4; step += 1) {
+    await page.locator("#level-xp-curve").press("ArrowRight");
+  }
+  curveState = await readLevelCurveState(page);
+  if (
+    curveState.level !== "Level 5" ||
+    curveState.total !== "8,000" ||
+    curveState.nextTotal !== "10,000" ||
+    curveState.delta !== "(+2,000)"
+  ) {
+    throw new Error(`Level 5 cumulative next-level preview is incorrect: ${JSON.stringify(curveState)}`);
   }
 
   await page.locator("#level-xp-curve").evaluate((canvas) => {
@@ -1581,7 +1600,12 @@ async function assertLevelCurve(page) {
     { timeout: timeoutMs }
   );
   curveState = await readLevelCurveState(page);
-  if (curveState.total !== "99,810,000" || curveState.delta !== "4,300,000" || !curveState.tooltipVisible) {
+  if (
+    curveState.total !== "95,510,000" ||
+    curveState.nextTotal !== "99,810,000" ||
+    curveState.delta !== "(+4,300,000)" ||
+    !curveState.tooltipVisible
+  ) {
     throw new Error(`Level 75 pointer inspection failed: ${JSON.stringify(curveState)}`);
   }
 }
@@ -1592,7 +1616,9 @@ async function readLevelCurveState(page) {
     return {
       ariaLevel: document.querySelector("#level-xp-curve")?.getAttribute("aria-valuenow") || "",
       delta: document.querySelector("[data-level-curve-delta]")?.textContent?.trim() || "",
+      deltaLabel: document.querySelector("[data-level-curve-delta-label]")?.textContent?.trim() || "",
       level: document.querySelector("[data-level-curve-level]")?.textContent?.trim() || "",
+      nextTotal: document.querySelector("[data-level-curve-next-total]")?.textContent?.trim() || "",
       tooltipVisible: Boolean(tooltip && !tooltip.hidden),
       total: document.querySelector("[data-level-curve-total]")?.textContent?.trim() || "",
     };
@@ -1611,19 +1637,13 @@ async function runSkillsSpec(browser, baseUrl) {
 
   try {
     await page.goto(joinUrl(baseUrl, "/pages/stats/skills.html"), { waitUntil: "load" });
-    await page.locator(".skills-requirement-widget").waitFor({ state: "visible" });
+    await page.locator(".skills-chart-card").waitFor({ state: "visible" });
     const pageText = (await page.locator(".main-content").textContent()).trim();
     for (const expected of [
-      "Skills at a Glance",
-      "Melee Skill Set",
-      "Requirement Preview",
-      "Skill XP Requirements",
-      "Related Pages",
-      "Large Blades",
-      "Axes",
-      "Blunts",
-      "Polearms",
-      "Small Blades",
+      "Skill XP Curve",
+      "Five Melee Skills",
+      "Base Max",
+      "+10 Above Cap",
       "Race bonuses do not count toward equipment requirements",
     ]) {
       if (!pageText.includes(expected)) {
@@ -1631,21 +1651,18 @@ async function runSkillsSpec(browser, baseUrl) {
       }
     }
 
-    for (const href of [
-      "pages/stats/races.html",
-      "pages/General/build-planner.html",
-      "pages/items/weapons.html",
-      "pages/items/armors.html",
-      "pages/stats/level.html",
-      "pages/systems/experience.html",
-    ]) {
-      const count = await page.locator(`.skills-link-grid a[href="${href}"]`).count();
-      if (count !== 1) {
-        throw new Error(`Skills related link expected one "${href}", found ${count}`);
+    for (const removed of ["Skills at a Glance", "Melee Skill Set", "Requirement Preview", "Related Pages"]) {
+      if (pageText.includes(removed)) {
+        throw new Error(`Skills page should not include removed section "${removed}".`);
       }
     }
 
-    await assertSkillsRequirementWidget(page);
+    const oldRowCount = await page.locator("#skill-xp-chart .weight-row").count();
+    if (oldRowCount !== 0) {
+      throw new Error(`Skills page expected no long-form XP rows, found ${oldRowCount}.`);
+    }
+
+    await assertSkillCurve(page);
     await assertMobilePageFirstNavigation(page, baseUrl, "/pages/stats/skills.html");
 
     if (runtimeErrors.length) {
@@ -1656,85 +1673,82 @@ async function runSkillsSpec(browser, baseUrl) {
   }
 }
 
-async function assertSkillsRequirementWidget(page) {
-  const rowCount = await page.locator("#skill-xp-chart .weight-row").count();
-  if (rowCount !== 111) {
-    throw new Error(`Skills XP chart expected 111 rows, found ${rowCount}`);
-  }
-
-  for (const [level, expectedTotal, expectedDelta] of [
-    [0, "0", null],
-    [5, "375", "(75)"],
-    [95, "21,250,000", "(787,500)"],
-    [100, "25,000,000", "(750,000)"],
-    [110, "75,000,000", "(12,700,000)"],
-  ]) {
-    const rowText = (await page.locator("#skill-xp-chart .weight-row").nth(level).textContent()).trim();
-    for (const expected of [`Lvl ${level}`, expectedTotal, expectedDelta].filter(Boolean)) {
-      if (!rowText.includes(expected)) {
-        throw new Error(`Skill ${level} XP row missing "${expected}": "${rowText}"`);
-      }
-    }
-  }
-
-  let state = await readSkillsRequirementState(page);
+async function assertSkillCurve(page) {
+  await page.locator("#skill-xp-curve").waitFor({ state: "visible" });
+  let state = await readSkillCurveState(page);
   for (const [key, expected] of Object.entries({
-    base: "80",
-    effective: "80",
-    requirement: "90",
-    status: "Requirement unmet",
+    level: "Level 100",
+    total: "25,000,000",
+    nextTotal: "26,500,000",
+    nextIncrement: "(+1,500,000)",
+    nextLabel: "Next Level At",
+    ariaLevel: "100",
   })) {
     if (state[key] !== expected) {
-      throw new Error(`Skills requirement widget expected ${key}="${expected}", got "${state[key]}"`);
+      throw new Error(`Skill curve expected ${key}="${expected}", got "${state[key]}"`);
     }
   }
 
-  await page.locator("[data-skill-race-toggle]").click();
+  await page.locator("#skill-xp-curve").focus();
+  await page.locator("#skill-xp-curve").press("Home");
   await page.waitForFunction(
-    () => document.querySelector("[data-skill-effective]")?.textContent?.trim() === "90",
+    () => document.querySelector("[data-skill-curve-level]")?.textContent?.trim() === "Level 0",
     undefined,
     { timeout: timeoutMs }
   );
-  state = await readSkillsRequirementState(page);
-  if (state.status !== "Requirement unmet" || state.note !== "Race bonus is visible, but base skill is still short.") {
-    throw new Error(`Skills race bonus should not satisfy equipment requirements: ${JSON.stringify(state)}`);
+  state = await readSkillCurveState(page);
+  if (
+    state.total !== "0" ||
+    state.nextTotal !== "75" ||
+    state.nextIncrement !== "(+75)" ||
+    state.nextLabel !== "Next Level At"
+  ) {
+    throw new Error(`Skill Level 0 curve values are incorrect: ${JSON.stringify(state)}`);
   }
 
-  await setSkillsRange(page, "[data-skill-base-slider]", 90);
-  await page.waitForFunction(
-    () => document.querySelector("[data-skill-status]")?.textContent?.trim() === "Meets requirement",
-    undefined,
-    { timeout: timeoutMs }
-  );
-  state = await readSkillsRequirementState(page);
-  if (state.base !== "90" || state.effective !== "100" || state.status !== "Meets requirement") {
-    throw new Error(`Skills base requirement check did not update correctly: ${JSON.stringify(state)}`);
+  for (let step = 0; step < 5; step += 1) {
+    await page.locator("#skill-xp-curve").press("ArrowRight");
+  }
+  state = await readSkillCurveState(page);
+  if (
+    state.level !== "Level 5" ||
+    state.total !== "375" ||
+    state.nextTotal !== "500" ||
+    state.nextIncrement !== "(+125)"
+  ) {
+    throw new Error(`Skill Level 5 curve values are incorrect: ${JSON.stringify(state)}`);
   }
 
-  await setSkillsRange(page, "[data-skill-requirement-slider]", 105);
+  await page.locator("#skill-xp-curve").press("End");
   await page.waitForFunction(
-    () => document.querySelector("[data-skill-status]")?.textContent?.trim() === "Requirement unmet",
+    () => document.querySelector("[data-skill-curve-level]")?.textContent?.trim() === "Level 110",
     undefined,
     { timeout: timeoutMs }
   );
+  state = await readSkillCurveState(page);
+  if (
+    state.total !== "75,000,000" ||
+    state.nextTotal !== "75,000,000" ||
+    state.nextIncrement !== "" ||
+    state.nextLabel !== "Maximum XP"
+  ) {
+    throw new Error(`Skill Level 110 curve values are incorrect: ${JSON.stringify(state)}`);
+  }
 }
 
-async function setSkillsRange(page, selector, value) {
-  await page.locator(selector).evaluate((input, nextValue) => {
-    input.value = String(nextValue);
-    input.dispatchEvent(new Event("input", { bubbles: true }));
-  }, value);
-}
-
-async function readSkillsRequirementState(page) {
-  return await page.evaluate(() => ({
-    base: document.querySelector("[data-skill-base]")?.textContent?.trim() || "",
-    effective: document.querySelector("[data-skill-effective]")?.textContent?.trim() || "",
-    note: document.querySelector("[data-skill-note]")?.textContent?.trim() || "",
-    requirement: document.querySelector("[data-skill-requirement]")?.textContent?.trim() || "",
-    status: document.querySelector("[data-skill-status]")?.textContent?.trim() || "",
-    racePressed: document.querySelector("[data-skill-race-toggle]")?.getAttribute("aria-pressed") || "",
-  }));
+async function readSkillCurveState(page) {
+  return await page.evaluate(() => {
+    const tooltip = document.querySelector("[data-skill-curve-tooltip]");
+    return {
+      ariaLevel: document.querySelector("#skill-xp-curve")?.getAttribute("aria-valuenow") || "",
+      level: document.querySelector("[data-skill-curve-level]")?.textContent?.trim() || "",
+      nextIncrement: document.querySelector("[data-skill-curve-next-increment]")?.textContent?.trim() || "",
+      nextLabel: document.querySelector("[data-skill-curve-next-label]")?.textContent?.trim() || "",
+      nextTotal: document.querySelector("[data-skill-curve-next-total]")?.textContent?.trim() || "",
+      tooltipVisible: Boolean(tooltip && !tooltip.hidden),
+      total: document.querySelector("[data-skill-curve-total]")?.textContent?.trim() || "",
+    };
+  });
 }
 
 async function runRacesSpec(browser, baseUrl) {

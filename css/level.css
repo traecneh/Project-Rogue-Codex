@@ -1,11 +1,17 @@
-.level-summary-grid,
-.level-link-grid {
+.level-summary-grid {
   display: grid;
   gap: 0.75rem;
 }
 
 .level-summary-grid {
   grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+}
+
+.level-summary-grid .stat-card:hover,
+.level-summary-grid .stat-card:focus-within {
+  border-color: inherit;
+  box-shadow: none;
+  transform: none;
 }
 
 .level-chart-card {
@@ -93,23 +99,16 @@
   font-size: 1rem;
 }
 
-.level-link-grid {
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+.level-curve-next-value {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem;
 }
 
-.level-link-grid a {
-  border: 1px solid var(--border-soft);
-  border-radius: 8px;
-  background: var(--bg-panel-dark);
-  color: var(--text-main);
-  padding: 0.65rem 0.75rem;
-  text-decoration: none;
-}
-
-.level-link-grid a:hover,
-.level-link-grid a:focus-visible {
-  border-color: var(--accent);
-  color: var(--accent);
+.level-curve-next-increment {
+  color: var(--text-muted);
+  font-size: 0.86rem;
 }
 
 @media (max-width: 560px) {

@@ -13,17 +13,17 @@
     <link rel="icon" type="image/png" sizes="64x64" href="images/project-rogue-favicon-64.png" />
     <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
-    <link rel="stylesheet" href="css/styles.css?v=codex-2026-07-18-level" />
-    <link rel="stylesheet" href="css/skills.css?v=codex-2026-07-18-level" />
-    <script src="js/site-search.js?v=codex-2026-07-18-level" defer></script>
-    <script src="js/weapon-specialty.js?v=codex-2026-07-18-level" defer></script>
-    <script src="js/stat-widgets.js?v=codex-2026-07-18-level" defer></script>
-    <script src="js/keyword-links.js?v=codex-2026-07-18-level" defer></script>
-    <script src="js/cursor-toggle.js?v=codex-2026-07-18-level" defer></script>
-    <script src="js/perks.js?v=codex-2026-07-18-level" defer></script>
-    <script src="js/rarity-roller.js?v=codex-2026-07-18-level" defer></script>
-    <script src="js/nav-core.js?v=codex-2026-07-18-level" defer></script>
-    <script src="js/skills.js?v=codex-2026-07-18-level" defer></script>
+    <link rel="stylesheet" href="css/styles.css?v=codex-2026-07-18-xp-curves" />
+    <link rel="stylesheet" href="css/skills.css?v=codex-2026-07-18-xp-curves" />
+    <script src="js/site-search.js?v=codex-2026-07-18-xp-curves" defer></script>
+    <script src="js/weapon-specialty.js?v=codex-2026-07-18-xp-curves" defer></script>
+    <script src="js/stat-widgets.js?v=codex-2026-07-18-xp-curves" defer></script>
+    <script src="js/keyword-links.js?v=codex-2026-07-18-xp-curves" defer></script>
+    <script src="js/cursor-toggle.js?v=codex-2026-07-18-xp-curves" defer></script>
+    <script src="js/perks.js?v=codex-2026-07-18-xp-curves" defer></script>
+    <script src="js/rarity-roller.js?v=codex-2026-07-18-xp-curves" defer></script>
+    <script src="js/nav-core.js?v=codex-2026-07-18-xp-curves" defer></script>
+    <script src="js/skills.js?v=codex-2026-07-18-xp-curves" defer></script>
   </head>
   <body>
     <div class="layout">
@@ -31,11 +31,20 @@
       <main class="main-content">
         <header class="content-header">
           <h1 class="content-title">Skills</h1>
-          <p class="content-tagline">Melee caps, trade anchors, race bonus behavior, and XP requirements.</p>
+          <p class="content-tagline">Melee skill caps, race bonus rules, and the full Level 0-110 XP curve.</p>
         </header>
 
-        <article class="content-section" id="skills-basics">
-          <h2>Skills at a Glance</h2>
+        <section class="content-section" id="skills-basics" aria-label="Skill summary">
+          <div class="skills-anchor-targets" aria-hidden="true">
+            <span id="blacksmithing"></span>
+            <span id="carpentry"></span>
+            <span id="farming"></span>
+            <span id="fishing"></span>
+            <span id="milling"></span>
+            <span id="mining"></span>
+            <span id="tinkering"></span>
+            <span id="woodcutting"></span>
+          </div>
           <div class="skills-summary-grid" role="list">
             <section class="stat-card" role="listitem">
               <p class="stat-label">Skill Set</p>
@@ -61,156 +70,49 @@
               <p>Race bonuses do not count toward equipment requirements.</p>
             </section>
           </div>
-        </article>
-
-        <article class="content-section" id="melee-skills">
-          <h2>Melee Skill Set</h2>
-          <div class="skills-list-grid">
-            <section class="skills-list-card">
-              <p class="stat-label">Weapon Family</p>
-              <h3>Large Blades</h3>
-              <p>Swords and heavier blade weapons that lean into direct melee scaling.</p>
-            </section>
-            <section class="skills-list-card">
-              <p class="stat-label">Weapon Family</p>
-              <h3>Axes</h3>
-              <p>Axe weapons with their own skill requirement checks and progression curve.</p>
-            </section>
-            <section class="skills-list-card">
-              <p class="stat-label">Weapon Family</p>
-              <h3>Blunts</h3>
-              <p>Maces, hammers, and other blunt melee options.</p>
-            </section>
-            <section class="skills-list-card">
-              <p class="stat-label">Weapon Family</p>
-              <h3>Polearms</h3>
-              <p>Long-reach melee weapons that still use the shared skill XP curve.</p>
-            </section>
-            <section class="skills-list-card">
-              <p class="stat-label">Weapon Family</p>
-              <h3>Small Blades</h3>
-              <p>Daggers and lighter blade weapons with separate skill requirements.</p>
-            </section>
-          </div>
-        </article>
-
-        <article class="content-section" id="trade-gathering-skills">
-          <h2>Trade &amp; Gathering Skills</h2>
-          <p>Item relationship links land here when a tool, material, fish, seed, or processed resource points at a trade skill.</p>
-          <div class="skills-trade-grid" role="list">
-            <section class="skills-trade-card" id="mining" role="listitem">
-              <p class="stat-label">Gathering Link</p>
-              <h3>Mining</h3>
-              <p>Pickaxes, mining tools, and ore/refining material relationships.</p>
-            </section>
-            <section class="skills-trade-card" id="woodcutting" role="listitem">
-              <p class="stat-label">Gathering Link</p>
-              <h3>Woodcutting</h3>
-              <p>Woodcutting axes, logs, and wood material relationships.</p>
-            </section>
-            <section class="skills-trade-card" id="fishing" role="listitem">
-              <p class="stat-label">Gathering Link</p>
-              <h3>Fishing</h3>
-              <p>Fishing Rod and fish item family relationships.</p>
-            </section>
-            <section class="skills-trade-card" id="farming" role="listitem">
-              <p class="stat-label">Gathering Link</p>
-              <h3>Farming</h3>
-              <p>Seed item family relationships.</p>
-            </section>
-            <section class="skills-trade-card" id="carpentry" role="listitem">
-              <p class="stat-label">Tool / Material Link</p>
-              <h3>Carpentry</h3>
-              <p>Carpentry Saw and processed wood material relationships.</p>
-            </section>
-            <section class="skills-trade-card" id="blacksmithing" role="listitem">
-              <p class="stat-label">Tool / Material Link</p>
-              <h3>Blacksmithing</h3>
-              <p>Hammer and metalworking tool relationships.</p>
-            </section>
-            <section class="skills-trade-card" id="milling" role="listitem">
-              <p class="stat-label">Tool / Material Link</p>
-              <h3>Milling</h3>
-              <p>Milling Saw relationships.</p>
-            </section>
-            <section class="skills-trade-card" id="tinkering" role="listitem">
-              <p class="stat-label">Tool / Material Link</p>
-              <h3>Tinkering</h3>
-              <p>Tinker Tools and utility crafting relationships.</p>
-            </section>
-          </div>
-        </article>
-
-        <article class="content-section" id="skill-requirements">
-          <h2>Requirement Preview</h2>
-          <p>Compare base skill, race bonus, and an equipment requirement. The displayed effective skill can rise, but requirement checks use base skill.</p>
-
-          <div class="skills-requirement-widget">
-            <div class="skills-control-grid">
-              <label for="skill-base-slider">Base Skill: <span data-skill-base>80</span></label>
-              <input
-                type="range"
-                id="skill-base-slider"
-                min="0"
-                max="110"
-                value="80"
-                data-skill-base-slider
-              />
-
-              <label for="skill-requirement-slider">Requirement: <span data-skill-requirement>90</span></label>
-              <input
-                type="range"
-                id="skill-requirement-slider"
-                min="0"
-                max="120"
-                value="90"
-                data-skill-requirement-slider
-              />
-            </div>
-
-            <button class="skills-race-toggle" type="button" data-skill-race-toggle aria-pressed="false">
-              Apply Race Bonus +10
-            </button>
-
-            <div class="skills-output-grid" aria-live="polite">
-              <div class="stat-output">
-                <span class="stat-output-label">Effective Skill</span>
-                <span class="stat-output-value" data-skill-effective>80</span>
-              </div>
-              <div class="stat-output">
-                <span class="stat-output-label">Requirement Check</span>
-                <span class="stat-output-value" data-skill-status>Requirement unmet</span>
-              </div>
-              <div class="stat-output skills-note">
-                <span class="stat-output-label">Rule</span>
-                <span class="stat-output-value" data-skill-note>Base skill is checked.</span>
-              </div>
-            </div>
-          </div>
-        </article>
+        </section>
 
         <article class="content-section" id="skill-xp">
-          <h2>Skill XP Requirements</h2>
-          <p>Levels start at 0. Bars show cumulative XP through each skill level. Values in parentheses are that level's XP requirement.</p>
+          <h2>Skill XP Curve</h2>
+          <p>Skill XP from the Level 0 starting point through the Level 110 cap.</p>
           <div class="skills-chart-card">
-            <canvas id="skill-xp-curve" class="skills-xp-canvas" width="800" height="140" aria-label="Skill XP curve"></canvas>
-            <div class="skills-chart-legend">
-              <span>Cumulative XP through skill level</span>
-              <span>(XP assigned to level)</span>
+            <div class="skills-curve-stage">
+              <canvas
+                id="skill-xp-curve"
+                class="skills-xp-canvas"
+                width="900"
+                height="260"
+                tabindex="0"
+                role="slider"
+                aria-label="Skill XP curve. Use the left and right arrow keys to inspect levels."
+                aria-orientation="horizontal"
+                aria-valuemin="0"
+                aria-valuemax="110"
+                aria-valuenow="100"
+              ></canvas>
+              <div class="skills-curve-tooltip" data-skill-curve-tooltip role="tooltip" hidden>
+                <strong data-skill-curve-tooltip-level>Level 100</strong>
+                <span data-skill-curve-tooltip-total>25,000,000 XP to reach</span>
+                <span data-skill-curve-tooltip-next>Level 101 at 26,500,000 XP (+1,500,000)</span>
+              </div>
             </div>
-            <div class="weight-chart skills-xp-chart" id="skill-xp-chart"></div>
-          </div>
-        </article>
-
-        <article class="content-section">
-          <h2>Related Pages</h2>
-          <div class="skills-link-grid">
-            <a href="pages/stats/races.html">Races</a>
-            <a href="pages/General/build-planner.html">Build Planner</a>
-            <a href="pages/items/weapons.html">Weapons</a>
-            <a href="pages/items/armors.html">Armors</a>
-            <a href="pages/stats/level.html">Level</a>
-            <a href="pages/systems/experience.html">Experience Pool</a>
+            <div class="skills-curve-readout" aria-live="polite">
+              <div class="skills-curve-metric">
+                <span class="stat-output-label">Selected Level</span>
+                <strong data-skill-curve-level>Level 100</strong>
+              </div>
+              <div class="skills-curve-metric">
+                <span class="stat-output-label">XP to Reach Level</span>
+                <strong data-skill-curve-total>25,000,000</strong>
+              </div>
+              <div class="skills-curve-metric">
+                <span class="stat-output-label" data-skill-curve-next-label>Next Level At</span>
+                <strong class="skills-curve-next-value">
+                  <span data-skill-curve-next-total>26,500,000</span>
+                  <span class="skills-curve-next-increment" data-skill-curve-next-increment>(+1,500,000)</span>
+                </strong>
+              </div>
+            </div>
           </div>
         </article>
       </main>

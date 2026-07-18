@@ -13,17 +13,17 @@
     <link rel="icon" type="image/png" sizes="64x64" href="images/project-rogue-favicon-64.png" />
     <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
-    <link rel="stylesheet" href="css/styles.css?v=codex-2026-07-18-level" />
-    <link rel="stylesheet" href="css/level.css?v=codex-2026-07-18-level" />
-    <script src="js/site-search.js?v=codex-2026-07-18-level" defer></script>
-    <script src="js/weapon-specialty.js?v=codex-2026-07-18-level" defer></script>
-    <script src="js/stat-widgets.js?v=codex-2026-07-18-level" defer></script>
-    <script src="js/keyword-links.js?v=codex-2026-07-18-level" defer></script>
-    <script src="js/cursor-toggle.js?v=codex-2026-07-18-level" defer></script>
-    <script src="js/perks.js?v=codex-2026-07-18-level" defer></script>
-    <script src="js/rarity-roller.js?v=codex-2026-07-18-level" defer></script>
-    <script src="js/nav-core.js?v=codex-2026-07-18-level" defer></script>
-    <script src="js/level.js?v=codex-2026-07-18-level" defer></script>
+    <link rel="stylesheet" href="css/styles.css?v=codex-2026-07-18-xp-curves" />
+    <link rel="stylesheet" href="css/level.css?v=codex-2026-07-18-xp-curves" />
+    <script src="js/site-search.js?v=codex-2026-07-18-xp-curves" defer></script>
+    <script src="js/weapon-specialty.js?v=codex-2026-07-18-xp-curves" defer></script>
+    <script src="js/stat-widgets.js?v=codex-2026-07-18-xp-curves" defer></script>
+    <script src="js/keyword-links.js?v=codex-2026-07-18-xp-curves" defer></script>
+    <script src="js/cursor-toggle.js?v=codex-2026-07-18-xp-curves" defer></script>
+    <script src="js/perks.js?v=codex-2026-07-18-xp-curves" defer></script>
+    <script src="js/rarity-roller.js?v=codex-2026-07-18-xp-curves" defer></script>
+    <script src="js/nav-core.js?v=codex-2026-07-18-xp-curves" defer></script>
+    <script src="js/level.js?v=codex-2026-07-18-xp-curves" defer></script>
   </head>
   <body>
     <div class="layout">
@@ -34,8 +34,7 @@
           <p class="content-tagline">Player XP rules, additive boost math, and the full Level 105 curve.</p>
         </header>
 
-        <article class="content-section" id="level-basics">
-          <h2>Level at a Glance</h2>
+        <section class="content-section" id="level-basics" aria-label="Player level summary">
           <div class="level-summary-grid" role="list">
             <section class="stat-card" role="listitem">
               <p class="stat-label">Cap</p>
@@ -61,11 +60,11 @@
               <p>Item level requirements are checked separately from skill and stat requirements.</p>
             </section>
           </div>
-        </article>
+        </section>
 
         <article class="content-section" id="level-requirements">
           <h2>Level XP Curve</h2>
-          <p>Cumulative Player XP across all 105 levels.</p>
+          <p>Player XP from the Level 1 starting point through the Level 105 cap.</p>
           <div class="level-chart-card">
             <div class="level-curve-stage">
               <canvas
@@ -83,8 +82,8 @@
               ></canvas>
               <div class="level-curve-tooltip" data-level-curve-tooltip role="tooltip" hidden>
                 <strong data-level-curve-tooltip-level>Level 100</strong>
-                <span data-level-curve-tooltip-total>250,000,000 cumulative XP</span>
-                <span data-level-curve-tooltip-delta>7,100,000 XP for this level</span>
+                <span data-level-curve-tooltip-total>242,900,000 XP to reach</span>
+                <span data-level-curve-tooltip-delta>Level 101 at 250,000,000 XP (+7,100,000)</span>
               </div>
             </div>
             <div class="level-curve-readout" aria-live="polite">
@@ -93,28 +92,20 @@
                 <strong data-level-curve-level>Level 100</strong>
               </div>
               <div class="level-curve-metric">
-                <span class="stat-output-label">Cumulative XP</span>
-                <strong data-level-curve-total>250,000,000</strong>
+                <span class="stat-output-label">XP to Reach Level</span>
+                <strong data-level-curve-total>242,900,000</strong>
               </div>
               <div class="level-curve-metric">
-                <span class="stat-output-label">XP for This Level</span>
-                <strong data-level-curve-delta>7,100,000</strong>
+                <span class="stat-output-label" data-level-curve-delta-label>Next Level At</span>
+                <strong class="level-curve-next-value">
+                  <span data-level-curve-next-total>250,000,000</span>
+                  <span class="level-curve-next-increment" data-level-curve-delta>(+7,100,000)</span>
+                </strong>
               </div>
             </div>
           </div>
         </article>
 
-        <article class="content-section">
-          <h2>Related Pages</h2>
-          <div class="level-link-grid">
-            <a href="pages/systems/experience.html">Experience Pool</a>
-            <a href="pages/General/build-planner.html">Build Planner</a>
-            <a href="pages/systems/monster-damage-reduction.html">Monster DR</a>
-            <a href="pages/items/weapons.html">Weapons</a>
-            <a href="pages/items/armors.html">Armors</a>
-            <a href="pages/enemies/monsters.html">Monsters</a>
-          </div>
-        </article>
       </main>
     </div>
   </body>

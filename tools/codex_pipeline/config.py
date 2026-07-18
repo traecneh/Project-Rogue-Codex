@@ -26,6 +26,7 @@ GENERATED_ATLAS_ASSET_DIR = REPO_ROOT / "generated-output" / "atlas-assets"
 GENERATED_IMAGE_REVIEW_DIR = REPO_ROOT / "generated-output" / "image-review"
 CODEX_MANIFEST_PATH = REPO_ROOT / "data" / "codex_manifest.json"
 CLIENT_INVENTORY_SNAPSHOT_PATH = REPO_ROOT / "data" / "client_inventory_snapshot.json"
+PLAYER_TABLES_DATA_PATH = REPO_ROOT / "data" / "player_tables.json"
 
 WEAPONS_DATA_PATH = REPO_ROOT / "pages" / "items" / "weapons_data05.json"
 ARMORS_DATA_PATH = REPO_ROOT / "pages" / "items" / "armors_data06.json"

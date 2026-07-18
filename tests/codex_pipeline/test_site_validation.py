@@ -2109,9 +2109,7 @@ class SiteValidationTests(unittest.TestCase):
         self.assertNotRegex(html, r"\sstyle\s*=")
 
         for expected in [
-            "Level at a Glance",
             "Level XP Curve",
-            "Related Pages",
             "Level 105",
             "1:1 Damage",
             "Experience Pool",
@@ -2120,35 +2118,37 @@ class SiteValidationTests(unittest.TestCase):
             "data-level-curve-tooltip",
             "data-level-curve-level",
             "data-level-curve-total",
+            "data-level-curve-next-total",
             "data-level-curve-delta",
+            "data-level-curve-delta-label",
             'role="slider"',
-            "pages/systems/experience.html",
-            "pages/General/build-planner.html",
-            "pages/systems/monster-damage-reduction.html",
-            "pages/items/weapons.html",
-            "pages/items/armors.html",
-            "pages/enemies/monsters.html",
         ]:
             self.assertIn(expected, html)
 
+        self.assertNotIn("Level at a Glance", html)
+        self.assertNotIn("Related Pages", html)
+        self.assertNotIn("level-link-grid", html)
         self.assertNotIn("Milestone Reference", html)
         self.assertNotIn("level-xp-chart", html)
         self.assertNotIn("Damage to XP Preview", html)
         self.assertNotIn("data-level-damage-slider", html)
 
         self.assertIn(".level-summary-grid", css)
+        self.assertIn(".level-summary-grid .stat-card:hover", css)
+        self.assertIn("transform: none", css)
         self.assertIn(".level-chart-card", css)
         self.assertIn(".level-curve-stage", css)
         self.assertIn(".level-curve-tooltip", css)
         self.assertIn(".level-curve-readout", css)
         self.assertIn(".level-curve-metric", css)
-        self.assertIn(".level-link-grid", css)
+        self.assertNotIn(".level-link-grid", css)
 
-        self.assertIn("const LEVEL_XP_BANDS", script)
-        self.assertIn("const LEVEL_XP_TOTALS", script)
-        self.assertIn("[91, 95, 6588000]", script)
-        self.assertIn("[105, 105, 2500000000]", script)
-        self.assertIn("function buildXpTotals", script)
+        self.assertIn('const PLAYER_TABLES_URL = "data/player_tables.json"', script)
+        self.assertIn("let LEVEL_XP_THRESHOLDS", script)
+        self.assertIn("function validatePlayerXp", script)
+        self.assertIn("function loadPlayerXp", script)
+        self.assertIn("function getNextLevelXp", script)
+        self.assertIn("function getNextLevelTotal", script)
         self.assertIn("function drawLevelCurve", script)
         self.assertIn("function initLevelCurve", script)
         self.assertNotIn("function initLevelXpWidget", script)
@@ -2156,58 +2156,43 @@ class SiteValidationTests(unittest.TestCase):
         self.assertNotIn("function renderLevelMilestones", script)
         self.assertIn('document.addEventListener("DOMContentLoaded"', script)
 
-    def test_player_xp_bands_match_published_cumulative_totals(self):
-        from tools.codex_pipeline.config import REPO_ROOT
+    def test_player_tables_match_direct_game_export_boundaries(self):
+        from tools.codex_pipeline.config import PLAYER_TABLES_DATA_PATH
 
-        script = (REPO_ROOT / "js" / "level.js").read_text(encoding="utf-8")
-        bands_match = re.search(
-            r"const LEVEL_XP_BANDS = Object\.freeze\(\[([\s\S]*?)\n  \]\);",
-            script,
-        )
-        self.assertIsNotNone(bands_match)
-        bands = [
-            tuple(int(value) for value in match.groups())
-            for match in re.finditer(r"\[(\d+),\s*(\d+),\s*(\d+)\]", bands_match.group(1))
-        ]
-        expected_cumulative = {
+        payload = json.loads(PLAYER_TABLES_DATA_PATH.read_text(encoding="utf-8"))
+        self.assertEqual(1, payload["schema_version"])
+        table = payload["player_tables"][0]
+        player_exp = table["player_exp"]
+        skill_exp = table["skill_exp"]
+
+        self.assertEqual(106, len(player_exp))
+        self.assertEqual(111, len(skill_exp))
+        self.assertEqual(0, player_exp[0])
+        self.assertEqual(0, skill_exp[0])
+        self.assertTrue(all(current > previous for previous, current in zip(player_exp, player_exp[1:])))
+        self.assertTrue(all(current > previous for previous, current in zip(skill_exp, skill_exp[1:])))
+
+        # Player array index N is the cumulative boundary after the Nth level cost.
+        for index, expected in {
+            0: 0,
+            1: 2_000,
             5: 10_000,
-            10: 35_000,
-            15: 110_000,
-            20: 310_000,
-            25: 1_060_000,
-            30: 2_310_000,
-            35: 4_060_000,
-            40: 7_060_000,
-            45: 12_060_000,
-            50: 19_810_000,
-            55: 30_310_000,
-            60: 43_560_000,
-            65: 59_560_000,
-            70: 78_310_000,
-            75: 99_810_000,
-            80: 124_310_000,
-            85: 151_560_000,
             90: 181_560_000,
+            94: 207_760_000,
             95: 214_500_000,
             100: 250_000_000,
-            101: 400_000_000,
-            102: 750_000_000,
-            103: 1_400_000_000,
             104: 2_500_000_000,
             105: 5_000_000_000,
-        }
+        }.items():
+            self.assertEqual(expected, player_exp[index])
 
-        cumulative = 0
-        previous_end = 0
-        for start, end, xp_per_level in bands:
-            self.assertEqual(previous_end + 1, start)
-            cumulative += (end - start + 1) * xp_per_level
-            self.assertEqual(expected_cumulative[end], cumulative)
-            previous_end = end
+        self.assertEqual(6_550_000, player_exp[94] - player_exp[93])
+        self.assertEqual(6_740_000, player_exp[95] - player_exp[94])
+        self.assertEqual(765_000, skill_exp[94] - skill_exp[93])
+        self.assertEqual(877_500, skill_exp[95] - skill_exp[94])
+        self.assertEqual(75_000_000, skill_exp[110])
 
-        self.assertEqual(105, previous_end)
-
-    def test_skills_page_has_compact_melee_reference(self):
+    def test_skills_page_has_compact_xp_reference(self):
         from tools.codex_pipeline import cli
         from tools.codex_pipeline.config import REPO_ROOT
 
@@ -2239,71 +2224,57 @@ class SiteValidationTests(unittest.TestCase):
         self.assertNotRegex(html, r"\sstyle\s*=")
 
         for expected in [
-            "Skills at a Glance",
-            "Melee Skill Set",
-            "Trade &amp; Gathering Skills",
-            "Requirement Preview",
-            "Skill XP Requirements",
-            "Related Pages",
-            "Large Blades",
-            "Axes",
-            "Blunts",
-            "Polearms",
-            "Small Blades",
-            'id="blacksmithing"',
-            'id="carpentry"',
-            'id="farming"',
-            'id="fishing"',
-            'id="milling"',
-            'id="mining"',
-            'id="tinkering"',
-            'id="woodcutting"',
-            "Blacksmithing",
-            "Carpentry",
-            "Farming",
-            "Fishing",
-            "Milling",
-            "Mining",
-            "Tinkering",
-            "Woodcutting",
-            "Tool / Material Link",
-            "Gathering Link",
+            "Skill XP Curve",
+            "Five Melee Skills",
             "Base Max",
             "110",
             "Race Bonus",
             "+10 Above Cap",
             "Equipment Requirements",
             "Race bonuses do not count toward equipment requirements",
-            "data-skill-base-slider",
-            "data-skill-race-toggle",
-            "data-skill-effective",
-            "data-skill-requirement",
-            "data-skill-status",
-            "pages/stats/races.html",
-            "pages/General/build-planner.html",
-            "pages/items/weapons.html",
-            "pages/items/armors.html",
-            "pages/stats/level.html",
-            "pages/systems/experience.html",
+            "data-skill-curve-tooltip",
+            "data-skill-curve-level",
+            "data-skill-curve-total",
+            "data-skill-curve-next-label",
+            "data-skill-curve-next-total",
+            "data-skill-curve-next-increment",
+            'role="slider"',
         ]:
             self.assertIn(expected, html)
 
-        self.assertIn(".skills-summary-grid", css)
-        self.assertIn(".skills-list-grid", css)
-        self.assertIn(".skills-trade-grid", css)
-        self.assertIn(".skills-trade-card", css)
-        self.assertIn(".skills-requirement-widget", css)
-        self.assertIn(".skills-chart-card", css)
-        self.assertIn(".skills-link-grid", css)
+        for removed in [
+            "Skills at a Glance",
+            "Melee Skill Set",
+            "Trade &amp; Gathering Skills",
+            "Requirement Preview",
+            "Skill XP Requirements",
+            "Related Pages",
+            "data-skill-base-slider",
+            "data-skill-race-toggle",
+            "skill-xp-chart",
+            "skills-link-grid",
+        ]:
+            self.assertNotIn(removed, html)
 
-        self.assertIn("const SKILL_XP_BANDS", script)
-        self.assertIn("const SKILL_XP_TOTALS", script)
-        self.assertIn("[91, 95, 787500]", script)
-        self.assertIn("[110, 110, 12700000]", script)
-        self.assertIn("function buildXpTotals", script)
-        self.assertIn("function initSkillRequirementWidget", script)
-        self.assertIn("function renderSkillChart", script)
-        self.assertIn("function renderSkillCurve", script)
+        self.assertIn(".skills-summary-grid", css)
+        self.assertIn(".skills-summary-grid .stat-card:hover", css)
+        self.assertIn(".skills-chart-card", css)
+        self.assertIn(".skills-curve-stage", css)
+        self.assertIn(".skills-curve-tooltip", css)
+        self.assertIn(".skills-curve-readout", css)
+        self.assertIn(".skills-curve-metric", css)
+        self.assertIn(".skills-curve-next-value", css)
+
+        self.assertIn('const PLAYER_TABLES_URL = "data/player_tables.json"', script)
+        self.assertIn("let SKILL_XP_TOTALS", script)
+        self.assertIn("function validateSkillXp", script)
+        self.assertIn("function loadSkillXp", script)
+        self.assertIn("function getNextSkillTotal", script)
+        self.assertIn("function getNextSkillXp", script)
+        self.assertIn("function drawSkillCurve", script)
+        self.assertIn("function initSkillCurve", script)
+        self.assertNotIn("function initSkillRequirementWidget", script)
+        self.assertNotIn("function renderSkillChart", script)
         self.assertIn('document.addEventListener("DOMContentLoaded"', script)
 
     def test_races_page_has_compact_bonus_reference(self):
