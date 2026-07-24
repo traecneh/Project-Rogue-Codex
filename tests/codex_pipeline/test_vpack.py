@@ -5,6 +5,7 @@ import json
 import struct
 import tempfile
 import unittest
+from argparse import Namespace
 from pathlib import Path
 from unittest.mock import patch
 
@@ -200,6 +201,42 @@ class VpackInspectorTests(unittest.TestCase):
         printed = output.getvalue()
         self.assertIn("VPACK EXTRACTED weapons.json", printed)
         self.assertIn("VPACK EXTRACTED nested/armors.json", printed)
+
+    def test_atlas_commands_extract_configured_graphics_vpack(self):
+        from tools.codex_pipeline import cli
+
+        files = {
+            "itemgraph.json": b'{"frames":{}}',
+            "monstergraph.json": b'{"frames":{}}',
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            pack_path = root / "rogue_graphics.vpack"
+            output_dir = root / "graphics"
+            pack_path.write_bytes(make_encrypted_vpack(files))
+
+            with (
+                patch.object(cli, "CLIENT_GRAPHICS_PACK_PATH", pack_path),
+                patch.object(cli, "GENERATED_GRAPHICS_PACK_DIR", output_dir),
+                patch.object(cli, "CLIENT_LOG_PATH", root / "missing.log"),
+                patch("sys.stdout", io.StringIO()),
+            ):
+                resolved = cli._configured_gf_json_dir(Namespace(gf_json_dir=None))
+
+            itemgraph = (output_dir / "itemgraph.json").read_bytes()
+
+        self.assertEqual(output_dir, resolved)
+        self.assertEqual(files["itemgraph.json"], itemgraph)
+
+    def test_atlas_commands_honor_explicit_gf_json_directory(self):
+        from tools.codex_pipeline import cli
+
+        explicit = Path("custom/gf_json")
+        with patch.object(cli, "extract_vpack_files") as extract:
+            resolved = cli._configured_gf_json_dir(Namespace(gf_json_dir=explicit))
+
+        self.assertEqual(explicit, resolved)
+        extract.assert_not_called()
 
 
 if __name__ == "__main__":

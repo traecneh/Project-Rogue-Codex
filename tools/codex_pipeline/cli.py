@@ -9,6 +9,7 @@ from pathlib import Path
 from tools.codex_pipeline.config import (
     ARMOR_IMAGES_DIR,
     ARMORS_DATA_PATH,
+    CLIENT_GRAPHICS_PACK_PATH,
     CLIENT_INVENTORY_SNAPSHOT_PATH,
     CODEX_MANIFEST_PATH,
     CLIENT_ROOT,
@@ -16,6 +17,7 @@ from tools.codex_pipeline.config import (
     DROP_SOURCES_PATH,
     ITEM_RELATIONSHIP_TARGETS_PATH,
     GENERATED_ATLAS_ASSET_DIR,
+    GENERATED_GRAPHICS_PACK_DIR,
     GENERATED_IMAGE_REVIEW_DIR,
     GENERATED_OUTPUT_DIR,
     CLIENT_LOG_PATH,
@@ -79,7 +81,13 @@ from tools.codex_pipeline.static_assets import (
     write_static_asset_version,
 )
 from tools.codex_pipeline.unknowns import build_unknown_field_reports
-from tools.codex_pipeline.vpack import VpackError, decrypt_vpack, inspect_vpack, resolve_vpack_output_path
+from tools.codex_pipeline.vpack import (
+    VpackError,
+    decrypt_vpack,
+    extract_vpack_files,
+    inspect_vpack,
+    resolve_vpack_output_path,
+)
 from tools.codex_pipeline.validators.site import (
     ValidationIssue,
     read_json,
@@ -254,7 +262,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--gf-json-dir",
         type=Path,
-        help="Client gf_json directory for atlas extraction and client-inventory. Defaults to the configured client gf_json directory.",
+        help=(
+            "Client gf_json directory for atlas extraction and client-inventory. "
+            "Atlas commands default to the current graphics VPACK when available."
+        ),
     )
     parser.add_argument(
         "--asset-source",
@@ -1459,8 +1470,28 @@ def _format_inventory_path(path: Path) -> str:
     return path.as_posix()
 
 
-def _configured_gf_json_dir(args: argparse.Namespace) -> Path:
-    return args.gf_json_dir or CLIENT_GF_JSON_DIR
+def _configured_gf_json_dir(args: argparse.Namespace, *, client_root: Path | None = None) -> Path:
+    if args.gf_json_dir:
+        return args.gf_json_dir
+    graphics_pack_path = (
+        CLIENT_GRAPHICS_PACK_PATH
+        if client_root is None
+        else client_root / "Data" / "GraphicsPack" / "rogue_graphics.vpack"
+    )
+    fallback_dir = CLIENT_GF_JSON_DIR if client_root is None else client_root / "gf_json"
+    if not graphics_pack_path.is_file():
+        return fallback_dir
+    log_path = CLIENT_LOG_PATH if client_root is None else client_root / "ProjectRogue.log"
+    try:
+        extract_vpack_files(
+            graphics_pack_path,
+            GENERATED_GRAPHICS_PACK_DIR,
+            log_path=log_path,
+        )
+    except (OSError, VpackError) as exc:
+        raise ExportError(f"failed to extract graphics VPACK: {exc}") from exc
+    print(f"GRAPHICS SOURCE: {graphics_pack_path} -> {GENERATED_GRAPHICS_PACK_DIR}")
+    return GENERATED_GRAPHICS_PACK_DIR
 
 
 def _print_client_inventory_diff(report) -> None:
@@ -1481,13 +1512,17 @@ def run_client_inventory(args: argparse.Namespace) -> int:
     client_root = args.client_root or CLIENT_ROOT
     pack_path = args.pack_path or (client_root / "Data" / "ClientPack" / "rogue_data.vpack")
     log_path = args.log_path or (client_root / "ProjectRogue.log")
-    gf_json_dir = args.gf_json_dir or (client_root / "gf_json")
-    report = build_client_inventory_report(
-        client_root,
-        pack_path=pack_path,
-        log_path=log_path,
-        gf_json_dir=gf_json_dir,
-    )
+    try:
+        gf_json_dir = _configured_gf_json_dir(args, client_root=client_root)
+        report = build_client_inventory_report(
+            client_root,
+            pack_path=pack_path,
+            log_path=log_path,
+            gf_json_dir=gf_json_dir,
+        )
+    except ExportError as exc:
+        print(f"ERROR: {exc}")
+        return 1
     setattr(args, "_client_inventory_report", report)
 
     print(f"CLIENT INVENTORY: {report.client_root}")
@@ -1657,11 +1692,9 @@ def run_vpack_extract(args: argparse.Namespace) -> int:
     pack_path = args.pack_path or CLIENT_PACK_PATH
     output_dir = args.output_dir
     try:
-        decrypted = decrypt_vpack(pack_path, log_path=args.log_path or CLIENT_LOG_PATH)
+        decrypted = extract_vpack_files(pack_path, output_dir, log_path=args.log_path or CLIENT_LOG_PATH)
         for file in decrypted.files:
             output_path = resolve_vpack_output_path(output_dir, file.path)
-            output_path.parent.mkdir(parents=True, exist_ok=True)
-            output_path.write_bytes(file.data)
             print(
                 f"VPACK EXTRACTED {file.path}: {output_path} "
                 f"original={file.original_size} compressed={file.compressed_size} sha256=ok"

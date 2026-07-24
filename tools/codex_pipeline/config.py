@@ -5,9 +5,19 @@ from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-CLIENT_ROOT = Path(os.environ.get("PROJECT_ROGUE_CLIENT_ROOT", r"C:\Users\traec\Desktop\Client")).expanduser()
+_CONFIGURED_CLIENT_ROOT = os.environ.get("PROJECT_ROGUE_CLIENT_ROOT")
+_DEFAULT_CLIENT_ROOTS = (
+    Path(r"C:\Users\traec\Desktop\Project Rogue\Client"),
+    Path(r"C:\Users\traec\Desktop\Client"),
+)
+CLIENT_ROOT = (
+    Path(_CONFIGURED_CLIENT_ROOT).expanduser()
+    if _CONFIGURED_CLIENT_ROOT
+    else next((path for path in _DEFAULT_CLIENT_ROOTS if path.is_dir()), _DEFAULT_CLIENT_ROOTS[0])
+)
 CLIENT_DATA_DIR = CLIENT_ROOT / "data"
 CLIENT_PACK_PATH = CLIENT_ROOT / "Data" / "ClientPack" / "rogue_data.vpack"
+CLIENT_GRAPHICS_PACK_PATH = CLIENT_ROOT / "Data" / "GraphicsPack" / "rogue_graphics.vpack"
 CLIENT_LOG_PATH = CLIENT_ROOT / "ProjectRogue.log"
 CLIENT_GF_JSON_DIR = CLIENT_ROOT / "gf_json"
 CLIENT_IMAGE_DIR = CLIENT_GF_JSON_DIR / "images"
@@ -23,6 +33,7 @@ ITEM_RELATIONSHIP_TARGETS_PATH = REPO_ROOT / "data" / "codex-overrides" / "item_
 PERK_LABEL_OVERRIDES_PATH = REPO_ROOT / "data" / "codex-overrides" / "perk_labels.json"
 GENERATED_OUTPUT_DIR = REPO_ROOT / "generated-output" / "codex-data"
 GENERATED_ATLAS_ASSET_DIR = REPO_ROOT / "generated-output" / "atlas-assets"
+GENERATED_GRAPHICS_PACK_DIR = REPO_ROOT / "generated-output" / "graphics-pack"
 GENERATED_IMAGE_REVIEW_DIR = REPO_ROOT / "generated-output" / "image-review"
 CODEX_MANIFEST_PATH = REPO_ROOT / "data" / "codex_manifest.json"
 CLIENT_INVENTORY_SNAPSHOT_PATH = REPO_ROOT / "data" / "client_inventory_snapshot.json"

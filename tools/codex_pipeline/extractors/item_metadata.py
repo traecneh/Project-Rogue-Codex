@@ -120,11 +120,12 @@ WEAPON_SPECIALTY_LABELS = {
 WEAPON_ELEMENT_LABELS = {
     1: "Fire",
     2: "Electric",
+    3: "Holy",
     4: "Cold",
+    5: "Dark",
     6: "Acid",
     7: "Poison",
     8: "Disease",
-    5: "Magic",
 }
 
 RARITY_LABELS = {

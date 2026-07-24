@@ -312,3 +312,17 @@ def resolve_vpack_output_path(output_dir: Path, packed_path: str) -> Path:
     if not output_path.is_relative_to(output_root):
         raise VpackError(f"manifest path is invalid: {packed_path}")
     return output_path
+
+
+def extract_vpack_files(
+    path: Path,
+    output_dir: Path,
+    *,
+    log_path: Path | None = None,
+) -> VpackDecryptionResult:
+    decrypted = decrypt_vpack(path, log_path=log_path)
+    for file in decrypted.files:
+        output_path = resolve_vpack_output_path(output_dir, file.path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_bytes(file.data)
+    return decrypted
