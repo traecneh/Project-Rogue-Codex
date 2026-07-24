@@ -512,7 +512,7 @@ class ExportCommandTests(unittest.TestCase):
             export_client_data([target], output_dir=output_dir, python_executable=sys.executable)
 
             exported = json.loads((output_dir / "weapons.json").read_text(encoding="utf-8"))
-            self.assertNotIn("corrupted_perk_label", exported[0]["fields"])
+            self.assertEqual("Unknown", exported[0]["fields"]["corrupted_perk_label"])
             self.assertEqual(41, exported[0]["fields"]["corrupted_perk"])
             self.assertEqual("Vengeance (Tier 2)", exported[1]["fields"]["corrupted_perk_label"])
 
@@ -617,7 +617,13 @@ class ExportCommandTests(unittest.TestCase):
 
             changed_paths = [change.path for change in report.changed[0].field_changes]
             self.assertIn("fields.corrupted_perk", changed_paths)
-            self.assertNotIn("fields.corrupted_perk_label", changed_paths)
+            self.assertIn("fields.corrupted_perk_label", changed_paths)
+            corrupted_label_change = next(
+                change
+                for change in report.changed[0].field_changes
+                if change.path == "fields.corrupted_perk_label"
+            )
+            self.assertEqual("Unknown", corrupted_label_change.new_value)
 
     def test_build_generated_diff_report_summarizes_added_removed_and_changed_records(self):
         with tempfile.TemporaryDirectory() as tmp:

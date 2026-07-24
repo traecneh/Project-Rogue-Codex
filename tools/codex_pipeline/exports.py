@@ -27,7 +27,7 @@ from tools.codex_pipeline.packed_json import (
     map_packed_json_target,
     read_packed_json_files,
 )
-from tools.codex_pipeline.perks import CorruptedPerkOverrides, load_perk_label_overrides
+from tools.codex_pipeline.perks import CorruptedPerkOverrides, UNKNOWN_PERK_LABEL, load_perk_label_overrides
 from tools.codex_pipeline.vpack import VpackError
 
 
@@ -283,7 +283,7 @@ def _apply_corrupted_perk_override(fields: dict[str, Any], overrides: CorruptedP
 
     label = overrides[corrupted_perk]
     if label is None:
-        fields.pop("corrupted_perk_label", None)
+        fields["corrupted_perk_label"] = UNKNOWN_PERK_LABEL
     else:
         fields["corrupted_perk_label"] = label
     return True

@@ -243,6 +243,10 @@ class ExtractorModuleTests(unittest.TestCase):
         self.assertEqual("Epic", weapon_fields["max_rarity_label"])
         self.assertEqual("Frozen Heart (Tier 1)", weapon_fields["perk_label"])
         self.assertEqual("Frozen Heart (Tier 2)", weapon_fields["corrupted_perk_label"])
+        unknown_weapon_fields = {"perk": 570, "corrupted_perk": 41}
+        enrich_weapon_fields(unknown_weapon_fields)
+        self.assertEqual("Unknown", unknown_weapon_fields["perk_label"])
+        self.assertEqual("Unknown", unknown_weapon_fields["corrupted_perk_label"])
         self.assertEqual(300, armor_fields["value"])
         self.assertEqual("Arrows", armor_fields["slot_label"])
         self.assertEqual("Rare", armor_fields["max_rarity_label"])

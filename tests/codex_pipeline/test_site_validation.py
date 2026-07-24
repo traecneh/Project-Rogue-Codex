@@ -2872,7 +2872,7 @@ class SiteValidationTests(unittest.TestCase):
                 {
                     "id": 1,
                     "name": "Grips of Winter",
-                    "fields": {"corrupted_perk": 41},
+                    "fields": {"corrupted_perk": 41, "corrupted_perk_label": "Unknown"},
                 }
             ],
             "armors": [],
@@ -2899,7 +2899,7 @@ class SiteValidationTests(unittest.TestCase):
                 {
                     "id": 2,
                     "name": "Known Unknown",
-                    "fields": {"corrupted_perk": 24, "corrupted_perk_label": "Should Not Exist"},
+                    "fields": {"corrupted_perk": 24, "corrupted_perk_label": "Wrong Label"},
                 },
             ],
             "armors": [],
@@ -2912,7 +2912,7 @@ class SiteValidationTests(unittest.TestCase):
 
         messages = "\n".join(issue.message for issue in issues)
         self.assertIn("expected corrupted perk 41 label", messages)
-        self.assertIn("configured as unknown but has label", messages)
+        self.assertIn("expected corrupted perk 24 label 'Unknown'", messages)
 
     def test_inline_script_parser_reports_syntax_errors(self):
         from tools.codex_pipeline.validators.site import validate_inline_scripts

@@ -6840,7 +6840,8 @@
       "subtype_label": "Dagger",
       "element_label": "Cold",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Frozen Heart (Tier 1)"
+      "perk_label": "Frozen Heart (Tier 1)",
+      "corrupted_perk_label": "Unknown"
     }
   },
   {
@@ -8455,7 +8456,8 @@
       "value": 200000,
       "subtype_label": "Sword",
       "element_label": "Holy",
-      "max_rarity_label": "Ascendant"
+      "max_rarity_label": "Ascendant",
+      "perk_label": "Unknown"
     }
   },
   {
@@ -8531,7 +8533,8 @@
       "value": 5000000,
       "subtype_label": "Sword",
       "element_label": "Holy",
-      "max_rarity_label": "Ascendant"
+      "max_rarity_label": "Ascendant",
+      "perk_label": "Unknown"
     }
   },
   {
@@ -8607,7 +8610,8 @@
       "value": 300000,
       "subtype_label": "Dagger",
       "element_label": "Holy",
-      "max_rarity_label": "Ascendant"
+      "max_rarity_label": "Ascendant",
+      "perk_label": "Unknown"
     }
   },
   {
@@ -11477,7 +11481,8 @@
       "unknown_98": 0,
       "corrupted_perk": 0,
       "value": 0,
-      "subtype_label": "Axe"
+      "subtype_label": "Axe",
+      "perk_label": "Unknown"
     }
   },
   {
@@ -11679,7 +11684,8 @@
       "value": 200000,
       "subtype_label": "Axe",
       "element_label": "Fire",
-      "max_rarity_label": "Ascendant"
+      "max_rarity_label": "Ascendant",
+      "perk_label": "Unknown"
     }
   },
   {
@@ -11779,7 +11785,8 @@
       "value": 150000,
       "subtype_label": "Axe",
       "element_label": "Electric",
-      "max_rarity_label": "Ascendant"
+      "max_rarity_label": "Ascendant",
+      "perk_label": "Unknown"
     }
   },
   {
@@ -12261,7 +12268,8 @@
       "value": 3000000,
       "subtype_label": "Axe",
       "element_label": "Holy",
-      "max_rarity_label": "Ascendant"
+      "max_rarity_label": "Ascendant",
+      "perk_label": "Unknown"
     }
   },
   {
@@ -15425,7 +15433,8 @@
       "value": 150000,
       "subtype_label": "Blunt",
       "element_label": "Electric",
-      "max_rarity_label": "Ascendant"
+      "max_rarity_label": "Ascendant",
+      "perk_label": "Unknown"
     }
   },
   {
@@ -15625,7 +15634,8 @@
       "unknown_98": 0,
       "corrupted_perk": 0,
       "value": 0,
-      "subtype_label": "Blunt"
+      "subtype_label": "Blunt",
+      "perk_label": "Unknown"
     }
   },
   {
@@ -16130,7 +16140,8 @@
       "value": 200000,
       "subtype_label": "Blunt",
       "element_label": "Disease",
-      "max_rarity_label": "Ascendant"
+      "max_rarity_label": "Ascendant",
+      "perk_label": "Unknown"
     }
   },
   {
@@ -19496,7 +19507,8 @@
       "value": 200000,
       "subtype_label": "Polearm",
       "element_label": "Acid",
-      "max_rarity_label": "Ascendant"
+      "max_rarity_label": "Ascendant",
+      "perk_label": "Unknown"
     }
   },
   {
@@ -19697,7 +19709,8 @@
       "value": 150000,
       "subtype_label": "Polearm",
       "element_label": "Poison",
-      "max_rarity_label": "Ascendant"
+      "max_rarity_label": "Ascendant",
+      "perk_label": "Unknown"
     }
   },
   {
@@ -20300,7 +20313,8 @@
       "unknown_98": 0,
       "corrupted_perk": 0,
       "value": 0,
-      "subtype_label": "Polearm"
+      "subtype_label": "Polearm",
+      "perk_label": "Unknown"
     }
   },
   {
@@ -20884,7 +20898,8 @@
       "value": 500000,
       "subtype_label": "Polearm",
       "element_label": "Dark",
-      "max_rarity_label": "Ascendant"
+      "max_rarity_label": "Ascendant",
+      "perk_label": "Unknown"
     }
   },
   {
@@ -22606,7 +22621,8 @@
       "frame_9_height": 0,
       "value": 3000000,
       "subtype_label": "Bow",
-      "max_rarity_label": "Ascendant"
+      "max_rarity_label": "Ascendant",
+      "perk_label": "Unknown"
     }
   },
   {
@@ -23801,7 +23817,8 @@
       "frame_9_height": 0,
       "value": 5000000,
       "subtype_label": "Bow",
-      "max_rarity_label": "Ascendant"
+      "max_rarity_label": "Ascendant",
+      "perk_label": "Unknown"
     }
   },
   {

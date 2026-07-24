@@ -1599,7 +1599,8 @@
       "value": 100000,
       "slot_label": "Chest",
       "max_rarity_label": "Legendary",
-      "perk_label": "Antitoxin (Tier 1)"
+      "perk_label": "Antitoxin (Tier 1)",
+      "corrupted_perk_label": "Unknown"
     }
   },
   {
@@ -5918,7 +5919,8 @@
       "corrupted_perk": 0,
       "value": 125000,
       "slot_label": "Helmet",
-      "max_rarity_label": "Mythical"
+      "max_rarity_label": "Mythical",
+      "perk_label": "Unknown"
     }
   },
   {
@@ -7523,7 +7525,8 @@
       "corrupted_perk": 2,
       "value": 450000,
       "slot_label": "Helmet",
-      "max_rarity_label": "Ascendant"
+      "max_rarity_label": "Ascendant",
+      "corrupted_perk_label": "Unknown"
     }
   },
   {
@@ -12140,7 +12143,8 @@
       "value": 750000,
       "slot_label": "Shield",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Vitality (Tier 3)"
+      "perk_label": "Vitality (Tier 3)",
+      "corrupted_perk_label": "Unknown"
     }
   },
   {
@@ -20794,7 +20798,8 @@
       "value": 0,
       "slot_label": "Cosmetic",
       "max_rarity_label": "Ascendant",
-      "perk_label": "Iceburst (Tier 1)"
+      "perk_label": "Iceburst (Tier 1)",
+      "corrupted_perk_label": "Unknown"
     }
   },
   {
@@ -25030,7 +25035,8 @@
       "frame_9_width": 0,
       "frame_9_height": 0,
       "value": 0,
-      "max_rarity_label": "Ascendant"
+      "max_rarity_label": "Ascendant",
+      "perk_label": "Unknown"
     }
   },
   {
@@ -25100,7 +25106,8 @@
       "frame_9_width": 0,
       "frame_9_height": 0,
       "value": 0,
-      "max_rarity_label": "Ascendant"
+      "max_rarity_label": "Ascendant",
+      "perk_label": "Unknown"
     }
   },
   {
@@ -25170,7 +25177,8 @@
       "frame_9_width": 0,
       "frame_9_height": 0,
       "value": 0,
-      "max_rarity_label": "Ascendant"
+      "max_rarity_label": "Ascendant",
+      "perk_label": "Unknown"
     }
   }
 ]

@@ -4,6 +4,8 @@ import re
 from collections.abc import Mapping, MutableMapping, Sequence
 from typing import Any
 
+from tools.codex_pipeline.perks import UNKNOWN_PERK_LABEL
+
 
 PERK_LABELS = {
     1: "Lifesteal (Tier 2)",
@@ -172,7 +174,6 @@ def resolve_corrupted_perk_label(corrupted_val: int, base_val: int | None = None
         base_label = PERK_LABELS[base_val]
         if corrupted_val - base_val == 256:
             return _bump_tier_label(base_label)
-        return base_label
 
     offset_base = corrupted_val - 256
     if offset_base in PERK_LABELS:
@@ -199,14 +200,13 @@ def add_derived_value(fields: MutableMapping[str, object]) -> None:
 
 def add_perk_labels(fields: MutableMapping[str, object]) -> None:
     perk_val = fields.get("perk")
-    if perk_val in PERK_LABELS:
-        fields["perk_label"] = PERK_LABELS[perk_val]
+    if perk_val:
+        fields["perk_label"] = PERK_LABELS.get(perk_val, UNKNOWN_PERK_LABEL)
 
     corrupted_val = fields.get("corrupted_perk")
     if corrupted_val:
         resolved = resolve_corrupted_perk_label(corrupted_val, perk_val)
-        if resolved:
-            fields["corrupted_perk_label"] = resolved
+        fields["corrupted_perk_label"] = resolved or UNKNOWN_PERK_LABEL
 
 
 def enrich_weapon_fields(fields: MutableMapping[str, object]) -> None:
