@@ -26,9 +26,9 @@
     },
     "weapons": {
       "entries": 250,
-      "files_sha256": "e71b3ed045d2de4b8e2b38bcb6a16ca0df99a876c2c5327e6af919beb1770b4b",
+      "files_sha256": "7735fd1b7e32fc6fe45450ad80ea3430331f3c00206b9b446cc13c84b9e84a6c",
       "manifest_path": "images/weapons/manifest.json",
-      "manifest_sha256": "e857f48cf33e5971238f0629773e1348cfdf51c68b25d12f2e7eda184edcf82b"
+      "manifest_sha256": "a460939c4e84ee650642393622d1cf57456352d37a5288d8e609bbf16ab2c334"
     }
   },
   "data": {
@@ -58,12 +58,12 @@
       "sha256": "373bc2679e59c5ef0b3208f50b49eb24553d8936f78ee3f3a7bb1b80fed4dd4a"
     }
   },
-  "generated_at_utc": "2026-07-24T22:25:02Z",
+  "generated_at_utc": "2026-07-24T22:37:39Z",
   "schema": "project-rogue-codex-manifest",
-  "source_commit": "53868d2c21c9f1ee71ac896c0fbcfa856c894ce5",
+  "source_commit": "ba9840160ab5f6dc57c468cedc95546a32a2fe3b",
   "summary": {
     "asset_entries": 810,
-    "content_sha256": "09a5f45c8e415f959a47e5f501923811ad9bf70e1f0aebbf5a66a4859192c5a0",
+    "content_sha256": "f8a4d4821f3978fef4ba3b58c4659bacd9362a55ff034d70768b3af3b4b1c05d",
     "data_records": 811
   },
   "version": 1

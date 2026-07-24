@@ -173,6 +173,14 @@ def _record_requests_animation(record: Any) -> bool:
         return False
     animated = _int_or_none(fields.get("animated"))
     frame_count = _int_or_none(fields.get("animation_frame_count"))
+    if animated is None:
+        animated = _int_or_none(fields.get("unknown_34"))
+    if animated is None:
+        animated = _int_or_none(fields.get("unknown_30"))
+    if frame_count is None:
+        frame_count = _int_or_none(fields.get("unknown_35"))
+    if frame_count is None:
+        frame_count = _int_or_none(fields.get("unknown_31"))
     return animated == 1 or (frame_count is not None and frame_count > 1)
 
 

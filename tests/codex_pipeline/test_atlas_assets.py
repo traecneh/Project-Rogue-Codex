@@ -148,6 +148,61 @@ class AtlasAssetTests(unittest.TestCase):
         self.assertEqual((0, 0, 255, 255), frames[1].getpixel((0, 0)))
         self.assertEqual(0, frames[1].getpixel((1, 0))[3])
 
+    def test_extract_atlas_assets_uses_legacy_weapon_animation_fields_for_new_assets(self):
+        from tools.codex_pipeline.atlas_assets import extract_atlas_assets_for_target
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            gf_json_dir = root / "client" / "gf_json"
+            data_path = root / "generated" / "weapons_data05.json"
+            output_dir = root / "atlas-assets" / "weapons"
+            site_dir = root / "site" / "images" / "weapons"
+            gf_json_dir.mkdir(parents=True)
+            data_path.parent.mkdir()
+            site_dir.mkdir(parents=True)
+
+            atlas = Image.new("RGBA", (4, 2), (255, 0, 255, 255))
+            atlas.putpixel((0, 0), (255, 255, 0, 255))
+            atlas.putpixel((2, 0), (128, 0, 255, 255))
+            _write_gf_json_png(gf_json_dir / "itemgraph.json", atlas)
+            data_path.write_text(
+                json.dumps(
+                    [
+                        {
+                            "id": 1,
+                            "name": "New Animated Sword",
+                            "fields": {
+                                "unknown_34": 1,
+                                "unknown_35": 2,
+                                "frame_1_x": 0,
+                                "frame_1_y": 0,
+                                "frame_1_width": 2,
+                                "frame_1_height": 2,
+                                "frame_2_x": 2,
+                                "frame_2_y": 0,
+                                "frame_2_width": 2,
+                                "frame_2_height": 2,
+                            },
+                        }
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            report = extract_atlas_assets_for_target(
+                "weapons",
+                data_path=data_path,
+                gf_json_dir=gf_json_dir,
+                output_dir=output_dir,
+                site_dir=site_dir,
+            )
+
+            with Image.open(output_dir / "New Animated Sword.gif") as image:
+                frame_count = sum(1 for _ in ImageSequence.Iterator(image))
+
+        self.assertEqual(["New Animated Sword.gif"], report.written)
+        self.assertEqual(2, frame_count)
+
     def test_extract_atlas_assets_uses_avatar_atlas_for_monsters(self):
         from tools.codex_pipeline.atlas_assets import extract_atlas_assets_for_target
 
