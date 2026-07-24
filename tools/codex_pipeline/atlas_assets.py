@@ -144,12 +144,36 @@ def _record_id_suffix(record: Any, fallback_index: int) -> str:
     return str(fallback_index + 1)
 
 
-def _output_file_name(record_name: str, site_names: dict[str, str], *, duplicate_suffix: str | None = None) -> str:
+def _output_file_name(
+    record_name: str,
+    site_names: dict[str, str],
+    *,
+    duplicate_suffix: str | None = None,
+    animated: bool = False,
+) -> str:
     stem = _sanitize_filename_stem(record_name)
+    extension = ".gif" if animated else ".png"
     if duplicate_suffix:
         duplicate_stem = f"{stem}-{duplicate_suffix}"
-        return site_names.get(duplicate_stem.casefold()) or f"{duplicate_stem}.png"
-    return site_names.get(stem.casefold()) or f"{stem}.png"
+        existing = site_names.get(duplicate_stem.casefold())
+        if existing and (not animated or Path(existing).suffix.lower() == ".gif"):
+            return existing
+        return f"{duplicate_stem}{extension}"
+    existing = site_names.get(stem.casefold())
+    if existing and (not animated or Path(existing).suffix.lower() == ".gif"):
+        return existing
+    return f"{stem}{extension}"
+
+
+def _record_requests_animation(record: Any) -> bool:
+    if not isinstance(record, dict):
+        return False
+    fields = record.get("fields")
+    if not isinstance(fields, dict):
+        return False
+    animated = _int_or_none(fields.get("animated"))
+    frame_count = _int_or_none(fields.get("animation_frame_count"))
+    return animated == 1 or (frame_count is not None and frame_count > 1)
 
 
 def _record_frames(record: Any) -> list[AtlasFrame]:
@@ -282,7 +306,13 @@ def extract_atlas_assets_for_target(
             if name_counts[_sanitize_filename_stem(name).casefold()] > 1
             else None
         )
-        file_name = _output_file_name(name, site_names, duplicate_suffix=duplicate_suffix)
+        animated = len(crops) > 1 and (target_name == "monsters" or _record_requests_animation(record))
+        file_name = _output_file_name(
+            name,
+            site_names,
+            duplicate_suffix=duplicate_suffix,
+            animated=animated,
+        )
         try:
             _save_frames(crops, output_dir / file_name)
         except OSError as exc:

@@ -408,7 +408,6 @@ class ItemRelationshipInventoryTests(unittest.TestCase):
         demon_skull = by_name["Demon Skull"]
         feather = by_name["Feather"]
         human_bones = by_name["Human Bones"]
-        ship_deed = by_name["Ship Deed"]
 
         self.assertEqual("confirmed", holiday.status)
         self.assertTrue(
@@ -467,25 +466,7 @@ class ItemRelationshipInventoryTests(unittest.TestCase):
                 for relationship in human_bones.confirmed
             )
         )
-        self.assertTrue(
-            any(
-                relationship.relationship_type == "related_system" and relationship.target == "Travel"
-                for relationship in ship_deed.confirmed
-            )
-        )
-        self.assertEqual("linked", by_target["Travel"].status)
-        self.assertEqual("pages/systems/travel.html", by_target["Travel"].href)
-        self.assertEqual(1, by_target["Travel"].relationship_count)
-        self.assertEqual(
-            ["manual override: reviewed ship utility item"],
-            [
-                relationship.evidence
-                for relationship in ship_deed.confirmed
-                if relationship.relationship_type == "related_system" and relationship.target == "Travel"
-            ],
-        )
         self.assertNotIn("Seasonal Events", review_targets)
-        self.assertNotIn("Travel", review_targets)
 
     def test_cli_prints_item_relationship_inventory(self):
         from tools.codex_pipeline import cli

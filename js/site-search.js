@@ -30,6 +30,14 @@ const SITE_SEARCH_INDEX = [
     keywords: ["planner", "builds", "stats", "theorycraft"],
   },
   {
+    title: "Quests",
+    url: "pages/General/quests.html",
+    category: "General",
+    description: "Quest requirements, staged objectives, NPCs, and rewards.",
+    keywords: ["quests", "silvest", "objectives", "rewards", "npc"],
+    featured: true,
+  },
+  {
     title: "Weapons",
     url: "pages/items/weapons.html",
     category: "Items",
@@ -207,13 +215,6 @@ const SITE_SEARCH_INDEX = [
     keywords: ["seasonal", "events", "holiday gift", "holiday", "gift"],
   },
   {
-    title: "Travel",
-    url: "pages/systems/travel.html",
-    category: "Systems",
-    description: "Travel-related utility items and current Ship Deed reference.",
-    keywords: ["travel", "ship deed", "ship", "deed", "boat"],
-  },
-  {
     title: "Deconstruct",
     url: "pages/systems/deconstruct.html",
     category: "Ascendancy",
@@ -262,6 +263,8 @@ const WEAPONS_SCHEMA_VERSION = 5;
 const PERKS_PAGE_URL = "pages/systems/perks.html";
 const PERKS_INDEX_URL = "pages/systems/perks.json";
 const MONSTERS_PAGE_URL = "pages/enemies/monsters.html";
+const QUESTS_PAGE_URL = "pages/General/quests.html";
+const QUESTS_INDEX_URL = "pages/General/quests_data.json";
 const MAX_PERK_RESULTS = 4;
 const MIN_PERK_TERM_LENGTH = 2;
 const MAX_TATTER_MONSTER_RESULTS = 4;
@@ -288,6 +291,8 @@ let WEAPON_INDEX_PROMISE = null;
 let WEAPON_DATA_PROMISE = null;
 let ARMOR_SEARCH_INDEX = [];
 let ARMOR_INDEX_PROMISE = null;
+let QUEST_SEARCH_INDEX = [];
+let QUEST_INDEX_PROMISE = null;
 const COLLECTABLE_SEARCH_CONFIG = {
   dataFile: "pages/items/collectables_data.json",
   url: "pages/items/collectables.html",
@@ -849,6 +854,67 @@ function loadMiscItemSearchIndex(config) {
   return config.promise;
 }
 
+function buildQuestSearchEntry(entry, kind) {
+  if (!entry || !entry.id || !entry.name) return null;
+  const provider = kind === "service" ? entry.provider : entry.giver;
+  const objectives =
+    kind === "quest"
+      ? (entry.stages || []).flatMap((stage) =>
+          (stage.objectives || []).flatMap((objective) => [
+            objective.text,
+            objective.target?.label,
+            objective.target?.entity?.name,
+          ])
+        )
+      : [];
+  const rewards =
+    kind === "quest"
+      ? [...(entry.rewards?.guaranteed || []), ...(entry.rewards?.choose_one || [])].map(
+          (reward) => reward.label
+        )
+      : (entry.costs || []).map((cost) => cost.label);
+  const typeLabel = kind === "service" ? "Service" : entry.repeatable ? "Repeatable quest" : "Quest";
+  return normalizeSearchEntry({
+    title: entry.name,
+    url: `${QUESTS_PAGE_URL}?quest=${encodeURIComponent(entry.id)}`,
+    category: kind === "service" ? "Services" : "Quests",
+    description: `Level ${entry.min_level} | ${provider?.name || "Unknown"} | ${entry.area}`,
+    keywords: [
+      entry.name,
+      typeLabel,
+      entry.category,
+      entry.region,
+      entry.area,
+      provider?.name,
+      ...objectives,
+      ...rewards,
+    ].filter(Boolean),
+    isQuest: kind === "quest",
+    questId: entry.id,
+  });
+}
+
+function loadQuestSearchIndex() {
+  if (QUEST_INDEX_PROMISE) return QUEST_INDEX_PROMISE;
+  const absoluteUrl = getAbsoluteUrl(QUESTS_INDEX_URL);
+  QUEST_INDEX_PROMISE = fetchJsonMaybeCached(absoluteUrl, `Failed to fetch ${QUESTS_INDEX_URL}`)
+    .then((data) => {
+      const quests = Array.isArray(data?.quests)
+        ? data.quests.map((entry) => buildQuestSearchEntry(entry, "quest"))
+        : [];
+      const services = Array.isArray(data?.services)
+        ? data.services.map((entry) => buildQuestSearchEntry(entry, "service"))
+        : [];
+      QUEST_SEARCH_INDEX = quests.concat(services).filter(Boolean);
+      return QUEST_SEARCH_INDEX;
+    })
+    .catch(() => {
+      QUEST_SEARCH_INDEX = [];
+      return QUEST_SEARCH_INDEX;
+    });
+  return QUEST_INDEX_PROMISE;
+}
+
 function loadArmorSearchIndex() {
   if (ARMOR_INDEX_PROMISE) return ARMOR_INDEX_PROMISE;
   const absoluteUrl = getAbsoluteUrl("pages/items/armors_data06.json");
@@ -1099,6 +1165,7 @@ function runSiteSearch(query) {
   loadMonsterSearchIndex();
   loadWeaponSearchIndex();
   loadArmorSearchIndex();
+  loadQuestSearchIndex();
   loadMiscItemSearchIndex(COLLECTABLE_SEARCH_CONFIG);
   loadMiscItemSearchIndex(USEABLE_SEARCH_CONFIG);
   if (!terms.length) {
@@ -1113,6 +1180,7 @@ function runSiteSearch(query) {
     MONSTER_SEARCH_INDEX,
     WEAPON_SEARCH_INDEX,
     ARMOR_SEARCH_INDEX,
+    QUEST_SEARCH_INDEX,
     COLLECTABLE_SEARCH_CONFIG.index,
     USEABLE_SEARCH_CONFIG.index
   );
@@ -1268,6 +1336,9 @@ function initializeSiteSearch() {
     }
     if (ARMOR_INDEX_PROMISE) {
       pendingFetches.push(ARMOR_INDEX_PROMISE);
+    }
+    if (QUEST_INDEX_PROMISE) {
+      pendingFetches.push(QUEST_INDEX_PROMISE);
     }
     if (COLLECTABLE_SEARCH_CONFIG.promise) {
       pendingFetches.push(COLLECTABLE_SEARCH_CONFIG.promise);

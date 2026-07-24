@@ -189,6 +189,79 @@ class AtlasAssetTests(unittest.TestCase):
         self.assertEqual(["Ice Devil.png"], report.written)
         self.assertEqual((12, 34, 56, 255), monster_image.getpixel((0, 0)))
 
+    def test_extract_atlas_assets_animates_duplicate_monster_records(self):
+        from tools.codex_pipeline.atlas_assets import extract_atlas_assets_for_target
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            gf_json_dir = root / "client" / "gf_json"
+            data_path = root / "generated" / "monsters_data03.json"
+            output_dir = root / "atlas-assets" / "monsters"
+            site_dir = root / "site" / "images" / "monsters"
+            gf_json_dir.mkdir(parents=True)
+            data_path.parent.mkdir()
+            site_dir.mkdir(parents=True)
+            (site_dir / "Zombie-23.png").write_bytes(b"static")
+            (site_dir / "Zombie-94.png").write_bytes(b"static")
+
+            atlas = Image.new("RGBA", (8, 2), (255, 0, 255, 255))
+            colors = [(0, 255, 0, 255), (0, 128, 0, 255), (255, 0, 0, 255), (128, 0, 0, 255)]
+            for frame_index, color in enumerate(colors):
+                atlas.putpixel((frame_index * 2, 0), color)
+            _write_gf_json_png(gf_json_dir / "avatars.json", atlas)
+            data_path.write_text(
+                json.dumps(
+                    [
+                        {
+                            "id": 23,
+                            "name": "Zombie",
+                            "fields": {
+                                "frame_1_x": 0,
+                                "frame_1_y": 0,
+                                "frame_1_width": 2,
+                                "frame_1_height": 2,
+                                "frame_2_x": 2,
+                                "frame_2_y": 0,
+                                "frame_2_width": 2,
+                                "frame_2_height": 2,
+                            },
+                        },
+                        {
+                            "id": 94,
+                            "name": "Zombie",
+                            "fields": {
+                                "frame_1_x": 4,
+                                "frame_1_y": 0,
+                                "frame_1_width": 2,
+                                "frame_1_height": 2,
+                                "frame_2_x": 6,
+                                "frame_2_y": 0,
+                                "frame_2_width": 2,
+                                "frame_2_height": 2,
+                            },
+                        },
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            report = extract_atlas_assets_for_target(
+                "monsters",
+                data_path=data_path,
+                gf_json_dir=gf_json_dir,
+                output_dir=output_dir,
+                site_dir=site_dir,
+            )
+
+            frame_counts = {}
+            for file_name in report.written:
+                with Image.open(output_dir / file_name) as image:
+                    frame_counts[file_name] = sum(1 for _ in ImageSequence.Iterator(image))
+
+        self.assertEqual(["Zombie-23.gif", "Zombie-94.gif"], report.written)
+        self.assertEqual({"Zombie-23.gif": 2, "Zombie-94.gif": 2}, frame_counts)
+        self.assertEqual([], report.issues)
+
     def test_extract_atlas_assets_uses_itemgraph_for_collectables_and_useables(self):
         from tools.codex_pipeline.atlas_assets import has_atlas_source
 

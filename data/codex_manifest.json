@@ -14,9 +14,9 @@
     },
     "monsters": {
       "entries": 191,
-      "files_sha256": "655befc2e42926f32a9f3b26c45aa977d1cc8216c14340e3bae77109cf50bffb",
+      "files_sha256": "54de7ac2ac13e50d10e00aee136582efcd933022ef86a0982e332a4de7a01773",
       "manifest_path": "images/monsters/manifest.json",
-      "manifest_sha256": "1c9a729b36651632270f7d97fc7e706c9beb2dfa789b4de3428c9a1fa5f52b6f"
+      "manifest_sha256": "e955c6d167bcebe22306492ee104458078ff24fdf3c2cf03f5b4e40e81de18c3"
     },
     "useables": {
       "entries": 22,
@@ -58,12 +58,12 @@
       "sha256": "959367fbe8eb9041a5c8e8243126a6228d0fa166119149ea932d117a2b6e4149"
     }
   },
-  "generated_at_utc": "2026-07-17T20:25:01Z",
+  "generated_at_utc": "2026-07-24T12:56:22Z",
   "schema": "project-rogue-codex-manifest",
-  "source_commit": "063de7058e852ca479ba86fcc0b551995304c9ef",
+  "source_commit": "315a7ec96b3d048fe660d70cfca2deb4ca2bceb2",
   "summary": {
     "asset_entries": 804,
-    "content_sha256": "033fbb3d246cfaaa5fc6887e3d54e36d057d164047a384a913296237014f5711",
+    "content_sha256": "6d19a92691139279f564be7f9c84f489ce5abf10e89ccbfab13ff5aa65bfd8b3",
     "data_records": 805
   },
   "version": 1

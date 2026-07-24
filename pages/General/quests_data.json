@@ -1,0 +1,1016 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-07-24",
+  "source": {
+    "kind": "manual_observation",
+    "scope": "Silvest quest pass",
+    "note": "Quest data is not currently present in rogue_data.vpack. Dialogue, objectives, coordinates, and rewards were observed in game."
+  },
+  "quests": [
+    {
+      "id": "welcome-to-silvest",
+      "name": "Welcome to Silvest",
+      "category": "Tutorial",
+      "region": "Silvest",
+      "area": "Silvest Town - outside the starting building",
+      "min_level": 1,
+      "repeatable": false,
+      "giver": {
+        "name": "Town Guide",
+        "coordinates": [3415, 3722],
+        "markers": "!?*"
+      },
+      "prerequisites": [],
+      "initial_dialogue": "Welcome to Silvest! You can press \"F1\" to get your bearings. Let me also give you some directions of places to go!",
+      "stages": [
+        {
+          "number": 1,
+          "label": "Town orientation",
+          "objectives": [
+            {
+              "number": 1,
+              "text": "Check out the Bank!",
+              "target": {
+                "kind": "location",
+                "label": "Silvest Bank",
+                "coordinates": [3468, 3729]
+              }
+            },
+            {
+              "number": 2,
+              "text": "Check out the Potion Shop!",
+              "target": {
+                "kind": "location",
+                "label": "Potion Shop",
+                "coordinates": [3458, 3740]
+              }
+            }
+          ]
+        },
+        {
+          "number": 2,
+          "label": "Southern outpost",
+          "unlocks_after": "Complete objectives 1 and 2",
+          "objectives": [
+            {
+              "number": 3,
+              "text": "Talk to Hicklen at the southern outpost",
+              "target": {
+                "kind": "npc",
+                "label": "Hicklen",
+                "coordinates": [3452, 3847],
+                "markers": "*"
+              },
+              "dialogue": "Hello! I assume my friend sent you, why don't you try killing some monsters for me? Press \"Q\" to toggle attack and click on a monster, or, press ta",
+              "dialogue_truncated": true
+            }
+          ]
+        },
+        {
+          "number": 3,
+          "label": "Hicklen's hunt",
+          "unlocks_after": "Talk to Hicklen",
+          "objectives": [
+            {
+              "number": 4,
+              "text": "Kill Spiders for Hicklen",
+              "quantity": 15,
+              "target": {
+                "kind": "monster",
+                "label": "Spider",
+                "entity": {
+                  "type": "monster",
+                  "id": 89,
+                  "name": "Spider"
+                }
+              }
+            },
+            {
+              "number": 5,
+              "text": "Kill Bats for Hicklen",
+              "quantity": 5,
+              "target": {
+                "kind": "monster",
+                "label": "Bat",
+                "entity": {
+                  "type": "monster",
+                  "id": 124,
+                  "name": "Bat"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "number": 4,
+          "label": "Respawn lesson",
+          "unlocks_after": "Complete objectives 4 and 5",
+          "objectives": [
+            {
+              "number": 6,
+              "text": "Return to Hicklen",
+              "target": {
+                "kind": "npc",
+                "label": "Hicklen",
+                "coordinates": [3452, 3847],
+                "markers": "*"
+              },
+              "dialogue": "Welcome back! Do you see that purple portal below me? Please go to it and left click it to set your respawn when you die!"
+            }
+          ]
+        },
+        {
+          "number": 5,
+          "label": "Set the spawn gate",
+          "unlocks_after": "Return to Hicklen",
+          "objectives": [
+            {
+              "number": 7,
+              "text": "Left click the spawn gate",
+              "target": {
+                "kind": "location",
+                "label": "Spawn Gate",
+                "coordinates": [3447, 3863]
+              },
+              "notes": [
+                "Observed behavior: walking near the spawn gate completes the objective; left clicking was not required."
+              ]
+            }
+          ]
+        },
+        {
+          "number": 6,
+          "label": "Return to town",
+          "unlocks_after": "Set the spawn gate",
+          "objectives": [
+            {
+              "number": 8,
+              "text": "Return to Town Guide",
+              "target": {
+                "kind": "npc",
+                "label": "Town Guide",
+                "coordinates": [3415, 3722],
+                "markers": "!?*"
+              },
+              "dialogue": "Did Hicklen treat you well? Hopefully this helped guide you somewhat in this world!"
+            }
+          ]
+        }
+      ],
+      "turn_in": {
+        "name": "Town Guide",
+        "coordinates": [3415, 3722],
+        "markers": "!?*",
+        "dialogue": "Please see my friend when you want to leave Silvest!"
+      },
+      "rewards": {
+        "guaranteed": [
+          {
+            "type": "experience",
+            "amount": 500,
+            "label": "Experience"
+          }
+        ],
+        "choose_one": []
+      },
+      "notes": []
+    },
+    {
+      "id": "leave-silvest",
+      "name": "Leave Silvest",
+      "category": "Tutorial",
+      "region": "Silvest",
+      "area": "Silvest Town - Bank",
+      "min_level": 1,
+      "repeatable": false,
+      "giver": {
+        "name": "Brother John",
+        "coordinates": [3464, 3729],
+        "markers": "!"
+      },
+      "prerequisites": [],
+      "initial_dialogue": "Hey there, are you wanting to leave Silvest? My friend, Jed at the docks can guide you. The docks are to the north.",
+      "stages": [
+        {
+          "number": 1,
+          "label": "Find passage",
+          "objectives": [
+            {
+              "number": 1,
+              "text": "Speak to Priest Jed at the Docks",
+              "target": {
+                "kind": "npc",
+                "label": "Priest Jed",
+                "coordinates": [3657, 3612],
+                "markers": "*"
+              },
+              "dialogue": "Did Brother John send you? If you're looking to leave Silvest, you can have my ticket to go on the boat! *he hands you his ticket* Go see Brother",
+              "dialogue_truncated": true
+            }
+          ]
+        },
+        {
+          "number": 2,
+          "label": "Sail to Jeel",
+          "unlocks_after": "Speak to Priest Jed",
+          "objectives": [
+            {
+              "number": 2,
+              "text": "Get on the boat",
+              "target": {
+                "kind": "location",
+                "label": "Boat to Jeel",
+                "coordinates": [3678, 3570]
+              },
+              "notes": [
+                "Left click the boat to travel to Jeel, then speak to Brother Tom."
+              ]
+            }
+          ]
+        }
+      ],
+      "turn_in": {
+        "name": "Brother Tom",
+        "area": "Jeel",
+        "coordinates": [3829, 3272],
+        "markers": "?",
+        "dialogue": "Hey there traveler, welcome to Jeel! This land is called Krythan, I hope you enjoy your adventures here!"
+      },
+      "rewards": {
+        "guaranteed": [
+          {
+            "type": "experience",
+            "amount": 500,
+            "label": "Experience"
+          }
+        ],
+        "choose_one": []
+      },
+      "notes": []
+    },
+    {
+      "id": "silvest-explorer",
+      "name": "Silvest Explorer",
+      "category": "Side",
+      "region": "Silvest",
+      "area": "Silvest Town - outside the starting building",
+      "min_level": 1,
+      "repeatable": true,
+      "giver": {
+        "name": "Zalen",
+        "coordinates": [3433, 3721],
+        "markers": "!?"
+      },
+      "prerequisites": [],
+      "initial_dialogue": "Zalen of Silvest has requested you to explore silvest, along with investigate the rumors of William the Young's father.",
+      "stages": [
+        {
+          "number": 1,
+          "label": "Explore southern Silvest",
+          "objectives": [
+            {
+              "number": 1,
+              "text": "Kill Spiders",
+              "quantity": 10,
+              "target": {
+                "kind": "monster",
+                "label": "Spider",
+                "entity": {
+                  "type": "monster",
+                  "id": 89,
+                  "name": "Spider"
+                }
+              }
+            },
+            {
+              "number": 2,
+              "text": "Find William the Young and speak to him",
+              "target": {
+                "kind": "npc",
+                "label": "William the Young",
+                "coordinates": [3495, 3915],
+                "markers": "*"
+              }
+            }
+          ]
+        },
+        {
+          "number": 2,
+          "label": "Investigate the cave",
+          "unlocks_after": "Complete objectives 1 and 2",
+          "objectives": [
+            {
+              "number": 3,
+              "text": "Explore the cave near William's house",
+              "target": {
+                "kind": "route",
+                "label": "Cave near William's house",
+                "coordinates": [3544, 3992],
+                "destination_coordinates": [7708, 3913]
+              }
+            },
+            {
+              "number": 4,
+              "text": "Look for clues of William's father's fate",
+              "target": {
+                "kind": "object",
+                "label": "Mossy Tombstone",
+                "coordinates": [7722, 3908]
+              },
+              "dialogue": "You see a memorial to William's father"
+            }
+          ]
+        },
+        {
+          "number": 3,
+          "label": "Bring back the news",
+          "unlocks_after": "Complete objectives 3 and 4",
+          "objectives": [
+            {
+              "number": 5,
+              "text": "Tell William the news of his father",
+              "target": {
+                "kind": "npc",
+                "label": "William the Young",
+                "coordinates": [3495, 3915],
+                "markers": "*"
+              },
+              "dialogue": "I am not surprised he died..."
+            }
+          ]
+        }
+      ],
+      "turn_in": {
+        "name": "Zalen",
+        "coordinates": [3433, 3721],
+        "markers": "!?"
+      },
+      "rewards": {
+        "guaranteed": [
+          {
+            "type": "experience",
+            "amount": 1000,
+            "label": "Experience"
+          },
+          {
+            "type": "experience_pool",
+            "amount": 0.25,
+            "label": "Experience Pool"
+          },
+          {
+            "type": "armor",
+            "amount": 1,
+            "label": "Padded Armor",
+            "entity": {
+              "type": "armor",
+              "id": 4,
+              "name": "Padded Armor"
+            }
+          }
+        ],
+        "choose_one": [
+          {
+            "type": "weapon",
+            "amount": 1,
+            "label": "Golden Sword",
+            "entity": {
+              "type": "weapon",
+              "id": 203,
+              "name": "Golden Sword"
+            }
+          },
+          {
+            "type": "weapon",
+            "amount": 1,
+            "label": "Great Dagger",
+            "entity": {
+              "type": "weapon",
+              "id": 238,
+              "name": "Great Dagger"
+            }
+          },
+          {
+            "type": "weapon",
+            "amount": 1,
+            "label": "Golden Hatchet",
+            "entity": {
+              "type": "weapon",
+              "id": 402,
+              "name": "Golden Hatchet"
+            }
+          }
+        ]
+      },
+      "notes": []
+    },
+    {
+      "id": "mastery-of-silvest",
+      "name": "Mastery of Silvest",
+      "category": "Progression",
+      "region": "Silvest",
+      "area": "Silvest Town",
+      "min_level": 10,
+      "repeatable": false,
+      "giver": {
+        "name": "Champion of Silvest",
+        "coordinates": [3454, 3729],
+        "markers": "!?"
+      },
+      "prerequisites": [
+        "deadly-kobold-spears",
+        "a-snack-for-a-snack",
+        "investigate-the-undead",
+        "a-thiefs-gambit",
+        "bark-at-the-docks"
+      ],
+      "initial_dialogue": "The people of Silvest need your help from monsters. Can you help me clear them out of Silvest for good?",
+      "stages": [
+        {
+          "number": 1,
+          "label": "Clear Silvest's threats",
+          "objectives": [
+            {
+              "number": 1,
+              "text": "Kill Skeletons",
+              "quantity": 25,
+              "target": {
+                "kind": "monster",
+                "label": "Skeleton",
+                "entity": {
+                  "type": "monster",
+                  "id": 46,
+                  "name": "Skeleton"
+                }
+              }
+            },
+            {
+              "number": 2,
+              "text": "Kill Skeleton Warriors",
+              "quantity": 15,
+              "target": {
+                "kind": "monster",
+                "label": "Skeleton Warrior",
+                "entity": {
+                  "type": "monster",
+                  "id": 120,
+                  "name": "Skeleton Warrior"
+                }
+              }
+            },
+            {
+              "number": 3,
+              "text": "Kill Zombies",
+              "quantity": 25,
+              "target": {
+                "kind": "monster",
+                "label": "Zombie",
+                "entity": {
+                  "type": "monster",
+                  "id": 94,
+                  "name": "Zombie",
+                  "image": "images/monsters/Zombie-94.gif"
+                }
+              }
+            },
+            {
+              "number": 4,
+              "text": "Kill Kobold Mages",
+              "quantity": 5,
+              "target": {
+                "kind": "monster",
+                "label": "Kobold Mage",
+                "entity": {
+                  "type": "monster",
+                  "id": 107,
+                  "name": "Kobold Mage"
+                }
+              }
+            },
+            {
+              "number": 5,
+              "text": "Kill Dark Mages",
+              "quantity": 5,
+              "target": {
+                "kind": "monster",
+                "label": "Dark Mage",
+                "entity": {
+                  "type": "monster",
+                  "id": 58,
+                  "name": "Dark Mage"
+                }
+              }
+            },
+            {
+              "number": 6,
+              "text": "Kill Thieves",
+              "quantity": 5,
+              "target": {
+                "kind": "monster",
+                "label": "Thief",
+                "entity": {
+                  "type": "monster",
+                  "id": 116,
+                  "name": "Thief"
+                }
+              }
+            },
+            {
+              "number": 7,
+              "text": "Kill Fighters",
+              "quantity": 5,
+              "target": {
+                "kind": "monster",
+                "label": "Fighter",
+                "entity": {
+                  "type": "monster",
+                  "id": 117,
+                  "name": "Fighter"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "turn_in": {
+        "name": "Champion of Silvest",
+        "coordinates": [3454, 3729],
+        "markers": "!?",
+        "dialogue": "You have proven yourself to be a champion of Silvest, Thank you!"
+      },
+      "rewards": {
+        "guaranteed": [
+          {
+            "type": "experience",
+            "amount": 7500,
+            "label": "Experience"
+          },
+          {
+            "type": "armor",
+            "amount": 1,
+            "label": "Bottomless Bag",
+            "entity": {
+              "type": "armor",
+              "id": 1006,
+              "name": "Bottomless Bag"
+            }
+          }
+        ],
+        "choose_one": []
+      },
+      "notes": []
+    },
+    {
+      "id": "bark-at-the-docks",
+      "name": "Bark At The Docks",
+      "category": "Side",
+      "region": "Silvest",
+      "area": "Silvest Town - south of the farms",
+      "min_level": 1,
+      "repeatable": false,
+      "giver": {
+        "name": "Clive",
+        "coordinates": [3487, 3724],
+        "markers": "!?"
+      },
+      "prerequisites": [],
+      "initial_dialogue": "My dog Torgal ran off to the north towards the boats where people leave Silvest. Can you please go and look for him and let me know if you see him?",
+      "stages": [
+        {
+          "number": 1,
+          "label": "Find Torgal",
+          "objectives": [
+            {
+              "number": 1,
+              "text": "Find the Dog",
+              "target": {
+                "kind": "npc",
+                "label": "Torgal",
+                "coordinates": [3679, 3581],
+                "markers": "*"
+              },
+              "dialogue": "The dog looks at you and barks, and rubs against your leg. This must be the dog Clive told you about. Return to him and let him know."
+            }
+          ]
+        }
+      ],
+      "turn_in": {
+        "name": "Clive",
+        "coordinates": [3487, 3724],
+        "markers": "!?",
+        "dialogue": "Torgal is at the docks? I'll head there immediately. Thank you!"
+      },
+      "rewards": {
+        "guaranteed": [
+          {
+            "type": "experience",
+            "amount": 500,
+            "label": "Experience"
+          }
+        ],
+        "choose_one": []
+      },
+      "notes": []
+    },
+    {
+      "id": "a-thiefs-gambit",
+      "name": "A Thief's Gambit",
+      "category": "Side",
+      "region": "Silvest",
+      "area": "Silvest Town - east of the Bank",
+      "min_level": 8,
+      "repeatable": false,
+      "giver": {
+        "name": "Pyke",
+        "coordinates": [3478, 3729],
+        "markers": "!?"
+      },
+      "prerequisites": [],
+      "initial_dialogue": "My former gang is to the north in a abandoned outpost and kept some of my valuables when I left. Look for my chest in the outpost.",
+      "stages": [
+        {
+          "number": 1,
+          "label": "Clear the abandoned outpost",
+          "objectives": [
+            {
+              "number": 1,
+              "text": "Kill Fighters",
+              "quantity": 10,
+              "target": {
+                "kind": "monster",
+                "label": "Fighter",
+                "entity": {
+                  "type": "monster",
+                  "id": 117,
+                  "name": "Fighter"
+                }
+              }
+            },
+            {
+              "number": 2,
+              "text": "Kill Thieves",
+              "quantity": 15,
+              "target": {
+                "kind": "monster",
+                "label": "Thief",
+                "entity": {
+                  "type": "monster",
+                  "id": 116,
+                  "name": "Thief"
+                }
+              }
+            },
+            {
+              "number": 3,
+              "text": "Search the Chest",
+              "target": {
+                "kind": "object",
+                "label": "Pyke's Chest",
+                "coordinates": [3258, 3545]
+              },
+              "dialogue": "The chest is empty. Something seems amiss, return to Pyke when the area is cleared."
+            }
+          ]
+        }
+      ],
+      "turn_in": {
+        "name": "Pyke",
+        "coordinates": [3478, 3729],
+        "markers": "!?",
+        "dialogue": "What, my chest was empty? I'll have to go check into this soon. Here's your reward."
+      },
+      "rewards": {
+        "guaranteed": [
+          {
+            "type": "experience",
+            "amount": 3250,
+            "label": "Experience"
+          }
+        ],
+        "choose_one": []
+      },
+      "notes": []
+    },
+    {
+      "id": "a-snack-for-a-snack",
+      "name": "A Snack For A Snack",
+      "category": "Side",
+      "region": "Silvest",
+      "area": "Silvest Town - southwest of the Bank",
+      "min_level": 1,
+      "repeatable": false,
+      "giver": {
+        "name": "Clea",
+        "coordinates": [3441, 3746],
+        "markers": "!?"
+      },
+      "prerequisites": [],
+      "initial_dialogue": "Hello adventurer! I need some snake meat for a meal tonight. Could you go retrieve me some?",
+      "stages": [
+        {
+          "number": 1,
+          "label": "Visit the Snake Pit",
+          "objectives": [
+            {
+              "number": 1,
+              "text": "Go to the Snake Pit",
+              "target": {
+                "kind": "location",
+                "label": "Snake Pit entrance",
+                "coordinates": [3704, 3800]
+              },
+              "notes": [
+                "Observed behavior: getting near the ladder completes the objective; entering the Snake Pit was not required."
+              ]
+            },
+            {
+              "number": 2,
+              "text": "Kill Snakes",
+              "quantity": 20,
+              "target": {
+                "kind": "monster",
+                "label": "Snake",
+                "entity": {
+                  "type": "monster",
+                  "id": 47,
+                  "name": "Snake"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "number": 2,
+          "label": "Bring Clea the meat",
+          "unlocks_after": "Complete objectives 1 and 2",
+          "objectives": [
+            {
+              "number": 3,
+              "text": "Give Clea Raw Snake Meat",
+              "quantity": 20,
+              "target": {
+                "kind": "item",
+                "label": "Raw Snake Meat",
+                "entity": {
+                  "type": "collectable",
+                  "id": 10,
+                  "name": "Snake Meat"
+                }
+              },
+              "notes": [
+                "The quest text displayed a quantity of 1, but 20 Raw Snake Meat were required in the observed playthrough."
+              ]
+            }
+          ]
+        }
+      ],
+      "turn_in": {
+        "name": "Clea",
+        "coordinates": [3441, 3746],
+        "markers": "!?"
+      },
+      "rewards": {
+        "guaranteed": [
+          {
+            "type": "experience",
+            "amount": 750,
+            "label": "Experience"
+          },
+          {
+            "type": "collectable",
+            "amount": 30,
+            "label": "Greater Healing Potions",
+            "entity": {
+              "type": "collectable",
+              "id": 4,
+              "name": "Greater Healing Potion"
+            }
+          }
+        ],
+        "choose_one": []
+      },
+      "notes": []
+    },
+    {
+      "id": "deadly-kobold-spears",
+      "name": "Deadly Kobold Spears",
+      "category": "Side",
+      "region": "Silvest",
+      "area": "Silvest - Southwest Outpost",
+      "min_level": 4,
+      "repeatable": true,
+      "giver": {
+        "name": "Tomard",
+        "coordinates": [3212, 3800],
+        "markers": "!?"
+      },
+      "prerequisites": [],
+      "initial_dialogue": "Kobolds keep attacking from the south, and the locals are upset. Tomard at the outpost has asked you to look into it.",
+      "stages": [
+        {
+          "number": 1,
+          "label": "Defend the outpost",
+          "objectives": [
+            {
+              "number": 1,
+              "text": "Kill Kobolds",
+              "quantity": 20,
+              "target": {
+                "kind": "monster",
+                "label": "Kobold",
+                "entity": {
+                  "type": "monster",
+                  "id": 0,
+                  "name": "Kobold"
+                }
+              }
+            },
+            {
+              "number": 2,
+              "text": "Kill Kobold Mages",
+              "quantity": 5,
+              "target": {
+                "kind": "monster",
+                "label": "Kobold Mage",
+                "entity": {
+                  "type": "monster",
+                  "id": 107,
+                  "name": "Kobold Mage"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "turn_in": {
+        "name": "Tomard",
+        "coordinates": [3212, 3800],
+        "markers": "!?"
+      },
+      "rewards": {
+        "guaranteed": [
+          {
+            "type": "experience",
+            "amount": 1000,
+            "label": "Experience"
+          }
+        ],
+        "choose_one": []
+      },
+      "notes": []
+    },
+    {
+      "id": "investigate-the-undead",
+      "name": "Investigate the Undead",
+      "category": "Progression",
+      "region": "Silvest",
+      "area": "Silvest - Southwest Outpost",
+      "min_level": 5,
+      "repeatable": false,
+      "giver": {
+        "name": "Tomard",
+        "coordinates": [3212, 3800],
+        "markers": "!?"
+      },
+      "prerequisites": [
+        "deadly-kobold-spears"
+      ],
+      "initial_dialogue": "Our outpost is constantly under attack by undead from the north. Can you see what is further to the north and report back?",
+      "stages": [
+        {
+          "number": 1,
+          "label": "Trace the undead",
+          "objectives": [
+            {
+              "number": 1,
+              "text": "Kill Zombies",
+              "quantity": 15,
+              "target": {
+                "kind": "monster",
+                "label": "Zombie",
+                "entity": {
+                  "type": "monster",
+                  "id": 94,
+                  "name": "Zombie",
+                  "image": "images/monsters/Zombie-94.gif"
+                }
+              }
+            },
+            {
+              "number": 2,
+              "text": "Kill Skeletons",
+              "quantity": 5,
+              "target": {
+                "kind": "monster",
+                "label": "Skeleton",
+                "entity": {
+                  "type": "monster",
+                  "id": 46,
+                  "name": "Skeleton"
+                }
+              }
+            },
+            {
+              "number": 3,
+              "text": "Find the Source of Undead",
+              "target": {
+                "kind": "location",
+                "label": "Source of Undead",
+                "coordinates": [3158, 3554]
+              }
+            }
+          ]
+        },
+        {
+          "number": 2,
+          "label": "Stop the summoning",
+          "unlocks_after": "Find the Source of Undead; the first two kill objectives do not need to be complete",
+          "objectives": [
+            {
+              "number": 4,
+              "text": "Kill Dark Mages",
+              "quantity": 3,
+              "target": {
+                "kind": "monster",
+                "label": "Dark Mage",
+                "entity": {
+                  "type": "monster",
+                  "id": 58,
+                  "name": "Dark Mage"
+                }
+              }
+            },
+            {
+              "number": 5,
+              "text": "Kill Skeleton Wolf",
+              "quantity": 1,
+              "target": {
+                "kind": "monster",
+                "label": "Skeleton Wolf",
+                "entity": {
+                  "type": "monster",
+                  "id": 67,
+                  "name": "Skeleton Wolf"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "turn_in": {
+        "name": "Tomard",
+        "coordinates": [3212, 3800],
+        "markers": "!?",
+        "dialogue": "You found Dark Mages??? They must be summoning the undead. Thank you for dispatching them."
+      },
+      "rewards": {
+        "guaranteed": [
+          {
+            "type": "experience",
+            "amount": 1750,
+            "label": "Experience"
+          }
+        ],
+        "choose_one": []
+      },
+      "notes": []
+    }
+  ],
+  "services": [
+    {
+      "id": "create-a-guild",
+      "name": "Create a Guild",
+      "category": "Service",
+      "region": "Silvest",
+      "area": "Silvest Town - starting building",
+      "min_level": 1,
+      "repeatable": false,
+      "provider": {
+        "name": "Guild Master",
+        "coordinates": [3404, 3720],
+        "markers": ""
+      },
+      "costs": [
+        {
+          "type": "gold",
+          "amount": 50,
+          "label": "Gold",
+          "entity": {
+            "type": "collectable",
+            "id": 0,
+            "name": "Gold"
+          }
+        }
+      ],
+      "result": "Pay 50 gold in the prompt to create a guild for the character immediately.",
+      "related_pages": [
+        {
+          "label": "Guild System",
+          "href": "pages/systems/guild.html"
+        }
+      ],
+      "notes": [
+        "This interaction is recorded as a service, not a quest."
+      ]
+    }
+  ]
+}

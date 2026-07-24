@@ -250,17 +250,6 @@
     },
     {
       "kind": "useable",
-      "name": "Ship Deed",
-      "relationships": [
-        {
-          "type": "related_system",
-          "target": "Travel",
-          "evidence": "reviewed ship utility item"
-        }
-      ]
-    },
-    {
-      "kind": "useable",
       "name": "Tinker Tools",
       "relationships": [
         {

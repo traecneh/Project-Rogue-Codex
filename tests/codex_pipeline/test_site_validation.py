@@ -377,7 +377,6 @@ class SiteValidationTests(unittest.TestCase):
         self.assertEqual("pages/enemies/monsters.html?monster=beholder", target_links["Beholder"])
         self.assertEqual("pages/enemies/monsters.html?monster=demon", target_links["Demon"])
         self.assertEqual("pages/systems/seasonal-events.html", target_links["Seasonal Events"])
-        self.assertEqual("pages/systems/travel.html", target_links["Travel"])
         self.assertIn(".relationship-pill:hover", css)
         self.assertIn(".relationship-pill:focus-visible", css)
 
@@ -443,23 +442,43 @@ class SiteValidationTests(unittest.TestCase):
         ]:
             self.assertIn(expected, script)
 
-    def test_travel_page_is_registered_for_navigation_search_and_validation(self):
+    def test_quests_page_is_registered_for_navigation_search_and_validation(self):
         from tools.codex_pipeline import cli
-        from tools.codex_pipeline.config import REPO_ROOT
+        from tools.codex_pipeline.config import QUESTS_DATA_PATH, REPO_ROOT
 
-        html_path = REPO_ROOT / "pages" / "systems" / "travel.html"
+        html_path = REPO_ROOT / "pages" / "General" / "quests.html"
+        css_path = REPO_ROOT / "css" / "quests.css"
+        script_path = REPO_ROOT / "js" / "quests-page.js"
         nav = (REPO_ROOT / "nav.html").read_text(encoding="utf-8")
-        script = (REPO_ROOT / "js" / "site-search.js").read_text(encoding="utf-8")
-        html = html_path.read_text(encoding="utf-8") if html_path.exists() else ""
+        search = (REPO_ROOT / "js" / "site-search.js").read_text(encoding="utf-8")
+        html = html_path.read_text(encoding="utf-8")
+        page_script = script_path.read_text(encoding="utf-8")
+        utils_script = (REPO_ROOT / "js" / "utils.js").read_text(encoding="utf-8")
 
         self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
-        self.assertIn('href="pages/systems/travel.html">Travel</a>', nav)
-        self.assertIn('title: "Travel"', script)
-        self.assertIn('url: "pages/systems/travel.html"', script)
-        self.assertIn('"ship deed"', script)
-        self.assertIn("<h1 class=\"content-title\">Travel</h1>", html)
-        self.assertIn("Ship Deed", html)
-        self.assertIn("pages/items/useables.html?useable=Ship%20Deed", html)
+        self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
+        self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
+        self.assertTrue(QUESTS_DATA_PATH.is_file())
+        self.assertIn('href="pages/General/quests.html">Quests</a>', nav)
+        self.assertIn('title: "Quests"', search)
+        self.assertIn('url: "pages/General/quests.html"', search)
+        self.assertIn("loadQuestSearchIndex", search)
+        self.assertIn("QUEST_SEARCH_INDEX", search)
+        self.assertIn('<h1 class="content-title">Quests</h1>', html)
+        self.assertIn('id="quest-detail"', html)
+        self.assertIn('id="quest-repeatable-filter"', html)
+        self.assertIn('new URLSearchParams(window.location.search)', page_script)
+        self.assertIn('url.searchParams.set("quest", entryId)', page_script)
+        self.assertIn('window.addEventListener("popstate"', page_script)
+        self.assertIn("objective.quantity", page_script)
+        self.assertIn("createEntityLink", page_script)
+        self.assertIn('const PROJECT_ROGUE_MAP_URL = "https://traecneh.github.io/Project-Rogue-Map/"', utils_script)
+        self.assertIn("function buildProjectRogueMapUrl", utils_script)
+        self.assertIn("buildProjectRogueMapUrl,", utils_script)
+        self.assertIn("createMapCoordinateLink", page_script)
+        self.assertIn("buildProjectRogueMapUrl?.(coordinates, label)", page_script)
+        self.assertIn('link.target = "_blank"', page_script)
+        self.assertIn('link.rel = "noopener noreferrer"', page_script)
 
     def test_seasonal_events_page_is_registered_for_navigation_search_and_validation(self):
         from tools.codex_pipeline import cli

@@ -67,6 +67,7 @@ from tools.codex_pipeline.game_update import build_game_update_report
 from tools.codex_pipeline.freshness import build_codex_manifest, validate_codex_manifest, write_codex_manifest
 from tools.codex_pipeline.item_relationships import build_item_relationship_inventory
 from tools.codex_pipeline.perks import load_perk_label_overrides
+from tools.codex_pipeline.quests import validate_quest_data_file
 from tools.codex_pipeline.sources import inspect_export_source_package, validate_export_sources
 from tools.codex_pipeline.site_smoke import run_site_smoke as run_site_smoke_command
 from tools.codex_pipeline.site_coverage import SiteCoverageReport, build_site_coverage_report
@@ -97,6 +98,7 @@ VALIDATED_HTML_PATHS = [
     REPO_ROOT / "index.html",
     REPO_ROOT / "pages" / "General" / "build-planner.html",
     REPO_ROOT / "pages" / "General" / "play-the-game.html",
+    REPO_ROOT / "pages" / "General" / "quests.html",
     REPO_ROOT / "pages" / "items" / "weapons.html",
     REPO_ROOT / "pages" / "items" / "armors.html",
     REPO_ROOT / "pages" / "items" / "collectables.html",
@@ -114,7 +116,6 @@ VALIDATED_HTML_PATHS = [
     REPO_ROOT / "pages" / "systems" / "monster-damage-reduction.html",
     REPO_ROOT / "pages" / "systems" / "experience.html",
     REPO_ROOT / "pages" / "systems" / "seasonal-events.html",
-    REPO_ROOT / "pages" / "systems" / "travel.html",
     REPO_ROOT / "pages" / "stats" / "level.html",
     REPO_ROOT / "pages" / "stats" / "skills.html",
     REPO_ROOT / "pages" / "stats" / "races.html",
@@ -136,6 +137,7 @@ VALIDATED_STYLE_PATHS = [
     REPO_ROOT / "css" / "home.css",
     REPO_ROOT / "css" / "build-planner.css",
     REPO_ROOT / "css" / "play-the-game.css",
+    REPO_ROOT / "css" / "quests.css",
     REPO_ROOT / "css" / "weapons.css",
     REPO_ROOT / "css" / "armors.css",
     REPO_ROOT / "css" / "misc-items.css",
@@ -173,6 +175,7 @@ VALIDATED_SCRIPT_PATHS = [
     REPO_ROOT / "js" / "items-page-utils.js",
     REPO_ROOT / "js" / "build-planner.js",
     REPO_ROOT / "js" / "play-the-game.js",
+    REPO_ROOT / "js" / "quests-page.js",
     REPO_ROOT / "js" / "weapons-page.js",
     REPO_ROOT / "js" / "armors-page.js",
     REPO_ROOT / "js" / "misc-items-page.js",
@@ -612,6 +615,7 @@ def collect_validation_issues() -> list[ValidationIssue]:
                 corrupted_perk_overrides=perk_overrides,
             )
         )
+    issues.extend(validate_quest_data_file())
 
     for folder in [WEAPON_IMAGES_DIR, ARMOR_IMAGES_DIR, MONSTER_IMAGES_DIR]:
         manifest_path = folder / "manifest.json"

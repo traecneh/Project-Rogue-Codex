@@ -1,5 +1,6 @@
 (() => {
   const DEFAULT_JSON_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
+  const PROJECT_ROGUE_MAP_URL = "https://traecneh.github.io/Project-Rogue-Map/";
   const PERKS_INDEX_SCHEMA_VERSION = 3;
   const ALLOWLISTS_SCHEMA_VERSION = 1;
   const FORCE_JSON_REFRESH = true;
@@ -20,6 +21,21 @@
     } catch (error) {
       return String(url);
     }
+  }
+
+  function buildProjectRogueMapUrl(coordinates, label = "") {
+    if (
+      !Array.isArray(coordinates) ||
+      coordinates.length !== 2 ||
+      coordinates.some((coordinate) => !Number.isFinite(Number(coordinate)))
+    ) {
+      return "";
+    }
+    const url = new URL(PROJECT_ROGUE_MAP_URL);
+    url.searchParams.set("x", String(coordinates[0]));
+    url.searchParams.set("y", String(coordinates[1]));
+    if (label) url.searchParams.set("label", String(label).trim());
+    return url.toString();
   }
 
   function getPerksIndexUrl() {
@@ -475,6 +491,7 @@
     DROP_SOURCES_SCHEMA_VERSION,
     FORCE_JSON_REFRESH,
     getAbsoluteUrl,
+    buildProjectRogueMapUrl,
     fetchJsonCached,
     ELEMENT_COLORS,
     RESIST_COLORS,

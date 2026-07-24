@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Quests - Project Rogue Codex</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <base href="../../" />
+    <link rel="icon" type="image/x-icon" href="images/project-rogue-favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="images/project-rogue-favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="64x64" href="images/project-rogue-favicon-64.png" />
+    <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
+    <link rel="stylesheet" href="css/styles.css?v=codex-2026-07-24-quests" />
+    <link rel="stylesheet" href="css/quests.css?v=codex-2026-07-24-quests" />
+    <script src="js/utils.js?v=codex-2026-07-24-quests"></script>
+    <script src="js/site-search.js?v=codex-2026-07-24-quests" defer></script>
+    <script src="js/cursor-toggle.js?v=codex-2026-07-24-quests" defer></script>
+    <script src="js/nav-core.js?v=codex-2026-07-24-quests" defer></script>
+    <script src="js/quests-page.js?v=codex-2026-07-24-quests" defer></script>
+  </head>
+  <body>
+    <div class="layout quests-page">
+      <div id="sidebar-root"></div>
+      <main class="main-content">
+        <header class="content-header quest-page-header">
+          <div>
+            <h1 class="content-title">Quests</h1>
+            <p class="content-tagline">Observed quest routes, requirements, objectives, and rewards.</p>
+          </div>
+          <p class="quest-page-summary" id="quest-page-summary" aria-live="polite"></p>
+        </header>
+
+        <section class="quest-controls" aria-label="Quest filters">
+          <label class="sr-only" for="quest-search">Search quests</label>
+          <input
+            type="search"
+            id="quest-search"
+            class="quest-search"
+            placeholder="Search quests, NPCs, objectives..."
+            autocomplete="off"
+          />
+
+          <label class="sr-only" for="quest-kind-filter">Entry type</label>
+          <select id="quest-kind-filter" class="quest-filter">
+            <option value="">All Entries</option>
+            <option value="quest">Quests</option>
+            <option value="service">Services</option>
+          </select>
+
+          <label class="sr-only" for="quest-category-filter">Quest category</label>
+          <select id="quest-category-filter" class="quest-filter">
+            <option value="">All Categories</option>
+          </select>
+
+          <label class="sr-only" for="quest-level-filter">Minimum level</label>
+          <select id="quest-level-filter" class="quest-filter">
+            <option value="">All Levels</option>
+          </select>
+
+          <label class="quest-repeatable-filter" for="quest-repeatable-filter">
+            <input type="checkbox" id="quest-repeatable-filter" />
+            <span>Repeatable</span>
+          </label>
+        </section>
+
+        <div class="quest-browser" id="quest-browser" aria-busy="true">
+          <section class="quest-directory" aria-labelledby="quest-directory-title">
+            <div class="quest-directory-header">
+              <h2 id="quest-directory-title">Silvest Entries</h2>
+              <span id="quest-result-count"></span>
+            </div>
+            <div class="quest-list" id="quest-list"></div>
+            <p class="quest-empty" id="quest-empty" hidden>No matching entries.</p>
+          </section>
+
+          <article class="quest-detail" id="quest-detail" aria-live="polite">
+            <p class="quest-detail-empty">No entry selected.</p>
+          </article>
+        </div>
+
+        <p class="quest-load-error" id="quest-load-error" role="alert" hidden>
+          Quest data could not be loaded.
+        </p>
+      </main>
+    </div>
+  </body>
+</html>

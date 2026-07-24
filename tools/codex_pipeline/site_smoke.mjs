@@ -10,6 +10,7 @@ const timeoutMs = Number(args.timeoutMs || 20000);
 const configuredBaseUrl = args.baseUrl ? normalizeBaseUrl(args.baseUrl) : null;
 const RUNE_SWORD_DETAIL_PATH = "pages/items/weapons.html?weapon=Rune%20Sword";
 const PERKS_RUNIC_PATH = "/pages/systems/perks.html?perk=Runic";
+const QUESTS_INVESTIGATE_PATH = "/pages/General/quests.html?quest=investigate-the-undead";
 const PROJECT_ROGUE_FILTER_SELECTOR = '[data-era-filter="project-rogue"]';
 
 const smokeSpecs = [
@@ -111,6 +112,12 @@ async function main() {
       console.log("SMOKE OK play the game: Discord setup, CTA, related links");
     } catch (error) {
       failures.push(`SMOKE ERROR play the game: ${formatError(error)}`);
+    }
+    try {
+      await runQuestsSpec(browser, baseUrl);
+      console.log("SMOKE OK quests: deep links, objectives, filters, relationships, search");
+    } catch (error) {
+      failures.push(`SMOKE ERROR quests: ${formatError(error)}`);
     }
     try {
       await runPerksSpec(browser, baseUrl);
@@ -271,7 +278,7 @@ async function main() {
     failures.forEach((failure) => console.error(failure));
     process.exit(1);
   }
-  console.log(`SMOKE OK site: ${smokeSpecs.length + 28} page(s) checked at ${baseUrl}`);
+  console.log(`SMOKE OK site: ${smokeSpecs.length + 29} page(s) checked at ${baseUrl}`);
 }
 
 async function importPlaywright() {
@@ -558,6 +565,143 @@ async function runPlayTheGameSpec(browser, baseUrl) {
     }
 
     await assertMobilePageFirstNavigation(page, baseUrl, "/pages/General/play-the-game.html");
+
+    if (runtimeErrors.length) {
+      throw new Error(`browser errors: ${runtimeErrors.join("; ")}`);
+    }
+  } finally {
+    await page.close();
+  }
+}
+
+async function runQuestsSpec(browser, baseUrl) {
+  const page = await browser.newPage();
+  page.setDefaultTimeout(timeoutMs);
+  await page.setViewportSize({ width: 1365, height: 1000 });
+  const runtimeErrors = [];
+  page.on("console", (message) => {
+    const text = message.text();
+    if (message.type() === "error" && !text.startsWith("Failed to load resource")) runtimeErrors.push(text);
+  });
+  page.on("pageerror", (error) => runtimeErrors.push(formatError(error)));
+
+  try {
+    await page.goto(joinUrl(baseUrl, QUESTS_INVESTIGATE_PATH), { waitUntil: "load" });
+    await page.locator(".quest-detail-title").waitFor({ state: "visible" });
+    const title = (await page.locator(".quest-detail-title").textContent()).trim();
+    if (title !== "Investigate the Undead") {
+      throw new Error(`Quest deep link opened "${title}" instead of "Investigate the Undead"`);
+    }
+
+    const detailText = (await page.locator("#quest-detail").textContent()).trim();
+    for (const expected of [
+      "Deadly Kobold Spears",
+      "Kill Dark Mages",
+      "3 required",
+      "Kill Skeleton Wolf",
+      "1 required",
+      "1,750 Experience",
+    ]) {
+      if (!detailText.includes(expected)) {
+        throw new Error(`Investigate the Undead detail missing "${expected}": "${detailText}"`);
+      }
+    }
+
+    for (const href of [
+      "pages/enemies/monsters.html?monster=94",
+      "pages/enemies/monsters.html?monster=58",
+      "pages/enemies/monsters.html?monster=67",
+    ]) {
+      const count = await page.locator(`#quest-detail a[href="${href}"]`).count();
+      if (count !== 1) {
+        throw new Error(`Quest entity link expected one "${href}", found ${count}`);
+      }
+    }
+    await page.locator('#quest-detail img[src*="Zombie-94.gif"]').waitFor({ state: "visible" });
+
+    const zombiePage = await browser.newPage();
+    try {
+      zombiePage.setDefaultTimeout(timeoutMs);
+      await zombiePage.goto(joinUrl(baseUrl, "/pages/enemies/monsters.html?monster=94"), {
+        waitUntil: "load",
+      });
+      await zombiePage.locator("#monster-details.show").waitFor({ state: "visible" });
+      const zombieName = (await zombiePage.locator("#details-name").textContent()).trim();
+      const zombieLevel = (await zombiePage.locator("#details-level").textContent()).trim();
+      if (zombieName !== "Zombie" || zombieLevel !== "10") {
+        throw new Error(`Zombie ID 94 opened name="${zombieName}" level="${zombieLevel}"`);
+      }
+    } finally {
+      await zombiePage.close();
+    }
+
+    await page.reload({ waitUntil: "load" });
+    await page.locator(".quest-detail-title").waitFor({ state: "visible" });
+    if ((await page.locator(".quest-detail-title").textContent()).trim() !== "Investigate the Undead") {
+      throw new Error("Quest deep link did not survive reload");
+    }
+
+    await page.locator('[data-quest-id="deadly-kobold-spears"]').click();
+    await page.waitForFunction(
+      () => new URL(window.location.href).searchParams.get("quest") === "deadly-kobold-spears"
+    );
+    if ((await page.locator(".quest-detail-title").textContent()).trim() !== "Deadly Kobold Spears") {
+      throw new Error("Quest prerequisite link did not open Deadly Kobold Spears");
+    }
+
+    await page.goBack({ waitUntil: "load" });
+    await page.locator(".quest-detail-title").waitFor({ state: "visible" });
+    if ((await page.locator(".quest-detail-title").textContent()).trim() !== "Investigate the Undead") {
+      throw new Error("Quest browser back did not restore Investigate the Undead");
+    }
+
+    await page.locator("#site-search-input").waitFor({ state: "visible" });
+    await page.locator("#site-search-input").fill("Tomard");
+    await page
+      .locator('.nav-search-result[href*="pages/General/quests.html?quest=investigate-the-undead"]')
+      .waitFor({ state: "visible" });
+    await page.locator("#site-search-input").fill("");
+
+    await page.locator("#quest-search").fill("Guild Master");
+    await page.waitForFunction(() => {
+      const rows = document.querySelectorAll("[data-entry-id]");
+      return rows.length === 1 && rows[0].getAttribute("data-entry-id") === "create-a-guild";
+    });
+    await page.locator('[data-entry-id="create-a-guild"]').click();
+    await page.waitForFunction(
+      () => new URL(window.location.href).searchParams.get("quest") === "create-a-guild"
+    );
+    const serviceText = (await page.locator("#quest-detail").textContent()).trim();
+    for (const expected of ["Create a Guild", "Guild Master", "Gold", "x50", "Guild System"]) {
+      if (!serviceText.includes(expected)) {
+        throw new Error(`Guild service detail missing "${expected}": "${serviceText}"`);
+      }
+    }
+    const goldLinkCount = await page.locator(
+      '#quest-detail a[href="pages/items/collectables.html?collectable=0"]'
+    ).count();
+    if (goldLinkCount !== 1) {
+      throw new Error(`Guild service expected one Gold collectable link, found ${goldLinkCount}`);
+    }
+    await page.locator('#quest-detail img[src*="Gold.png"]').waitFor({ state: "visible" });
+    const guildMapLink = page.locator(
+      '#quest-detail a.quest-map-link[href="https://traecneh.github.io/Project-Rogue-Map/?x=3404&y=3720&label=Guild+Master"]'
+    );
+    if ((await guildMapLink.count()) !== 1) {
+      throw new Error("Guild service is missing its labeled Project Rogue Map coordinate link");
+    }
+    if (
+      (await guildMapLink.getAttribute("target")) !== "_blank" ||
+      !(await guildMapLink.getAttribute("rel"))?.includes("noopener")
+    ) {
+      throw new Error("Quest map links must open safely in a new tab");
+    }
+
+    await page.locator("[data-close-detail]").click();
+    await page.waitForFunction(() => !new URL(window.location.href).searchParams.has("quest"));
+    await page.locator(".quest-detail-empty").waitFor({ state: "visible" });
+
+    await assertMobilePageFirstNavigation(page, baseUrl, "/pages/General/quests.html");
 
     if (runtimeErrors.length) {
       throw new Error(`browser errors: ${runtimeErrors.join("; ")}`);
