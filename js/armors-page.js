@@ -158,13 +158,20 @@
       : { armors: {}, weapons: {}, reverse: { armors: {}, weapons: {} } };
   let hiddenArmorNames = new Set();
   let allowedMonsterNames = new Set();
+  let blockedMonsterIds = new Set();
 
   const applyAllowlists = (allowlists) => {
     hiddenArmorNames = buildNameSet(allowlists?.armors?.block);
     allowedMonsterNames = buildNameSet(allowlists?.monsters?.allow);
+    blockedMonsterIds = new Set(
+      (Array.isArray(allowlists?.monsters?.blockIds) ? allowlists.monsters.blockIds : []).map((id) =>
+        String(id).trim()
+      )
+    );
   };
 
   const isMonsterAllowed = (monster) => {
+    if (blockedMonsterIds.has(String(monster?.id ?? "").trim())) return false;
     if (!allowedMonsterNames.size) return true;
     return allowedMonsterNames.has((monster.name || "").toLowerCase());
   };

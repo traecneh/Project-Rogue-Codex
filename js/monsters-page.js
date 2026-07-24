@@ -310,16 +310,23 @@
       ? utils.createEmptyDropSources()
       : { armors: {}, weapons: {}, reverse: { armors: {}, weapons: {} } };
   let allowedMonsterNames = new Set();
+  let blockedMonsterIds = new Set();
   let hiddenWeaponNames = new Set();
   let hiddenArmorNames = new Set();
 
   const applyAllowlists = (allowlists) => {
     allowedMonsterNames = buildNameSet(allowlists?.monsters?.allow);
+    blockedMonsterIds = new Set(
+      (Array.isArray(allowlists?.monsters?.blockIds) ? allowlists.monsters.blockIds : []).map((id) =>
+        String(id).trim()
+      )
+    );
     hiddenWeaponNames = buildNameSet(allowlists?.weapons?.block);
     hiddenArmorNames = buildNameSet(allowlists?.armors?.block);
   };
 
   const isMonsterAllowed = (monster) => {
+    if (blockedMonsterIds.has(String(monster?.id ?? "").trim())) return false;
     if (!allowedMonsterNames.size) return true;
     return allowedMonsterNames.has((monster.name || "").toLowerCase());
   };
@@ -335,10 +342,12 @@
   let pendingMonsterId = getInitialMonsterId();
 
   const monsterImageManifest = new Map();
+  let monsterImageManifestPromise = null;
   const loadMonsterImageManifest = () => {
-    if (monsterImageManifest.size) return;
+    if (monsterImageManifest.size) return Promise.resolve(monsterImageManifest);
+    if (monsterImageManifestPromise) return monsterImageManifestPromise;
     const manifestUrl = new URL("../../images/monsters/manifest.json", window.location.href).toString();
-    fetch(manifestUrl)
+    monsterImageManifestPromise = fetch(manifestUrl)
       .then((res) => (res.ok ? res.json() : Promise.reject()))
       .then((list) => {
         const entries = Array.isArray(list) ? list : [];
@@ -347,23 +356,30 @@
           const base = file.replace(/\.[^.]+$/, "").toLowerCase();
           if (base) monsterImageManifest.set(base, path);
         });
+        return monsterImageManifest;
       })
-      .catch(() => {});
+      .catch(() => monsterImageManifest)
+      .finally(() => {
+        monsterImageManifestPromise = null;
+      });
+    return monsterImageManifestPromise;
   };
-
-  loadMonsterImageManifest();
 
   const deriveImageCandidates = (monster) => {
     const candidates = [];
     const rawName = (monster && monster.name ? String(monster.name) : "").trim();
     const lowerName = rawName.toLowerCase();
+    const rawId = monster?.id === null || monster?.id === undefined ? "" : String(monster.id).trim();
     const pngExceptions = new Set(["demon spire", "dragon spire", "master spire", "winter spire"]);
 
     if (monster && monster.image) {
       candidates.push(monster.image);
     }
 
-    if (lowerName && monsterImageManifest.has(lowerName)) {
+    const idSpecificKey = lowerName && rawId ? `${lowerName}-${rawId.toLowerCase()}` : "";
+    if (idSpecificKey && monsterImageManifest.has(idSpecificKey)) {
+      candidates.push(monsterImageManifest.get(idSpecificKey));
+    } else if (lowerName && monsterImageManifest.has(lowerName)) {
       candidates.push(monsterImageManifest.get(lowerName));
     }
 
@@ -2072,8 +2088,8 @@ const unpinTooltip = (tooltip) => {
       fetchJsonCached(resistancesUrl),
       loadAllowlists(),
       loadDropSources(),
-    ])
-      .then(([monsterData, weaponData, armorData, resistancesData, allowlists, loadedDropSources]) => {
+      loadMonsterImageManifest(),
+    ]).then(([monsterData, weaponData, armorData, resistancesData, allowlists, loadedDropSources]) => {
         const map =
           resistancesData && typeof resistancesData === "object" ? resistancesData.typeResistances : null;
         if (map && typeof map === "object") {

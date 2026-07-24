@@ -367,7 +367,7 @@ function getPerkSlug(name) {
 }
 
 const EMPTY_ALLOWLISTS = {
-  monsters: { allow: [], block: [] },
+  monsters: { allow: [], block: [], blockIds: [] },
   weapons: { block: [] },
   armors: { block: [] },
 };
@@ -385,6 +385,7 @@ const buildNameSet = (list) => {
 let allowlistsPromise = null;
 let allowedMonsterNames = new Set();
 let blockedMonsterNames = new Set();
+let blockedMonsterIds = new Set();
 let hiddenWeaponNames = new Set();
 let hiddenArmorNames = new Set();
 
@@ -392,6 +393,9 @@ const applyAllowlists = (allowlists) => {
   const safe = allowlists && typeof allowlists === "object" ? allowlists : EMPTY_ALLOWLISTS;
   allowedMonsterNames = buildNameSet(safe.monsters?.allow);
   blockedMonsterNames = buildNameSet(safe.monsters?.block);
+  blockedMonsterIds = new Set(
+    (Array.isArray(safe.monsters?.blockIds) ? safe.monsters.blockIds : []).map((id) => String(id).trim())
+  );
   hiddenWeaponNames = buildNameSet(safe.weapons?.block);
   hiddenArmorNames = buildNameSet(safe.armors?.block);
 };
@@ -414,6 +418,8 @@ const loadAllowlists = () => {
 const normalizeMonsterName = (monster) => normalizePerkName(monster && (monster.name || monster.Name));
 
 const isMonsterAllowed = (monster) => {
+  const id = monster?.id ?? monster?.Id;
+  if (id !== null && id !== undefined && blockedMonsterIds.has(String(id).trim())) return false;
   const name = normalizeMonsterName(monster);
   if (!name) return false;
   if (allowedMonsterNames.size) {

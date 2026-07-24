@@ -14,6 +14,7 @@ class HiddenItemRulesTests(unittest.TestCase):
                     ]
                 },
                 "armors": {"block": ["stone of jordan"]},
+                "monsters": {"block_ids": [23]},
             }
         )
 
@@ -22,6 +23,10 @@ class HiddenItemRulesTests(unittest.TestCase):
         self.assertTrue(rules.is_hidden_image("weapons", "GM Deathbringer.png"))
         self.assertTrue(rules.is_hidden_image("armors", "Stone of Jordan.gif"))
         self.assertFalse(rules.is_hidden_image("weapons", "Rune Sword.png"))
+        self.assertTrue(rules.is_hidden_record("monsters", {"id": 23, "name": "Zombie"}))
+        self.assertTrue(rules.is_hidden_image("monsters", "Zombie-23.gif"))
+        self.assertFalse(rules.is_hidden_record("monsters", {"id": 94, "name": "Zombie"}))
+        self.assertFalse(rules.is_hidden_image("monsters", "Zombie-94.gif"))
         self.assertFalse(rules.is_hidden_record("monsters", {"name": "Dretch"}))
 
 

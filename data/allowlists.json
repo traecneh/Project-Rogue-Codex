@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "monsters": {
     "allow": [
       "Abishai",
@@ -166,7 +166,8 @@
       "Durg",
       "Frigit",
       "Bramble"
-    ]
+    ],
+    "block_ids": [23]
   },
   "weapons": {
     "block": [

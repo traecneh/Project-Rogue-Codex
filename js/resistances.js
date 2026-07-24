@@ -387,13 +387,26 @@
   function initMonsterTypeResistances(root = document) {
     const resistancesUrl = getVersionedUrl("pages/systems/resistances.json", RESISTANCES_SCHEMA_VERSION);
     const monstersUrl = getVersionedUrl("pages/enemies/monsters_data03.json", MONSTERS_SCHEMA_VERSION);
+    const loadAllowlists =
+      typeof window.RogueCodexUtils?.loadAllowlists === "function"
+        ? () => window.RogueCodexUtils.loadAllowlists()
+        : () => Promise.resolve(null);
 
     Promise.all([
       fetchJsonCached(resistancesUrl, { cacheKey: `resistances-v${RESISTANCES_SCHEMA_VERSION}` }),
       fetchJsonCached(monstersUrl, { cacheKey: `monsters-data-v${MONSTERS_SCHEMA_VERSION}` }),
-    ]).then(([resistanceData, monsterData]) => {
+      loadAllowlists(),
+    ]).then(([resistanceData, monsterData, allowlists]) => {
+      const blockedMonsterIds = new Set(
+        (Array.isArray(allowlists?.monsters?.blockIds) ? allowlists.monsters.blockIds : []).map((id) =>
+          String(id).trim()
+        )
+      );
+      const visibleMonsters = Array.isArray(monsterData)
+        ? monsterData.filter((monster) => !blockedMonsterIds.has(String(monster?.id ?? "").trim()))
+        : monsterData;
       renderMonsterTypeResistances(resistanceData, root);
-      hydrateMonsterExamples(monsterData, root);
+      hydrateMonsterExamples(visibleMonsters, root);
     });
   }
 

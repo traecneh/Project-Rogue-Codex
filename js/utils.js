@@ -2,7 +2,7 @@
   const DEFAULT_JSON_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
   const PROJECT_ROGUE_MAP_URL = "https://traecneh.github.io/Project-Rogue-Map/";
   const PERKS_INDEX_SCHEMA_VERSION = 3;
-  const ALLOWLISTS_SCHEMA_VERSION = 1;
+  const ALLOWLISTS_SCHEMA_VERSION = 2;
   const FORCE_JSON_REFRESH = true;
   const jsonMemoryCache = new Map();
   let perkIndexPromise = null;
@@ -215,6 +215,7 @@
           monsters: {
             allow: normalizeNameList(safe.monsters?.allow),
             block: normalizeNameList(safe.monsters?.block),
+            blockIds: normalizeNameList(safe.monsters?.block_ids),
           },
           weapons: {
             block: normalizeNameList(safe.weapons?.block),
@@ -227,7 +228,7 @@
       })
       .catch(() => {
         allowlistsCache = {
-          monsters: { allow: [], block: [] },
+          monsters: { allow: [], block: [], blockIds: [] },
           weapons: { block: [] },
           armors: { block: [] },
         };

@@ -189,6 +189,7 @@
         };
   let hiddenWeaponNames = new Set();
   let allowedMonsterNames = new Set();
+  let blockedMonsterIds = new Set();
   let dropSources =
     typeof utils.createEmptyDropSources === "function"
       ? utils.createEmptyDropSources()
@@ -197,9 +198,15 @@
   const applyAllowlists = (allowlists) => {
     hiddenWeaponNames = buildNameSet(allowlists?.weapons?.block);
     allowedMonsterNames = buildNameSet(allowlists?.monsters?.allow);
+    blockedMonsterIds = new Set(
+      (Array.isArray(allowlists?.monsters?.blockIds) ? allowlists.monsters.blockIds : []).map((id) =>
+        String(id).trim()
+      )
+    );
   };
 
   const isMonsterAllowed = (monster) => {
+    if (blockedMonsterIds.has(String(monster?.id ?? "").trim())) return false;
     if (!allowedMonsterNames.size) return true;
     return allowedMonsterNames.has((monster.name || "").toLowerCase());
   };

@@ -634,6 +634,15 @@ async function runQuestsSpec(browser, baseUrl) {
       if (zombieName !== "Zombie" || zombieLevel !== "10") {
         throw new Error(`Zombie ID 94 opened name="${zombieName}" level="${zombieLevel}"`);
       }
+      await zombiePage.locator('#details-image[src*="Zombie-94.gif"]').waitFor({ state: "visible" });
+      await zombiePage.locator("#monster-search").fill("Zombie");
+      await zombiePage.waitForFunction(() => {
+        const rows = Array.from(document.querySelectorAll("#monsters-body tr[data-id]"));
+        return rows.length === 1 && rows[0].getAttribute("data-id") === "94";
+      });
+      await zombiePage
+        .locator('#monsters-body tr[data-id="94"] img[src*="Zombie-94.gif"]')
+        .waitFor({ state: "visible" });
     } finally {
       await zombiePage.close();
     }
