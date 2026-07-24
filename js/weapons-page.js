@@ -228,7 +228,6 @@
   const normalizeMonsterId = itemUtils.normalizeItemId;
   const rawWeaponQuery = (urlParams.get("weapon") || urlParams.get("weaponName") || "").trim();
   const initialWeaponId = normalizeWeaponId(rawWeaponQuery);
-  const initialWeaponSearchTerm = rawWeaponQuery.replace(/-/g, " ").trim();
   let pendingWeaponId = initialWeaponId;
   let pendingWeaponName = rawWeaponQuery.toLowerCase();
 
@@ -1326,10 +1325,6 @@
         selectedAttackSpeeds = new Set();
         buildHead();
         populateFilters(items);
-        if (initialWeaponSearchTerm) {
-          searchTerm = initialWeaponSearchTerm;
-          if (searchInput) searchInput.value = initialWeaponSearchTerm;
-        }
         applyFilterAndSort();
       })
       .catch(() => {

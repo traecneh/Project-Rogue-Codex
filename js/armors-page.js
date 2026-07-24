@@ -13,7 +13,6 @@
   const normalizeArmorId = itemUtils.normalizeItemId;
   const initialArmorQuery = (urlParams.get("armor") || urlParams.get("armorName") || "").trim();
   const initialArmorId = normalizeArmorId(initialArmorQuery);
-  const initialArmorSearchTerm = initialArmorQuery.replace(/-/g, " ").trim();
   let pendingArmorId = initialArmorId;
   let pendingArmorName = initialArmorQuery.toLowerCase();
   const tableHeadRow = document.getElementById("items-head-row");
@@ -917,10 +916,6 @@
         sortDir = "desc";
         buildHead();
         populateFilters(items);
-        if (initialArmorSearchTerm) {
-          searchTerm = initialArmorSearchTerm;
-          if (searchInput) searchInput.value = initialArmorSearchTerm;
-        }
         applyFilterAndSort();
       })
       .catch(() => {

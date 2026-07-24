@@ -123,7 +123,6 @@
   const urlParams = new URLSearchParams(window.location.search);
   const initialItemQuery = (urlParams.get(page.queryKey) || urlParams.get(`${page.queryKey}Name`) || "").trim();
   const initialItemId = normalizeItemId(initialItemQuery);
-  const initialItemSearchTerm = initialItemQuery.replace(/-/g, " ").trim();
   let pendingItemId = initialItemId;
   let pendingItemName = initialItemQuery.toLowerCase();
 
@@ -725,10 +724,6 @@
         }
         buildHead();
         populateFilters(items);
-        if (initialItemSearchTerm) {
-          searchTerm = initialItemSearchTerm;
-          if (searchInput) searchInput.value = initialItemSearchTerm;
-        }
         applyFilterAndSort();
       })
       .catch(() => {

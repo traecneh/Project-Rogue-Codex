@@ -11,6 +11,7 @@ const configuredBaseUrl = args.baseUrl ? normalizeBaseUrl(args.baseUrl) : null;
 const RUNE_SWORD_DETAIL_PATH = "pages/items/weapons.html?weapon=Rune%20Sword";
 const PERKS_RUNIC_PATH = "/pages/systems/perks.html?perk=Runic";
 const QUESTS_INVESTIGATE_PATH = "/pages/General/quests.html?quest=investigate-the-undead";
+const QUESTS_MASTERY_PATH = "/pages/General/quests.html?quest=mastery-of-silvest";
 const PROJECT_ROGUE_FILTER_SELECTOR = '[data-era-filter="project-rogue"]';
 
 const smokeSpecs = [
@@ -26,8 +27,8 @@ const smokeSpecs = [
     queryKey: "weapon",
   },
   {
-    detailName: "Brown Tunic",
-    detailQuery: "Brown Tunic",
+    detailName: "Bottomless Bag",
+    detailQuery: "1006",
     label: "armors",
     listPath: "/pages/items/armors.html",
     detailSelector: "#item-details",
@@ -323,6 +324,7 @@ async function runSpec(browser, baseUrl, spec) {
   try {
     await openDetail(page, baseUrl, spec);
     await assertDetailState(page, spec, "deep link");
+    await assertDetailRouteDoesNotFilterList(page, spec, "deep link");
     await assertDetailLinks(page, spec);
     await assertDetailTextIncludes(page, spec);
     await assertDetailHrefIncludes(page, spec);
@@ -333,6 +335,7 @@ async function runSpec(browser, baseUrl, spec) {
     await page.reload({ waitUntil: "load" });
     await waitForRows(page, spec);
     await assertDetailState(page, spec, "reload");
+    await assertDetailRouteDoesNotFilterList(page, spec, "reload");
 
     await page.goto(joinUrl(baseUrl, spec.listPath), { waitUntil: "load" });
     await waitForRows(page, spec);
@@ -633,6 +636,30 @@ async function runQuestsSpec(browser, baseUrl) {
       }
     } finally {
       await zombiePage.close();
+    }
+
+    const masteryPage = await browser.newPage();
+    try {
+      masteryPage.setDefaultTimeout(timeoutMs);
+      await masteryPage.goto(joinUrl(baseUrl, QUESTS_MASTERY_PATH), { waitUntil: "load" });
+      const bottomlessBagLink = masteryPage.locator(
+        '#quest-detail a[href="pages/items/armors.html?armor=1006"]'
+      );
+      await bottomlessBagLink.waitFor({ state: "visible" });
+      await bottomlessBagLink.click();
+      await masteryPage.waitForURL((url) => url.searchParams.get("armor") === "1006", {
+        timeout: timeoutMs,
+      });
+      await masteryPage.locator("#item-details.show").waitFor({ state: "visible" });
+      const armorName = (await masteryPage.locator("#details-name").textContent()).trim();
+      const armorSearch = await masteryPage.locator("#item-search").inputValue();
+      if (armorName !== "Bottomless Bag" || armorSearch) {
+        throw new Error(
+          `Bottomless Bag quest link opened name="${armorName}" with search="${armorSearch}"`
+        );
+      }
+    } finally {
+      await masteryPage.close();
     }
 
     await page.reload({ waitUntil: "load" });
@@ -3548,7 +3575,8 @@ async function assertWeaponTableScanMetrics(page) {
     throw new Error(`Rune Sword table row missing compact speed column: "${tableText}"`);
   }
 
-  const dpsTooltip = (await page.locator("#items-body .dps-breakdown-tooltip").textContent()).trim();
+  const runeSwordRow = page.locator("#items-body tr").filter({ hasText: "Rune Sword" }).first();
+  const dpsTooltip = (await runeSwordRow.locator(".dps-breakdown-tooltip").textContent()).trim();
   const expected = ["DPS Breakdown", "80 - 150", "1,000 ms", "1.00 attacks/sec"];
   expected.forEach((value) => {
     if (!dpsTooltip.includes(value)) {
@@ -3588,6 +3616,19 @@ async function assertDetailState(page, spec, action) {
     throw new Error(`${action} selected "${detailName}" instead of "${spec.detailName}"`);
   }
   await assertUrlHasQuery(page, spec.queryKey);
+}
+
+async function assertDetailRouteDoesNotFilterList(page, spec, action) {
+  const searchInput = page.locator("#item-search");
+  if (!(await searchInput.count())) return;
+  const searchValue = await searchInput.inputValue();
+  if (searchValue) {
+    throw new Error(`${spec.label} ${action} copied detail route "${searchValue}" into table search`);
+  }
+  const visibleRows = await page.locator(spec.rowSelector).count();
+  if (!visibleRows) {
+    throw new Error(`${spec.label} ${action} hid the item table while opening a detail route`);
+  }
 }
 
 async function assertDetailVisible(page, spec) {
