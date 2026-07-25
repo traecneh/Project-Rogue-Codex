@@ -1,7 +1,15 @@
+import json
 import unittest
+
+from tools.codex_pipeline.config import ALLOWLISTS_PATH
 
 
 class HiddenItemRulesTests(unittest.TestCase):
+    def test_site_allowlist_blocks_super_duper_bow_by_exact_name(self):
+        allowlists = json.loads(ALLOWLISTS_PATH.read_text(encoding="utf-8"))
+
+        self.assertIn("Super Duper Bow", allowlists["weapons"]["block"])
+
     def test_allowlist_block_rules_match_records_and_image_variants(self):
         from tools.codex_pipeline.hidden_items import HiddenItemRules
 

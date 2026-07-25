@@ -3555,6 +3555,7 @@ async function assertWeaponDetailEnhancements(page) {
     .first();
   await runicLink.waitFor({ state: "attached" });
   await assertWeaponTableScanMetrics(page);
+  await assertSuperDuperBowHidden(page);
 
   const detailText = (await page.locator("#details-properties").textContent()).trim();
   if (!detailText.includes("Weapon Speed") || (!detailText.includes("1,000") && !detailText.includes("1000"))) {
@@ -3576,6 +3577,23 @@ async function assertWeaponDetailEnhancements(page) {
   await page.locator('#details-properties a.perk-link[href*="pages/systems/perks.html?perk=Runic"]').first().waitFor({
     state: "attached",
   });
+}
+
+async function assertSuperDuperBowHidden(page) {
+  const originalUrl = page.url();
+  const url = new URL("/pages/items/weapons.html", originalUrl);
+  url.searchParams.set("weapon", "1037");
+  await page.goto(url.toString(), { waitUntil: "load" });
+  await page.locator("#items-body tr[data-id]").first().waitFor({ state: "attached" });
+  const tableText = (await page.locator("#items-body").textContent()).trim();
+  if (tableText.includes("Super Duper Bow")) {
+    throw new Error("Super Duper Bow should be hidden from the weapons table");
+  }
+  if (await page.locator("#item-details.show").count()) {
+    throw new Error("Super Duper Bow direct route should not open a detail panel");
+  }
+  await page.goto(originalUrl, { waitUntil: "load" });
+  await page.locator("#item-details.show").waitFor({ state: "visible" });
 }
 
 async function assertWeaponTableScanMetrics(page) {
