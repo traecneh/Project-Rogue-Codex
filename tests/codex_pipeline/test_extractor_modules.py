@@ -323,7 +323,9 @@ class ExtractorModuleTests(unittest.TestCase):
         )
 
         self.assertEqual("Demon", TYPE_LABELS[3])
+        self.assertEqual("Holy", ELEMENTAL_LABELS[3])
         self.assertEqual("Cold", ELEMENTAL_LABELS[4])
+        self.assertEqual("Dark", ELEMENTAL_LABELS[5])
         self.assertEqual("Freeze", STATUS_EFFECT_LABELS[3856])
         self.assertEqual("Frozen Heart", TATTER_LABELS[22])
         fields = {

@@ -8,9 +8,9 @@
     },
     "collectables": {
       "entries": 92,
-      "files_sha256": "2088dcc28e4253494c6c4b56de54b338e3d8bdcd653b5afcccab5fdf903483de",
+      "files_sha256": "beb27456f631918110d341a60e1e16ab670dbace857af44b1683f58d271f804b",
       "manifest_path": "images/collectables/manifest.json",
-      "manifest_sha256": "84e666e63037828e5857efaf7ce80848c7e80244426a1a6dbcc7fd3bb1df3f25"
+      "manifest_sha256": "c5936eb4c7804976596ac69c329ad1984076268381362c5e3b184e2125fcd40f"
     },
     "monsters": {
       "entries": 191,
@@ -20,9 +20,9 @@
     },
     "useables": {
       "entries": 22,
-      "files_sha256": "c01e8694c81ae828971496ed607c105df0fbf0451d7330868929021fe57a288f",
+      "files_sha256": "f2f6cd3b3363851499ad5fa1ee91aa4e3c1d305421228279333a59c7b59e1f81",
       "manifest_path": "images/useables/manifest.json",
-      "manifest_sha256": "ce4e1f56b3d03e258645b16258a027064cd4bbdfb5aa77f0cdfa714d1aa13a8d"
+      "manifest_sha256": "75d9079ae695b3fc6999c953b745c8ff193b00cefdbd26a3cd809254b23c4c76"
     },
     "weapons": {
       "entries": 250,
@@ -45,7 +45,7 @@
     "monsters": {
       "path": "pages/enemies/monsters_data03.json",
       "records": 191,
-      "sha256": "0bd58b9f0b739fa5971bf2c34aff61354bf91631f56a80adf8400e7a77ed5579"
+      "sha256": "4237c964aa8a060539b46e71aaa3105345b0377c986554c7df7018f0664f6b02"
     },
     "useables": {
       "path": "pages/items/useables_data.json",
@@ -58,12 +58,12 @@
       "sha256": "7c66d1bfe42b3690d008c626907888384263c62eb94b7b7b6ac85f4bae71069d"
     }
   },
-  "generated_at_utc": "2026-07-24T22:43:46Z",
+  "generated_at_utc": "2026-07-24T23:59:33Z",
   "schema": "project-rogue-codex-manifest",
-  "source_commit": "8b747d38f15ce9e996334a009abacc3f303855c3",
+  "source_commit": "364abde79b8b225f03d5ab813d9070ae4280c6a9",
   "summary": {
     "asset_entries": 810,
-    "content_sha256": "e24e63147f2c582c97b1923b479c8de6a3bb1129dc91d46a5fc6d9541d675644",
+    "content_sha256": "52b7b4491dd7c51b82f58863349f13e2abbca27c04be42bb10682a53bf41333a",
     "data_records": 811
   },
   "version": 1
