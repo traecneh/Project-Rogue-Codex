@@ -65,6 +65,36 @@ class QuestDataTests(unittest.TestCase):
             service["costs"][0]["entity"],
         )
 
+    def test_grave_consequences_has_confirmed_jeel_details(self):
+        quest = next(quest for quest in self.data["quests"] if quest["id"] == "grave-consequences")
+        objectives = quest["stages"][0]["objectives"]
+
+        self.assertEqual(("Jeel", "Jeel - Mayor's House", 12), (
+            quest["region"],
+            quest["area"],
+            quest["min_level"],
+        ))
+        self.assertEqual(
+            {"name": "Mayor of Jeel", "coordinates": [3766, 3232], "markers": "!?"},
+            quest["giver"],
+        )
+        self.assertEqual([], quest["prerequisites"])
+        self.assertEqual(
+            [
+                ("Kill Skeletons", 25, 46),
+                ("Kill Skeleton Warriors", 15, 120),
+                ("Kill Undead Warriors", 10, 96),
+            ],
+            [
+                (objective["text"], objective["quantity"], objective["target"]["entity"]["id"])
+                for objective in objectives
+            ],
+        )
+        self.assertEqual(
+            [{"type": "experience", "amount": 4250, "label": "Experience"}],
+            quest["rewards"]["guaranteed"],
+        )
+
     def test_missing_prerequisite_and_entity_are_reported(self):
         data = copy.deepcopy(self.data)
         data["quests"][0]["prerequisites"] = ["missing-quest"]

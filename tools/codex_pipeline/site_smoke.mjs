@@ -12,6 +12,7 @@ const RUNE_SWORD_DETAIL_PATH = "pages/items/weapons.html?weapon=Rune%20Sword";
 const PERKS_RUNIC_PATH = "/pages/systems/perks.html?perk=Runic";
 const QUESTS_INVESTIGATE_PATH = "/pages/General/quests.html?quest=investigate-the-undead";
 const QUESTS_MASTERY_PATH = "/pages/General/quests.html?quest=mastery-of-silvest";
+const QUESTS_GRAVE_CONSEQUENCES_PATH = "/pages/General/quests.html?quest=grave-consequences";
 const PROJECT_ROGUE_FILTER_SELECTOR = '[data-era-filter="project-rogue"]';
 
 const smokeSpecs = [
@@ -731,6 +732,45 @@ async function runQuestsSpec(browser, baseUrl) {
       !(await guildMapLink.getAttribute("rel"))?.includes("noopener")
     ) {
       throw new Error("Quest map links must open safely in a new tab");
+    }
+
+    await page.goto(joinUrl(baseUrl, QUESTS_GRAVE_CONSEQUENCES_PATH), { waitUntil: "load" });
+    await page.locator(".quest-detail-title").waitFor({ state: "visible" });
+    const graveTitle = (await page.locator(".quest-detail-title").textContent()).trim();
+    if (graveTitle !== "Grave Consequences") {
+      throw new Error(`Quest deep link opened "${graveTitle}" instead of "Grave Consequences"`);
+    }
+    const graveText = (await page.locator("#quest-detail").textContent()).trim();
+    for (const expected of [
+      "Jeel",
+      "Mayor of Jeel",
+      "Kill Skeletons",
+      "25 required",
+      "Kill Skeleton Warriors",
+      "15 required",
+      "Kill Undead Warriors",
+      "10 required",
+      "4,250 Experience",
+    ]) {
+      if (!graveText.includes(expected)) {
+        throw new Error(`Grave Consequences detail missing "${expected}": "${graveText}"`);
+      }
+    }
+    for (const href of [
+      "pages/enemies/monsters.html?monster=46",
+      "pages/enemies/monsters.html?monster=120",
+      "pages/enemies/monsters.html?monster=96",
+    ]) {
+      const count = await page.locator(`#quest-detail a[href="${href}"]`).count();
+      if (count !== 1) {
+        throw new Error(`Grave Consequences expected one "${href}", found ${count}`);
+      }
+    }
+    const mayorMapLinks = page.locator(
+      '#quest-detail a.quest-map-link[href="https://traecneh.github.io/Project-Rogue-Map/?x=3766&y=3232&label=Mayor+of+Jeel"]'
+    );
+    if ((await mayorMapLinks.count()) !== 2) {
+      throw new Error("Grave Consequences should link both giver and turn-in coordinates");
     }
 
     await page.locator("[data-close-detail]").click();

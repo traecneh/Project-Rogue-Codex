@@ -58,9 +58,9 @@
       "sha256": "7c66d1bfe42b3690d008c626907888384263c62eb94b7b7b6ac85f4bae71069d"
     }
   },
-  "generated_at_utc": "2026-07-24T23:59:33Z",
+  "generated_at_utc": "2026-07-25T21:02:52Z",
   "schema": "project-rogue-codex-manifest",
-  "source_commit": "364abde79b8b225f03d5ab813d9070ae4280c6a9",
+  "source_commit": "f9be9b84323f18a6cdc2b12d0a015d0f99015c9b",
   "summary": {
     "asset_entries": 810,
     "content_sha256": "52b7b4491dd7c51b82f58863349f13e2abbca27c04be42bb10682a53bf41333a",

@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-07-24",
+  "updated_at": "2026-07-25",
   "source": {
     "kind": "manual_observation",
-    "scope": "Silvest quest pass",
+    "scope": "Silvest and Jeel quest pass",
     "note": "Quest data is not currently present in rogue_data.vpack. Dialogue, objectives, coordinates, and rewards were observed in game."
   },
   "quests": [
@@ -967,6 +967,89 @@
           {
             "type": "experience",
             "amount": 1750,
+            "label": "Experience"
+          }
+        ],
+        "choose_one": []
+      },
+      "notes": []
+    },
+    {
+      "id": "grave-consequences",
+      "name": "Grave Consequences",
+      "category": "Side",
+      "region": "Jeel",
+      "area": "Jeel - Mayor's House",
+      "min_level": 12,
+      "repeatable": false,
+      "giver": {
+        "name": "Mayor of Jeel",
+        "coordinates": [3766, 3232],
+        "markers": "!?"
+      },
+      "prerequisites": [],
+      "initial_dialogue": "The Jeel cemetary has come alive and overrun! My guards cannot handle all of the undead by themselves.",
+      "stages": [
+        {
+          "number": 1,
+          "label": "Clear the cemetery",
+          "objectives": [
+            {
+              "number": 1,
+              "text": "Kill Skeletons",
+              "quantity": 25,
+              "target": {
+                "kind": "monster",
+                "label": "Skeleton",
+                "entity": {
+                  "type": "monster",
+                  "id": 46,
+                  "name": "Skeleton"
+                }
+              }
+            },
+            {
+              "number": 2,
+              "text": "Kill Skeleton Warriors",
+              "quantity": 15,
+              "target": {
+                "kind": "monster",
+                "label": "Skeleton Warrior",
+                "entity": {
+                  "type": "monster",
+                  "id": 120,
+                  "name": "Skeleton Warrior"
+                }
+              }
+            },
+            {
+              "number": 3,
+              "text": "Kill Undead Warriors",
+              "quantity": 10,
+              "target": {
+                "kind": "monster",
+                "label": "Undead Warrior",
+                "entity": {
+                  "type": "monster",
+                  "id": 96,
+                  "name": "Undead Warrior"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "turn_in": {
+        "name": "Mayor of Jeel",
+        "area": "Jeel - Mayor's House",
+        "coordinates": [3766, 3232],
+        "markers": "!?"
+      },
+      "rewards": {
+        "guaranteed": [
+          {
+            "type": "experience",
+            "amount": 4250,
             "label": "Experience"
           }
         ],

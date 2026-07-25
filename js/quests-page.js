@@ -1,5 +1,5 @@
 (() => {
-  const DATA_URL = "pages/General/quests_data.json";
+  const DATA_URL = "pages/General/quests_data.json?v=codex-2026-07-25-jeel-quest";
   const detail = document.getElementById("quest-detail");
   const browser = document.getElementById("quest-browser");
   const list = document.getElementById("quest-list");
@@ -600,7 +600,10 @@
     state.entries = [...quests, ...services];
     state.entriesById = new Map(state.entries.map((entry) => [entry.id, entry]));
     populateFilters();
-    pageSummary.textContent = `${quests.length} quests / ${services.length} service / Silvest`;
+    const regions = [...new Set(state.entries.map((entry) => entry.region).filter(Boolean))];
+    const regionSummary =
+      regions.length === 1 ? regions[0] : `${regions.length} regions`;
+    pageSummary.textContent = `${quests.length} quests / ${services.length} service / ${regionSummary}`;
     browser.setAttribute("aria-busy", "false");
 
     const routeId = selectedIdFromLocation();

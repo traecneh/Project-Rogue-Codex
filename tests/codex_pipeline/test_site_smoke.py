@@ -115,6 +115,7 @@ class SiteSmokeTests(unittest.TestCase):
         self.assertIn("runQuestsSpec", runner)
         self.assertIn("/pages/General/quests.html?quest=investigate-the-undead", runner)
         self.assertIn("/pages/General/quests.html?quest=mastery-of-silvest", runner)
+        self.assertIn("/pages/General/quests.html?quest=grave-consequences", runner)
         self.assertIn("SMOKE OK quests", runner)
         self.assertIn('detailQuery: "1006"', runner)
         self.assertIn('detailName: "Bottomless Bag"', runner)
