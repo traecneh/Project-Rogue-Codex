@@ -124,7 +124,7 @@ class SiteSmokeTests(unittest.TestCase):
         self.assertIn("/pages/General/quests.html?quest=the-scared-guard", runner)
         self.assertIn("Map_Combined-preview.webp", runner)
         self.assertIn(".quest-map-preview.is-unavailable", runner)
-        self.assertIn("five unique map previews", runner)
+        self.assertIn("six contextual map previews", runner)
         self.assertIn("SMOKE OK quests", runner)
         self.assertIn('detailQuery: "1006"', runner)
         self.assertIn('detailName: "Bottomless Bag"', runner)

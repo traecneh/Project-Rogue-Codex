@@ -864,15 +864,28 @@ async function runQuestsSpec(browser, baseUrl) {
     const guardCoordinateCount = await page
       .locator('#quest-detail a.quest-map-preview[data-map-coordinate="3576,3015"]')
       .count();
-    if (guardCoordinateCount !== 1) {
-      throw new Error(`The Backroom expected one deduplicated Guard Captain preview, found ${guardCoordinateCount}`);
+    if (guardCoordinateCount !== 2) {
+      throw new Error(`The Backroom expected contextual Guard Captain previews, found ${guardCoordinateCount}`);
     }
     const backroomPreviewCount = await page.locator("#quest-detail a.quest-map-preview").count();
-    if (backroomPreviewCount !== 5) {
-      throw new Error(`The Backroom expected five unique map previews, found ${backroomPreviewCount}`);
+    if (backroomPreviewCount !== 6) {
+      throw new Error(`The Backroom expected six contextual map previews, found ${backroomPreviewCount}`);
     }
     if ((await page.locator("#quest-detail a.quest-map-link").count()) !== 0) {
       throw new Error("The Backroom should replace visible coordinate links with map previews");
+    }
+    if ((await page.locator("#quest-detail .quest-map-preview-section").count()) !== 0) {
+      throw new Error("The Backroom should not collect map previews in a Locations section");
+    }
+    const backroomPreviewsAreContextual = await page
+      .locator("#quest-detail a.quest-map-preview")
+      .evaluateAll((previews) =>
+        previews.every((preview) =>
+          Boolean(preview.closest(".quest-fact-value, .quest-target-line, .quest-turn-in"))
+        )
+      );
+    if (!backroomPreviewsAreContextual) {
+      throw new Error("The Backroom map previews are not attached to their quest context");
     }
     const backroomDetailText = (await page.locator("#quest-detail").textContent()).trim();
     if (backroomDetailText.includes("3,576, 3,031")) {
@@ -881,12 +894,12 @@ async function runQuestsSpec(browser, baseUrl) {
     await page.waitForFunction(() => {
       const previews = Array.from(document.querySelectorAll(".quest-map-preview-image"));
       return (
-        previews.length === 5 &&
+        previews.length === 6 &&
         previews.every((image) => image.complete && image.naturalWidth === 4096)
       );
     });
     const floorLabels = await page.locator(".quest-map-preview-floor").allTextContents();
-    if (floorLabels.filter((label) => label === "OW").length !== 3 ||
+    if (floorLabels.filter((label) => label === "OW").length !== 4 ||
         floorLabels.filter((label) => label === "UG").length !== 2) {
       throw new Error(`The Backroom floor badges are incorrect: ${floorLabels.join(", ")}`);
     }
@@ -906,8 +919,8 @@ async function runQuestsSpec(browser, baseUrl) {
       waitUntil: "load",
     });
     const welcomePreviewCount = await page.locator("#quest-detail a.quest-map-preview").count();
-    if (welcomePreviewCount !== 5) {
-      throw new Error(`Welcome to Silvest expected five unique map previews, found ${welcomePreviewCount}`);
+    if (welcomePreviewCount !== 8) {
+      throw new Error(`Welcome to Silvest expected eight contextual map previews, found ${welcomePreviewCount}`);
     }
     if ((await page.locator("#quest-detail a.quest-map-link").count()) !== 0) {
       throw new Error("Welcome to Silvest should replace visible coordinate links with map previews");
@@ -915,11 +928,11 @@ async function runQuestsSpec(browser, baseUrl) {
     const townGuidePreviewCount = await page
       .locator('#quest-detail a.quest-map-preview[data-map-coordinate="3415,3722"]')
       .count();
-    if (townGuidePreviewCount !== 1) {
-      throw new Error(`Welcome to Silvest expected one deduplicated Town Guide preview, found ${townGuidePreviewCount}`);
+    if (townGuidePreviewCount !== 3) {
+      throw new Error(`Welcome to Silvest expected contextual Town Guide previews, found ${townGuidePreviewCount}`);
     }
     const welcomeFloorLabels = await page.locator(".quest-map-preview-floor").allTextContents();
-    if (welcomeFloorLabels.length !== 5 || welcomeFloorLabels.some((label) => label !== "OW")) {
+    if (welcomeFloorLabels.length !== 8 || welcomeFloorLabels.some((label) => label !== "OW")) {
       throw new Error(`Welcome to Silvest floor badges are incorrect: ${welcomeFloorLabels.join(", ")}`);
     }
 
@@ -954,8 +967,8 @@ async function runQuestsSpec(browser, baseUrl) {
         .first()
         .waitFor({ state: "visible" });
       const unavailableCount = await fallbackPage.locator(".quest-map-preview.is-unavailable").count();
-      if (unavailableCount !== 5) {
-        throw new Error(`Map preview fallback expected five unavailable tiles, found ${unavailableCount}`);
+      if (unavailableCount !== 6) {
+        throw new Error(`Map preview fallback expected six unavailable tiles, found ${unavailableCount}`);
       }
       await fallbackPage
         .locator(".quest-map-preview-fallback")
@@ -972,7 +985,7 @@ async function runQuestsSpec(browser, baseUrl) {
       await mobileQuestPage.goto(joinUrl(baseUrl, "/pages/General/quests.html?quest=the-backroom"), {
         waitUntil: "load",
       });
-      await mobileQuestPage.locator(".quest-map-preview-grid").waitFor({ state: "visible" });
+      await mobileQuestPage.locator(".quest-map-preview").first().waitFor({ state: "visible" });
       const mobileLayout = await mobileQuestPage.evaluate(() => {
         const cards = Array.from(document.querySelectorAll(".quest-map-preview"));
         return {
@@ -981,7 +994,7 @@ async function runQuestsSpec(browser, baseUrl) {
           overflow: document.documentElement.scrollWidth > window.innerWidth + 1,
         };
       });
-      if (mobileLayout.cardCount !== 5 || mobileLayout.minCardWidth < 120 || mobileLayout.overflow) {
+      if (mobileLayout.cardCount !== 6 || mobileLayout.minCardWidth < 120 || mobileLayout.overflow) {
         throw new Error(`Quest map previews do not fit mobile: ${JSON.stringify(mobileLayout)}`);
       }
     } finally {

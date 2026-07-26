@@ -87,53 +87,17 @@
   const usesMapPreviews = (entry) =>
     entry?.kind === "quest" && MAP_PREVIEW_QUEST_IDS.has(entry.id);
 
-  const questLocations = (entry) => {
-    const locations = new Map();
-    const addLocation = (coordinates, label, role) => {
-      if (!Array.isArray(coordinates) || coordinates.length !== 2) return;
-      const key = `${coordinates[0]},${coordinates[1]}`;
-      const existing = locations.get(key);
-      if (existing) {
-        if (label) existing.labels.add(label);
-        if (role) existing.roles.add(role);
-        return;
-      }
-      locations.set(key, {
-        coordinates,
-        labels: new Set(label ? [label] : []),
-        roles: new Set(role ? [role] : []),
-      });
-    };
-
-    const giver = getProvider(entry);
-    addLocation(giver?.coordinates, giver?.name, "Giver");
-    (entry.stages || []).forEach((stage) => {
-      (stage.objectives || []).forEach((objective) => {
-        const target = objective.target;
-        if (!target) return;
-        const label = target.destination_coordinates ? `${target.label} entrance` : target.label;
-        addLocation(target.coordinates, label, `Objective ${objective.number}`);
-        addLocation(
-          target.destination_coordinates,
-          target.destination_label || `${target.label} inside`,
-          `Objective ${objective.number}`
-        );
-      });
-    });
-    addLocation(entry.turn_in?.coordinates, entry.turn_in?.name, "Turn In");
-    return [...locations.values()];
-  };
-
-  const createQuestMapPreview = (location) => {
-    const [x, y] = location.coordinates;
-    const labels = [...location.labels];
-    const roles = [...location.roles];
-    const label = labels.join(" / ") || "Quest location";
-    const coordinateLabel = coordinatesText(location.coordinates);
-    const href = window.RogueCodexUtils?.buildProjectRogueMapUrl?.(location.coordinates, label);
+  const createQuestMapPreview = (
+    coordinates,
+    label = "Quest location",
+    { caption = true } = {}
+  ) => {
+    const [x, y] = coordinates;
+    const coordinateLabel = coordinatesText(coordinates);
+    const href = window.RogueCodexUtils?.buildProjectRogueMapUrl?.(coordinates, label);
     if (!href) return null;
 
-    const link = createElement("a", "quest-map-preview");
+    const link = createElement("a", "quest-map-preview quest-map-preview-inline");
     link.href = href;
     link.target = "_blank";
     link.rel = "noopener noreferrer";
@@ -174,26 +138,30 @@
     );
     link.appendChild(media);
 
-    const caption = createElement("span", "quest-map-preview-caption");
-    caption.appendChild(createElement("strong", "", label));
-    caption.appendChild(createElement("span", "", roles.join(" / ")));
-    link.appendChild(caption);
+    if (caption) {
+      const captionNode = createElement("span", "quest-map-preview-caption");
+      captionNode.appendChild(createElement("strong", "", label));
+      link.appendChild(captionNode);
+    } else {
+      link.classList.add("quest-map-preview-uncaptioned");
+    }
     return link;
   };
 
-  const appendQuestMapPreviews = (container, entry) => {
-    if (!usesMapPreviews(entry)) return;
-    const locations = questLocations(entry);
-    if (!locations.length) return;
-    const section = createElement("section", "quest-section quest-map-preview-section");
-    section.appendChild(createElement("h3", "quest-section-title", "Locations"));
-    const grid = createElement("div", "quest-map-preview-grid");
-    locations.forEach((location) => {
-      const preview = createQuestMapPreview(location);
-      if (preview) grid.appendChild(preview);
-    });
-    section.appendChild(grid);
-    container.appendChild(section);
+  const appendMapLocation = (
+    container,
+    coordinates,
+    label,
+    { prefix = "at", preview = false, caption = true } = {}
+  ) => {
+    if (preview) {
+      const mapPreview = createQuestMapPreview(coordinates, label, { caption });
+      if (mapPreview) {
+        container.appendChild(mapPreview);
+        return;
+      }
+    }
+    appendMapCoordinate(container, coordinates, label, prefix);
   };
 
   const entityUrl = (entity) => {
@@ -385,14 +353,14 @@
     empty.hidden = entries.length > 0;
   };
 
-  const appendFacts = (container, entry, showCoordinates = true) => {
+  const appendFacts = (container, entry, useMapPreviewsForEntry = false) => {
     const provider = getProvider(entry);
     const facts = [
       { label: "Level", value: entry.min_level },
       {
         label: entry.kind === "service" ? "Provider" : "Giver",
         value: provider?.name || "Unknown",
-        coordinates: showCoordinates ? provider?.coordinates : null,
+        coordinates: provider?.coordinates,
         mapLabel: provider?.name,
       },
       { label: "Area", value: entry.area },
@@ -413,7 +381,10 @@
       const value = createElement("dd", "quest-fact-value");
       value.appendChild(createElement("span", "", item.value));
       if (item.coordinates) {
-        appendMapCoordinate(value, item.coordinates, item.mapLabel);
+        appendMapLocation(value, item.coordinates, item.mapLabel, {
+          preview: useMapPreviewsForEntry,
+          caption: false,
+        });
       }
       fact.appendChild(value);
       factList.appendChild(fact);
@@ -434,28 +405,44 @@
     return disclosure;
   };
 
-  const appendTarget = (container, objective, showCoordinates = true) => {
+  const appendTarget = (container, objective, useMapPreviewsForEntry = false) => {
     const target = objective.target;
     if (!target) return;
     const line = createElement("div", "quest-target-line");
+    const previewLocations = [];
     if (target.entity) {
       line.appendChild(createEntityLink(target.entity, target.label));
-    } else {
+    } else if (!useMapPreviewsForEntry || !target.coordinates) {
       line.appendChild(createElement("span", "quest-target-label", target.label));
     }
-    if (showCoordinates && target.coordinates) {
+    if (target.coordinates) {
       const mapLabel = target.destination_coordinates ? `${target.label} entrance` : target.label;
-      appendMapCoordinate(line, target.coordinates, mapLabel);
+      if (useMapPreviewsForEntry) {
+        previewLocations.push({
+          coordinates: target.coordinates,
+          label: mapLabel,
+          caption: !target.entity,
+        });
+      } else {
+        appendMapCoordinate(line, target.coordinates, mapLabel);
+      }
     }
     if (target.destination_coordinates) {
-      if (target.destination_label) {
+      if (target.destination_label && !useMapPreviewsForEntry) {
         line.appendChild(createElement("span", "quest-target-label", target.destination_label));
       }
-      if (showCoordinates) {
+      const destinationLabel = target.destination_label || `${target.label} inside`;
+      if (useMapPreviewsForEntry) {
+        previewLocations.push({
+          coordinates: target.destination_coordinates,
+          label: destinationLabel,
+          caption: true,
+        });
+      } else {
         appendMapCoordinate(
           line,
           target.destination_coordinates,
-          target.destination_label || `${target.label} inside`,
+          destinationLabel,
           target.destination_label ? "at" : "inside"
         );
       }
@@ -463,13 +450,19 @@
     if (target.markers) {
       line.appendChild(createElement("span", "", `NPC markers ${target.markers}`));
     }
+    previewLocations.forEach((location) => {
+      appendMapLocation(line, location.coordinates, location.label, {
+        preview: true,
+        caption: location.caption,
+      });
+    });
     container.appendChild(line);
     if (target.unresolved_entity) {
       container.appendChild(createElement("p", "quest-inline-note", target.unresolved_entity));
     }
   };
 
-  const appendObjectives = (container, entry, showCoordinates = true) => {
+  const appendObjectives = (container, entry, useMapPreviewsForEntry = false) => {
     const section = createElement("section", "quest-section");
     section.appendChild(createElement("h3", "quest-section-title", "Objectives"));
     (entry.stages || []).forEach((stage) => {
@@ -493,7 +486,7 @@
           );
         }
         body.appendChild(heading);
-        appendTarget(body, objective, showCoordinates);
+        appendTarget(body, objective, useMapPreviewsForEntry);
         (objective.notes || []).forEach((note) => {
           body.appendChild(createElement("p", "quest-inline-note", note));
         });
@@ -525,18 +518,19 @@
     container.appendChild(section);
   };
 
-  const appendTurnIn = (container, entry, showCoordinates = true) => {
+  const appendTurnIn = (container, entry, useMapPreviewsForEntry = false) => {
     if (!entry.turn_in) return;
     const section = createElement("section", "quest-section");
     section.appendChild(createElement("h3", "quest-section-title", "Turn In"));
     const line = createElement("div", "quest-turn-in");
     line.appendChild(createElement("strong", "", entry.turn_in.name));
     if (entry.turn_in.area) line.appendChild(createElement("span", "", entry.turn_in.area));
-    if (showCoordinates && entry.turn_in.coordinates) {
-      appendMapCoordinate(
+    if (entry.turn_in.coordinates) {
+      appendMapLocation(
         line,
         entry.turn_in.coordinates,
-        entry.turn_in.name
+        entry.turn_in.name,
+        { preview: useMapPreviewsForEntry, caption: false }
       );
     }
     if (entry.turn_in.markers) {
@@ -616,15 +610,14 @@
     header.appendChild(close);
     fragment.appendChild(header);
 
-    const showInlineCoordinates = !usesMapPreviews(entry);
-    appendFacts(fragment, entry, showInlineCoordinates);
-    appendQuestMapPreviews(fragment, entry);
+    const useMapPreviewsForEntry = usesMapPreviews(entry);
+    appendFacts(fragment, entry, useMapPreviewsForEntry);
     appendPrerequisites(fragment, entry);
     if (entry.initial_dialogue) {
       fragment.appendChild(createDialogue("Initial dialogue", entry.initial_dialogue));
     }
-    appendObjectives(fragment, entry, showInlineCoordinates);
-    appendTurnIn(fragment, entry, showInlineCoordinates);
+    appendObjectives(fragment, entry, useMapPreviewsForEntry);
+    appendTurnIn(fragment, entry, useMapPreviewsForEntry);
     appendRewards(fragment, entry);
     appendNotes(fragment, entry.notes);
     detail.replaceChildren(fragment);
