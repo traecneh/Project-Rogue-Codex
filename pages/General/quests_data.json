@@ -3,7 +3,7 @@
   "updated_at": "2026-07-25",
   "source": {
     "kind": "manual_observation",
-    "scope": "Silvest and Jeel quest pass",
+    "scope": "Observed quest pass across multiple regions",
     "note": "Quest data is not currently present in rogue_data.vpack. Dialogue, objectives, coordinates, and rewards were observed in game."
   },
   "quests": [
@@ -1050,6 +1050,535 @@
           {
             "type": "experience",
             "amount": 4250,
+            "label": "Experience"
+          }
+        ],
+        "choose_one": []
+      },
+      "notes": []
+    },
+    {
+      "id": "the-backroom",
+      "name": "The Backroom",
+      "category": "Side",
+      "region": "Hothbra",
+      "area": "Hothbra - Hallway past Potion Shop",
+      "min_level": 18,
+      "repeatable": false,
+      "giver": {
+        "name": "Lyrael",
+        "coordinates": [3572, 3026],
+        "markers": "!"
+      },
+      "prerequisites": [],
+      "initial_dialogue": "The backroom of the potion shop has something strange about it... My friend fell through the floor ...and there is groaning noises!",
+      "stages": [
+        {
+          "number": 1,
+          "label": "Investigate the backroom",
+          "objectives": [
+            {
+              "number": 1,
+              "text": "Investigate the room and noises",
+              "target": {
+                "kind": "route",
+                "label": "Potion Shop backroom trapdoor",
+                "coordinates": [3576, 3031],
+                "destination_coordinates": [7695, 3018],
+                "destination_label": "Scared Thief",
+                "markers": "*"
+              },
+              "notes": [
+                "Enter through the trapdoor, then left-click the Scared Thief."
+              ]
+            }
+          ]
+        },
+        {
+          "number": 2,
+          "label": "Clear the undead",
+          "unlocks_after": "Speak to the Scared Thief",
+          "objectives": [
+            {
+              "number": 2,
+              "text": "Kill Zombies",
+              "quantity": 5,
+              "target": {
+                "kind": "monster",
+                "label": "Zombie",
+                "entity": {
+                  "type": "monster",
+                  "id": 94,
+                  "name": "Zombie",
+                  "image": "images/monsters/Zombie-94.gif"
+                }
+              }
+            },
+            {
+              "number": 3,
+              "text": "Kill Undead Warriors",
+              "quantity": 5,
+              "target": {
+                "kind": "monster",
+                "label": "Undead Warrior",
+                "entity": {
+                  "type": "monster",
+                  "id": 96,
+                  "name": "Undead Warrior"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "number": 3,
+          "label": "Follow the noises",
+          "unlocks_after": "Complete objectives 2 and 3",
+          "objectives": [
+            {
+              "number": 4,
+              "text": "Investigate the noises echoing throughout the halls",
+              "target": {
+                "kind": "portal",
+                "label": "Fire Portal",
+                "coordinates": [7687, 2961]
+              },
+              "notes": [
+                "Walk through the Fire Portal."
+              ]
+            }
+          ]
+        },
+        {
+          "number": 4,
+          "label": "Clear the lower halls",
+          "unlocks_after": "Walk through the Fire Portal",
+          "objectives": [
+            {
+              "number": 5,
+              "text": "Kill Hell Hounds",
+              "quantity": 20,
+              "target": {
+                "kind": "monster",
+                "label": "Hell Hound",
+                "entity": {
+                  "type": "monster",
+                  "id": 99,
+                  "name": "Hell Hound"
+                }
+              }
+            },
+            {
+              "number": 6,
+              "text": "Kill Imps",
+              "quantity": 20,
+              "target": {
+                "kind": "monster",
+                "label": "Imp",
+                "entity": {
+                  "type": "monster",
+                  "id": 103,
+                  "name": "Imp"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "number": 5,
+          "label": "Report to the town guard",
+          "unlocks_after": "Complete objectives 5 and 6",
+          "objectives": [
+            {
+              "number": 7,
+              "text": "Report your findings to the Guard Captain of Hothbra",
+              "target": {
+                "kind": "npc",
+                "label": "Guard Captain of Hothbra",
+                "coordinates": [3576, 3015],
+                "markers": "?*"
+              }
+            }
+          ]
+        }
+      ],
+      "turn_in": {
+        "name": "Guard Captain of Hothbra",
+        "area": "Hothbra",
+        "coordinates": [3576, 3015],
+        "markers": "?*",
+        "dialogue": "You have reported your findings to the town guard in hopes they will take it seriously."
+      },
+      "rewards": {
+        "guaranteed": [
+          {
+            "type": "experience",
+            "amount": 15000,
+            "label": "Experience"
+          }
+        ],
+        "choose_one": []
+      },
+      "notes": []
+    },
+    {
+      "id": "the-highwaymans-due",
+      "name": "The Highwayman's Due",
+      "category": "Side",
+      "region": "Hothbra",
+      "area": "Hothbra - Main Street",
+      "min_level": 10,
+      "repeatable": false,
+      "giver": {
+        "name": "Town Crier",
+        "coordinates": [3572, 3013],
+        "markers": "!"
+      },
+      "prerequisites": [],
+      "initial_dialogue": "Bandits keep attacking Hothbra's citizens on the roads. Please help us!",
+      "stages": [
+        {
+          "number": 1,
+          "label": "Clear the roads",
+          "objectives": [
+            {
+              "number": 1,
+              "text": "Kill Thieves",
+              "quantity": 15,
+              "target": {
+                "kind": "monster",
+                "label": "Thief",
+                "entity": {
+                  "type": "monster",
+                  "id": 116,
+                  "name": "Thief"
+                }
+              }
+            },
+            {
+              "number": 2,
+              "text": "Kill Fighters",
+              "quantity": 10,
+              "target": {
+                "kind": "monster",
+                "label": "Fighter",
+                "entity": {
+                  "type": "monster",
+                  "id": 117,
+                  "name": "Fighter"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "turn_in": {
+        "name": "Town Crier",
+        "area": "Hothbra - Main Street",
+        "coordinates": [3572, 3013],
+        "markers": "!",
+        "dialogue": "Thank you so much, the road is more safe now."
+      },
+      "rewards": {
+        "guaranteed": [
+          {
+            "type": "experience",
+            "amount": 3250,
+            "label": "Experience"
+          }
+        ],
+        "choose_one": []
+      },
+      "notes": []
+    },
+    {
+      "id": "scurvy-dogs",
+      "name": "Scurvy Dogs",
+      "category": "Side",
+      "region": "Wilderness",
+      "area": "Wilderness",
+      "min_level": 25,
+      "repeatable": false,
+      "giver": {
+        "name": "Jack Sparrow",
+        "coordinates": [3388, 2961],
+        "markers": "!?"
+      },
+      "prerequisites": [],
+      "initial_dialogue": "My crew is runnin' a mutiny! They took me leg and left me out to dry. I'll pay ye to clear them out!",
+      "stages": [
+        {
+          "number": 1,
+          "label": "End the mutiny",
+          "objectives": [
+            {
+              "number": 1,
+              "text": "Kill Pirates",
+              "quantity": 25,
+              "target": {
+                "kind": "monster",
+                "label": "Pirate",
+                "entity": {
+                  "type": "monster",
+                  "id": 85,
+                  "name": "Pirate"
+                }
+              }
+            },
+            {
+              "number": 2,
+              "text": "Kill Swashbucklers",
+              "quantity": 10,
+              "target": {
+                "kind": "monster",
+                "label": "Swashbuckler",
+                "entity": {
+                  "type": "monster",
+                  "id": 86,
+                  "name": "Swashbuckler"
+                }
+              }
+            },
+            {
+              "number": 3,
+              "text": "Kill Pirate Captains",
+              "quantity": 5,
+              "target": {
+                "kind": "monster",
+                "label": "Pirate Captain",
+                "entity": {
+                  "type": "monster",
+                  "id": 84,
+                  "name": "Pirate Captain"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "turn_in": {
+        "name": "Jack Sparrow",
+        "area": "Wilderness",
+        "coordinates": [3388, 2961],
+        "markers": "!?",
+        "dialogue": "Aye, ye did a good job. Here's ye reward."
+      },
+      "rewards": {
+        "guaranteed": [
+          {
+            "type": "experience",
+            "amount": 17500,
+            "label": "Experience"
+          }
+        ],
+        "choose_one": []
+      },
+      "notes": []
+    },
+    {
+      "id": "lotors-ettin-slayer",
+      "name": "Lotor's Ettin Slayer",
+      "category": "Side",
+      "region": "Lotor's Castle",
+      "area": "Lotor's Castle - Throne Room",
+      "min_level": 32,
+      "repeatable": false,
+      "giver": {
+        "name": "King Lotor",
+        "coordinates": [3848, 2969],
+        "markers": "!?"
+      },
+      "prerequisites": [],
+      "initial_dialogue": "Slay Ettins and collect their ribs on behalf of King Lotor",
+      "stages": [
+        {
+          "number": 1,
+          "label": "Hunt the ettins",
+          "objectives": [
+            {
+              "number": 1,
+              "text": "Kill Ettins",
+              "quantity": 50,
+              "target": {
+                "kind": "monster",
+                "label": "Ettin",
+                "entity": {
+                  "type": "monster",
+                  "id": 82,
+                  "name": "Ettin"
+                }
+              }
+            },
+            {
+              "number": 2,
+              "text": "Provide Uncooked Ribs for Lotor",
+              "quantity": 10,
+              "target": {
+                "kind": "item",
+                "label": "Uncooked Ribs",
+                "entity": {
+                  "type": "collectable",
+                  "id": 96,
+                  "name": "Uncooked Ribs"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "turn_in": {
+        "name": "King Lotor",
+        "area": "Lotor's Castle - Throne Room",
+        "coordinates": [3848, 2969],
+        "markers": "!?",
+        "dialogue": "Thank you for your efforts slaying the ettins!"
+      },
+      "rewards": {
+        "guaranteed": [
+          {
+            "type": "experience",
+            "amount": 27500,
+            "label": "Experience"
+          }
+        ],
+        "choose_one": []
+      },
+      "notes": []
+    },
+    {
+      "id": "wailing-souls",
+      "name": "Wailing Souls",
+      "category": "Side",
+      "region": "New Korelth",
+      "area": "New Korelth - North of NK Bank",
+      "min_level": 18,
+      "repeatable": false,
+      "giver": {
+        "name": "Guard Captain",
+        "coordinates": [3761, 2614],
+        "markers": "!?"
+      },
+      "prerequisites": [],
+      "initial_dialogue": "Ghosts have taken over the crypt of New Korleath. Are you capable of checking into them?",
+      "stages": [
+        {
+          "number": 1,
+          "label": "Clear the crypt",
+          "objectives": [
+            {
+              "number": 1,
+              "text": "Kill Ghosts",
+              "quantity": 25,
+              "target": {
+                "kind": "monster",
+                "label": "Ghost",
+                "entity": {
+                  "type": "monster",
+                  "id": 90,
+                  "name": "Ghost"
+                }
+              }
+            },
+            {
+              "number": 2,
+              "text": "Kill Wraiths",
+              "quantity": 15,
+              "target": {
+                "kind": "monster",
+                "label": "Wraith",
+                "entity": {
+                  "type": "monster",
+                  "id": 101,
+                  "name": "Wraith"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "turn_in": {
+        "name": "Guard Captain",
+        "area": "New Korelth - North of NK Bank",
+        "coordinates": [3761, 2614],
+        "markers": "!?",
+        "dialogue": "Some observers told me of your encounters in there, thank you for looking into it."
+      },
+      "rewards": {
+        "guaranteed": [
+          {
+            "type": "experience",
+            "amount": 10000,
+            "label": "Experience"
+          }
+        ],
+        "choose_one": []
+      },
+      "notes": []
+    },
+    {
+      "id": "the-scared-guard",
+      "name": "The Scared Guard",
+      "category": "Side",
+      "region": "New Korelth",
+      "area": "New Korelth - Inn",
+      "min_level": 15,
+      "repeatable": false,
+      "giver": {
+        "name": "Scared Guard",
+        "coordinates": [3742, 2647],
+        "markers": "!?"
+      },
+      "prerequisites": [],
+      "initial_dialogue": "Ghosts have taken over the crypt of New Korleath. Are you capable of checking into them?",
+      "stages": [
+        {
+          "number": 1,
+          "label": "Face the undead",
+          "objectives": [
+            {
+              "number": 1,
+              "text": "Kill Undead Warriors",
+              "quantity": 29,
+              "target": {
+                "kind": "monster",
+                "label": "Undead Warrior",
+                "entity": {
+                  "type": "monster",
+                  "id": 96,
+                  "name": "Undead Warrior"
+                }
+              }
+            },
+            {
+              "number": 2,
+              "text": "Kill Zombies",
+              "quantity": 15,
+              "target": {
+                "kind": "monster",
+                "label": "Zombie",
+                "entity": {
+                  "type": "monster",
+                  "id": 94,
+                  "name": "Zombie",
+                  "image": "images/monsters/Zombie-94.gif"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "turn_in": {
+        "name": "Scared Guard",
+        "area": "New Korelth - Inn",
+        "coordinates": [3742, 2647],
+        "markers": "!?",
+        "dialogue": "I watched you from afar and saaw you handle those menaces. Thank you. Please don't tell anyone I was scared..."
+      },
+      "rewards": {
+        "guaranteed": [
+          {
+            "type": "experience",
+            "amount": 3250,
             "label": "Experience"
           }
         ],

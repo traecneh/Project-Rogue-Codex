@@ -773,6 +773,129 @@ async function runQuestsSpec(browser, baseUrl) {
       throw new Error("Grave Consequences should link both giver and turn-in coordinates");
     }
 
+    const regionalQuests = [
+      {
+        path: "/pages/General/quests.html?quest=the-backroom",
+        title: "The Backroom",
+        expected: [
+          "Hothbra",
+          "Lyrael",
+          "Scared Thief",
+          "Kill Zombies",
+          "5 required",
+          "Kill Hell Hounds",
+          "20 required",
+          "Guard Captain of Hothbra",
+          "15,000 Experience",
+        ],
+      },
+      {
+        path: "/pages/General/quests.html?quest=the-highwaymans-due",
+        title: "The Highwayman's Due",
+        expected: ["Town Crier", "Kill Thieves", "15 required", "Kill Fighters", "3,250 Experience"],
+      },
+      {
+        path: "/pages/General/quests.html?quest=scurvy-dogs",
+        title: "Scurvy Dogs",
+        expected: [
+          "Jack Sparrow",
+          "Kill Pirates",
+          "Kill Swashbucklers",
+          "Kill Pirate Captains",
+          "17,500 Experience",
+        ],
+      },
+      {
+        path: "/pages/General/quests.html?quest=lotors-ettin-slayer",
+        title: "Lotor's Ettin Slayer",
+        expected: [
+          "King Lotor",
+          "Kill Ettins",
+          "50 required",
+          "Uncooked Ribs",
+          "10 required",
+          "27,500 Experience",
+        ],
+      },
+      {
+        path: "/pages/General/quests.html?quest=wailing-souls",
+        title: "Wailing Souls",
+        expected: ["New Korelth", "Guard Captain", "Kill Ghosts", "Kill Wraiths", "10,000 Experience"],
+      },
+      {
+        path: "/pages/General/quests.html?quest=the-scared-guard",
+        title: "The Scared Guard",
+        expected: [
+          "Scared Guard",
+          "Kill Undead Warriors",
+          "29 required",
+          "Kill Zombies",
+          "15 required",
+          "3,250 Experience",
+        ],
+      },
+    ];
+    for (const quest of regionalQuests) {
+      await page.goto(joinUrl(baseUrl, quest.path), { waitUntil: "load" });
+      await page.locator(".quest-detail-title").waitFor({ state: "visible" });
+      const regionalTitle = (await page.locator(".quest-detail-title").textContent()).trim();
+      if (regionalTitle !== quest.title) {
+        throw new Error(`Quest deep link opened "${regionalTitle}" instead of "${quest.title}"`);
+      }
+      const regionalText = (await page.locator("#quest-detail").textContent()).trim();
+      for (const expected of quest.expected) {
+        if (!regionalText.includes(expected)) {
+          throw new Error(`${quest.title} detail missing "${expected}": "${regionalText}"`);
+        }
+      }
+    }
+
+    await page.goto(joinUrl(baseUrl, "/pages/General/quests.html?quest=the-backroom"), {
+      waitUntil: "load",
+    });
+    for (const coordinate of ["3576,3031", "7695,3018", "7687,2961"]) {
+      const count = await page.locator(`#quest-detail a[data-map-coordinate="${coordinate}"]`).count();
+      if (count !== 1) {
+        throw new Error(`The Backroom expected one map link for ${coordinate}, found ${count}`);
+      }
+    }
+    const guardCoordinateCount = await page
+      .locator('#quest-detail a[data-map-coordinate="3576,3015"]')
+      .count();
+    if (guardCoordinateCount !== 2) {
+      throw new Error(`The Backroom expected two Guard Captain map links, found ${guardCoordinateCount}`);
+    }
+    for (const href of [
+      "pages/enemies/monsters.html?monster=94",
+      "pages/enemies/monsters.html?monster=96",
+      "pages/enemies/monsters.html?monster=99",
+      "pages/enemies/monsters.html?monster=103",
+    ]) {
+      const count = await page.locator(`#quest-detail a[href="${href}"]`).count();
+      if (count !== 1) {
+        throw new Error(`The Backroom expected one "${href}", found ${count}`);
+      }
+    }
+
+    await page.goto(joinUrl(baseUrl, "/pages/General/quests.html?quest=lotors-ettin-slayer"), {
+      waitUntil: "load",
+    });
+    const ribsLinkCount = await page
+      .locator('#quest-detail a[href="pages/items/collectables.html?collectable=96"]')
+      .count();
+    if (ribsLinkCount !== 1) {
+      throw new Error(`Lotor's Ettin Slayer expected one Uncooked Ribs link, found ${ribsLinkCount}`);
+    }
+    const summaryText = (await page.locator("#quest-page-summary").textContent()).trim();
+    if (summaryText !== "16 quests / 1 service / 6 regions") {
+      throw new Error(`Quest summary has unexpected multi-region text: "${summaryText}"`);
+    }
+    await page.locator("#site-search-input").fill("King Lotor");
+    await page
+      .locator('.nav-search-result[href*="pages/General/quests.html?quest=lotors-ettin-slayer"]')
+      .waitFor({ state: "visible" });
+    await page.locator("#site-search-input").fill("");
+
     await page.locator("[data-close-detail]").click();
     await page.waitForFunction(() => !new URL(window.location.href).searchParams.has("quest"));
     await page.locator(".quest-detail-empty").waitFor({ state: "visible" });

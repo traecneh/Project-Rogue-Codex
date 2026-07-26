@@ -1,5 +1,5 @@
 (() => {
-  const DATA_URL = "pages/General/quests_data.json?v=codex-2026-07-25-jeel-quest";
+  const DATA_URL = "pages/General/quests_data.json?v=codex-2026-07-25-quest-expansion";
   const detail = document.getElementById("quest-detail");
   const browser = document.getElementById("quest-browser");
   const list = document.getElementById("quest-list");
@@ -330,11 +330,14 @@
       appendMapCoordinate(line, target.coordinates, mapLabel);
     }
     if (target.destination_coordinates) {
+      if (target.destination_label) {
+        line.appendChild(createElement("span", "quest-target-label", target.destination_label));
+      }
       appendMapCoordinate(
         line,
         target.destination_coordinates,
-        `${target.label} inside`,
-        "inside"
+        target.destination_label || `${target.label} inside`,
+        target.destination_label ? "at" : "inside"
       );
     }
     if (target.markers) {

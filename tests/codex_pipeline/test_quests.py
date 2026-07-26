@@ -95,6 +95,106 @@ class QuestDataTests(unittest.TestCase):
             quest["rewards"]["guaranteed"],
         )
 
+    def test_new_regional_quests_have_confirmed_requirements_and_rewards(self):
+        expected = {
+            "the-backroom": ("Hothbra", 18, "Lyrael", [3572, 3026], 15000),
+            "the-highwaymans-due": ("Hothbra", 10, "Town Crier", [3572, 3013], 3250),
+            "scurvy-dogs": ("Wilderness", 25, "Jack Sparrow", [3388, 2961], 17500),
+            "lotors-ettin-slayer": ("Lotor's Castle", 32, "King Lotor", [3848, 2969], 27500),
+            "wailing-souls": ("New Korelth", 18, "Guard Captain", [3761, 2614], 10000),
+            "the-scared-guard": ("New Korelth", 15, "Scared Guard", [3742, 2647], 3250),
+        }
+
+        for quest_id, details in expected.items():
+            quest = next(quest for quest in self.data["quests"] if quest["id"] == quest_id)
+            actual = (
+                quest["region"],
+                quest["min_level"],
+                quest["giver"]["name"],
+                quest["giver"]["coordinates"],
+                quest["rewards"]["guaranteed"][0]["amount"],
+            )
+            self.assertEqual(details, actual, quest_id)
+            self.assertEqual([], quest["prerequisites"], quest_id)
+            self.assertFalse(quest["repeatable"], quest_id)
+
+    def test_new_regional_quest_entities_use_canonical_records(self):
+        expected = {
+            "the-backroom": [
+                ("Kill Zombies", 5, "monster", 94),
+                ("Kill Undead Warriors", 5, "monster", 96),
+                ("Kill Hell Hounds", 20, "monster", 99),
+                ("Kill Imps", 20, "monster", 103),
+            ],
+            "the-highwaymans-due": [
+                ("Kill Thieves", 15, "monster", 116),
+                ("Kill Fighters", 10, "monster", 117),
+            ],
+            "scurvy-dogs": [
+                ("Kill Pirates", 25, "monster", 85),
+                ("Kill Swashbucklers", 10, "monster", 86),
+                ("Kill Pirate Captains", 5, "monster", 84),
+            ],
+            "lotors-ettin-slayer": [
+                ("Kill Ettins", 50, "monster", 82),
+                ("Provide Uncooked Ribs for Lotor", 10, "collectable", 96),
+            ],
+            "wailing-souls": [
+                ("Kill Ghosts", 25, "monster", 90),
+                ("Kill Wraiths", 15, "monster", 101),
+            ],
+            "the-scared-guard": [
+                ("Kill Undead Warriors", 29, "monster", 96),
+                ("Kill Zombies", 15, "monster", 94),
+            ],
+        }
+
+        for quest_id, expected_entities in expected.items():
+            quest = next(quest for quest in self.data["quests"] if quest["id"] == quest_id)
+            objectives = [
+                objective
+                for stage in quest["stages"]
+                for objective in stage["objectives"]
+                if objective["target"].get("entity")
+            ]
+            actual = [
+                (
+                    objective["text"],
+                    objective["quantity"],
+                    objective["target"]["entity"]["type"],
+                    objective["target"]["entity"]["id"],
+                )
+                for objective in objectives
+            ]
+            self.assertEqual(expected_entities, actual, quest_id)
+
+    def test_backroom_retains_all_phases_and_confirmed_coordinates(self):
+        quest = next(quest for quest in self.data["quests"] if quest["id"] == "the-backroom")
+        objectives = [objective for stage in quest["stages"] for objective in stage["objectives"]]
+        route = objectives[0]["target"]
+        fire_portal = objectives[3]["target"]
+        guard = objectives[6]["target"]
+
+        self.assertEqual([1, 2, 3, 4, 5], [stage["number"] for stage in quest["stages"]])
+        self.assertEqual(list(range(1, 8)), [objective["number"] for objective in objectives])
+        self.assertEqual(
+            ([3576, 3031], [7695, 3018], "Scared Thief", "*"),
+            (
+                route["coordinates"],
+                route["destination_coordinates"],
+                route["destination_label"],
+                route["markers"],
+            ),
+        )
+        self.assertEqual(
+            ("Fire Portal", [7687, 2961]),
+            (fire_portal["label"], fire_portal["coordinates"]),
+        )
+        self.assertEqual(
+            ("Guard Captain of Hothbra", [3576, 3015], "?*"),
+            (guard["label"], guard["coordinates"], guard["markers"]),
+        )
+
     def test_missing_prerequisite_and_entity_are_reported(self):
         data = copy.deepcopy(self.data)
         data["quests"][0]["prerequisites"] = ["missing-quest"]
