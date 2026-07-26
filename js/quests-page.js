@@ -1,5 +1,11 @@
 (() => {
   const DATA_URL = "pages/General/quests_data.json?v=codex-2026-07-25-quest-expansion";
+  const MAP_PREVIEW_IMAGE_URL =
+    "https://traecneh.github.io/Project-Rogue-Map/img/Map_Combined-preview.webp";
+  const MAP_PREVIEW_QUEST_IDS = new Set(["welcome-to-silvest", "the-backroom"]);
+  const MAP_WIDTH = 8192;
+  const MAP_HEIGHT = 4096;
+  const MAP_FLOOR_WIDTH = 4096;
   const detail = document.getElementById("quest-detail");
   const browser = document.getElementById("quest-browser");
   const list = document.getElementById("quest-list");
@@ -76,6 +82,118 @@
     if (!link) return;
     if (prefix) container.appendChild(createElement("span", "", prefix));
     container.appendChild(link);
+  };
+
+  const usesMapPreviews = (entry) =>
+    entry?.kind === "quest" && MAP_PREVIEW_QUEST_IDS.has(entry.id);
+
+  const questLocations = (entry) => {
+    const locations = new Map();
+    const addLocation = (coordinates, label, role) => {
+      if (!Array.isArray(coordinates) || coordinates.length !== 2) return;
+      const key = `${coordinates[0]},${coordinates[1]}`;
+      const existing = locations.get(key);
+      if (existing) {
+        if (label) existing.labels.add(label);
+        if (role) existing.roles.add(role);
+        return;
+      }
+      locations.set(key, {
+        coordinates,
+        labels: new Set(label ? [label] : []),
+        roles: new Set(role ? [role] : []),
+      });
+    };
+
+    const giver = getProvider(entry);
+    addLocation(giver?.coordinates, giver?.name, "Giver");
+    (entry.stages || []).forEach((stage) => {
+      (stage.objectives || []).forEach((objective) => {
+        const target = objective.target;
+        if (!target) return;
+        const label = target.destination_coordinates ? `${target.label} entrance` : target.label;
+        addLocation(target.coordinates, label, `Objective ${objective.number}`);
+        addLocation(
+          target.destination_coordinates,
+          target.destination_label || `${target.label} inside`,
+          `Objective ${objective.number}`
+        );
+      });
+    });
+    addLocation(entry.turn_in?.coordinates, entry.turn_in?.name, "Turn In");
+    return [...locations.values()];
+  };
+
+  const createQuestMapPreview = (location) => {
+    const [x, y] = location.coordinates;
+    const labels = [...location.labels];
+    const roles = [...location.roles];
+    const label = labels.join(" / ") || "Quest location";
+    const coordinateLabel = coordinatesText(location.coordinates);
+    const href = window.RogueCodexUtils?.buildProjectRogueMapUrl?.(location.coordinates, label);
+    if (!href) return null;
+
+    const link = createElement("a", "quest-map-preview");
+    link.href = href;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.title = `Open ${label} at ${coordinateLabel} on Project Rogue Map`;
+    link.setAttribute(
+      "aria-label",
+      `Open ${label} at ${coordinateLabel} on Project Rogue Map`
+    );
+    link.dataset.mapCoordinate = `${x},${y}`;
+
+    const media = createElement("span", "quest-map-preview-media");
+    const image = createElement("img", "quest-map-preview-image");
+    const scale = x >= MAP_FLOOR_WIDTH ? 0.75 : 0.5;
+    image.src = MAP_PREVIEW_IMAGE_URL;
+    image.alt = "";
+    image.loading = "lazy";
+    image.decoding = "async";
+    image.draggable = false;
+    image.style.width = `${MAP_WIDTH * scale}px`;
+    image.style.height = `${MAP_HEIGHT * scale}px`;
+    image.style.left = `calc(50% - ${x * scale}px)`;
+    image.style.top = `calc(50% - ${y * scale}px)`;
+    image.addEventListener("error", () => {
+      link.classList.add("is-unavailable");
+      image.remove();
+    });
+    media.appendChild(image);
+    media.appendChild(createElement("span", "quest-map-preview-marker"));
+    const floor = createElement(
+      "span",
+      "quest-map-preview-floor",
+      x >= MAP_FLOOR_WIDTH ? "UG" : "OW"
+    );
+    floor.title = x >= MAP_FLOOR_WIDTH ? "Underground" : "Overworld";
+    media.appendChild(floor);
+    media.appendChild(
+      createElement("span", "quest-map-preview-fallback", "Preview unavailable")
+    );
+    link.appendChild(media);
+
+    const caption = createElement("span", "quest-map-preview-caption");
+    caption.appendChild(createElement("strong", "", label));
+    caption.appendChild(createElement("span", "", roles.join(" / ")));
+    link.appendChild(caption);
+    return link;
+  };
+
+  const appendQuestMapPreviews = (container, entry) => {
+    if (!usesMapPreviews(entry)) return;
+    const locations = questLocations(entry);
+    if (!locations.length) return;
+    const section = createElement("section", "quest-section quest-map-preview-section");
+    section.appendChild(createElement("h3", "quest-section-title", "Locations"));
+    const grid = createElement("div", "quest-map-preview-grid");
+    locations.forEach((location) => {
+      const preview = createQuestMapPreview(location);
+      if (preview) grid.appendChild(preview);
+    });
+    section.appendChild(grid);
+    container.appendChild(section);
   };
 
   const entityUrl = (entity) => {
@@ -267,14 +385,14 @@
     empty.hidden = entries.length > 0;
   };
 
-  const appendFacts = (container, entry) => {
+  const appendFacts = (container, entry, showCoordinates = true) => {
     const provider = getProvider(entry);
     const facts = [
       { label: "Level", value: entry.min_level },
       {
         label: entry.kind === "service" ? "Provider" : "Giver",
         value: provider?.name || "Unknown",
-        coordinates: provider?.coordinates,
+        coordinates: showCoordinates ? provider?.coordinates : null,
         mapLabel: provider?.name,
       },
       { label: "Area", value: entry.area },
@@ -316,7 +434,7 @@
     return disclosure;
   };
 
-  const appendTarget = (container, objective) => {
+  const appendTarget = (container, objective, showCoordinates = true) => {
     const target = objective.target;
     if (!target) return;
     const line = createElement("div", "quest-target-line");
@@ -325,7 +443,7 @@
     } else {
       line.appendChild(createElement("span", "quest-target-label", target.label));
     }
-    if (target.coordinates) {
+    if (showCoordinates && target.coordinates) {
       const mapLabel = target.destination_coordinates ? `${target.label} entrance` : target.label;
       appendMapCoordinate(line, target.coordinates, mapLabel);
     }
@@ -333,12 +451,14 @@
       if (target.destination_label) {
         line.appendChild(createElement("span", "quest-target-label", target.destination_label));
       }
-      appendMapCoordinate(
-        line,
-        target.destination_coordinates,
-        target.destination_label || `${target.label} inside`,
-        target.destination_label ? "at" : "inside"
-      );
+      if (showCoordinates) {
+        appendMapCoordinate(
+          line,
+          target.destination_coordinates,
+          target.destination_label || `${target.label} inside`,
+          target.destination_label ? "at" : "inside"
+        );
+      }
     }
     if (target.markers) {
       line.appendChild(createElement("span", "", `NPC markers ${target.markers}`));
@@ -349,7 +469,7 @@
     }
   };
 
-  const appendObjectives = (container, entry) => {
+  const appendObjectives = (container, entry, showCoordinates = true) => {
     const section = createElement("section", "quest-section");
     section.appendChild(createElement("h3", "quest-section-title", "Objectives"));
     (entry.stages || []).forEach((stage) => {
@@ -373,7 +493,7 @@
           );
         }
         body.appendChild(heading);
-        appendTarget(body, objective);
+        appendTarget(body, objective, showCoordinates);
         (objective.notes || []).forEach((note) => {
           body.appendChild(createElement("p", "quest-inline-note", note));
         });
@@ -405,14 +525,14 @@
     container.appendChild(section);
   };
 
-  const appendTurnIn = (container, entry) => {
+  const appendTurnIn = (container, entry, showCoordinates = true) => {
     if (!entry.turn_in) return;
     const section = createElement("section", "quest-section");
     section.appendChild(createElement("h3", "quest-section-title", "Turn In"));
     const line = createElement("div", "quest-turn-in");
     line.appendChild(createElement("strong", "", entry.turn_in.name));
     if (entry.turn_in.area) line.appendChild(createElement("span", "", entry.turn_in.area));
-    if (entry.turn_in.coordinates) {
+    if (showCoordinates && entry.turn_in.coordinates) {
       appendMapCoordinate(
         line,
         entry.turn_in.coordinates,
@@ -496,13 +616,15 @@
     header.appendChild(close);
     fragment.appendChild(header);
 
-    appendFacts(fragment, entry);
+    const showInlineCoordinates = !usesMapPreviews(entry);
+    appendFacts(fragment, entry, showInlineCoordinates);
+    appendQuestMapPreviews(fragment, entry);
     appendPrerequisites(fragment, entry);
     if (entry.initial_dialogue) {
       fragment.appendChild(createDialogue("Initial dialogue", entry.initial_dialogue));
     }
-    appendObjectives(fragment, entry);
-    appendTurnIn(fragment, entry);
+    appendObjectives(fragment, entry, showInlineCoordinates);
+    appendTurnIn(fragment, entry, showInlineCoordinates);
     appendRewards(fragment, entry);
     appendNotes(fragment, entry.notes);
     detail.replaceChildren(fragment);

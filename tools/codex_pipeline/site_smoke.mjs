@@ -854,16 +854,41 @@ async function runQuestsSpec(browser, baseUrl) {
       waitUntil: "load",
     });
     for (const coordinate of ["3576,3031", "7695,3018", "7687,2961"]) {
-      const count = await page.locator(`#quest-detail a[data-map-coordinate="${coordinate}"]`).count();
+      const count = await page
+        .locator(`#quest-detail a.quest-map-preview[data-map-coordinate="${coordinate}"]`)
+        .count();
       if (count !== 1) {
-        throw new Error(`The Backroom expected one map link for ${coordinate}, found ${count}`);
+        throw new Error(`The Backroom expected one map preview for ${coordinate}, found ${count}`);
       }
     }
     const guardCoordinateCount = await page
-      .locator('#quest-detail a[data-map-coordinate="3576,3015"]')
+      .locator('#quest-detail a.quest-map-preview[data-map-coordinate="3576,3015"]')
       .count();
-    if (guardCoordinateCount !== 2) {
-      throw new Error(`The Backroom expected two Guard Captain map links, found ${guardCoordinateCount}`);
+    if (guardCoordinateCount !== 1) {
+      throw new Error(`The Backroom expected one deduplicated Guard Captain preview, found ${guardCoordinateCount}`);
+    }
+    const backroomPreviewCount = await page.locator("#quest-detail a.quest-map-preview").count();
+    if (backroomPreviewCount !== 5) {
+      throw new Error(`The Backroom expected five unique map previews, found ${backroomPreviewCount}`);
+    }
+    if ((await page.locator("#quest-detail a.quest-map-link").count()) !== 0) {
+      throw new Error("The Backroom should replace visible coordinate links with map previews");
+    }
+    const backroomDetailText = (await page.locator("#quest-detail").textContent()).trim();
+    if (backroomDetailText.includes("3,576, 3,031")) {
+      throw new Error("The Backroom still exposes numeric coordinates in visible detail text");
+    }
+    await page.waitForFunction(() => {
+      const previews = Array.from(document.querySelectorAll(".quest-map-preview-image"));
+      return (
+        previews.length === 5 &&
+        previews.every((image) => image.complete && image.naturalWidth === 4096)
+      );
+    });
+    const floorLabels = await page.locator(".quest-map-preview-floor").allTextContents();
+    if (floorLabels.filter((label) => label === "OW").length !== 3 ||
+        floorLabels.filter((label) => label === "UG").length !== 2) {
+      throw new Error(`The Backroom floor badges are incorrect: ${floorLabels.join(", ")}`);
     }
     for (const href of [
       "pages/enemies/monsters.html?monster=94",
@@ -875,6 +900,27 @@ async function runQuestsSpec(browser, baseUrl) {
       if (count !== 1) {
         throw new Error(`The Backroom expected one "${href}", found ${count}`);
       }
+    }
+
+    await page.goto(joinUrl(baseUrl, "/pages/General/quests.html?quest=welcome-to-silvest"), {
+      waitUntil: "load",
+    });
+    const welcomePreviewCount = await page.locator("#quest-detail a.quest-map-preview").count();
+    if (welcomePreviewCount !== 5) {
+      throw new Error(`Welcome to Silvest expected five unique map previews, found ${welcomePreviewCount}`);
+    }
+    if ((await page.locator("#quest-detail a.quest-map-link").count()) !== 0) {
+      throw new Error("Welcome to Silvest should replace visible coordinate links with map previews");
+    }
+    const townGuidePreviewCount = await page
+      .locator('#quest-detail a.quest-map-preview[data-map-coordinate="3415,3722"]')
+      .count();
+    if (townGuidePreviewCount !== 1) {
+      throw new Error(`Welcome to Silvest expected one deduplicated Town Guide preview, found ${townGuidePreviewCount}`);
+    }
+    const welcomeFloorLabels = await page.locator(".quest-map-preview-floor").allTextContents();
+    if (welcomeFloorLabels.length !== 5 || welcomeFloorLabels.some((label) => label !== "OW")) {
+      throw new Error(`Welcome to Silvest floor badges are incorrect: ${welcomeFloorLabels.join(", ")}`);
     }
 
     await page.goto(joinUrl(baseUrl, "/pages/General/quests.html?quest=lotors-ettin-slayer"), {
@@ -895,6 +941,52 @@ async function runQuestsSpec(browser, baseUrl) {
       .locator('.nav-search-result[href*="pages/General/quests.html?quest=lotors-ettin-slayer"]')
       .waitFor({ state: "visible" });
     await page.locator("#site-search-input").fill("");
+
+    const fallbackPage = await browser.newPage();
+    try {
+      fallbackPage.setDefaultTimeout(timeoutMs);
+      await fallbackPage.route("**/Map_Combined-preview.webp", (route) => route.abort());
+      await fallbackPage.goto(joinUrl(baseUrl, "/pages/General/quests.html?quest=the-backroom"), {
+        waitUntil: "load",
+      });
+      await fallbackPage
+        .locator(".quest-map-preview.is-unavailable")
+        .first()
+        .waitFor({ state: "visible" });
+      const unavailableCount = await fallbackPage.locator(".quest-map-preview.is-unavailable").count();
+      if (unavailableCount !== 5) {
+        throw new Error(`Map preview fallback expected five unavailable tiles, found ${unavailableCount}`);
+      }
+      await fallbackPage
+        .locator(".quest-map-preview-fallback")
+        .first()
+        .waitFor({ state: "visible" });
+    } finally {
+      await fallbackPage.close();
+    }
+
+    const mobileQuestPage = await browser.newPage();
+    try {
+      mobileQuestPage.setDefaultTimeout(timeoutMs);
+      await mobileQuestPage.setViewportSize({ width: 390, height: 844 });
+      await mobileQuestPage.goto(joinUrl(baseUrl, "/pages/General/quests.html?quest=the-backroom"), {
+        waitUntil: "load",
+      });
+      await mobileQuestPage.locator(".quest-map-preview-grid").waitFor({ state: "visible" });
+      const mobileLayout = await mobileQuestPage.evaluate(() => {
+        const cards = Array.from(document.querySelectorAll(".quest-map-preview"));
+        return {
+          cardCount: cards.length,
+          minCardWidth: Math.min(...cards.map((card) => card.getBoundingClientRect().width)),
+          overflow: document.documentElement.scrollWidth > window.innerWidth + 1,
+        };
+      });
+      if (mobileLayout.cardCount !== 5 || mobileLayout.minCardWidth < 120 || mobileLayout.overflow) {
+        throw new Error(`Quest map previews do not fit mobile: ${JSON.stringify(mobileLayout)}`);
+      }
+    } finally {
+      await mobileQuestPage.close();
+    }
 
     await page.locator("[data-close-detail]").click();
     await page.waitForFunction(() => !new URL(window.location.href).searchParams.has("quest"));

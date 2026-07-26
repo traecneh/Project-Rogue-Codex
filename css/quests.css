@@ -525,6 +525,112 @@
   outline: none;
 }
 
+.quest-map-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 190px));
+  gap: 0.55rem;
+}
+
+.quest-map-preview {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #46515f;
+  border-radius: var(--radius-sm);
+  background: #11161d;
+  color: #eef1f5;
+  text-decoration: none;
+}
+
+.quest-map-preview:hover,
+.quest-map-preview:focus-visible {
+  border-color: #8fc8f5;
+  color: #ffffff;
+  outline: none;
+}
+
+.quest-map-preview-media {
+  position: relative;
+  display: block;
+  aspect-ratio: 8 / 5;
+  overflow: hidden;
+  border-bottom: 1px solid #46515f;
+  background: #080b10;
+}
+
+.quest-map-preview-image {
+  position: absolute;
+  max-width: none;
+  image-rendering: pixelated;
+  pointer-events: none;
+  user-select: none;
+}
+
+.quest-map-preview-marker {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 12px;
+  height: 12px;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  background: #e53f4f;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.55);
+  transform: translate(-50%, -50%);
+}
+
+.quest-map-preview-floor {
+  position: absolute;
+  top: 0.35rem;
+  left: 0.35rem;
+  padding: 0.16rem 0.28rem;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 3px;
+  background: rgba(7, 10, 14, 0.86);
+  color: #ffffff;
+  font-size: 0.58rem;
+  font-weight: 900;
+}
+
+.quest-map-preview-fallback {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem;
+  color: #aeb7c2;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.quest-map-preview.is-unavailable .quest-map-preview-marker,
+.quest-map-preview.is-unavailable .quest-map-preview-floor {
+  display: none;
+}
+
+.quest-map-preview.is-unavailable .quest-map-preview-fallback {
+  display: flex;
+}
+
+.quest-map-preview-caption {
+  display: grid;
+  gap: 0.16rem;
+  padding: 0.45rem 0.5rem 0.5rem;
+}
+
+.quest-map-preview-caption strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 0.72rem;
+}
+
+.quest-map-preview-caption span {
+  color: #9ba5b1;
+  font-size: 0.62rem;
+  font-weight: 700;
+}
+
 .quest-inline-note {
   margin: 0.5rem 0 0;
   padding: 0.45rem 0.55rem;
@@ -708,5 +814,15 @@
   .quest-objective-number {
     width: 26px;
     height: 26px;
+  }
+
+  .quest-map-preview-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 360px) {
+  .quest-map-preview-grid {
+    grid-template-columns: 1fr;
   }
 }
