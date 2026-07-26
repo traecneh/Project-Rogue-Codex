@@ -2,7 +2,6 @@
   const DATA_URL = "pages/General/quests_data.json?v=codex-2026-07-25-quest-expansion";
   const MAP_PREVIEW_IMAGE_URL =
     "https://traecneh.github.io/Project-Rogue-Map/img/Map_Combined-preview.webp";
-  const MAP_PREVIEW_QUEST_IDS = new Set(["welcome-to-silvest", "the-backroom"]);
   const MAP_WIDTH = 8192;
   const MAP_HEIGHT = 4096;
   const MAP_FLOOR_WIDTH = 4096;
@@ -84,8 +83,7 @@
     container.appendChild(link);
   };
 
-  const usesMapPreviews = (entry) =>
-    entry?.kind === "quest" && MAP_PREVIEW_QUEST_IDS.has(entry.id);
+  const usesMapPreviews = (entry) => entry?.kind === "quest";
 
   const createQuestMapPreview = (
     coordinates,

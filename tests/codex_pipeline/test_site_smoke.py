@@ -125,6 +125,8 @@ class SiteSmokeTests(unittest.TestCase):
         self.assertIn("Map_Combined-preview.webp", runner)
         self.assertIn(".quest-map-preview.is-unavailable", runner)
         self.assertIn("six contextual map previews", runner)
+        self.assertIn("for (const quest of questData.quests || [])", runner)
+        self.assertIn("still renders numeric coordinate links", runner)
         self.assertIn("SMOKE OK quests", runner)
         self.assertIn('detailQuery: "1006"', runner)
         self.assertIn('detailName: "Bottomless Bag"', runner)

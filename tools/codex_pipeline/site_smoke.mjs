@@ -727,6 +727,9 @@ async function runQuestsSpec(browser, baseUrl) {
     if ((await guildMapLink.count()) !== 1) {
       throw new Error("Guild service is missing its labeled Project Rogue Map coordinate link");
     }
+    if ((await page.locator("#quest-detail a.quest-map-preview").count()) !== 0) {
+      throw new Error("Guild service should retain its coordinate link instead of a quest map preview");
+    }
     if (
       (await guildMapLink.getAttribute("target")) !== "_blank" ||
       !(await guildMapLink.getAttribute("rel"))?.includes("noopener")
@@ -766,11 +769,11 @@ async function runQuestsSpec(browser, baseUrl) {
         throw new Error(`Grave Consequences expected one "${href}", found ${count}`);
       }
     }
-    const mayorMapLinks = page.locator(
-      '#quest-detail a.quest-map-link[href="https://traecneh.github.io/Project-Rogue-Map/?x=3766&y=3232&label=Mayor+of+Jeel"]'
+    const mayorMapPreviews = page.locator(
+      '#quest-detail a.quest-map-preview[href="https://traecneh.github.io/Project-Rogue-Map/?x=3766&y=3232&label=Mayor+of+Jeel"]'
     );
-    if ((await mayorMapLinks.count()) !== 2) {
-      throw new Error("Grave Consequences should link both giver and turn-in coordinates");
+    if ((await mayorMapPreviews.count()) !== 2) {
+      throw new Error("Grave Consequences should preview both giver and turn-in coordinates");
     }
 
     const regionalQuests = [
@@ -847,6 +850,111 @@ async function runQuestsSpec(browser, baseUrl) {
         if (!regionalText.includes(expected)) {
           throw new Error(`${quest.title} detail missing "${expected}": "${regionalText}"`);
         }
+      }
+    }
+
+    const questDataResponse = await page.request.get(
+      joinUrl(baseUrl, "/pages/General/quests_data.json")
+    );
+    if (!questDataResponse.ok()) {
+      throw new Error(`Quest map coverage could not load quest data: ${questDataResponse.status()}`);
+    }
+    const questData = await questDataResponse.json();
+    for (const quest of questData.quests || []) {
+      const coordinateOccurrences = [];
+      const addCoordinates = (coordinates) => {
+        if (Array.isArray(coordinates) && coordinates.length === 2) {
+          coordinateOccurrences.push(coordinates);
+        }
+      };
+      addCoordinates(quest.giver?.coordinates);
+      for (const stage of quest.stages || []) {
+        for (const objective of stage.objectives || []) {
+          addCoordinates(objective.target?.coordinates);
+          addCoordinates(objective.target?.destination_coordinates);
+        }
+      }
+      addCoordinates(quest.turn_in?.coordinates);
+
+      await page.goto(
+        joinUrl(
+          baseUrl,
+          `/pages/General/quests.html?quest=${encodeURIComponent(quest.id)}`
+        ),
+        { waitUntil: "load" }
+      );
+      await page.locator(".quest-detail-title").waitFor({ state: "visible" });
+      const previewCount = await page.locator("#quest-detail a.quest-map-preview").count();
+      if (previewCount !== coordinateOccurrences.length) {
+        throw new Error(
+          `${quest.name} expected ${coordinateOccurrences.length} contextual map previews, found ${previewCount}`
+        );
+      }
+      if ((await page.locator("#quest-detail a.quest-map-link").count()) !== 0) {
+        throw new Error(`${quest.name} still renders numeric coordinate links`);
+      }
+      if ((await page.locator("#quest-detail .quest-map-preview-section").count()) !== 0) {
+        throw new Error(`${quest.name} still renders a standalone Locations section`);
+      }
+
+      const expectedCoordinateCounts = new Map();
+      coordinateOccurrences.forEach(([x, y]) => {
+        const key = `${x},${y}`;
+        expectedCoordinateCounts.set(key, (expectedCoordinateCounts.get(key) || 0) + 1);
+      });
+      for (const [coordinate, expectedCount] of expectedCoordinateCounts) {
+        const actualCount = await page
+          .locator(`#quest-detail a.quest-map-preview[data-map-coordinate="${coordinate}"]`)
+          .count();
+        if (actualCount !== expectedCount) {
+          throw new Error(
+            `${quest.name} expected ${expectedCount} preview(s) for ${coordinate}, found ${actualCount}`
+          );
+        }
+      }
+
+      const previewState = await page.locator("#quest-detail a.quest-map-preview").evaluateAll(
+        (previews) =>
+          previews.map((preview) => {
+            const url = new URL(preview.href);
+            const [x, y] = preview.dataset.mapCoordinate.split(",");
+            return {
+              contextual: Boolean(
+                preview.closest(".quest-fact-value, .quest-target-line, .quest-turn-in")
+              ),
+              safeTarget:
+                preview.target === "_blank" && preview.rel.split(/\s+/).includes("noopener"),
+              coordinatesMatch:
+                url.searchParams.get("x") === x && url.searchParams.get("y") === y,
+            };
+          })
+      );
+      if (
+        previewState.some(
+          (preview) =>
+            !preview.contextual || !preview.safeTarget || !preview.coordinatesMatch
+        )
+      ) {
+        throw new Error(`${quest.name} has an invalid contextual Project Rogue Map link`);
+      }
+
+      if (coordinateOccurrences.length) {
+        await page.waitForFunction((expectedCount) => {
+          const images = Array.from(document.querySelectorAll(".quest-map-preview-image"));
+          return (
+            images.length === expectedCount &&
+            images.every((image) => image.complete && image.naturalWidth === 4096)
+          );
+        }, coordinateOccurrences.length);
+      }
+      const floorLabels = await page.locator(".quest-map-preview-floor").allTextContents();
+      const expectedUnderground = coordinateOccurrences.filter(([x]) => x >= 4096).length;
+      if (
+        floorLabels.filter((label) => label === "UG").length !== expectedUnderground ||
+        floorLabels.filter((label) => label === "OW").length !==
+          coordinateOccurrences.length - expectedUnderground
+      ) {
+        throw new Error(`${quest.name} has incorrect overworld/underground map badges`);
       }
     }
 
