@@ -39,6 +39,7 @@
     data: null,
     entries: [],
     entriesById: new Map(),
+    entryOrder: new Map(),
     selectedId: "",
   };
 
@@ -302,19 +303,31 @@
     });
   };
 
+  const compareEntriesByLevel = (left, right) => {
+    const leftLevel = Number.isFinite(left.min_level) ? left.min_level : Number.MAX_SAFE_INTEGER;
+    const rightLevel = Number.isFinite(right.min_level) ? right.min_level : Number.MAX_SAFE_INTEGER;
+    return (
+      leftLevel - rightLevel ||
+      (state.entryOrder.get(left.id) ?? Number.MAX_SAFE_INTEGER) -
+        (state.entryOrder.get(right.id) ?? Number.MAX_SAFE_INTEGER)
+    );
+  };
+
   const filteredEntries = () => {
     const query = searchInput.value.trim().toLowerCase();
     const kind = kindFilter.value;
     const category = categoryFilter.value;
     const level = levelFilter.value;
-    return state.entries.filter((entry) => {
-      if (query && !searchableText(entry).includes(query)) return false;
-      if (kind && entry.kind !== kind) return false;
-      if (category && entry.category !== category) return false;
-      if (level && String(entry.min_level) !== level) return false;
-      if (repeatableFilter.checked && !entry.repeatable) return false;
-      return true;
-    });
+    return state.entries
+      .filter((entry) => {
+        if (query && !searchableText(entry).includes(query)) return false;
+        if (kind && entry.kind !== kind) return false;
+        if (category && entry.category !== category) return false;
+        if (level && String(entry.min_level) !== level) return false;
+        if (repeatableFilter.checked && !entry.repeatable) return false;
+        return true;
+      })
+      .sort(compareEntriesByLevel);
   };
 
   const renderList = () => {
@@ -715,6 +728,7 @@
     state.data = data;
     state.entries = [...quests, ...services];
     state.entriesById = new Map(state.entries.map((entry) => [entry.id, entry]));
+    state.entryOrder = new Map(state.entries.map((entry, index) => [entry.id, index]));
     populateFilters();
     const regions = [...new Set(state.entries.map((entry) => entry.region).filter(Boolean))];
     const regionSummary =

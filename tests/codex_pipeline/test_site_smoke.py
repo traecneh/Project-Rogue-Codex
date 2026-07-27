@@ -127,6 +127,8 @@ class SiteSmokeTests(unittest.TestCase):
         self.assertIn("six contextual map previews", runner)
         self.assertIn("for (const quest of questData.quests || [])", runner)
         self.assertIn("still renders numeric coordinate links", runner)
+        self.assertIn("Quest list is not ordered by level with stable source ties", runner)
+        self.assertIn("Filtered quest list is not ordered by level", runner)
         self.assertIn("SMOKE OK quests", runner)
         self.assertIn('detailQuery: "1006"', runner)
         self.assertIn('detailName: "Bottomless Bag"', runner)

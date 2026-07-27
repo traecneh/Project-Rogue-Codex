@@ -590,12 +590,58 @@ async function runQuestsSpec(browser, baseUrl) {
   page.on("pageerror", (error) => runtimeErrors.push(formatError(error)));
 
   try {
+    const questDataResponse = await page.request.get(
+      joinUrl(baseUrl, "/pages/General/quests_data.json")
+    );
+    if (!questDataResponse.ok()) {
+      throw new Error(`Quest checks could not load quest data: ${questDataResponse.status()}`);
+    }
+    const questData = await questDataResponse.json();
+
     await page.goto(joinUrl(baseUrl, QUESTS_INVESTIGATE_PATH), { waitUntil: "load" });
     await page.locator(".quest-detail-title").waitFor({ state: "visible" });
     const title = (await page.locator(".quest-detail-title").textContent()).trim();
     if (title !== "Investigate the Undead") {
       throw new Error(`Quest deep link opened "${title}" instead of "Investigate the Undead"`);
     }
+
+    const sourceEntries = [...(questData.quests || []), ...(questData.services || [])];
+    const expectedDefaultOrder = sourceEntries
+      .map((entry, sourceIndex) => ({ id: entry.id, level: entry.min_level, sourceIndex }))
+      .sort((left, right) => left.level - right.level || left.sourceIndex - right.sourceIndex)
+      .map((entry) => entry.id);
+    const actualDefaultOrder = await page
+      .locator("#quest-list [data-entry-id]")
+      .evaluateAll((entries) => entries.map((entry) => entry.dataset.entryId));
+    if (JSON.stringify(actualDefaultOrder) !== JSON.stringify(expectedDefaultOrder)) {
+      throw new Error(
+        `Quest list is not ordered by level with stable source ties: ${actualDefaultOrder.join(", ")}`
+      );
+    }
+
+    await page.locator("#quest-search").fill("Silvest");
+    await page.waitForFunction(
+      () => document.querySelectorAll("#quest-list [data-entry-id]").length > 1
+    );
+    const filteredLevels = await page
+      .locator("#quest-list .quest-list-heading .badge")
+      .allTextContents();
+    const numericFilteredLevels = filteredLevels.map((label) =>
+      Number.parseInt(label.replace(/\D+/g, ""), 10)
+    );
+    if (
+      numericFilteredLevels.some(
+        (level, index) => index > 0 && level < numericFilteredLevels[index - 1]
+      )
+    ) {
+      throw new Error(`Filtered quest list is not ordered by level: ${filteredLevels.join(", ")}`);
+    }
+    await page.locator("#quest-search").fill("");
+    await page.waitForFunction(
+      (expectedCount) =>
+        document.querySelectorAll("#quest-list [data-entry-id]").length === expectedCount,
+      expectedDefaultOrder.length
+    );
 
     const detailText = (await page.locator("#quest-detail").textContent()).trim();
     for (const expected of [
@@ -853,13 +899,6 @@ async function runQuestsSpec(browser, baseUrl) {
       }
     }
 
-    const questDataResponse = await page.request.get(
-      joinUrl(baseUrl, "/pages/General/quests_data.json")
-    );
-    if (!questDataResponse.ok()) {
-      throw new Error(`Quest map coverage could not load quest data: ${questDataResponse.status()}`);
-    }
-    const questData = await questDataResponse.json();
     for (const quest of questData.quests || []) {
       const coordinateOccurrences = [];
       const addCoordinates = (coordinates) => {
