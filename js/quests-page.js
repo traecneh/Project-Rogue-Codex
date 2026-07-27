@@ -1,5 +1,5 @@
 (() => {
-  const DATA_URL = "pages/General/quests_data.json?v=codex-2026-07-25-quest-expansion";
+  const DATA_URL = "pages/General/quests_data.json?v=codex-2026-07-27-six-new-quests";
   const MAP_PREVIEW_IMAGE_URL =
     "https://traecneh.github.io/Project-Rogue-Map/img/Map_Combined-preview.webp";
   const MAP_WIDTH = 8192;

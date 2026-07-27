@@ -168,6 +168,126 @@ class QuestDataTests(unittest.TestCase):
             ]
             self.assertEqual(expected_entities, actual, quest_id)
 
+    def test_latest_regional_quests_have_confirmed_requirements_and_rewards(self):
+        expected = {
+            "the-approaching-orcs": (
+                "Vrethpool",
+                "Vrethpool - Near Spawn Gate",
+                5,
+                "Maribell",
+                [3448, 2400],
+                1750,
+                [],
+            ),
+            "where-theres-smoke": (
+                "Vrethpool",
+                "Vrethpool - Near Spawn Gate",
+                20,
+                "Mayor of Vrethpool",
+                [3436, 2395],
+                17500,
+                [],
+            ),
+            "a-headless-problem": (
+                "New Korelth",
+                "New Korelth - Portal to Parian",
+                5,
+                "Lazy Guard",
+                [3520, 2601],
+                1250,
+                [],
+            ),
+            "banished-no-more": (
+                "Garnea",
+                "Garnea - Northeast of Bank",
+                50,
+                "Jimothy",
+                [1372, 1886],
+                75000,
+                [],
+            ),
+            "the-fallen-order": (
+                "Garnea",
+                "Garnea - Northeast of Bank",
+                55,
+                "Jimothy",
+                [1372, 1886],
+                55000,
+                ["banished-no-more"],
+            ),
+            "feathers-and-fury": (
+                "Parian",
+                "Parian - Northeast of NPB",
+                22,
+                "Preston the Archer",
+                [631, 1016],
+                12500,
+                [],
+            ),
+        }
+
+        for quest_id, details in expected.items():
+            quest = next(quest for quest in self.data["quests"] if quest["id"] == quest_id)
+            actual = (
+                quest["region"],
+                quest["area"],
+                quest["min_level"],
+                quest["giver"]["name"],
+                quest["giver"]["coordinates"],
+                quest["rewards"]["guaranteed"][0]["amount"],
+                quest["prerequisites"],
+            )
+            self.assertEqual(details, actual, quest_id)
+            self.assertEqual(quest["giver"]["name"], quest["turn_in"]["name"], quest_id)
+            self.assertEqual(quest["giver"]["coordinates"], quest["turn_in"]["coordinates"], quest_id)
+            self.assertFalse(quest["repeatable"], quest_id)
+
+    def test_latest_regional_quest_entities_use_canonical_records(self):
+        expected = {
+            "the-approaching-orcs": [
+                ("Kill Orcs", 15, 45),
+                ("Kill Goblins", 15, 21),
+            ],
+            "where-theres-smoke": [
+                ("Kill Hell Hounds", 30, 99),
+                ("Kill Imps", 20, 103),
+            ],
+            "a-headless-problem": [
+                ("Kill Headless", 15, 49),
+                ("Kill Lizardmen", 15, 102),
+            ],
+            "banished-no-more": [
+                ("Kill Banished Spirits", 25, 4),
+                ("Kill Banished Soldiers", 20, 125),
+            ],
+            "the-fallen-order": [
+                ("Kill Banished Knights", 15, 57),
+                ("Kill Blue Wisps", 10, 50),
+            ],
+            "feathers-and-fury": [
+                ("Kill Harpies", 20, 121),
+                ("Kill Minotaurs", 15, 69),
+                ("Kill Evil Eyes", 10, 61),
+            ],
+        }
+
+        for quest_id, expected_entities in expected.items():
+            quest = next(quest for quest in self.data["quests"] if quest["id"] == quest_id)
+            objectives = [
+                objective
+                for stage in quest["stages"]
+                for objective in stage["objectives"]
+            ]
+            actual = [
+                (
+                    objective["text"],
+                    objective["quantity"],
+                    objective["target"]["entity"]["id"],
+                )
+                for objective in objectives
+            ]
+            self.assertEqual(expected_entities, actual, quest_id)
+
     def test_backroom_retains_all_phases_and_confirmed_coordinates(self):
         quest = next(quest for quest in self.data["quests"] if quest["id"] == "the-backroom")
         objectives = [objective for stage in quest["stages"] for objective in stage["objectives"]]

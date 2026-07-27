@@ -886,6 +886,60 @@ async function runQuestsSpec(browser, baseUrl) {
           "3,250 Experience",
         ],
       },
+      {
+        path: "/pages/General/quests.html?quest=the-approaching-orcs",
+        title: "The Approaching Orcs",
+        expected: ["Vrethpool", "Maribell", "Kill Orcs", "Kill Goblins", "1,750 Experience"],
+      },
+      {
+        path: "/pages/General/quests.html?quest=where-theres-smoke",
+        title: "Where There's Smoke",
+        expected: [
+          "Mayor of Vrethpool",
+          "Kill Hell Hounds",
+          "30 required",
+          "Kill Imps",
+          "17,500 Experience",
+        ],
+      },
+      {
+        path: "/pages/General/quests.html?quest=a-headless-problem",
+        title: "A Headless Problem",
+        expected: ["Lazy Guard", "Kill Headless", "Kill Lizardmen", "1,250 Experience"],
+      },
+      {
+        path: "/pages/General/quests.html?quest=banished-no-more",
+        title: "Banished No More",
+        expected: [
+          "Garnea",
+          "Jimothy",
+          "Kill Banished Spirits",
+          "Kill Banished Soldiers",
+          "75,000 Experience",
+        ],
+      },
+      {
+        path: "/pages/General/quests.html?quest=the-fallen-order",
+        title: "The Fallen Order",
+        expected: [
+          "Banished No More",
+          "Kill Banished Knights",
+          "Kill Blue Wisps",
+          "55,000 Experience",
+        ],
+      },
+      {
+        path: "/pages/General/quests.html?quest=feathers-and-fury",
+        title: "Feathers and Fury",
+        expected: [
+          "Parian",
+          "Preston the Archer",
+          "Kill Harpies",
+          "Kill Minotaurs",
+          "Kill Evil Eyes",
+          "12,500 Experience",
+        ],
+      },
     ];
     for (const quest of regionalQuests) {
       await page.goto(joinUrl(baseUrl, quest.path), { waitUntil: "load" });
@@ -1096,12 +1150,21 @@ async function runQuestsSpec(browser, baseUrl) {
       throw new Error(`Lotor's Ettin Slayer expected one Uncooked Ribs link, found ${ribsLinkCount}`);
     }
     const summaryText = (await page.locator("#quest-page-summary").textContent()).trim();
-    if (summaryText !== "16 quests / 1 service / 6 regions") {
+    if (summaryText !== "22 quests / 1 service / 9 regions") {
       throw new Error(`Quest summary has unexpected multi-region text: "${summaryText}"`);
     }
-    await page.locator("#site-search-input").fill("King Lotor");
+    const factLayoutIsContained = await page.locator(".quest-facts").evaluate((facts) =>
+      Array.from(facts.querySelectorAll(".quest-fact")).every((fact) => {
+        const preview = fact.querySelector(".quest-map-preview");
+        return !preview || preview.getBoundingClientRect().right <= fact.getBoundingClientRect().right + 1;
+      })
+    );
+    if (!factLayoutIsContained) {
+      throw new Error("Quest map preview overflows its fact cell");
+    }
+    await page.locator("#site-search-input").fill("Jimothy");
     await page
-      .locator('.nav-search-result[href*="pages/General/quests.html?quest=lotors-ettin-slayer"]')
+      .locator('.nav-search-result[href*="pages/General/quests.html?quest=the-fallen-order"]')
       .waitFor({ state: "visible" });
     await page.locator("#site-search-input").fill("");
 

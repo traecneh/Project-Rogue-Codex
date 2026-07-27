@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-07-25",
+  "updated_at": "2026-07-27",
   "source": {
     "kind": "manual_observation",
     "scope": "Observed quest pass across multiple regions",
@@ -1579,6 +1579,442 @@
           {
             "type": "experience",
             "amount": 3250,
+            "label": "Experience"
+          }
+        ],
+        "choose_one": []
+      },
+      "notes": []
+    },
+    {
+      "id": "the-approaching-orcs",
+      "name": "The Approaching Orcs",
+      "category": "Side",
+      "region": "Vrethpool",
+      "area": "Vrethpool - Near Spawn Gate",
+      "min_level": 5,
+      "repeatable": false,
+      "giver": {
+        "name": "Maribell",
+        "coordinates": [3448, 2400],
+        "markers": "!?"
+      },
+      "prerequisites": [],
+      "initial_dialogue": "Orcs have been flooding into the outskirts of Vrethpool and endangering our people, please help!",
+      "stages": [
+        {
+          "number": 1,
+          "label": "Defend Vrethpool",
+          "objectives": [
+            {
+              "number": 1,
+              "text": "Kill Orcs",
+              "quantity": 15,
+              "target": {
+                "kind": "monster",
+                "label": "Orc",
+                "entity": {
+                  "type": "monster",
+                  "id": 45,
+                  "name": "Orc"
+                }
+              }
+            },
+            {
+              "number": 2,
+              "text": "Kill Goblins",
+              "quantity": 15,
+              "target": {
+                "kind": "monster",
+                "label": "Goblin",
+                "entity": {
+                  "type": "monster",
+                  "id": 21,
+                  "name": "Goblin"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "turn_in": {
+        "name": "Maribell",
+        "area": "Vrethpool - Near Spawn Gate",
+        "coordinates": [3448, 2400],
+        "markers": "!?",
+        "dialogue": "Thank you for helping us!"
+      },
+      "rewards": {
+        "guaranteed": [
+          {
+            "type": "experience",
+            "amount": 1750,
+            "label": "Experience"
+          }
+        ],
+        "choose_one": []
+      },
+      "notes": []
+    },
+    {
+      "id": "where-theres-smoke",
+      "name": "Where There's Smoke",
+      "category": "Side",
+      "region": "Vrethpool",
+      "area": "Vrethpool - Near Spawn Gate",
+      "min_level": 20,
+      "repeatable": false,
+      "giver": {
+        "name": "Mayor of Vrethpool",
+        "coordinates": [3436, 2395],
+        "markers": "!?"
+      },
+      "prerequisites": [],
+      "initial_dialogue": "Hellish creaturs keep escaping from the portal to the east. Please check into it and clear it out.",
+      "stages": [
+        {
+          "number": 1,
+          "label": "Clear the eastern portal",
+          "objectives": [
+            {
+              "number": 1,
+              "text": "Kill Hell Hounds",
+              "quantity": 30,
+              "target": {
+                "kind": "monster",
+                "label": "Hell Hound",
+                "entity": {
+                  "type": "monster",
+                  "id": 99,
+                  "name": "Hell Hound"
+                }
+              }
+            },
+            {
+              "number": 2,
+              "text": "Kill Imps",
+              "quantity": 20,
+              "target": {
+                "kind": "monster",
+                "label": "Imp",
+                "entity": {
+                  "type": "monster",
+                  "id": 103,
+                  "name": "Imp"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "turn_in": {
+        "name": "Mayor of Vrethpool",
+        "area": "Vrethpool - Near Spawn Gate",
+        "coordinates": [3436, 2395],
+        "markers": "!?",
+        "dialogue": "The creatures keep coming, but you have done your diligence of clearing some out."
+      },
+      "rewards": {
+        "guaranteed": [
+          {
+            "type": "experience",
+            "amount": 17500,
+            "label": "Experience"
+          }
+        ],
+        "choose_one": []
+      },
+      "notes": []
+    },
+    {
+      "id": "a-headless-problem",
+      "name": "A Headless Problem",
+      "category": "Side",
+      "region": "New Korelth",
+      "area": "New Korelth - Portal to Parian",
+      "min_level": 5,
+      "repeatable": false,
+      "giver": {
+        "name": "Lazy Guard",
+        "coordinates": [3520, 2601],
+        "markers": "!?"
+      },
+      "prerequisites": [],
+      "initial_dialogue": "My leg hurts... the captain tasked me with clearing the surrounding areas, but if you do it I'll give you half my wage.",
+      "stages": [
+        {
+          "number": 1,
+          "label": "Clear the surrounding area",
+          "objectives": [
+            {
+              "number": 1,
+              "text": "Kill Headless",
+              "quantity": 15,
+              "target": {
+                "kind": "monster",
+                "label": "Headless",
+                "entity": {
+                  "type": "monster",
+                  "id": 49,
+                  "name": "Headless"
+                }
+              }
+            },
+            {
+              "number": 2,
+              "text": "Kill Lizardmen",
+              "quantity": 15,
+              "target": {
+                "kind": "monster",
+                "label": "Lizardman",
+                "entity": {
+                  "type": "monster",
+                  "id": 102,
+                  "name": "Lizardman"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "turn_in": {
+        "name": "Lazy Guard",
+        "area": "New Korelth - Portal to Parian",
+        "coordinates": [3520, 2601],
+        "markers": "!?",
+        "dialogue": "Thanks for helping me. My leg is feeling better."
+      },
+      "rewards": {
+        "guaranteed": [
+          {
+            "type": "experience",
+            "amount": 1250,
+            "label": "Experience"
+          }
+        ],
+        "choose_one": []
+      },
+      "notes": []
+    },
+    {
+      "id": "banished-no-more",
+      "name": "Banished No More",
+      "category": "Side",
+      "region": "Garnea",
+      "area": "Garnea - Northeast of Bank",
+      "min_level": 50,
+      "repeatable": false,
+      "giver": {
+        "name": "Jimothy",
+        "coordinates": [1372, 1886],
+        "markers": "!?"
+      },
+      "prerequisites": [],
+      "initial_dialogue": "The banished realm bleeds into ours. Spirits from another world march beneath a dead sky.",
+      "stages": [
+        {
+          "number": 1,
+          "label": "Seal the banished rift",
+          "objectives": [
+            {
+              "number": 1,
+              "text": "Kill Banished Spirits",
+              "quantity": 25,
+              "target": {
+                "kind": "monster",
+                "label": "Banished Spirit",
+                "entity": {
+                  "type": "monster",
+                  "id": 4,
+                  "name": "Banished Spirit"
+                }
+              }
+            },
+            {
+              "number": 2,
+              "text": "Kill Banished Soldiers",
+              "quantity": 20,
+              "target": {
+                "kind": "monster",
+                "label": "Banished Soldier",
+                "entity": {
+                  "type": "monster",
+                  "id": 125,
+                  "name": "Banished Soldier"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "turn_in": {
+        "name": "Jimothy",
+        "area": "Garnea - Northeast of Bank",
+        "coordinates": [1372, 1886],
+        "markers": "!?",
+        "dialogue": "The rift is sealed. The banished army crumbles."
+      },
+      "rewards": {
+        "guaranteed": [
+          {
+            "type": "experience",
+            "amount": 75000,
+            "label": "Experience"
+          }
+        ],
+        "choose_one": []
+      },
+      "notes": []
+    },
+    {
+      "id": "the-fallen-order",
+      "name": "The Fallen Order",
+      "category": "Side",
+      "region": "Garnea",
+      "area": "Garnea - Northeast of Bank",
+      "min_level": 55,
+      "repeatable": false,
+      "giver": {
+        "name": "Jimothy",
+        "coordinates": [1372, 1886],
+        "markers": "!?"
+      },
+      "prerequisites": [
+        "banished-no-more"
+      ],
+      "initial_dialogue": "The banished knights are the elite of their order. Each is a master of war.",
+      "stages": [
+        {
+          "number": 1,
+          "label": "Break the fallen order",
+          "objectives": [
+            {
+              "number": 1,
+              "text": "Kill Banished Knights",
+              "quantity": 15,
+              "target": {
+                "kind": "monster",
+                "label": "Banished Knight",
+                "entity": {
+                  "type": "monster",
+                  "id": 57,
+                  "name": "Banished Knight"
+                }
+              }
+            },
+            {
+              "number": 2,
+              "text": "Kill Blue Wisps",
+              "quantity": 10,
+              "target": {
+                "kind": "monster",
+                "label": "Blue Wisp",
+                "entity": {
+                  "type": "monster",
+                  "id": 50,
+                  "name": "Blue Wisp"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "turn_in": {
+        "name": "Jimothy",
+        "area": "Garnea - Northeast of Bank",
+        "coordinates": [1372, 1886],
+        "markers": "!?",
+        "dialogue": "The last banished knight kneels. Their order ends."
+      },
+      "rewards": {
+        "guaranteed": [
+          {
+            "type": "experience",
+            "amount": 55000,
+            "label": "Experience"
+          }
+        ],
+        "choose_one": []
+      },
+      "notes": []
+    },
+    {
+      "id": "feathers-and-fury",
+      "name": "Feathers and Fury",
+      "category": "Side",
+      "region": "Parian",
+      "area": "Parian - Northeast of NPB",
+      "min_level": 22,
+      "repeatable": false,
+      "giver": {
+        "name": "Preston the Archer",
+        "coordinates": [631, 1016],
+        "markers": "!?"
+      },
+      "prerequisites": [],
+      "initial_dialogue": "Harpies sweep from the cliffs. Minotaurs stampede through the foothills. Something drives the wild creatures mad.",
+      "stages": [
+        {
+          "number": 1,
+          "label": "Clear the roads",
+          "objectives": [
+            {
+              "number": 1,
+              "text": "Kill Harpies",
+              "quantity": 20,
+              "target": {
+                "kind": "monster",
+                "label": "Harpy",
+                "entity": {
+                  "type": "monster",
+                  "id": 121,
+                  "name": "Harpy"
+                }
+              }
+            },
+            {
+              "number": 2,
+              "text": "Kill Minotaurs",
+              "quantity": 15,
+              "target": {
+                "kind": "monster",
+                "label": "Minotaur",
+                "entity": {
+                  "type": "monster",
+                  "id": 69,
+                  "name": "Minotaur"
+                }
+              }
+            },
+            {
+              "number": 3,
+              "text": "Kill Evil Eyes",
+              "quantity": 10,
+              "target": {
+                "kind": "monster",
+                "label": "Evil Eye",
+                "entity": {
+                  "type": "monster",
+                  "id": 61,
+                  "name": "Evil Eye"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "turn_in": {
+        "name": "Preston the Archer",
+        "area": "Parian - Northeast of NPB",
+        "coordinates": [631, 1016],
+        "markers": "!?",
+        "dialogue": "The roads are clear once more."
+      },
+      "rewards": {
+        "guaranteed": [
+          {
+            "type": "experience",
+            "amount": 12500,
             "label": "Experience"
           }
         ],

@@ -718,6 +718,20 @@
   font-weight: 700;
 }
 
+@media (max-width: 1360px) {
+  .quest-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .quest-fact:nth-child(2) {
+    border-right: 0;
+  }
+
+  .quest-fact:nth-child(-n + 2) {
+    border-bottom: 1px solid #353c46;
+  }
+}
+
 @media (max-width: 1080px) {
   .quest-controls {
     grid-template-columns: minmax(220px, 1fr) repeat(2, minmax(130px, 0.55fr));
@@ -729,18 +743,6 @@
 
   .quest-browser {
     grid-template-columns: minmax(270px, 0.75fr) minmax(0, 1.25fr);
-  }
-
-  .quest-facts {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .quest-fact:nth-child(2) {
-    border-right: 0;
-  }
-
-  .quest-fact:nth-child(-n + 2) {
-    border-bottom: 1px solid #353c46;
   }
 }
 

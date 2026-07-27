@@ -264,7 +264,7 @@ const PERKS_PAGE_URL = "pages/systems/perks.html";
 const PERKS_INDEX_URL = "pages/systems/perks.json";
 const MONSTERS_PAGE_URL = "pages/enemies/monsters.html";
 const QUESTS_PAGE_URL = "pages/General/quests.html";
-const QUESTS_INDEX_URL = "pages/General/quests_data.json?v=codex-2026-07-25-quest-expansion";
+const QUESTS_INDEX_URL = "pages/General/quests_data.json?v=codex-2026-07-27-six-new-quests";
 const MAX_PERK_RESULTS = 4;
 const MIN_PERK_TERM_LENGTH = 2;
 const MAX_TATTER_MONSTER_RESULTS = 4;
