@@ -4062,7 +4062,7 @@ async function assertWeaponDetailEnhancements(page) {
 
 async function assertSuperDuperBowHidden(page) {
   const originalUrl = page.url();
-  const url = new URL("/pages/items/weapons.html", originalUrl);
+  const url = new URL(originalUrl);
   url.searchParams.set("weapon", "1037");
   await page.goto(url.toString(), { waitUntil: "load" });
   await page.locator("#items-body tr[data-id]").first().waitFor({ state: "attached" });
@@ -4114,7 +4114,13 @@ function normalizeBaseUrl(baseUrl) {
 }
 
 async function waitForRows(page, spec) {
-  await page.locator(spec.rowSelector).first().waitFor({ state: "attached" });
+  try {
+    await page.locator(spec.rowSelector).first().waitFor({ state: "attached" });
+  } catch (error) {
+    throw new Error(
+      `${spec.label} rows unavailable at ${page.url()}: ${formatError(error)}`
+    );
+  }
 }
 
 async function assertDetailState(page, spec, action) {

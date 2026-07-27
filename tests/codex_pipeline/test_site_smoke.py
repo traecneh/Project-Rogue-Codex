@@ -148,6 +148,8 @@ class SiteSmokeTests(unittest.TestCase):
         self.assertIn("Zombie ID 94", runner)
         self.assertIn('img[src*="Zombie-94.gif"]', runner)
         self.assertIn('rows.length === 1 && rows[0].getAttribute("data-id") === "94"', runner)
+        self.assertIn("const url = new URL(originalUrl);", runner)
+        self.assertNotIn('new URL("/pages/items/weapons.html", originalUrl)', runner)
         self.assertIn('data-entry-id="create-a-guild"', runner)
         self.assertIn("Guild Master", runner)
         self.assertIn('collectables.html?collectable=0', runner)
