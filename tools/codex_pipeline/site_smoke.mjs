@@ -624,11 +624,14 @@ async function runQuestsSpec(browser, baseUrl) {
       () => document.querySelectorAll("#quest-list [data-entry-id]").length > 1
     );
     const filteredLevels = await page
-      .locator("#quest-list .quest-list-heading .badge")
+      .locator("#quest-list .quest-list-heading .quest-badge")
       .allTextContents();
     const numericFilteredLevels = filteredLevels.map((label) =>
       Number.parseInt(label.replace(/\D+/g, ""), 10)
     );
+    if (numericFilteredLevels.length < 2) {
+      throw new Error(`Filtered quest list did not expose level badges: ${filteredLevels.join(", ")}`);
+    }
     if (
       numericFilteredLevels.some(
         (level, index) => index > 0 && level < numericFilteredLevels[index - 1]
