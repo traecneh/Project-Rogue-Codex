@@ -12,6 +12,7 @@
     }
   })();
   const weaponsUrl = new URL("../items/weapons_data05.json", window.location.href);
+  const perksUrl = new URL("../systems/perks.json", window.location.href);
   const searchInput = document.getElementById("monster-search");
   const typeFilter = document.getElementById("filter-type");
   const elementFilter = document.getElementById("filter-element");
@@ -588,6 +589,59 @@ const tooltipFields = {
 };
 let pinnedTooltip = null;
 let pinDocumentListenerAttached = false;
+const WEAPON_RANKING_STORAGE_KEY = "project-rogue-codex:monster-weapon-ranking";
+const ARMOR_RANKING_STORAGE_KEY = "project-rogue-codex:monster-armor-ranking-v3";
+const ARMOR_SET_SLOTS = ["helmet", "chest", "gauntlets", "leggings", "shield"];
+const ARMOR_RESISTANCE_CAP = 60;
+const ARMOR_SET_RESULT_LIMIT = 8;
+const ARMOR_COMBAT_PERK_GROUPS = new Set([
+  "Slayer & Bane",
+  "General Offense",
+  "Mitigation & Shields",
+  "Resistances",
+]);
+const ARMOR_SLAYER_MATCHUPS = new Map([
+  ["beastslayer", new Set(["animal", "beast"])],
+  ["consecration", new Set(["undead", "disease beast"])],
+  ["demonsbane", new Set(["demon", "fire beast"])],
+  ["executioner", new Set(["humanoid", "giant"])],
+  ["iceshatter", new Set(["ice beast"])],
+  ["slayer", new Set(["*"])],
+  ["venomshock", new Set(["electric beast", "poison beast"])],
+]);
+const ARMOR_RESISTANCE_PERK_MATCHUPS = new Map([
+  ["antacid", "acid"],
+  ["demonblood", "fire"],
+  ["frozenheart", "cold"],
+  ["hazmat", "disease"],
+  ["lightningfield", "electric"],
+  ["magicshield", "*"],
+  ["tourniquet", "poison"],
+]);
+const CRAFTED_ARMOR_RECOMMENDATION_LEVELS = new Map(
+  [
+    "Frost Platemail",
+    "Frost Helmet",
+    "Frost Gauntlets",
+    "Frost Leggings",
+    "Frost Shield",
+    "Dragon Scale Platemail",
+    "Dragon Scale Helmet",
+    "Dragon Scale Gauntlets",
+    "Dragon Scale Leggings",
+    "Dragon Scale Shield",
+    "Red Dragon Scale Plate",
+    "Red Dragon Scale Helm",
+    "Red Dragon Scale Gloves",
+    "Red Dragon Scale Boots",
+    "Red Dragon Scale Shield",
+    "Black Dragon Armor",
+    "Black Dragon Helmet",
+    "Black Dragon Gauntlets",
+    "Black Dragon Leggings",
+    "Black Dragon Shield",
+  ].map((name) => [name, 65])
+);
 
   let monsters = [];
   let sortKey = "dps";
@@ -598,6 +652,74 @@ let pinDocumentListenerAttached = false;
   let selectedFlags = new Set();
   let weapons = [];
   let armors = [];
+  let perkDefinitions = new Map();
+  let weaponRankingSearch = "";
+  let weaponRankingOpen = false;
+  let armorRankingSearch = "";
+  let armorRankingOpen = false;
+
+  const loadWeaponRankingPreferences = () => {
+    const defaults = { maxLevel: null, type: "all", includeUnleveled: true };
+    try {
+      const saved = JSON.parse(localStorage.getItem(WEAPON_RANKING_STORAGE_KEY) || "null");
+      if (!saved || typeof saved !== "object") return defaults;
+      const savedMaxLevel = Number(saved.maxLevel);
+      return {
+        maxLevel: Number.isFinite(savedMaxLevel) && savedMaxLevel > 0 ? Math.round(savedMaxLevel) : null,
+        type: typeof saved.type === "string" && saved.type.trim() ? saved.type : "all",
+        includeUnleveled: saved.includeUnleveled !== false,
+      };
+    } catch {
+      return defaults;
+    }
+  };
+
+  let weaponRankingPreferences = loadWeaponRankingPreferences();
+
+  const saveWeaponRankingPreferences = () => {
+    try {
+      localStorage.setItem(WEAPON_RANKING_STORAGE_KEY, JSON.stringify(weaponRankingPreferences));
+    } catch {
+      // Storage is optional; the ranking controls still work for the current page.
+    }
+  };
+
+  const loadArmorRankingPreferences = () => {
+    const defaults = {
+      maxItemLevel: null,
+      includeUnleveled: false,
+      includePerks: true,
+      view: "sets",
+      slot: "helmet",
+    };
+    try {
+      const saved = JSON.parse(localStorage.getItem(ARMOR_RANKING_STORAGE_KEY) || "null");
+      if (!saved || typeof saved !== "object") return defaults;
+      const savedMaxItemLevel = Number(saved.maxItemLevel ?? saved.maxLevel);
+      return {
+        maxItemLevel:
+          Number.isFinite(savedMaxItemLevel) && savedMaxItemLevel > 0
+            ? Math.round(savedMaxItemLevel)
+            : null,
+        includeUnleveled: saved.includeUnleveled === true,
+        includePerks: saved.includePerks !== false,
+        view: saved.view === "slot" ? "slot" : "sets",
+        slot: ARMOR_SET_SLOTS.includes(saved.slot) ? saved.slot : "helmet",
+      };
+    } catch {
+      return defaults;
+    }
+  };
+
+  let armorRankingPreferences = loadArmorRankingPreferences();
+
+  const saveArmorRankingPreferences = () => {
+    try {
+      localStorage.setItem(ARMOR_RANKING_STORAGE_KEY, JSON.stringify(armorRankingPreferences));
+    } catch {
+      // Storage is optional; the ranking controls still work for the current page.
+    }
+  };
 
   if (searchInput && searchTerm) {
     searchInput.value = searchTerm;
@@ -765,6 +887,7 @@ const renderEmpty = (message) => {
       name: raw.name || fields.name_label || "Unknown Weapon",
       dps,
       level: toNumber(fields.level_requirement ?? raw.level),
+      skillRequirement: toNumber(fields.skill_requirement ?? raw.skillRequirement),
       elementalDamageType: fields.element_label || fields.element || raw.elementalDamageType || raw.element,
       type: fields.subtype_label || fields.subtype || raw.type || raw.Type,
     };
@@ -787,6 +910,7 @@ const renderEmpty = (message) => {
       slot,
       slotNorm: normalizeSlot(slot),
       level: toNumber(fields.level),
+      playerLevelRequirement: toNumber(fields.player_level_requirement ?? raw.playerLevelRequirement),
       armor: toNumber(fields.armor),
       weight: toNumber(fields.weight),
       maxRarity: fields.max_rarity_label || fields.max_rarity,
@@ -814,6 +938,63 @@ const renderEmpty = (message) => {
     if (!normalized || normalized === "none") return null;
     if (normalized.includes("lightning") || normalized.includes("electrical")) return "electric";
     return COMBAT_ELEMENT_KEYS.find((element) => normalized.includes(element)) || null;
+  };
+
+  const normalizePerkNameKey = (value) =>
+    (value || "")
+      .toString()
+      .replace(/\s*\(tier\s+\d+\)\s*$/i, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "");
+
+  const getArmorPerkProfile = (perkLabel, monsterType, elementKey) => {
+    const label = (perkLabel || "").toString().trim();
+    const perkKey = normalizePerkNameKey(label);
+    if (!perkKey || perkKey === "none" || perkKey === "unknown") return null;
+
+    const definition = perkDefinitions.get(perkKey);
+    if (!definition || !ARMOR_COMBAT_PERK_GROUPS.has(definition.group)) return null;
+
+    const tierMatch = label.match(/\(tier\s+(\d+)\)/i);
+    const tier = tierMatch ? Number(tierMatch[1]) : 1;
+    const typeKey = normalizeType(monsterType);
+
+    if (definition.group === "Slayer & Bane") {
+      const matchups = ARMOR_SLAYER_MATCHUPS.get(perkKey);
+      if (!matchups || (!matchups.has("*") && !matchups.has(typeKey))) return null;
+      return {
+        category: "matchup",
+        group: definition.group,
+        label,
+        tier,
+        reason: matchups.has("*")
+          ? "Effective against all monster types"
+          : `Effective against ${formatTypeLabel(typeKey)}`,
+      };
+    }
+
+    if (definition.group === "Resistances") {
+      const matchup = ARMOR_RESISTANCE_PERK_MATCHUPS.get(perkKey);
+      if (!elementKey || !matchup || (matchup !== "*" && matchup !== elementKey)) return null;
+      return {
+        category: "matchup",
+        group: definition.group,
+        label,
+        tier,
+        reason:
+          matchup === "*"
+            ? `Increases resistance against ${elementKey}`
+            : `Matches ${elementKey} damage`,
+      };
+    }
+
+    return {
+      category: "combat",
+      group: definition.group,
+      label,
+      tier,
+      reason: definition.group,
+    };
   };
 
   const getElementMultiplier = (monsterType, weaponElement) => {
@@ -890,23 +1071,7 @@ const renderEmpty = (message) => {
     }
 
     const level = Number(monster.level);
-    let ranges = [];
-    if (Number.isFinite(level)) {
-      const maxLevels =
-        level >= 105 ? [90, 105, 125] : [-25, -10, 5].map((offset) => level + offset);
-      ranges = maxLevels
-        .map((maxValue) => Math.max(0, maxValue))
-        .filter((maxValue) => maxValue > 0)
-        .map((maxValue) => ({
-          label: `<= ${formatNumber(maxValue)}`,
-          min: 0,
-          max: maxValue,
-          limit: 10,
-        }));
-      if (level >= 85) {
-        ranges.push({ label: "Endgame", min: 100, max: Infinity, limit: 10 });
-      }
-    } else {
+    if (!Number.isFinite(level)) {
       const pill = document.createElement("span");
       pill.className = "detail-pill";
       pill.textContent = "No level data";
@@ -914,80 +1079,293 @@ const renderEmpty = (message) => {
       return;
     }
 
-    const buildList = (range) => {
-      const list = weapons
-        .map((w) => {
-          const dps = Number(w.dps);
-          const wLevel = Number(w.level);
-          if (!Number.isFinite(dps)) return null;
-          const isUnique = !Number.isFinite(wLevel) || wLevel <= 0;
-          const effectiveLevel = isUnique
-            ? Math.max(0, Math.round((dps - 10) / 5) * 5)
-            : wLevel;
-          if (!Number.isFinite(effectiveLevel)) return null;
-          if (effectiveLevel < range.min) return null;
-          if (range.max !== Infinity && effectiveLevel > range.max) return null;
-          const multiplier = getElementMultiplier(monster.monsterType, w.elementalDamageType);
-          return {
-            name: w.name || "Unknown Weapon",
-            element: w.elementalDamageType || "-",
-            type: w.type || "-",
-            effective: dps * multiplier,
-            base: dps,
-            level: wLevel,
-            multiplier,
-          };
-        })
-        .filter(Boolean)
-        .sort((a, b) => b.effective - a.effective)
-        .slice(0, range.limit || 5);
-      return list;
+    const defaultMaxLevel = Math.max(1, Math.round(level + 5));
+    const weaponTypes = Array.from(
+      new Set(weapons.map((weapon) => (weapon.type || "").toString().trim()).filter(Boolean))
+    ).sort((a, b) => a.localeCompare(b));
+    if (weaponRankingPreferences.type !== "all" && !weaponTypes.includes(weaponRankingPreferences.type)) {
+      weaponRankingPreferences.type = "all";
+      saveWeaponRankingPreferences();
+    }
+
+    const rankedWeapons = weapons
+      .map((weapon) => {
+        const base = Number(weapon.dps);
+        if (!Number.isFinite(base)) return null;
+        const itemLevel = Number(weapon.level);
+        const skillRequirement = Number(weapon.skillRequirement);
+        const isUnleveled = !Number.isFinite(itemLevel) || itemLevel <= 0;
+        const effectiveRequirement =
+          Number.isFinite(skillRequirement) && skillRequirement >= 0
+            ? skillRequirement
+            : Number.isFinite(itemLevel) && itemLevel > 0
+              ? itemLevel
+              : 0;
+        const multiplier = getElementMultiplier(monster.monsterType, weapon.elementalDamageType);
+        return {
+          name: weapon.name || "Unknown Weapon",
+          element: weapon.elementalDamageType || "None",
+          type: (weapon.type || "Unknown").toString(),
+          level: effectiveRequirement,
+          itemLevel: Number.isFinite(itemLevel) ? itemLevel : 0,
+          isUnleveled,
+          base,
+          multiplier,
+          effective: base * multiplier,
+        };
+      })
+      .filter(Boolean);
+
+    const toggle = document.createElement("button");
+    toggle.type = "button";
+    toggle.className = "detail-pill weapon-ranking-toggle";
+    toggle.setAttribute("aria-expanded", String(weaponRankingOpen));
+    toggle.setAttribute("aria-controls", "weapon-ranking-panel");
+
+    const toggleLabel = document.createElement("span");
+    const toggleLimit = document.createElement("span");
+    toggleLimit.className = "weapon-ranking-toggle-limit";
+    const toggleIcon = document.createElement("span");
+    toggleIcon.className = "weapon-ranking-toggle-icon";
+    toggleIcon.setAttribute("aria-hidden", "true");
+    toggleIcon.textContent = "\u25be";
+    toggle.appendChild(toggleLabel);
+    toggle.appendChild(toggleLimit);
+    toggle.appendChild(toggleIcon);
+
+    const panel = document.createElement("section");
+    panel.id = "weapon-ranking-panel";
+    panel.className = "weapon-ranking-panel";
+    panel.hidden = !weaponRankingOpen;
+    panel.setAttribute("aria-label", "Weapon rankings");
+
+    const controls = document.createElement("div");
+    controls.className = "weapon-ranking-controls";
+
+    const createControl = (labelText, control, className = "") => {
+      const label = document.createElement("label");
+      label.className = `weapon-ranking-control ${className}`.trim();
+      const text = document.createElement("span");
+      text.className = "weapon-ranking-control-label";
+      text.textContent = labelText;
+      label.appendChild(text);
+      label.appendChild(control);
+      return label;
     };
 
-    const rangeLabel = (range) => (range.min === range.max ? `${range.max}` : `${range.min}-${range.max}`);
+    const rankingSearch = document.createElement("input");
+    rankingSearch.type = "search";
+    rankingSearch.className = "weapon-ranking-input";
+    rankingSearch.placeholder = "Search weapons";
+    rankingSearch.value = weaponRankingSearch;
+    rankingSearch.autocomplete = "off";
+    controls.appendChild(createControl("Search", rankingSearch, "weapon-ranking-search-control"));
 
-    ranges.forEach((range) => {
-      const pill = document.createElement("span");
-      pill.className = "detail-pill";
-      pill.textContent = range.label || rangeLabel(range);
+    const maxLevelInput = document.createElement("input");
+    maxLevelInput.type = "number";
+    maxLevelInput.className = "weapon-ranking-input weapon-ranking-level-input";
+    maxLevelInput.min = "1";
+    maxLevelInput.max = "999";
+    maxLevelInput.step = "5";
+    maxLevelInput.value = String(weaponRankingPreferences.maxLevel || defaultMaxLevel);
+    controls.appendChild(createControl("Max Skill Req.", maxLevelInput));
 
-      const tooltip = document.createElement("span");
-      tooltip.className = "detail-tooltip";
-      tooltip.role = "tooltip";
+    const typeSelect = document.createElement("select");
+    typeSelect.className = "weapon-ranking-input weapon-ranking-type-select";
+    const allTypesOption = document.createElement("option");
+    allTypesOption.value = "all";
+    allTypesOption.textContent = "All types";
+    typeSelect.appendChild(allTypesOption);
+    weaponTypes.forEach((type) => {
+      const option = document.createElement("option");
+      option.value = type;
+      option.textContent = type;
+      typeSelect.appendChild(option);
+    });
+    typeSelect.value = weaponRankingPreferences.type;
+    controls.appendChild(createControl("Weapon Type", typeSelect));
 
-      const headerRow = document.createElement("div");
-      headerRow.className = "detail-tooltip-row";
-      const headerLabel = document.createElement("span");
-      headerLabel.className = "detail-tooltip-label";
-      headerLabel.textContent = `Effective DPS (base x ${formatTypeLabel(monster.monsterType)} matchup)`;
-      headerRow.appendChild(headerLabel);
-      tooltip.appendChild(headerRow);
+    const uniqueControl = document.createElement("label");
+    uniqueControl.className = "weapon-ranking-unique";
+    const uniqueInput = document.createElement("input");
+    uniqueInput.type = "checkbox";
+    uniqueInput.checked = weaponRankingPreferences.includeUnleveled;
+    const uniqueLabel = document.createElement("span");
+    uniqueLabel.textContent = "Unique-tier items";
+    uniqueControl.appendChild(uniqueInput);
+    uniqueControl.appendChild(uniqueLabel);
+    controls.appendChild(uniqueControl);
 
-      const headerDivider = document.createElement("div");
-      headerDivider.className = "detail-tooltip-divider";
-      tooltip.appendChild(headerDivider);
+    const resetButton = document.createElement("button");
+    resetButton.type = "button";
+    resetButton.className = "weapon-ranking-reset";
+    resetButton.setAttribute("aria-label", "Reset weapon ranking filters");
+    resetButton.title = "Reset weapon ranking filters";
+    resetButton.textContent = "\u21bb";
+    controls.appendChild(resetButton);
 
-      const list = buildList(range);
-      if (!list.length) {
-        tooltip.textContent = "No matching weapons";
-      } else {
-        list.forEach((entry) => {
-          const row = buildWeaponLinkRow({
-            name: entry.name,
-            element: entry.element,
-            context: `${entry.element} ${formatResistanceValue(entry.multiplier)}`,
-            meta: `${formatDps(entry.effective)} DPS`,
-            base: entry.base,
-            effective: entry.effective,
-            multiplier: entry.multiplier,
-          });
-          tooltip.appendChild(row);
-        });
+    const summary = document.createElement("div");
+    summary.className = "weapon-ranking-summary";
+    const summaryLabel = document.createElement("span");
+    summaryLabel.textContent = `Effective DPS vs. ${formatTypeLabel(monster.monsterType)}`;
+    const resultCount = document.createElement("span");
+    resultCount.className = "weapon-ranking-count";
+    resultCount.setAttribute("aria-live", "polite");
+    summary.appendChild(summaryLabel);
+    summary.appendChild(resultCount);
+
+    const results = document.createElement("div");
+    results.className = "weapon-ranking-results";
+    const resultHeader = document.createElement("div");
+    resultHeader.className = "weapon-ranking-row weapon-ranking-header";
+    ["#", "Weapon", "Requirement / Type / Matchup", "Effective DPS"].forEach((labelText) => {
+      const cell = document.createElement("span");
+      cell.textContent = labelText;
+      resultHeader.appendChild(cell);
+    });
+    const resultBody = document.createElement("div");
+    resultBody.className = "weapon-ranking-body";
+    results.appendChild(resultHeader);
+    results.appendChild(resultBody);
+
+    panel.appendChild(controls);
+    panel.appendChild(summary);
+    panel.appendChild(results);
+
+    const getActiveMaxLevel = () => weaponRankingPreferences.maxLevel || defaultMaxLevel;
+
+    const updateToggle = () => {
+      toggleLabel.textContent = weaponRankingOpen ? "Hide rankings" : "View rankings";
+      toggleLimit.textContent = `Req <= ${formatNumber(getActiveMaxLevel())}`;
+      toggle.classList.toggle("is-open", weaponRankingOpen);
+      toggle.setAttribute("aria-expanded", String(weaponRankingOpen));
+    };
+
+    const renderRankingResults = () => {
+      const search = weaponRankingSearch.trim().toLowerCase();
+      const maxLevel = getActiveMaxLevel();
+      const selectedType = weaponRankingPreferences.type;
+      const filtered = rankedWeapons
+        .filter((entry) => {
+          if (entry.isUnleveled && !weaponRankingPreferences.includeUnleveled) return false;
+          if (entry.level > maxLevel) return false;
+          if (selectedType !== "all" && entry.type !== selectedType) return false;
+          if (!search) return true;
+          return `${entry.name} ${entry.type} ${entry.element} ${entry.level} ${entry.itemLevel}`
+            .toLowerCase()
+            .includes(search);
+        })
+        .sort(
+          (a, b) =>
+            b.effective - a.effective ||
+            b.base - a.base ||
+            a.level - b.level ||
+            a.name.localeCompare(b.name)
+        );
+
+      resultCount.textContent = `${formatNumber(filtered.length)} weapon${filtered.length === 1 ? "" : "s"}`;
+      resultBody.innerHTML = "";
+      if (!filtered.length) {
+        const empty = document.createElement("div");
+        empty.className = "weapon-ranking-empty";
+        empty.textContent = "No weapons match these filters.";
+        resultBody.appendChild(empty);
+        return;
       }
 
-      pill.appendChild(tooltip);
-      container.appendChild(pill);
+      const fragment = document.createDocumentFragment();
+      filtered.forEach((entry, index) => {
+        const row = document.createElement("div");
+        row.className = "weapon-ranking-row";
+        row.dataset.element = entry.element;
+        row.dataset.multiplier = String(entry.multiplier);
+        row.dataset.level = String(entry.level);
+        row.dataset.itemLevel = String(entry.itemLevel);
+        row.dataset.type = entry.type;
+
+        const rank = document.createElement("span");
+        rank.className = "weapon-ranking-rank";
+        rank.textContent = String(index + 1);
+
+        const name = document.createElement("a");
+        name.className = "weapon-ranking-name";
+        name.href = buildWeaponDetailUrl(entry.name);
+        name.textContent = entry.name;
+
+        const context = document.createElement("span");
+        context.className = "weapon-ranking-context";
+        const requirementLabel = entry.level > 0 ? `Req ${formatNumber(entry.level)}` : "No req.";
+        context.textContent = `${requirementLabel} / ${entry.type} / ${entry.element} ${formatResistanceValue(entry.multiplier)}`;
+        context.title = entry.isUnleveled
+          ? `Unique item tier; skill requirement ${formatNumber(entry.level)}`
+          : `Item level ${formatNumber(entry.itemLevel)}; skill requirement ${formatNumber(entry.level)}`;
+        const elementColor = ELEMENT_COLORS[(entry.element || "").toLowerCase()];
+        if (elementColor) context.style.color = elementColor;
+
+        const effective = document.createElement("span");
+        effective.className = "weapon-ranking-dps";
+        effective.textContent = `${formatDps(entry.effective)} DPS`;
+        effective.title = `${formatDps(entry.base)} base DPS at ${formatResistanceValue(entry.multiplier)} matchup`;
+        if (elementColor) effective.style.color = elementColor;
+
+        row.appendChild(rank);
+        row.appendChild(name);
+        row.appendChild(context);
+        row.appendChild(effective);
+        fragment.appendChild(row);
+      });
+      resultBody.appendChild(fragment);
+    };
+
+    toggle.addEventListener("click", () => {
+      weaponRankingOpen = !weaponRankingOpen;
+      panel.hidden = !weaponRankingOpen;
+      updateToggle();
     });
+
+    rankingSearch.addEventListener("input", () => {
+      weaponRankingSearch = rankingSearch.value;
+      renderRankingResults();
+    });
+
+    maxLevelInput.addEventListener("input", () => {
+      const value = Number(maxLevelInput.value);
+      if (!Number.isFinite(value) || value <= 0) return;
+      weaponRankingPreferences.maxLevel = Math.round(value);
+      saveWeaponRankingPreferences();
+      updateToggle();
+      renderRankingResults();
+    });
+
+    typeSelect.addEventListener("change", () => {
+      weaponRankingPreferences.type = typeSelect.value || "all";
+      saveWeaponRankingPreferences();
+      renderRankingResults();
+    });
+
+    uniqueInput.addEventListener("change", () => {
+      weaponRankingPreferences.includeUnleveled = uniqueInput.checked;
+      saveWeaponRankingPreferences();
+      renderRankingResults();
+    });
+
+    resetButton.addEventListener("click", () => {
+      weaponRankingPreferences = { maxLevel: null, type: "all", includeUnleveled: true };
+      weaponRankingSearch = "";
+      maxLevelInput.value = String(defaultMaxLevel);
+      typeSelect.value = "all";
+      uniqueInput.checked = true;
+      rankingSearch.value = "";
+      saveWeaponRankingPreferences();
+      updateToggle();
+      renderRankingResults();
+    });
+
+    container.dataset.defaultMaxLevel = String(defaultMaxLevel);
+    container.appendChild(toggle);
+    container.appendChild(panel);
+    updateToggle();
+    renderRankingResults();
   };
 
   const renderRecommendedArmors = (monster) => {
@@ -1014,198 +1392,637 @@ const renderEmpty = (message) => {
       return;
     }
 
-    const REQUIRED_SLOTS = ["helmet", "chest", "gauntlets", "leggings", "shield"];
+    const defaultMaxItemLevel = Math.max(1, Math.round(level + 5));
     const slotLabel = (slot) => slot.charAt(0).toUpperCase() + slot.slice(1);
+    const elementLabel = elementKey
+      ? elementKey.charAt(0).toUpperCase() + elementKey.slice(1)
+      : "Physical";
+    const elementColor = elementKey ? ELEMENT_COLORS[elementKey] : null;
 
-    const eligibleArmors = armors.filter(
-      (a) => a && a.slotNorm && REQUIRED_SLOTS.includes(a.slotNorm) && !/cosmetic/i.test(a.slot || "")
-    );
-
-    const slotGroups = new Map();
-    eligibleArmors.forEach((armor) => {
-      const list = slotGroups.get(armor.slotNorm) || [];
-      list.push(armor);
-      slotGroups.set(armor.slotNorm, list);
-    });
-
-    const effectiveLevelByArmor = new Map();
-    eligibleArmors.forEach((armor) => {
-      const armorLevel = Number(armor.level);
-      if (Number.isFinite(armorLevel) && armorLevel > 0) {
-        effectiveLevelByArmor.set(armor, armorLevel);
-        return;
-      }
-      const deconstruction = Number(armor.deconstruction);
-      if (!Number.isFinite(deconstruction)) {
-        effectiveLevelByArmor.set(armor, 0);
-        return;
-      }
-      const sameSlot = slotGroups.get(armor.slotNorm) || [];
-      let bestDiff = Infinity;
-      let bestLevel = Infinity;
-      sameSlot.forEach((candidate) => {
-        if (candidate === armor) return;
-        const candidateLevel = Number(candidate.level);
-        if (!Number.isFinite(candidateLevel) || candidateLevel <= 0) return;
-        const candidateDeconstruction = Number(candidate.deconstruction);
-        if (!Number.isFinite(candidateDeconstruction)) return;
-        const diff = Math.abs(candidateDeconstruction - deconstruction);
-        if (diff < bestDiff || (diff === bestDiff && candidateLevel < bestLevel)) {
-          bestDiff = diff;
-          bestLevel = candidateLevel;
-        }
+    const rankedArmors = armors
+      .filter(
+        (armor) =>
+          armor &&
+          armor.slotNorm &&
+          ARMOR_SET_SLOTS.includes(armor.slotNorm) &&
+          !/cosmetic/i.test(armor.slot || "")
+      )
+      .map((armor) => {
+        const rawItemLevel = Number(armor.level);
+        const craftedRecommendationLevel =
+          CRAFTED_ARMOR_RECOMMENDATION_LEVELS.get(armor.name) || null;
+        const itemLevel =
+          craftedRecommendationLevel ||
+          (Number.isFinite(rawItemLevel) ? rawItemLevel : 0);
+        const hasPlayerRequirement =
+          Number.isFinite(armor.playerLevelRequirement) && armor.playerLevelRequirement >= 0;
+        const requirement = hasPlayerRequirement
+          ? armor.playerLevelRequirement
+          : Number.isFinite(itemLevel) && itemLevel > 0
+            ? itemLevel
+            : 0;
+        const perkProfile = getArmorPerkProfile(
+          armor.perk,
+          monster.monsterType,
+          elementKey
+        );
+        return {
+          ...armor,
+          rawItemLevel: Number.isFinite(rawItemLevel) ? rawItemLevel : 0,
+          itemLevel,
+          requirement,
+          isCraftedRecommendation: craftedRecommendationLevel !== null,
+          isUnleveled: itemLevel <= 0,
+          relevantResistance: elementKey ? Number(armor.resistances[elementKey]) || 0 : 0,
+          perkProfile,
+          matchingPerkCount: perkProfile?.category === "matchup" ? 1 : 0,
+          matchingPerkTier: perkProfile?.category === "matchup" ? perkProfile.tier : 0,
+          combatPerkCount: perkProfile?.category === "combat" ? 1 : 0,
+          combatPerkTier: perkProfile?.category === "combat" ? perkProfile.tier : 0,
+        };
       });
-      const effectiveLevel = Number.isFinite(bestLevel) && bestLevel !== Infinity ? bestLevel : 0;
-      effectiveLevelByArmor.set(armor, effectiveLevel);
-    });
 
-    const getBestSet = (sourceArmors) => {
+    const comparePerkRank = (left, right) => {
+      if (!armorRankingPreferences.includePerks) return 0;
+      return (
+        right.matchingPerkCount - left.matchingPerkCount ||
+        right.matchingPerkTier - left.matchingPerkTier ||
+        right.combatPerkCount - left.combatPerkCount ||
+        right.combatPerkTier - left.combatPerkTier
+      );
+    };
+
+    const compareSets = (left, right) =>
+      right.cappedResist - left.cappedResist ||
+      comparePerkRank(left, right) ||
+      right.totalArmor - left.totalArmor ||
+      left.totalWeight - right.totalWeight ||
+      left.key.localeCompare(right.key);
+
+    const getBestSets = (sourceArmors) => {
+      const requiredSlots = ARMOR_SET_SLOTS;
       const bySlot = new Map();
       sourceArmors
-        .filter((a) => a && a.slotNorm && REQUIRED_SLOTS.includes(a.slotNorm) && !/cosmetic/i.test(a.slot || ""))
         .forEach((armor) => {
           const list = bySlot.get(armor.slotNorm) || [];
           list.push(armor);
           bySlot.set(armor.slotNorm, list);
         });
 
-      if (REQUIRED_SLOTS.some((slot) => !bySlot.get(slot) || !bySlot.get(slot).length)) {
-        return null;
+      if (requiredSlots.some((slot) => !bySlot.get(slot) || !bySlot.get(slot).length)) {
+        return [];
       }
 
-      const topBySlot = {};
-      const TOP_COUNT = 5;
-      REQUIRED_SLOTS.forEach((slot) => {
-        const list = bySlot.get(slot) || [];
-        const sorted = list
-          .map((a) => {
-            const resist = elementKey ? Number(a.resistances[elementKey]) || 0 : 0;
-            const armorVal = Number(a.armor) || 0;
-            return { armor: a, resist, armorVal };
-          })
-          .sort(
-            (a, b) =>
-              b.resist - a.resist || b.armorVal - a.armorVal || (b.armor.level || 0) - (a.armor.level || 0)
-          )
-          .slice(0, TOP_COUNT);
-        topBySlot[slot] = sorted;
+      let states = [
+        {
+          set: [],
+          totalResist: 0,
+          cappedResist: 0,
+          totalArmor: 0,
+          totalWeight: 0,
+          matchingPerkCount: 0,
+          matchingPerkTier: 0,
+          combatPerkCount: 0,
+          combatPerkTier: 0,
+          key: "",
+        },
+      ];
+
+      requiredSlots.forEach((slot) => {
+        const buckets = new Map();
+        states.forEach((state) => {
+          (bySlot.get(slot) || []).forEach((armor) => {
+            const set = state.set.concat(armor);
+            const totalResist = state.totalResist + armor.relevantResistance;
+            const cappedResist = Math.min(totalResist, ARMOR_RESISTANCE_CAP);
+            const perkProfile = armor.perkProfile;
+            const isMatchingPerk = perkProfile?.category === "matchup";
+            const isCombatPerk = perkProfile?.category === "combat";
+            const candidate = {
+              set,
+              totalResist,
+              cappedResist,
+              totalArmor: state.totalArmor + (Number(armor.armor) || 0),
+              totalWeight: state.totalWeight + (Number(armor.weight) || 0),
+              matchingPerkCount: state.matchingPerkCount + (isMatchingPerk ? 1 : 0),
+              matchingPerkTier:
+                state.matchingPerkTier + (isMatchingPerk ? perkProfile.tier : 0),
+              combatPerkCount: state.combatPerkCount + (isCombatPerk ? 1 : 0),
+              combatPerkTier:
+                state.combatPerkTier + (isCombatPerk ? perkProfile.tier : 0),
+              key: set.map((item) => item.name).join("|"),
+            };
+            const bucket = buckets.get(cappedResist) || [];
+            bucket.push(candidate);
+            buckets.set(cappedResist, bucket);
+          });
+        });
+        states = Array.from(buckets.values()).flatMap((bucket) =>
+          bucket.sort(compareSets).slice(0, ARMOR_SET_RESULT_LIMIT)
+        );
       });
 
-      if (REQUIRED_SLOTS.some((slot) => !topBySlot[slot].length)) {
-        return null;
-      }
-
-      const combos = [];
-      const slotsArrays = REQUIRED_SLOTS.map((slot) => topBySlot[slot]);
-      const recurse = (idx, current) => {
-        if (idx === slotsArrays.length) {
-          const totalResist = current.reduce((sum, entry) => sum + (entry.resist || 0), 0);
-          const cappedResist = Math.min(totalResist, 60);
-          const totalArmor = current.reduce((sum, entry) => sum + (entry.armorVal || 0), 0);
-          combos.push({ set: current.map((e) => e.armor), totalResist, cappedResist, totalArmor });
-          return;
-        }
-        slotsArrays[idx].forEach((entry) => recurse(idx + 1, current.concat(entry)));
-      };
-      recurse(0, []);
-
-      combos.sort((a, b) => {
-        if (a.cappedResist !== b.cappedResist) return b.cappedResist - a.cappedResist;
-        return b.totalArmor - a.totalArmor;
-      });
-      return combos[0] || null;
+      return states.sort(compareSets).slice(0, ARMOR_SET_RESULT_LIMIT);
     };
 
-    const appendArmorPill = (label, sourceArmors) => {
-      const pill = document.createElement("span");
-      pill.className = "detail-pill";
-      pill.textContent = label;
+    const getFilteredArmors = () => {
+      const maxItemLevel = armorRankingPreferences.maxItemLevel || defaultMaxItemLevel;
+      return rankedArmors.filter((armor) => {
+        if (armor.isUnleveled) return armorRankingPreferences.includeUnleveled;
+        return armor.itemLevel <= maxItemLevel;
+      });
+    };
 
-      const tooltip = document.createElement("span");
-      tooltip.className = "detail-tooltip";
-      tooltip.role = "tooltip";
-      tooltip.dataset.element = elementKey || "none";
+    const toggle = document.createElement("button");
+    toggle.type = "button";
+    toggle.className = "detail-pill armor-ranking-toggle";
+    toggle.setAttribute("aria-expanded", String(armorRankingOpen));
+    toggle.setAttribute("aria-controls", "armor-ranking-panel");
 
-      const bestSet = getBestSet(sourceArmors);
-      if (!bestSet) {
-        tooltip.textContent = "Not enough armor pieces for a full set";
-      } else {
-        const headerRow = document.createElement("div");
-        headerRow.className = "detail-tooltip-row";
-        const headerLabel = document.createElement("span");
-        headerLabel.className = "detail-tooltip-label";
-        headerLabel.textContent = elementKey
-          ? `Best set vs. ${elementKey.charAt(0).toUpperCase() + elementKey.slice(1)}`
-          : "Best armor set";
-        headerRow.appendChild(headerLabel);
-        tooltip.appendChild(headerRow);
+    const toggleLabel = document.createElement("span");
+    const toggleLimit = document.createElement("span");
+    toggleLimit.className = "armor-ranking-toggle-limit";
+    const toggleIcon = document.createElement("span");
+    toggleIcon.className = "armor-ranking-toggle-icon";
+    toggleIcon.setAttribute("aria-hidden", "true");
+    toggleIcon.textContent = "\u25be";
+    toggle.appendChild(toggleLabel);
+    toggle.appendChild(toggleLimit);
+    toggle.appendChild(toggleIcon);
 
-        const headerDivider = document.createElement("div");
-        headerDivider.className = "detail-tooltip-divider";
-        tooltip.appendChild(headerDivider);
+    const panel = document.createElement("section");
+    panel.id = "armor-ranking-panel";
+    panel.className = "armor-ranking-panel";
+    panel.hidden = !armorRankingOpen;
+    panel.setAttribute("aria-label", "Armor set rankings");
 
-        const totalRow = document.createElement("div");
-        totalRow.className = "detail-tooltip-row";
-        const totalLabel = document.createElement("span");
-        totalLabel.className = "detail-tooltip-label";
-        totalLabel.textContent = "Total Resist";
-        const totalVal = document.createElement("span");
-        totalVal.textContent = elementKey
-          ? `${formatNumber(bestSet.cappedResist)} / 60 ${elementKey}`
-          : `${formatNumber(bestSet.cappedResist)} / 60`;
-        totalRow.appendChild(totalLabel);
-        totalRow.appendChild(totalVal);
-        tooltip.appendChild(totalRow);
+    const controls = document.createElement("div");
+    controls.className = "armor-ranking-controls";
 
-        const armorRow = document.createElement("div");
-        armorRow.className = "detail-tooltip-row";
-        const armorLabel = document.createElement("span");
-        armorLabel.className = "detail-tooltip-label";
-        armorLabel.textContent = "Total Armor";
-        const armorVal = document.createElement("span");
-        armorVal.textContent = formatNumber(bestSet.totalArmor);
-        armorRow.appendChild(armorLabel);
-        armorRow.appendChild(armorVal);
-        tooltip.appendChild(armorRow);
+    const createControl = (labelText, control, className = "") => {
+      const label = document.createElement("label");
+      label.className = `armor-ranking-control ${className}`.trim();
+      const text = document.createElement("span");
+      text.className = "armor-ranking-control-label";
+      text.textContent = labelText;
+      label.appendChild(text);
+      label.appendChild(control);
+      return label;
+    };
 
-        const divider = document.createElement("div");
-        divider.className = "detail-tooltip-divider";
-        tooltip.appendChild(divider);
+    const maxItemLevelInput = document.createElement("input");
+    maxItemLevelInput.type = "number";
+    maxItemLevelInput.className = "armor-ranking-input armor-ranking-level-input";
+    maxItemLevelInput.min = "1";
+    maxItemLevelInput.max = "999";
+    maxItemLevelInput.step = "5";
+    maxItemLevelInput.value = String(
+      armorRankingPreferences.maxItemLevel || defaultMaxItemLevel
+    );
+    controls.appendChild(createControl("Max Item Level", maxItemLevelInput));
 
+    const uniqueControl = document.createElement("label");
+    uniqueControl.className = "armor-ranking-unique";
+    const uniqueInput = document.createElement("input");
+    uniqueInput.type = "checkbox";
+    uniqueInput.checked = armorRankingPreferences.includeUnleveled;
+    const uniqueLabel = document.createElement("span");
+    uniqueLabel.textContent = "Unique-tier items";
+    uniqueControl.appendChild(uniqueInput);
+    uniqueControl.appendChild(uniqueLabel);
+    controls.appendChild(uniqueControl);
+
+    const perksControl = document.createElement("label");
+    perksControl.className = "armor-ranking-perks";
+    perksControl.title =
+      "Prioritize confirmed innate perks from the combat and resistance groups.";
+    const perksInput = document.createElement("input");
+    perksInput.type = "checkbox";
+    perksInput.checked = armorRankingPreferences.includePerks;
+    const perksLabel = document.createElement("span");
+    perksLabel.textContent = "Perks";
+    perksControl.appendChild(perksInput);
+    perksControl.appendChild(perksLabel);
+    controls.appendChild(perksControl);
+
+    const resetButton = document.createElement("button");
+    resetButton.type = "button";
+    resetButton.className = "armor-ranking-reset";
+    resetButton.setAttribute("aria-label", "Reset armor ranking filters");
+    resetButton.title = "Reset armor ranking filters";
+    resetButton.textContent = "\u21bb";
+    controls.appendChild(resetButton);
+
+    const tabs = document.createElement("div");
+    tabs.className = "armor-ranking-tabs";
+    tabs.setAttribute("role", "tablist");
+    const setsTab = document.createElement("button");
+    setsTab.type = "button";
+    setsTab.id = "armor-ranking-sets-tab";
+    setsTab.setAttribute("role", "tab");
+    setsTab.setAttribute("aria-controls", "armor-ranking-sets-view");
+    setsTab.textContent = "Best Sets";
+    const slotTab = document.createElement("button");
+    slotTab.type = "button";
+    slotTab.id = "armor-ranking-slot-tab";
+    slotTab.setAttribute("role", "tab");
+    slotTab.setAttribute("aria-controls", "armor-ranking-slot-view");
+    slotTab.textContent = "By Slot";
+    tabs.appendChild(setsTab);
+    tabs.appendChild(slotTab);
+
+    const setsView = document.createElement("div");
+    setsView.id = "armor-ranking-sets-view";
+    setsView.className = "armor-ranking-view";
+    setsView.setAttribute("role", "tabpanel");
+    setsView.setAttribute("aria-labelledby", setsTab.id);
+    const setsSummary = document.createElement("div");
+    setsSummary.className = "armor-ranking-summary";
+    const setsSummaryLabel = document.createElement("span");
+    setsSummaryLabel.textContent = elementKey
+      ? `Best sets vs. ${elementLabel}`
+      : "Best physical-defense sets";
+    const setsCount = document.createElement("span");
+    setsCount.className = "armor-ranking-count";
+    setsCount.setAttribute("aria-live", "polite");
+    setsSummary.appendChild(setsSummaryLabel);
+    setsSummary.appendChild(setsCount);
+    const setsResults = document.createElement("div");
+    setsResults.className = "armor-ranking-results armor-set-results";
+    setsView.appendChild(setsSummary);
+    setsView.appendChild(setsResults);
+
+    const slotView = document.createElement("div");
+    slotView.id = "armor-ranking-slot-view";
+    slotView.className = "armor-ranking-view";
+    slotView.setAttribute("role", "tabpanel");
+    slotView.setAttribute("aria-labelledby", slotTab.id);
+    const slotTools = document.createElement("div");
+    slotTools.className = "armor-slot-tools";
+    const slotSelect = document.createElement("select");
+    slotSelect.className = "armor-ranking-input armor-slot-select";
+    ARMOR_SET_SLOTS.forEach((slot) => {
+      const option = document.createElement("option");
+      option.value = slot;
+      option.textContent = slotLabel(slot);
+      slotSelect.appendChild(option);
+    });
+    slotSelect.value = armorRankingPreferences.slot;
+    slotTools.appendChild(createControl("Armor Slot", slotSelect));
+
+    const rankingSearch = document.createElement("input");
+    rankingSearch.type = "search";
+    rankingSearch.className = "armor-ranking-input";
+    rankingSearch.placeholder = "Search this slot";
+    rankingSearch.value = armorRankingSearch;
+    rankingSearch.autocomplete = "off";
+    slotTools.appendChild(createControl("Search", rankingSearch, "armor-ranking-search-control"));
+
+    const slotSummary = document.createElement("div");
+    slotSummary.className = "armor-ranking-summary";
+    const slotSummaryLabel = document.createElement("span");
+    const slotCount = document.createElement("span");
+    slotCount.className = "armor-ranking-count";
+    slotCount.setAttribute("aria-live", "polite");
+    slotSummary.appendChild(slotSummaryLabel);
+    slotSummary.appendChild(slotCount);
+    const slotResults = document.createElement("div");
+    slotResults.className = "armor-ranking-results armor-slot-results";
+    slotView.appendChild(slotTools);
+    slotView.appendChild(slotSummary);
+    slotView.appendChild(slotResults);
+
+    panel.appendChild(controls);
+    panel.appendChild(tabs);
+    panel.appendChild(setsView);
+    panel.appendChild(slotView);
+
+    const getActiveMaxItemLevel = () =>
+      armorRankingPreferences.maxItemLevel || defaultMaxItemLevel;
+
+    const updateToggle = () => {
+      toggleLabel.textContent = armorRankingOpen ? "Hide sets" : "View sets";
+      toggleLimit.textContent = `Item Lv <= ${formatNumber(getActiveMaxItemLevel())}`;
+      toggle.classList.toggle("is-open", armorRankingOpen);
+      toggle.setAttribute("aria-expanded", String(armorRankingOpen));
+    };
+
+    const appendSetHeader = () => {
+      const header = document.createElement("div");
+      header.className = "armor-set-row armor-set-header";
+      ["#", "Defense", "Armor", ""].forEach((labelText) => {
+        const cell = document.createElement("span");
+        cell.textContent = labelText;
+        header.appendChild(cell);
+      });
+      setsResults.appendChild(header);
+    };
+
+    const appendPerkContext = (target, armor) => {
+      if (!armorRankingPreferences.includePerks || !armor.perkProfile) return;
+      target.appendChild(document.createTextNode(" / "));
+      const perk = document.createElement("span");
+      perk.className = `armor-ranking-perk is-${armor.perkProfile.category}`;
+      perk.textContent = armor.perkProfile.label;
+      perk.title = armor.perkProfile.reason;
+      target.appendChild(perk);
+    };
+
+    const renderSetResults = () => {
+      const bestSets = getBestSets(getFilteredArmors());
+      setsCount.textContent = `${formatNumber(bestSets.length)} set${bestSets.length === 1 ? "" : "s"}`;
+      setsResults.innerHTML = "";
+      if (!bestSets.length) {
+        const empty = document.createElement("div");
+        empty.className = "armor-ranking-empty";
+        empty.textContent = "Not enough armor pieces for a complete set.";
+        setsResults.appendChild(empty);
+        return;
+      }
+
+      appendSetHeader();
+      bestSets.forEach((bestSet, index) => {
+        const card = document.createElement("article");
+        card.className = "armor-set-card";
+        card.dataset.rank = String(index + 1);
+        card.dataset.resistance = String(bestSet.cappedResist);
+        card.dataset.totalResistance = String(bestSet.totalResist);
+        card.dataset.armor = String(bestSet.totalArmor);
+        card.dataset.weight = String(bestSet.totalWeight);
+        card.dataset.matchingPerks = String(bestSet.matchingPerkCount);
+        card.dataset.combatPerks = String(bestSet.combatPerkCount);
+
+        const summaryButton = document.createElement("button");
+        summaryButton.type = "button";
+        summaryButton.className = "armor-set-row armor-set-toggle";
+        summaryButton.setAttribute("aria-expanded", "false");
+
+        const rank = document.createElement("span");
+        rank.className = "armor-ranking-rank";
+        rank.textContent = String(index + 1);
+        const defense = document.createElement("span");
+        defense.className = "armor-set-defense";
+        defense.textContent = elementKey
+          ? `${elementLabel} ${formatNumber(bestSet.cappedResist)} / ${ARMOR_RESISTANCE_CAP}`
+          : "Physical defense";
+        if (elementColor) defense.style.color = elementColor;
+        if (elementKey) {
+          defense.title =
+            bestSet.totalResist > ARMOR_RESISTANCE_CAP
+              ? `${formatNumber(bestSet.totalResist)} equipped; ${ARMOR_RESISTANCE_CAP} effective`
+              : `${formatNumber(bestSet.totalResist)} equipped and effective`;
+        }
+        const armorValue = document.createElement("span");
+        armorValue.className = "armor-set-number";
+        armorValue.dataset.label = "Armor";
+        armorValue.textContent = formatNumber(bestSet.totalArmor);
+        const icon = document.createElement("span");
+        icon.className = "armor-set-toggle-icon";
+        icon.setAttribute("aria-hidden", "true");
+        icon.textContent = "\u25be";
+        summaryButton.appendChild(rank);
+        summaryButton.appendChild(defense);
+        summaryButton.appendChild(armorValue);
+        summaryButton.appendChild(icon);
+
+        const pieces = document.createElement("div");
+        pieces.className = "armor-set-pieces";
+        pieces.hidden = true;
         bestSet.set.forEach((armor) => {
           const row = document.createElement("div");
-          row.className = "detail-tooltip-row";
-          const labelSpan = document.createElement("span");
-          labelSpan.className = "detail-tooltip-label";
-          labelSpan.textContent = slotLabel(armor.slotNorm);
-          const val = document.createElement("span");
-          val.textContent = `${armor.name}`;
-          row.appendChild(labelSpan);
-          row.appendChild(val);
-          tooltip.appendChild(row);
+          row.className = "armor-piece-row";
+          row.dataset.playerRequirement = String(armor.requirement);
+          row.dataset.itemLevel = String(armor.itemLevel);
+          row.dataset.rawItemLevel = String(armor.rawItemLevel);
+          row.dataset.crafted = String(armor.isCraftedRecommendation);
+          row.dataset.slot = armor.slotNorm;
+          row.dataset.perkCategory = armor.perkProfile?.category || "none";
+          const slot = document.createElement("span");
+          slot.className = "armor-piece-slot";
+          slot.textContent = slotLabel(armor.slotNorm);
+          const name = document.createElement("a");
+          name.className = "armor-ranking-name";
+          name.href = buildArmorDetailUrl(armor.name);
+          name.textContent = armor.name;
+          const requirement = document.createElement("span");
+          requirement.className = "armor-piece-requirement";
+          const playerRequirementLabel =
+            armor.requirement > 0 ? `Req ${formatNumber(armor.requirement)}` : "No req.";
+          requirement.textContent = armor.isCraftedRecommendation
+            ? `Crafted Lv ${formatNumber(armor.itemLevel)} / ${playerRequirementLabel}`
+            : armor.isUnleveled
+              ? `Unique / ${playerRequirementLabel}`
+              : `Item Lv ${formatNumber(armor.itemLevel)} / ${playerRequirementLabel}`;
+          requirement.title = armor.isCraftedRecommendation
+            ? `Crafted armor evaluated at item level ${formatNumber(armor.itemLevel)}; game data item level ${formatNumber(armor.rawItemLevel)}; player requirement ${formatNumber(armor.requirement)}`
+            : armor.isUnleveled
+              ? `Unique item tier; player requirement ${formatNumber(armor.requirement)}`
+              : `Item level ${formatNumber(armor.itemLevel)}; player requirement ${formatNumber(armor.requirement)}`;
+          const stats = document.createElement("span");
+          stats.className = "armor-piece-stats";
+          stats.textContent = elementKey
+            ? `${formatNumber(armor.relevantResistance)} ${elementLabel} / ${formatNumber(armor.armor || 0)} Armor`
+            : `${formatNumber(armor.armor || 0)} Armor / ${formatNumber(armor.weight || 0)} Wt`;
+          if (elementColor) stats.style.color = elementColor;
+          appendPerkContext(stats, armor);
+          row.appendChild(slot);
+          row.appendChild(name);
+          row.appendChild(requirement);
+          row.appendChild(stats);
+          pieces.appendChild(row);
         });
-      }
 
-      pill.appendChild(tooltip);
-      container.appendChild(pill);
+        summaryButton.addEventListener("click", () => {
+          const isOpen = summaryButton.getAttribute("aria-expanded") === "true";
+          summaryButton.setAttribute("aria-expanded", String(!isOpen));
+          summaryButton.classList.toggle("is-open", !isOpen);
+          pieces.hidden = isOpen;
+        });
+
+        card.appendChild(summaryButton);
+        card.appendChild(pieces);
+        setsResults.appendChild(card);
+      });
     };
 
-    const maxLevels =
-      level >= 105 ? [90, 105, 125] : [-25, -10, 5].map((offset) => level + offset);
-    maxLevels
-      .map((maxValue) => Math.max(0, maxValue))
-      .filter((maxValue) => maxValue > 0)
-      .forEach((maxValue) => {
-        const sourceArmors = eligibleArmors.filter((armor) => {
-          const effectiveLevel = effectiveLevelByArmor.get(armor);
-          return Number.isFinite(effectiveLevel) && effectiveLevel > 0 && effectiveLevel <= maxValue;
-        });
-        appendArmorPill(`<= ${formatNumber(maxValue)}`, sourceArmors);
-      });
+    const renderSlotResults = () => {
+      const search = armorRankingSearch.trim().toLowerCase();
+      const selectedSlot = armorRankingPreferences.slot;
+      const filtered = getFilteredArmors()
+        .filter((armor) => {
+          if (armor.slotNorm !== selectedSlot) return false;
+          if (!search) return true;
+          return `${armor.name} ${armor.requirement} ${armor.itemLevel} ${armor.perk}`
+            .toLowerCase()
+            .includes(search);
+        })
+        .sort(
+          (left, right) =>
+            right.relevantResistance - left.relevantResistance ||
+            comparePerkRank(left, right) ||
+            (Number(right.armor) || 0) - (Number(left.armor) || 0) ||
+            (Number(left.weight) || 0) - (Number(right.weight) || 0) ||
+            left.requirement - right.requirement ||
+            left.name.localeCompare(right.name)
+        );
 
-    if (level >= 85) {
-      appendArmorPill("Endgame", eligibleArmors);
-    }
+      slotSummaryLabel.textContent = elementKey
+        ? `${slotLabel(selectedSlot)} vs. ${elementLabel}`
+        : `${slotLabel(selectedSlot)} by armor`;
+      slotCount.textContent = `${formatNumber(filtered.length)} item${filtered.length === 1 ? "" : "s"}`;
+      slotResults.innerHTML = "";
+      if (!filtered.length) {
+        const empty = document.createElement("div");
+        empty.className = "armor-ranking-empty";
+        empty.textContent = "No armor pieces match these filters.";
+        slotResults.appendChild(empty);
+        return;
+      }
+
+      const header = document.createElement("div");
+      header.className = "armor-slot-row armor-slot-header";
+      ["#", "Armor", "Item Level / Req. / Defense", "Armor"].forEach((labelText) => {
+        const cell = document.createElement("span");
+        cell.textContent = labelText;
+        header.appendChild(cell);
+      });
+      slotResults.appendChild(header);
+
+      filtered.forEach((armor, index) => {
+        const row = document.createElement("div");
+        row.className = "armor-slot-row";
+        row.dataset.slot = armor.slotNorm;
+        row.dataset.playerRequirement = String(armor.requirement);
+        row.dataset.itemLevel = String(armor.itemLevel);
+        row.dataset.rawItemLevel = String(armor.rawItemLevel);
+        row.dataset.crafted = String(armor.isCraftedRecommendation);
+        row.dataset.resistance = String(armor.relevantResistance);
+        row.dataset.perkCategory = armor.perkProfile?.category || "none";
+        const rank = document.createElement("span");
+        rank.className = "armor-ranking-rank";
+        rank.textContent = String(index + 1);
+        const name = document.createElement("a");
+        name.className = "armor-ranking-name";
+        name.href = buildArmorDetailUrl(armor.name);
+        name.textContent = armor.name;
+        const context = document.createElement("span");
+        context.className = "armor-ranking-context";
+        const requirementLabel = armor.requirement > 0
+          ? `Req ${formatNumber(armor.requirement)}`
+          : "No req.";
+        const itemLevelLabel = armor.isCraftedRecommendation
+          ? `Crafted Lv ${formatNumber(armor.itemLevel)}`
+          : armor.isUnleveled
+            ? "Unique tier"
+            : `Item Lv ${formatNumber(armor.itemLevel)}`;
+        context.textContent = elementKey
+          ? `${itemLevelLabel} / ${requirementLabel} / ${elementLabel} ${formatNumber(armor.relevantResistance)} / ${formatNumber(armor.weight || 0)} Wt`
+          : `${itemLevelLabel} / ${requirementLabel} / ${formatNumber(armor.weight || 0)} Wt`;
+        context.title = armor.isCraftedRecommendation
+          ? `Crafted armor evaluated at item level ${formatNumber(armor.itemLevel)}; game data item level ${formatNumber(armor.rawItemLevel)}; player requirement ${formatNumber(armor.requirement)}`
+          : armor.isUnleveled
+            ? `Unique item tier; player requirement ${formatNumber(armor.requirement)}`
+            : `Item level ${formatNumber(armor.itemLevel)}; player requirement ${formatNumber(armor.requirement)}`;
+        if (elementColor) context.style.color = elementColor;
+        appendPerkContext(context, armor);
+        const armorValue = document.createElement("span");
+        armorValue.className = "armor-ranking-armor";
+        armorValue.textContent = formatNumber(armor.armor || 0);
+        row.appendChild(rank);
+        row.appendChild(name);
+        row.appendChild(context);
+        row.appendChild(armorValue);
+        slotResults.appendChild(row);
+      });
+    };
+
+    const renderActiveView = () => {
+      const showingSets = armorRankingPreferences.view === "sets";
+      setsTab.classList.toggle("is-active", showingSets);
+      slotTab.classList.toggle("is-active", !showingSets);
+      setsTab.setAttribute("aria-selected", String(showingSets));
+      slotTab.setAttribute("aria-selected", String(!showingSets));
+      setsTab.tabIndex = showingSets ? 0 : -1;
+      slotTab.tabIndex = showingSets ? -1 : 0;
+      setsView.hidden = !showingSets;
+      slotView.hidden = showingSets;
+      if (showingSets) renderSetResults();
+      else renderSlotResults();
+    };
+
+    toggle.addEventListener("click", () => {
+      armorRankingOpen = !armorRankingOpen;
+      panel.hidden = !armorRankingOpen;
+      updateToggle();
+    });
+
+    [setsTab, slotTab].forEach((tab) => {
+      tab.addEventListener("click", () => {
+        armorRankingPreferences.view = tab === setsTab ? "sets" : "slot";
+        saveArmorRankingPreferences();
+        renderActiveView();
+      });
+    });
+
+    maxItemLevelInput.addEventListener("input", () => {
+      const value = Number(maxItemLevelInput.value);
+      if (!Number.isFinite(value) || value <= 0) return;
+      armorRankingPreferences.maxItemLevel = Math.round(value);
+      saveArmorRankingPreferences();
+      updateToggle();
+      renderActiveView();
+    });
+
+    uniqueInput.addEventListener("change", () => {
+      armorRankingPreferences.includeUnleveled = uniqueInput.checked;
+      saveArmorRankingPreferences();
+      renderActiveView();
+    });
+
+    perksInput.addEventListener("change", () => {
+      armorRankingPreferences.includePerks = perksInput.checked;
+      saveArmorRankingPreferences();
+      renderActiveView();
+    });
+
+    slotSelect.addEventListener("change", () => {
+      armorRankingPreferences.slot = ARMOR_SET_SLOTS.includes(slotSelect.value)
+        ? slotSelect.value
+        : "helmet";
+      saveArmorRankingPreferences();
+      renderSlotResults();
+    });
+
+    rankingSearch.addEventListener("input", () => {
+      armorRankingSearch = rankingSearch.value;
+      renderSlotResults();
+    });
+
+    resetButton.addEventListener("click", () => {
+      armorRankingPreferences = {
+        maxItemLevel: null,
+        includeUnleveled: false,
+        includePerks: true,
+        view: "sets",
+        slot: "helmet",
+      };
+      armorRankingSearch = "";
+      maxItemLevelInput.value = String(defaultMaxItemLevel);
+      uniqueInput.checked = false;
+      perksInput.checked = true;
+      slotSelect.value = "helmet";
+      rankingSearch.value = "";
+      saveArmorRankingPreferences();
+      updateToggle();
+      renderActiveView();
+    });
+
+    container.dataset.defaultMaxItemLevel = String(defaultMaxItemLevel);
+    container.dataset.element = elementKey || "none";
+    container.appendChild(toggle);
+    container.appendChild(panel);
+    updateToggle();
+    renderActiveView();
   };
 
   const buildTatteredImbuementsPill = (monster) => {
@@ -2099,16 +2916,31 @@ const unpinTooltip = (tooltip) => {
       fetchJsonCached(dataUrl, { cacheKey: `monsters-data-v${MONSTERS_SCHEMA_VERSION}:${dataUrl}` }),
       fetchJsonCached(weaponsUrl.toString()),
       fetchJsonCached(new URL("../items/armors_data06.json", window.location.href).toString()),
+      fetchJsonCached(perksUrl.toString()),
       fetchJsonCached(resistancesUrl),
       loadAllowlists(),
       loadDropSources(),
       loadMonsterImageManifest(),
-    ]).then(([monsterData, weaponData, armorData, resistancesData, allowlists, loadedDropSources]) => {
+    ]).then(
+      ([
+        monsterData,
+        weaponData,
+        armorData,
+        perksData,
+        resistancesData,
+        allowlists,
+        loadedDropSources,
+      ]) => {
         const map =
           resistancesData && typeof resistancesData === "object" ? resistancesData.typeResistances : null;
         if (map && typeof map === "object") {
           TYPE_RESISTANCES = map;
         }
+        perkDefinitions = new Map(
+          (Array.isArray(perksData?.perks) ? perksData.perks : [])
+            .filter((perk) => perk && ARMOR_COMBAT_PERK_GROUPS.has(perk.group))
+            .map((perk) => [normalizePerkNameKey(perk.name), perk])
+        );
         applyAllowlists(allowlists);
         dropSources =
           loadedDropSources ||
@@ -2137,8 +2969,10 @@ const unpinTooltip = (tooltip) => {
         }
         populateFilters(monsters);
         applyFilterAndSort();
-      })
-      .catch(() => {
+      }
+    )
+      .catch((error) => {
+        console.error("Unable to initialize monster data.", error);
         renderEmpty("Unable to load monsters. Add monsters_data03.json beside this page.");
       });
   };

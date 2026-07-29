@@ -585,9 +585,23 @@ async function assertMonsterRecommendationEnhancements(page) {
 
   targetUrl.searchParams.set("monster", "dark-monk");
   await page.goto(targetUrl.toString(), { waitUntil: "load" });
+  await page.evaluate(() => localStorage.removeItem("project-rogue-codex:monster-weapon-ranking"));
+  await page.evaluate(() => localStorage.removeItem("project-rogue-codex:monster-armor-ranking-v3"));
+  await page.reload({ waitUntil: "load" });
   await page.locator("#monster-details.show").waitFor({ state: "visible" });
+  const rankingToggles = page.locator("#recommended-weapons > .weapon-ranking-toggle");
+  if ((await rankingToggles.count()) !== 1) {
+    throw new Error(`Dark Monk expected one weapon-ranking toggle, found ${await rankingToggles.count()}`);
+  }
+  const toggleText = (await rankingToggles.textContent()).trim();
+  if (!toggleText.includes("View rankings") || !toggleText.includes("<= 90")) {
+    throw new Error(`Dark Monk ranking did not default to monster level + 5: "${toggleText}"`);
+  }
+  await rankingToggles.click();
+  await page.locator("#recommended-weapons .weapon-ranking-panel").waitFor({ state: "visible" });
+
   const shadowfangRow = page
-    .locator('#recommended-weapons .weapon-row[data-element="Dark"][data-multiplier="1.3"]')
+    .locator('#recommended-weapons .weapon-ranking-row[data-element="Dark"][data-multiplier="1.3"]')
     .filter({ hasText: "Shadowfang" })
     .first();
   await shadowfangRow.waitFor({ state: "attached" });
@@ -596,36 +610,346 @@ async function assertMonsterRecommendationEnhancements(page) {
     throw new Error(`Dark Monk recommendation did not explain Shadowfang matchup: "${shadowfangText}"`);
   }
 
+  const uniqueInput = page.locator("#recommended-weapons .weapon-ranking-unique input");
+  await uniqueInput.uncheck();
+  await page.waitForFunction(
+    () =>
+      Array.from(document.querySelectorAll("#recommended-weapons .weapon-ranking-body .weapon-ranking-row")).every(
+        (row) => Number(row.dataset.itemLevel) > 0
+      ),
+    undefined,
+    { timeout: timeoutMs }
+  );
+  await uniqueInput.check();
+
+  const rankingSearch = page.locator("#recommended-weapons .weapon-ranking-search-control input");
+  await rankingSearch.fill("Shadowfang");
+  await page.waitForFunction(
+    () => document.querySelectorAll("#recommended-weapons .weapon-ranking-body .weapon-ranking-row").length === 1,
+    undefined,
+    { timeout: timeoutMs }
+  );
+  await rankingSearch.fill("");
+
+  const maxLevelInput = page.locator("#recommended-weapons .weapon-ranking-level-input");
+  await maxLevelInput.fill("60");
+  await page.waitForFunction(
+    () =>
+      Array.from(document.querySelectorAll("#recommended-weapons .weapon-ranking-body .weapon-ranking-row")).every(
+        (row) => Number(row.dataset.level) === 0 || Number(row.dataset.level) <= 60
+      ),
+    undefined,
+    { timeout: timeoutMs }
+  );
+
+  const typeSelect = page.locator("#recommended-weapons .weapon-ranking-type-select");
+  await typeSelect.selectOption("Bow");
+  const bowState = await page.evaluate(() => {
+    const rows = Array.from(document.querySelectorAll("#recommended-weapons .weapon-ranking-body .weapon-ranking-row"));
+    return { count: rows.length, allBows: rows.every((row) => row.dataset.type === "Bow") };
+  });
+  if (!bowState.count || !bowState.allBows) {
+    throw new Error(`Weapon-type ranking filter failed: ${JSON.stringify(bowState)}`);
+  }
+
+  await maxLevelInput.fill("70");
   targetUrl.searchParams.set("monster", "dusk-mage");
   await page.goto(targetUrl.toString(), { waitUntil: "load" });
   await page.locator("#monster-details.show").waitFor({ state: "visible" });
-  const darkArmorTooltips = page.locator('#recommended-armors .detail-tooltip[data-element="dark"]');
-  if (!(await darkArmorTooltips.count())) {
-    throw new Error("Dusk Mage armor recommendations did not use Dark resistance");
+  if (
+    (await page.locator("#recommended-weapons .weapon-ranking-level-input").inputValue()) !== "70" ||
+    (await page.locator("#recommended-weapons .weapon-ranking-type-select").inputValue()) !== "Bow"
+  ) {
+    throw new Error("Weapon-ranking preferences did not persist across monster navigation");
   }
-  const darkArmorText = (await darkArmorTooltips.first().textContent()).trim();
-  if (!darkArmorText.includes("Best set vs. Dark") || !darkArmorText.includes("/ 60 dark")) {
-    throw new Error(`Dusk Mage armor recommendation did not explain Dark resistance: "${darkArmorText}"`);
+  await page.reload({ waitUntil: "load" });
+  await page.locator("#monster-details.show").waitFor({ state: "visible" });
+  if (
+    (await page.locator("#recommended-weapons .weapon-ranking-level-input").inputValue()) !== "70" ||
+    (await page.locator("#recommended-weapons .weapon-ranking-type-select").inputValue()) !== "Bow"
+  ) {
+    throw new Error("Weapon-ranking preferences did not persist across reload");
+  }
+
+  const duskRankingToggle = page.locator("#recommended-weapons > .weapon-ranking-toggle");
+  await duskRankingToggle.click();
+  await page.locator("#recommended-weapons .weapon-ranking-reset").click();
+  const resetState = await page.evaluate(() => ({
+    maxLevel: document.querySelector("#recommended-weapons .weapon-ranking-level-input")?.value || "",
+    type: document.querySelector("#recommended-weapons .weapon-ranking-type-select")?.value || "",
+    unique: Boolean(document.querySelector("#recommended-weapons .weapon-ranking-unique input")?.checked),
+  }));
+  if (resetState.maxLevel !== "60" || resetState.type !== "all" || !resetState.unique) {
+    throw new Error(`Weapon-ranking reset did not restore Dusk Mage defaults: ${JSON.stringify(resetState)}`);
+  }
+
+  const armorToggle = page.locator("#recommended-armors > .armor-ranking-toggle");
+  if ((await armorToggle.count()) !== 1) {
+    throw new Error(`Dusk Mage expected one armor-ranking toggle, found ${await armorToggle.count()}`);
+  }
+  const armorToggleText = (await armorToggle.textContent()).trim();
+  if (!armorToggleText.includes("View sets") || !armorToggleText.includes("Item Lv <= 60")) {
+    throw new Error(`Dusk Mage armor ranking did not default to monster level + 5: "${armorToggleText}"`);
+  }
+  await armorToggle.click();
+  await page.locator("#recommended-armors .armor-ranking-panel").waitFor({ state: "visible" });
+  const armorPerksInput = page.locator("#recommended-armors .armor-ranking-perks input");
+  if ((await armorPerksInput.count()) !== 1 || !(await armorPerksInput.isChecked())) {
+    throw new Error("Armor rankings did not default to confirmed innate perks enabled");
+  }
+  if (await page.locator("#recommended-armors [data-include-shield]").count()) {
+    throw new Error("Armor rankings still exposed a shield toggle");
+  }
+  const armorSetHeaderText = (
+    await page.locator("#recommended-armors .armor-set-header").textContent()
+  ).trim();
+  if (armorSetHeaderText.includes("Weight") || armorSetHeaderText.includes("Pieces")) {
+    throw new Error(`Armor set rankings still exposed removed columns: "${armorSetHeaderText}"`);
+  }
+
+  const firstArmorSet = page.locator("#recommended-armors .armor-set-card").first();
+  await firstArmorSet.waitFor({ state: "attached" });
+  const firstArmorSetText = (await firstArmorSet.locator(".armor-set-toggle").textContent()).trim();
+  if (!firstArmorSetText.includes("Dark")) {
+    throw new Error(`Dusk Mage armor set did not rank Dark resistance first: "${firstArmorSetText}"`);
+  }
+  const armorSetState = await firstArmorSet.evaluate((card) => ({
+    resistance: Number(card.dataset.resistance),
+    totalResistance: Number(card.dataset.totalResistance),
+    armor: Number(card.dataset.armor),
+    weight: Number(card.dataset.weight),
+  }));
+  if (
+    armorSetState.resistance < 0 ||
+    armorSetState.resistance > 60 ||
+    armorSetState.totalResistance < armorSetState.resistance ||
+    armorSetState.armor <= 0 ||
+    armorSetState.weight < 0
+  ) {
+    throw new Error(`Dusk Mage armor set totals were invalid: ${JSON.stringify(armorSetState)}`);
+  }
+
+  await firstArmorSet.locator(".armor-set-toggle").click();
+  const fivePieceRows = firstArmorSet.locator(".armor-piece-row");
+  if ((await fivePieceRows.count()) !== 5) {
+    throw new Error(`Shield armor set expected five linked pieces, found ${await fivePieceRows.count()}`);
+  }
+  const invalidArmorLinks = await fivePieceRows.locator('a[href*="armors.html?armor="]').count();
+  if (invalidArmorLinks !== 5) {
+    throw new Error(`Shield armor set expected five armor detail links, found ${invalidArmorLinks}`);
+  }
+  const armorItemLevelsValid = await fivePieceRows.evaluateAll((rows) =>
+    rows.every((row) => Number(row.dataset.itemLevel) > 0 && Number(row.dataset.itemLevel) <= 60)
+  );
+  if (!armorItemLevelsValid) {
+    throw new Error("Dusk Mage armor set included an item above the item-level limit");
+  }
+  const firstSetPieceText = (await fivePieceRows.allTextContents()).join(" ");
+  if (firstSetPieceText.includes("Scabbard of Arcus")) {
+    throw new Error("Dusk Mage armor set incorrectly included item-level 145 Scabbard of Arcus");
+  }
+
+  await page.locator("#armor-ranking-slot-tab").click();
+  await page.locator("#recommended-armors .armor-slot-select").selectOption("chest");
+  const armorSlotState = await page.evaluate(() => {
+    const rows = Array.from(document.querySelectorAll("#recommended-armors .armor-slot-row[data-slot]"));
+    return {
+      count: rows.length,
+      allChest: rows.every((row) => row.dataset.slot === "chest"),
+      withinLimit: rows.every(
+        (row) => Number(row.dataset.itemLevel) > 0 && Number(row.dataset.itemLevel) <= 60
+      ),
+    };
+  });
+  if (!armorSlotState.count || !armorSlotState.allChest || !armorSlotState.withinLimit) {
+    throw new Error(`Armor slot ranking filter failed: ${JSON.stringify(armorSlotState)}`);
+  }
+
+  const armorSearch = page.locator("#recommended-armors .armor-ranking-search-control input");
+  await armorSearch.fill("White Robe");
+  await page.waitForFunction(
+    () => document.querySelectorAll("#recommended-armors .armor-slot-row[data-slot]").length === 1,
+    undefined,
+    { timeout: timeoutMs }
+  );
+  await armorSearch.fill("");
+
+  const armorMaxItemLevelInput = page.locator("#recommended-armors .armor-ranking-level-input");
+  await armorMaxItemLevelInput.fill("65");
+  await armorSearch.fill("Black Dragon Armor");
+  await page.waitForFunction(
+    () => document.querySelectorAll("#recommended-armors .armor-slot-row[data-slot]").length === 1,
+    undefined,
+    { timeout: timeoutMs }
+  );
+  const craftedArmorState = await page
+    .locator("#recommended-armors .armor-slot-row[data-slot]")
+    .first()
+    .evaluate((row) => ({
+      name: row.textContent,
+      itemLevel: row.dataset.itemLevel,
+      rawItemLevel: row.dataset.rawItemLevel,
+      crafted: row.dataset.crafted,
+    }));
+  if (
+    !craftedArmorState.name.includes("Black Dragon Armor") ||
+    !craftedArmorState.name.includes("Crafted Lv 65") ||
+    craftedArmorState.itemLevel !== "65" ||
+    craftedArmorState.rawItemLevel !== "0" ||
+    craftedArmorState.crafted !== "true"
+  ) {
+    throw new Error(`Crafted armor recommendation level was incorrect: ${JSON.stringify(craftedArmorState)}`);
+  }
+  await armorSearch.fill("");
+
+  await page.locator("#recommended-armors .armor-slot-select").selectOption("shield");
+  const getArmorPerkOrder = () =>
+    page.evaluate(() =>
+      Array.from(document.querySelectorAll("#recommended-armors .armor-slot-row[data-slot]")).map(
+        (row) => ({
+          name: row.querySelector(".armor-ranking-name")?.textContent?.trim() || "",
+          perkCategory: row.dataset.perkCategory || "",
+          text: row.textContent || "",
+        })
+      )
+    );
+  const perksOnOrder = await getArmorPerkOrder();
+  const blackDragonPerksOn = perksOnOrder.findIndex((row) => row.name === "Black Dragon Shield");
+  const redDragonPerksOn = perksOnOrder.findIndex((row) => row.name === "Red Dragon Scale Shield");
+  const blackDragonPerkRow = perksOnOrder[blackDragonPerksOn];
+  if (
+    blackDragonPerksOn < 0 ||
+    redDragonPerksOn < 0 ||
+    blackDragonPerksOn >= redDragonPerksOn ||
+    blackDragonPerkRow?.perkCategory !== "matchup" ||
+    !blackDragonPerkRow?.text.includes("Consecration (Tier 2)")
+  ) {
+    throw new Error(`Armor perk matchup ranking was incorrect: ${JSON.stringify(perksOnOrder)}`);
+  }
+
+  await armorPerksInput.uncheck();
+  const perksOffOrder = await getArmorPerkOrder();
+  const blackDragonPerksOff = perksOffOrder.findIndex((row) => row.name === "Black Dragon Shield");
+  const redDragonPerksOff = perksOffOrder.findIndex((row) => row.name === "Red Dragon Scale Shield");
+  if (
+    blackDragonPerksOff < 0 ||
+    redDragonPerksOff < 0 ||
+    redDragonPerksOff >= blackDragonPerksOff ||
+    perksOffOrder.some((row) => row.text.includes("Consecration (Tier 2)"))
+  ) {
+    throw new Error(`Armor perk toggle did not restore base ranking: ${JSON.stringify(perksOffOrder)}`);
+  }
+  await armorPerksInput.check();
+
+  const armorUniqueInput = page.locator("#recommended-armors .armor-ranking-unique input");
+  await armorUniqueInput.check();
+  await page.waitForFunction(
+    () =>
+      Array.from(document.querySelectorAll("#recommended-armors .armor-slot-row[data-slot]")).some(
+        (row) => Number(row.dataset.itemLevel) === 0
+      ),
+    undefined,
+    { timeout: timeoutMs }
+  );
+  await armorUniqueInput.uncheck();
+  await page.waitForFunction(
+    () =>
+      Array.from(document.querySelectorAll("#recommended-armors .armor-slot-row[data-slot]")).every(
+        (row) => Number(row.dataset.itemLevel) > 0
+      ),
+    undefined,
+    { timeout: timeoutMs }
+  );
+  await armorUniqueInput.check();
+
+  await page.locator("#recommended-armors .armor-ranking-reset").click();
+  const armorResetState = await page.evaluate(() => ({
+    maxLevel: document.querySelector("#recommended-armors .armor-ranking-level-input")?.value || "",
+    unique: Boolean(document.querySelector("#recommended-armors .armor-ranking-unique input")?.checked),
+    perks: Boolean(document.querySelector("#recommended-armors .armor-ranking-perks input")?.checked),
+    setsSelected: document.querySelector("#armor-ranking-sets-tab")?.getAttribute("aria-selected"),
+  }));
+  if (
+    armorResetState.maxLevel !== "60" ||
+    armorResetState.unique ||
+    !armorResetState.perks ||
+    armorResetState.setsSelected !== "true"
+  ) {
+    throw new Error(`Armor-ranking reset did not restore Dusk Mage defaults: ${JSON.stringify(armorResetState)}`);
+  }
+
+  targetUrl.searchParams.set("monster", "ice-dragon");
+  await page.goto(targetUrl.toString(), { waitUntil: "load" });
+  await page.locator("#monster-details.show").waitFor({ state: "visible" });
+  const iceDragonToggle = page.locator("#recommended-weapons > .weapon-ranking-toggle");
+  const iceDragonToggleText = (await iceDragonToggle.textContent()).trim();
+  if (!iceDragonToggleText.includes("Req <= 70")) {
+    throw new Error(`Ice Dragon ranking did not default to skill requirement 70: "${iceDragonToggleText}"`);
+  }
+  const iceDragonArmorToggleText = (
+    await page.locator("#recommended-armors > .armor-ranking-toggle").textContent()
+  ).trim();
+  if (!iceDragonArmorToggleText.includes("Item Lv <= 70")) {
+    throw new Error(`Ice Dragon armor ranking did not default to item level 70: "${iceDragonArmorToggleText}"`);
+  }
+  await iceDragonToggle.click();
+  const darknessFallsRow = page
+    .locator('#recommended-weapons .weapon-ranking-row[data-level="70"][data-item-level="75"]')
+    .filter({ hasText: "Darkness Falls" })
+    .first();
+  await darknessFallsRow.waitFor({ state: "attached" });
+  const darknessFallsText = (await darknessFallsRow.textContent()).trim();
+  if (!darknessFallsText.includes("Req 70")) {
+    throw new Error(`Darkness Falls did not use its skill requirement in rankings: "${darknessFallsText}"`);
   }
 
   const originalViewport = page.viewportSize();
   await page.setViewportSize({ width: 390, height: 844 });
-  targetUrl.searchParams.set("monster", "dark-monk");
-  await page.goto(targetUrl.toString(), { waitUntil: "load" });
+  await page.reload({ waitUntil: "load" });
   await page.locator("#monster-details.show").waitFor({ state: "visible" });
-  const mobileTier = page.locator("#recommended-weapons > .detail-pill").filter({ hasText: "<= 90" });
-  await mobileTier.click();
-  const mobileTooltipMetrics = await page.evaluate(() => {
-    const tooltip = document.querySelector("#recommended-weapons .detail-tooltip.is-pinned");
-    const bounds = tooltip?.getBoundingClientRect();
-    return bounds ? { left: bounds.left, right: bounds.right, viewportWidth: window.innerWidth } : null;
+  const mobileToggle = page.locator("#recommended-weapons > .weapon-ranking-toggle");
+  await mobileToggle.click();
+  const mobilePanelMetrics = await page.evaluate(() => {
+    const panel = document.querySelector("#recommended-weapons .weapon-ranking-panel");
+    const bounds = panel?.getBoundingClientRect();
+    return bounds
+      ? {
+          left: bounds.left,
+          right: bounds.right,
+          viewportWidth: window.innerWidth,
+          documentWidth: document.documentElement.scrollWidth,
+        }
+      : null;
   });
   if (
-    !mobileTooltipMetrics ||
-    mobileTooltipMetrics.left < 0 ||
-    mobileTooltipMetrics.right > mobileTooltipMetrics.viewportWidth
+    !mobilePanelMetrics ||
+    mobilePanelMetrics.left < 0 ||
+    mobilePanelMetrics.right > mobilePanelMetrics.viewportWidth ||
+    mobilePanelMetrics.documentWidth > mobilePanelMetrics.viewportWidth
   ) {
-    throw new Error(`Monster recommendation tooltip overflowed mobile viewport: ${JSON.stringify(mobileTooltipMetrics)}`);
+    throw new Error(`Monster recommendation panel overflowed mobile viewport: ${JSON.stringify(mobilePanelMetrics)}`);
+  }
+  const mobileArmorToggle = page.locator("#recommended-armors > .armor-ranking-toggle");
+  await mobileArmorToggle.click();
+  const mobileArmorPanelMetrics = await page.evaluate(() => {
+    const panel = document.querySelector("#recommended-armors .armor-ranking-panel");
+    const bounds = panel?.getBoundingClientRect();
+    return bounds
+      ? {
+          left: bounds.left,
+          right: bounds.right,
+          viewportWidth: window.innerWidth,
+          documentWidth: document.documentElement.scrollWidth,
+        }
+      : null;
+  });
+  if (
+    !mobileArmorPanelMetrics ||
+    mobileArmorPanelMetrics.left < 0 ||
+    mobileArmorPanelMetrics.right > mobileArmorPanelMetrics.viewportWidth ||
+    mobileArmorPanelMetrics.documentWidth > mobileArmorPanelMetrics.viewportWidth
+  ) {
+    throw new Error(`Armor recommendation panel overflowed mobile viewport: ${JSON.stringify(mobileArmorPanelMetrics)}`);
   }
   if (originalViewport) {
     await page.setViewportSize(originalViewport);

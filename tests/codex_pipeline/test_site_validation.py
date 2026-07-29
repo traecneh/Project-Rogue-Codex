@@ -633,13 +633,91 @@ class SiteValidationTests(unittest.TestCase):
     def test_monster_recommendations_use_current_element_inputs(self):
         from tools.codex_pipeline.config import REPO_ROOT
 
+        html = (REPO_ROOT / "pages" / "enemies" / "monsters.html").read_text(encoding="utf-8")
+        css = (REPO_ROOT / "css" / "monsters.css").read_text(encoding="utf-8")
         script = (REPO_ROOT / "js" / "monsters-page.js").read_text(encoding="utf-8")
 
         self.assertIn('"electric", "holy", "dark"', script)
         self.assertIn("const elementKey = normalizeElementKey(monster.elementalAttack);", script)
         self.assertIn("normalizeElementKey(entry.element) === target", script)
-        self.assertIn("context: `${entry.element} ${formatResistanceValue(entry.multiplier)}`", script)
         self.assertIn('if (nameLower === "flaming sword" && Number(w.level) === 0) return false;', script)
+        self.assertIn('id="recommended-weapons" class="weapon-ranking-host"', html)
+        self.assertIn('id="recommended-armors" class="armor-ranking-host"', html)
+        self.assertIn("const defaultMaxLevel = Math.max(1, Math.round(level + 5));", script)
+        self.assertIn("const defaultMaxItemLevel = Math.max(1, Math.round(level + 5));", script)
+        self.assertIn("skillRequirement: toNumber(fields.skill_requirement", script)
+        self.assertIn("playerLevelRequirement: toNumber(fields.player_level_requirement", script)
+        self.assertIn('createControl("Max Skill Req.", maxLevelInput)', script)
+        self.assertIn('createControl("Max Item Level", maxItemLevelInput)', script)
+        self.assertIn("return armor.itemLevel <= maxItemLevel;", script)
+        self.assertIn("Item Lv ${formatNumber(armor.itemLevel)}", script)
+        self.assertIn("row.dataset.itemLevel = String(entry.itemLevel);", script)
+        self.assertIn("WEAPON_RANKING_STORAGE_KEY", script)
+        self.assertIn("ARMOR_RANKING_STORAGE_KEY", script)
+        self.assertIn("weapon-ranking-toggle", script)
+        self.assertIn("armor-ranking-toggle", script)
+        self.assertNotIn("armor-ranking-segmented", script)
+        self.assertNotIn("includeShield", script)
+        self.assertIn("CRAFTED_ARMOR_RECOMMENDATION_LEVELS", script)
+        self.assertIn("ARMOR_COMBAT_PERK_GROUPS", script)
+        self.assertIn("ARMOR_SLAYER_MATCHUPS", script)
+        self.assertIn("ARMOR_RESISTANCE_PERK_MATCHUPS", script)
+        self.assertIn("getArmorPerkProfile", script)
+        self.assertIn("armorRankingPreferences.includePerks", script)
+        self.assertIn("armor-ranking-perks", script)
+        self.assertNotIn("armor.corruptedPerk", script)
+        self.assertIn('["#", "Defense", "Armor", ""]', script)
+        self.assertNotIn('["#", "Defense", "Armor", "Weight", "Pieces", ""]', script)
+        self.assertIn('"Black Dragon Armor"', script)
+        self.assertIn('"Frost Platemail"', script)
+        self.assertIn('"Dragon Scale Platemail"', script)
+        self.assertIn('"Red Dragon Scale Plate"', script)
+        self.assertIn("Crafted Lv ${formatNumber(armor.itemLevel)}", script)
+        self.assertIn("getBestSets", script)
+        self.assertIn("ARMOR_RESISTANCE_CAP", script)
+        self.assertIn("weapon-ranking-level-input", script)
+        self.assertIn("weapon-ranking-type-select", script)
+        self.assertIn("weapon-ranking-search-control", script)
+        self.assertIn("weaponRankingPreferences.includeUnleveled", script)
+        self.assertIn(".weapon-ranking-panel", css)
+        self.assertIn(".weapon-ranking-results", css)
+        self.assertIn(".armor-ranking-panel", css)
+        self.assertIn(".armor-set-pieces", css)
+
+        weapons = json.loads((REPO_ROOT / "pages" / "items" / "weapons_data05.json").read_text(encoding="utf-8"))
+        darkness_falls = next(record for record in weapons if record.get("name") == "Darkness Falls")
+        self.assertEqual(75, darkness_falls["fields"]["level_requirement"])
+        self.assertEqual(70, darkness_falls["fields"]["skill_requirement"])
+
+        armors = json.loads((REPO_ROOT / "pages" / "items" / "armors_data06.json").read_text(encoding="utf-8"))
+        scabbard = next(record for record in armors if record.get("name") == "Scabbard of Arcus")
+        self.assertEqual(145, scabbard["fields"]["level"])
+        self.assertEqual(50, scabbard["fields"]["player_level_requirement"])
+        crafted_names = {
+            "Frost Platemail",
+            "Frost Helmet",
+            "Frost Gauntlets",
+            "Frost Leggings",
+            "Frost Shield",
+            "Dragon Scale Platemail",
+            "Dragon Scale Helmet",
+            "Dragon Scale Gauntlets",
+            "Dragon Scale Leggings",
+            "Dragon Scale Shield",
+            "Red Dragon Scale Plate",
+            "Red Dragon Scale Helm",
+            "Red Dragon Scale Gloves",
+            "Red Dragon Scale Boots",
+            "Red Dragon Scale Shield",
+            "Black Dragon Armor",
+            "Black Dragon Helmet",
+            "Black Dragon Gauntlets",
+            "Black Dragon Leggings",
+            "Black Dragon Shield",
+        }
+        raw_crafted_names = {record["name"] for record in armors if record["name"] in crafted_names}
+        self.assertEqual(crafted_names, raw_crafted_names)
+        self.assertTrue(all(record["fields"]["level"] == 0 for record in armors if record["name"] in crafted_names))
 
     def test_drop_source_views_use_shared_detail_links(self):
         from tools.codex_pipeline.config import REPO_ROOT

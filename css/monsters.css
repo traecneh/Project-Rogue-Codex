@@ -301,6 +301,476 @@
   grid-template-columns: repeat(4, minmax(170px, 1fr));
 }
 
+.weapon-ranking-host,
+.armor-ranking-host {
+  display: grid;
+  width: 100%;
+  gap: 0.5rem;
+  justify-items: start;
+}
+
+.weapon-ranking-toggle,
+.armor-ranking-toggle {
+  appearance: none;
+  font: inherit;
+  cursor: pointer;
+}
+
+.weapon-ranking-toggle-limit,
+.armor-ranking-toggle-limit {
+  color: var(--accent);
+}
+
+.weapon-ranking-toggle-icon,
+.armor-ranking-toggle-icon {
+  color: var(--text-muted);
+  transition: transform 0.15s ease;
+}
+
+.weapon-ranking-toggle.is-open .weapon-ranking-toggle-icon,
+.armor-ranking-toggle.is-open .armor-ranking-toggle-icon {
+  transform: rotate(180deg);
+}
+
+.weapon-ranking-panel,
+.armor-ranking-panel {
+  width: min(920px, 100%);
+  padding: 0.65rem;
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  background: #11151c;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.45);
+  color: var(--text-main);
+  font-weight: 400;
+}
+
+.weapon-ranking-panel[hidden],
+.armor-ranking-panel[hidden] {
+  display: none;
+}
+
+.weapon-ranking-controls {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) 110px 150px auto 36px;
+  gap: 0.55rem;
+  align-items: end;
+}
+
+.weapon-ranking-control {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.weapon-ranking-control-label,
+.armor-ranking-control-label {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.weapon-ranking-input,
+.armor-ranking-input {
+  width: 100%;
+  min-height: 34px;
+  padding: 0.38rem 0.5rem;
+  border: 1px solid var(--border-soft);
+  border-radius: 5px;
+  background: var(--bg-panel-dark);
+  color: var(--text-main);
+  font: inherit;
+  font-size: 0.82rem;
+}
+
+.weapon-ranking-input:focus-visible,
+.weapon-ranking-reset:focus-visible,
+.weapon-ranking-toggle:focus-visible,
+.armor-ranking-input:focus-visible,
+.armor-ranking-reset:focus-visible,
+.armor-ranking-toggle:focus-visible,
+.armor-ranking-tabs button:focus-visible,
+.armor-set-toggle:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.weapon-ranking-unique,
+.armor-ranking-unique,
+.armor-ranking-perks {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--text-main);
+  font-size: 0.78rem;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.weapon-ranking-unique input,
+.armor-ranking-unique input,
+.armor-ranking-perks input {
+  accent-color: var(--accent);
+}
+
+.weapon-ranking-reset,
+.armor-ranking-reset {
+  display: inline-grid;
+  width: 36px;
+  height: 34px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--border-soft);
+  border-radius: 5px;
+  background: var(--bg-panel-dark);
+  color: var(--text-main);
+  font: inherit;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.weapon-ranking-reset:hover,
+.armor-ranking-reset:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.weapon-ranking-summary,
+.armor-ranking-summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 0.65rem;
+  padding: 0.45rem 0.2rem;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.weapon-ranking-count,
+.armor-ranking-count {
+  color: var(--text-main);
+  white-space: nowrap;
+}
+
+.weapon-ranking-results,
+.armor-ranking-results {
+  max-height: 360px;
+  overflow: auto;
+  border: 1px solid var(--border-soft);
+  border-radius: 5px;
+  background: var(--bg-panel-dark);
+}
+
+.weapon-ranking-results::-webkit-scrollbar,
+.armor-ranking-results::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+
+.weapon-ranking-results::-webkit-scrollbar-track,
+.armor-ranking-results::-webkit-scrollbar-track {
+  background: #0d1118;
+}
+
+.weapon-ranking-results::-webkit-scrollbar-thumb,
+.armor-ranking-results::-webkit-scrollbar-thumb {
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  background: #343b48;
+}
+
+.weapon-ranking-row {
+  display: grid;
+  grid-template-columns: 2.25rem minmax(150px, 1fr) minmax(220px, 1.25fr) 110px;
+  gap: 0.65rem;
+  align-items: center;
+  min-height: 34px;
+  padding: 0.35rem 0.55rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 0.8rem;
+}
+
+.weapon-ranking-header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  min-height: 30px;
+  border-top: 0;
+  background: #252a33;
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.weapon-ranking-header span:last-child {
+  text-align: right;
+}
+
+.weapon-ranking-body .weapon-ranking-row:hover {
+  background: rgba(75, 255, 75, 0.06);
+}
+
+.weapon-ranking-rank,
+.armor-ranking-rank {
+  color: var(--text-muted);
+  text-align: right;
+}
+
+.weapon-ranking-name,
+.armor-ranking-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--text-main);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.weapon-ranking-name:hover,
+.weapon-ranking-name:focus-visible,
+.armor-ranking-name:hover,
+.armor-ranking-name:focus-visible {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.weapon-ranking-context,
+.armor-ranking-context {
+  min-width: 0;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.weapon-ranking-dps {
+  color: var(--text-main);
+  font-weight: 700;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.weapon-ranking-empty,
+.armor-ranking-empty {
+  padding: 1rem;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  text-align: center;
+}
+
+.armor-ranking-controls {
+  display: grid;
+  grid-template-columns: 130px max-content max-content 1fr 36px;
+  gap: 0.55rem;
+  align-items: end;
+}
+
+.armor-ranking-controls .armor-ranking-reset {
+  grid-column: 5;
+}
+
+.armor-ranking-control {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.armor-ranking-tabs {
+  display: flex;
+  gap: 0;
+  margin-top: 0.7rem;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.armor-ranking-tabs button {
+  min-height: 34px;
+  padding: 0.4rem 0.8rem;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.armor-ranking-tabs button:hover,
+.armor-ranking-tabs button.is-active {
+  border-bottom-color: var(--accent);
+  color: var(--text-main);
+}
+
+.armor-ranking-view[hidden],
+.armor-set-pieces[hidden] {
+  display: none;
+}
+
+.armor-set-row {
+  display: grid;
+  grid-template-columns: 2.25rem minmax(180px, 1fr) 76px 1.25rem;
+  gap: 0.55rem;
+  align-items: center;
+  width: 100%;
+  min-height: 36px;
+  padding: 0.38rem 0.55rem;
+  border: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  background: transparent;
+  color: var(--text-main);
+  font: inherit;
+  font-size: 0.8rem;
+  text-align: left;
+}
+
+.armor-set-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  min-height: 30px;
+  border-top: 0;
+  background: #252a33;
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.armor-set-header span:nth-child(n + 3) {
+  text-align: right;
+}
+
+.armor-set-card {
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.armor-set-card .armor-set-row {
+  border-top: 0;
+}
+
+.armor-set-toggle {
+  cursor: pointer;
+}
+
+.armor-set-toggle:hover,
+.armor-set-toggle.is-open {
+  background: rgba(75, 255, 75, 0.06);
+}
+
+.armor-set-defense {
+  min-width: 0;
+  font-weight: 700;
+}
+
+.armor-set-number {
+  font-weight: 700;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.armor-set-toggle-icon {
+  color: var(--text-muted);
+  text-align: center;
+  transition: transform 0.15s ease;
+}
+
+.armor-set-toggle.is-open .armor-set-toggle-icon {
+  transform: rotate(180deg);
+}
+
+.armor-set-pieces {
+  padding: 0.25rem 0.55rem 0.5rem 2.8rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  background: #0d1118;
+}
+
+.armor-piece-row {
+  display: grid;
+  grid-template-columns: 86px minmax(150px, 1fr) 158px minmax(150px, auto);
+  gap: 0.55rem;
+  align-items: center;
+  min-height: 31px;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  font-size: 0.75rem;
+}
+
+.armor-piece-row:first-child {
+  border-top: 0;
+}
+
+.armor-piece-slot,
+.armor-piece-requirement {
+  color: var(--text-muted);
+}
+
+.armor-piece-requirement,
+.armor-piece-stats {
+  white-space: nowrap;
+}
+
+.armor-piece-stats {
+  text-align: right;
+}
+
+.armor-ranking-perk {
+  color: #d7e6c9;
+  font-weight: 700;
+}
+
+.armor-ranking-perk.is-matchup {
+  color: var(--accent);
+}
+
+.armor-slot-tools {
+  display: grid;
+  grid-template-columns: 160px minmax(200px, 1fr);
+  gap: 0.55rem;
+  margin-top: 0.65rem;
+}
+
+.armor-slot-row {
+  display: grid;
+  grid-template-columns: 2.25rem minmax(150px, 1fr) minmax(210px, 1.25fr) 70px;
+  gap: 0.65rem;
+  align-items: center;
+  min-height: 34px;
+  padding: 0.35rem 0.55rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 0.8rem;
+}
+
+.armor-slot-header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  min-height: 30px;
+  border-top: 0;
+  background: #252a33;
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.armor-slot-header span:last-child {
+  text-align: right;
+}
+
+.armor-slot-results .armor-slot-row:not(.armor-slot-header):hover {
+  background: rgba(75, 255, 75, 0.06);
+}
+
+.armor-ranking-armor {
+  font-weight: 700;
+  text-align: right;
+}
+
 .detail-label {
   font-size: 0.8rem;
   text-transform: uppercase;
@@ -550,6 +1020,195 @@
 @media (max-width: 640px) {
   .monster-details-info {
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  }
+
+  .weapon-ranking-panel {
+    padding: 0.5rem;
+  }
+
+  .weapon-ranking-controls {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 36px;
+  }
+
+  .weapon-ranking-search-control {
+    grid-column: 1 / -1;
+  }
+
+  .weapon-ranking-unique {
+    grid-column: 1 / 3;
+  }
+
+  .weapon-ranking-summary {
+    gap: 0.5rem;
+    font-size: 0.68rem;
+  }
+
+  .weapon-ranking-results {
+    max-height: 320px;
+  }
+
+  .weapon-ranking-header {
+    display: none;
+  }
+
+  .weapon-ranking-row {
+    grid-template-columns: 1.75rem minmax(0, 1fr) auto;
+    gap: 0.15rem 0.5rem;
+    padding: 0.45rem;
+  }
+
+  .weapon-ranking-rank {
+    grid-row: 1 / 3;
+    align-self: center;
+  }
+
+  .weapon-ranking-name {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .weapon-ranking-context {
+    grid-column: 2 / -1;
+    grid-row: 2;
+    font-size: 0.68rem;
+  }
+
+  .weapon-ranking-dps {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  .armor-ranking-panel {
+    padding: 0.5rem;
+  }
+
+  .armor-ranking-controls {
+    grid-template-columns: minmax(0, 1fr) 36px;
+  }
+
+  .armor-ranking-unique,
+  .armor-ranking-perks {
+    grid-column: 1 / -1;
+  }
+
+  .armor-ranking-controls .armor-ranking-reset {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .armor-ranking-summary {
+    gap: 0.5rem;
+    font-size: 0.68rem;
+  }
+
+  .armor-ranking-results {
+    max-height: 360px;
+  }
+
+  .armor-set-header,
+  .armor-slot-header {
+    display: none;
+  }
+
+  .armor-set-row {
+    grid-template-columns: 1.6rem minmax(0, 1fr) auto 1.25rem;
+    gap: 0.15rem 0.5rem;
+    padding: 0.5rem 0.45rem;
+  }
+
+  .armor-set-row .armor-ranking-rank {
+    grid-column: 1;
+    grid-row: 1 / 3;
+    align-self: center;
+  }
+
+  .armor-set-defense {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .armor-set-number {
+    font-size: 0.72rem;
+  }
+
+  .armor-set-number::after {
+    content: " " attr(data-label);
+    color: var(--text-muted);
+    font-weight: 400;
+  }
+
+  .armor-set-number:nth-of-type(3) {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  .armor-set-toggle-icon {
+    grid-column: 4;
+    grid-row: 1 / 3;
+  }
+
+  .armor-set-pieces {
+    padding: 0.25rem 0.45rem 0.5rem 2.55rem;
+  }
+
+  .armor-piece-row {
+    grid-template-columns: minmax(72px, auto) minmax(0, 1fr);
+    gap: 0.15rem 0.45rem;
+    padding: 0.35rem 0;
+  }
+
+  .armor-piece-slot {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .armor-piece-row .armor-ranking-name {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .armor-piece-requirement {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .armor-piece-stats {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    white-space: normal;
+    text-align: left;
+  }
+
+  .armor-slot-tools {
+    grid-template-columns: 1fr;
+  }
+
+  .armor-slot-row {
+    grid-template-columns: 1.75rem minmax(0, 1fr) auto;
+    gap: 0.15rem 0.5rem;
+    padding: 0.45rem;
+  }
+
+  .armor-slot-row .armor-ranking-rank {
+    grid-column: 1;
+    grid-row: 1 / 3;
+    align-self: center;
+  }
+
+  .armor-slot-row .armor-ranking-name {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .armor-ranking-context {
+    grid-column: 2 / -1;
+    grid-row: 2;
+    font-size: 0.68rem;
+  }
+
+  .armor-ranking-armor {
+    grid-column: 3;
+    grid-row: 1;
   }
 
   .detail-pill .detail-tooltip {
