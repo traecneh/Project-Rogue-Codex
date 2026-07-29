@@ -64,6 +64,7 @@ const smokeSpecs = [
     queryKey: "useable",
   },
   {
+    assertDetail: assertMonsterRecommendationEnhancements,
     detailName: "Bat",
     detailQuery: "bat",
     label: "monsters",
@@ -576,6 +577,62 @@ async function runPlayTheGameSpec(browser, baseUrl) {
   } finally {
     await page.close();
   }
+}
+
+async function assertMonsterRecommendationEnhancements(page) {
+  const originalUrl = page.url();
+  const targetUrl = new URL(originalUrl);
+
+  targetUrl.searchParams.set("monster", "dark-monk");
+  await page.goto(targetUrl.toString(), { waitUntil: "load" });
+  await page.locator("#monster-details.show").waitFor({ state: "visible" });
+  const shadowfangRow = page
+    .locator('#recommended-weapons .weapon-row[data-element="Dark"][data-multiplier="1.3"]')
+    .filter({ hasText: "Shadowfang" })
+    .first();
+  await shadowfangRow.waitFor({ state: "attached" });
+  const shadowfangText = (await shadowfangRow.textContent()).trim();
+  if (!shadowfangText.includes("Dark 1.3x")) {
+    throw new Error(`Dark Monk recommendation did not explain Shadowfang matchup: "${shadowfangText}"`);
+  }
+
+  targetUrl.searchParams.set("monster", "dusk-mage");
+  await page.goto(targetUrl.toString(), { waitUntil: "load" });
+  await page.locator("#monster-details.show").waitFor({ state: "visible" });
+  const darkArmorTooltips = page.locator('#recommended-armors .detail-tooltip[data-element="dark"]');
+  if (!(await darkArmorTooltips.count())) {
+    throw new Error("Dusk Mage armor recommendations did not use Dark resistance");
+  }
+  const darkArmorText = (await darkArmorTooltips.first().textContent()).trim();
+  if (!darkArmorText.includes("Best set vs. Dark") || !darkArmorText.includes("/ 60 dark")) {
+    throw new Error(`Dusk Mage armor recommendation did not explain Dark resistance: "${darkArmorText}"`);
+  }
+
+  const originalViewport = page.viewportSize();
+  await page.setViewportSize({ width: 390, height: 844 });
+  targetUrl.searchParams.set("monster", "dark-monk");
+  await page.goto(targetUrl.toString(), { waitUntil: "load" });
+  await page.locator("#monster-details.show").waitFor({ state: "visible" });
+  const mobileTier = page.locator("#recommended-weapons > .detail-pill").filter({ hasText: "<= 90" });
+  await mobileTier.click();
+  const mobileTooltipMetrics = await page.evaluate(() => {
+    const tooltip = document.querySelector("#recommended-weapons .detail-tooltip.is-pinned");
+    const bounds = tooltip?.getBoundingClientRect();
+    return bounds ? { left: bounds.left, right: bounds.right, viewportWidth: window.innerWidth } : null;
+  });
+  if (
+    !mobileTooltipMetrics ||
+    mobileTooltipMetrics.left < 0 ||
+    mobileTooltipMetrics.right > mobileTooltipMetrics.viewportWidth
+  ) {
+    throw new Error(`Monster recommendation tooltip overflowed mobile viewport: ${JSON.stringify(mobileTooltipMetrics)}`);
+  }
+  if (originalViewport) {
+    await page.setViewportSize(originalViewport);
+  }
+
+  await page.goto(originalUrl, { waitUntil: "load" });
+  await page.locator("#monster-details.show").waitFor({ state: "visible" });
 }
 
 async function runQuestsSpec(browser, baseUrl) {

@@ -630,6 +630,17 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn("nameLink.href = buildMonsterDetailUrl(monster);", script)
         self.assertIn("selectMonster(monster, { updateUrl: true", script)
 
+    def test_monster_recommendations_use_current_element_inputs(self):
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        script = (REPO_ROOT / "js" / "monsters-page.js").read_text(encoding="utf-8")
+
+        self.assertIn('"electric", "holy", "dark"', script)
+        self.assertIn("const elementKey = normalizeElementKey(monster.elementalAttack);", script)
+        self.assertIn("normalizeElementKey(entry.element) === target", script)
+        self.assertIn("context: `${entry.element} ${formatResistanceValue(entry.multiplier)}`", script)
+        self.assertIn('if (nameLower === "flaming sword" && Number(w.level) === 0) return false;', script)
+
     def test_drop_source_views_use_shared_detail_links(self):
         from tools.codex_pipeline.config import REPO_ROOT
 

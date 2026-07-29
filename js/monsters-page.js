@@ -807,17 +807,31 @@ const renderEmpty = (message) => {
     };
   };
 
+  const COMBAT_ELEMENT_KEYS = ["fire", "cold", "poison", "disease", "acid", "electric", "holy", "dark"];
+
+  const normalizeElementKey = (value) => {
+    const normalized = (value || "").toString().trim().toLowerCase();
+    if (!normalized || normalized === "none") return null;
+    if (normalized.includes("lightning") || normalized.includes("electrical")) return "electric";
+    return COMBAT_ELEMENT_KEYS.find((element) => normalized.includes(element)) || null;
+  };
+
   const getElementMultiplier = (monsterType, weaponElement) => {
     const list = TYPE_RESISTANCES[normalizeType(monsterType)];
     if (!list || !list.length) return 1;
-    const target = (weaponElement || "").toLowerCase();
-    const match = list.find((entry) => (entry.element || "").toLowerCase() === target);
+    const target = normalizeElementKey(weaponElement);
+    if (!target) return 1;
+    const match = list.find((entry) => normalizeElementKey(entry.element) === target);
     return match && typeof match.value === "number" ? match.value : 1;
   };
 
   const buildWeaponLinkRow = (entry) => {
     const row = document.createElement("div");
     row.className = "detail-tooltip-row weapon-row";
+    if (entry.element) row.dataset.element = entry.element;
+    if (Number.isFinite(entry.multiplier)) row.dataset.multiplier = String(entry.multiplier);
+    if (Number.isFinite(entry.base)) row.dataset.baseDps = String(entry.base);
+    if (Number.isFinite(entry.effective)) row.dataset.effectiveDps = String(entry.effective);
     const label = document.createElement("a");
     label.className = "detail-tooltip-label";
     label.textContent = entry.name;
@@ -828,10 +842,13 @@ const renderEmpty = (message) => {
     metaSpan.textContent = entry.meta || "-";
     metaSpan.className = "weapon-col-meta";
     const typeSpan = document.createElement("span");
-    typeSpan.textContent = entry.type || "-";
+    typeSpan.textContent = entry.context || entry.type || "-";
     typeSpan.className = "weapon-col-type";
     const color = ELEMENT_COLORS[(entry.element || "").toLowerCase()];
-    if (color) metaSpan.style.color = color;
+    if (color) {
+      metaSpan.style.color = color;
+      if (entry.context) typeSpan.style.color = color;
+    }
     row.appendChild(label);
     row.appendChild(metaSpan);
     row.appendChild(typeSpan);
@@ -918,6 +935,7 @@ const renderEmpty = (message) => {
             effective: dps * multiplier,
             base: dps,
             level: wLevel,
+            multiplier,
           };
         })
         .filter(Boolean)
@@ -941,7 +959,7 @@ const renderEmpty = (message) => {
       headerRow.className = "detail-tooltip-row";
       const headerLabel = document.createElement("span");
       headerLabel.className = "detail-tooltip-label";
-      headerLabel.textContent = "DPS uses element/type";
+      headerLabel.textContent = `Effective DPS (base x ${formatTypeLabel(monster.monsterType)} matchup)`;
       headerRow.appendChild(headerLabel);
       tooltip.appendChild(headerRow);
 
@@ -957,8 +975,11 @@ const renderEmpty = (message) => {
           const row = buildWeaponLinkRow({
             name: entry.name,
             element: entry.element,
-            type: entry.type,
+            context: `${entry.element} ${formatResistanceValue(entry.multiplier)}`,
             meta: `${formatDps(entry.effective)} DPS`,
+            base: entry.base,
+            effective: entry.effective,
+            multiplier: entry.multiplier,
           });
           tooltip.appendChild(row);
         });
@@ -982,15 +1003,7 @@ const renderEmpty = (message) => {
       return;
     }
 
-    const element = (monster.elementalAttack || "").toLowerCase();
-    const elementKey =
-      element.includes("fire") ? "fire"
-      : element.includes("poison") ? "poison"
-      : element.includes("cold") ? "cold"
-      : element.includes("electric") || element.includes("lightning") ? "electric"
-      : element.includes("acid") ? "acid"
-      : element.includes("disease") ? "disease"
-      : null;
+    const elementKey = normalizeElementKey(monster.elementalAttack);
 
     const level = Number(monster.level);
     if (!Number.isFinite(level)) {
@@ -1111,6 +1124,7 @@ const renderEmpty = (message) => {
       const tooltip = document.createElement("span");
       tooltip.className = "detail-tooltip";
       tooltip.role = "tooltip";
+      tooltip.dataset.element = elementKey || "none";
 
       const bestSet = getBestSet(sourceArmors);
       if (!bestSet) {
@@ -2105,7 +2119,12 @@ const unpinTooltip = (tooltip) => {
         weapons = Array.isArray(weaponData)
           ? weaponData
               .map((w) => normalizeWeapon(w))
-              .filter((w) => w && !hiddenWeaponNames.has((w.name || "").toLowerCase()))
+              .filter((w) => {
+                if (!w) return false;
+                const nameLower = (w.name || "").toLowerCase();
+                if (nameLower === "flaming sword" && Number(w.level) === 0) return false;
+                return !hiddenWeaponNames.has(nameLower);
+              })
           : [];
         armors = Array.isArray(armorData)
           ? armorData
