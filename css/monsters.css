@@ -351,7 +351,7 @@
 
 .weapon-ranking-controls {
   display: grid;
-  grid-template-columns: minmax(180px, 1fr) 110px 150px auto 36px;
+  grid-template-columns: minmax(180px, 1fr) 110px 150px max-content max-content 36px;
   gap: 0.55rem;
   align-items: end;
 }
@@ -397,6 +397,7 @@
 }
 
 .weapon-ranking-unique,
+.weapon-ranking-perks,
 .armor-ranking-unique,
 .armor-ranking-perks {
   display: inline-flex;
@@ -410,6 +411,7 @@
 }
 
 .weapon-ranking-unique input,
+.weapon-ranking-perks input,
 .armor-ranking-unique input,
 .armor-ranking-perks input {
   accent-color: var(--accent);
@@ -726,6 +728,23 @@
   color: var(--accent);
 }
 
+.weapon-ranking-separator {
+  color: var(--text-muted);
+}
+
+.weapon-ranking-perk {
+  color: #d7e6c9;
+  font-weight: 700;
+}
+
+.weapon-ranking-perk.is-matchup {
+  color: var(--accent);
+}
+
+.weapon-ranking-perk.is-direct {
+  color: #f5c86b;
+}
+
 .armor-slot-tools {
   display: grid;
   grid-template-columns: 160px minmax(200px, 1fr);
@@ -1022,6 +1041,13 @@
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   }
 
+  .weapon-ranking-toggle {
+    max-width: 100%;
+    font-size: 0.82rem;
+    letter-spacing: 0;
+    white-space: nowrap;
+  }
+
   .weapon-ranking-panel {
     padding: 0.5rem;
   }
@@ -1034,7 +1060,8 @@
     grid-column: 1 / -1;
   }
 
-  .weapon-ranking-unique {
+  .weapon-ranking-unique,
+  .weapon-ranking-perks {
     grid-column: 1 / 3;
   }
 

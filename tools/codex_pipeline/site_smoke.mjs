@@ -585,7 +585,7 @@ async function assertMonsterRecommendationEnhancements(page) {
 
   targetUrl.searchParams.set("monster", "dark-monk");
   await page.goto(targetUrl.toString(), { waitUntil: "load" });
-  await page.evaluate(() => localStorage.removeItem("project-rogue-codex:monster-weapon-ranking"));
+  await page.evaluate(() => localStorage.removeItem("project-rogue-codex:monster-weapon-ranking-v2"));
   await page.evaluate(() => localStorage.removeItem("project-rogue-codex:monster-armor-ranking-v3"));
   await page.reload({ waitUntil: "load" });
   await page.locator("#monster-details.show").waitFor({ state: "visible" });
@@ -594,11 +594,15 @@ async function assertMonsterRecommendationEnhancements(page) {
     throw new Error(`Dark Monk expected one weapon-ranking toggle, found ${await rankingToggles.count()}`);
   }
   const toggleText = (await rankingToggles.textContent()).trim();
-  if (!toggleText.includes("View rankings") || !toggleText.includes("<= 90")) {
-    throw new Error(`Dark Monk ranking did not default to monster level + 5: "${toggleText}"`);
+  if (!toggleText.includes("View rankings") || !toggleText.includes("Item Lv <= 90")) {
+    throw new Error(`Dark Monk item-level ranking did not default to monster level + 5: "${toggleText}"`);
   }
   await rankingToggles.click();
   await page.locator("#recommended-weapons .weapon-ranking-panel").waitFor({ state: "visible" });
+  const weaponPerksInput = page.locator("#recommended-weapons .weapon-ranking-perks input");
+  if ((await weaponPerksInput.count()) !== 1 || !(await weaponPerksInput.isChecked())) {
+    throw new Error("Weapon rankings did not default to confirmed innate perks enabled");
+  }
 
   const shadowfangRow = page
     .locator('#recommended-weapons .weapon-ranking-row[data-element="Dark"][data-multiplier="1.3"]')
@@ -631,12 +635,12 @@ async function assertMonsterRecommendationEnhancements(page) {
   );
   await rankingSearch.fill("");
 
-  const maxLevelInput = page.locator("#recommended-weapons .weapon-ranking-level-input");
-  await maxLevelInput.fill("60");
+  const maxItemLevelInput = page.locator("#recommended-weapons .weapon-ranking-item-level-input");
+  await maxItemLevelInput.fill("60");
   await page.waitForFunction(
     () =>
       Array.from(document.querySelectorAll("#recommended-weapons .weapon-ranking-body .weapon-ranking-row")).every(
-        (row) => Number(row.dataset.level) === 0 || Number(row.dataset.level) <= 60
+        (row) => Number(row.dataset.itemLevel) === 0 || Number(row.dataset.itemLevel) <= 60
       ),
     undefined,
     { timeout: timeoutMs }
@@ -652,12 +656,12 @@ async function assertMonsterRecommendationEnhancements(page) {
     throw new Error(`Weapon-type ranking filter failed: ${JSON.stringify(bowState)}`);
   }
 
-  await maxLevelInput.fill("70");
+  await maxItemLevelInput.fill("70");
   targetUrl.searchParams.set("monster", "dusk-mage");
   await page.goto(targetUrl.toString(), { waitUntil: "load" });
   await page.locator("#monster-details.show").waitFor({ state: "visible" });
   if (
-    (await page.locator("#recommended-weapons .weapon-ranking-level-input").inputValue()) !== "70" ||
+    (await page.locator("#recommended-weapons .weapon-ranking-item-level-input").inputValue()) !== "70" ||
     (await page.locator("#recommended-weapons .weapon-ranking-type-select").inputValue()) !== "Bow"
   ) {
     throw new Error("Weapon-ranking preferences did not persist across monster navigation");
@@ -665,7 +669,7 @@ async function assertMonsterRecommendationEnhancements(page) {
   await page.reload({ waitUntil: "load" });
   await page.locator("#monster-details.show").waitFor({ state: "visible" });
   if (
-    (await page.locator("#recommended-weapons .weapon-ranking-level-input").inputValue()) !== "70" ||
+    (await page.locator("#recommended-weapons .weapon-ranking-item-level-input").inputValue()) !== "70" ||
     (await page.locator("#recommended-weapons .weapon-ranking-type-select").inputValue()) !== "Bow"
   ) {
     throw new Error("Weapon-ranking preferences did not persist across reload");
@@ -675,11 +679,18 @@ async function assertMonsterRecommendationEnhancements(page) {
   await duskRankingToggle.click();
   await page.locator("#recommended-weapons .weapon-ranking-reset").click();
   const resetState = await page.evaluate(() => ({
-    maxLevel: document.querySelector("#recommended-weapons .weapon-ranking-level-input")?.value || "",
+    maxItemLevel:
+      document.querySelector("#recommended-weapons .weapon-ranking-item-level-input")?.value || "",
     type: document.querySelector("#recommended-weapons .weapon-ranking-type-select")?.value || "",
     unique: Boolean(document.querySelector("#recommended-weapons .weapon-ranking-unique input")?.checked),
+    perks: Boolean(document.querySelector("#recommended-weapons .weapon-ranking-perks input")?.checked),
   }));
-  if (resetState.maxLevel !== "60" || resetState.type !== "all" || !resetState.unique) {
+  if (
+    resetState.maxItemLevel !== "60" ||
+    resetState.type !== "all" ||
+    !resetState.unique ||
+    !resetState.perks
+  ) {
     throw new Error(`Weapon-ranking reset did not restore Dusk Mage defaults: ${JSON.stringify(resetState)}`);
   }
 
@@ -878,13 +889,40 @@ async function assertMonsterRecommendationEnhancements(page) {
     throw new Error(`Armor-ranking reset did not restore Dusk Mage defaults: ${JSON.stringify(armorResetState)}`);
   }
 
+  targetUrl.searchParams.set("monster", "dark-druid");
+  await page.goto(targetUrl.toString(), { waitUntil: "load" });
+  await page.locator("#monster-details.show").waitFor({ state: "visible" });
+  const darkDruidToggle = page.locator("#recommended-weapons > .weapon-ranking-toggle");
+  const darkDruidToggleText = (await darkDruidToggle.textContent()).trim();
+  if (!darkDruidToggleText.includes("Item Lv <= 85")) {
+    throw new Error(`Dark Druid ranking did not default to item level 85: "${darkDruidToggleText}"`);
+  }
+  await darkDruidToggle.click();
+  const darkSwordRows = page
+    .locator('#recommended-weapons .weapon-ranking-row[data-item-level="145"]')
+    .filter({ hasText: "Dark Sword" });
+  if ((await darkSwordRows.count()) !== 0) {
+    throw new Error("Dark Druid default recommendations incorrectly included item-level 145 Dark Sword");
+  }
+
+  const darkDruidMaxItemLevel = page.locator(
+    "#recommended-weapons .weapon-ranking-item-level-input"
+  );
+  await darkDruidMaxItemLevel.fill("145");
+  await darkSwordRows.waitFor({ state: "attached" });
+  const darkSwordText = (await darkSwordRows.textContent()).trim();
+  if (!darkSwordText.includes("Item Lv 145") || !darkSwordText.includes("Req 85")) {
+    throw new Error(`Dark Sword ranking context was incomplete: "${darkSwordText}"`);
+  }
+  await page.locator("#recommended-weapons .weapon-ranking-reset").click();
+
   targetUrl.searchParams.set("monster", "ice-dragon");
   await page.goto(targetUrl.toString(), { waitUntil: "load" });
   await page.locator("#monster-details.show").waitFor({ state: "visible" });
   const iceDragonToggle = page.locator("#recommended-weapons > .weapon-ranking-toggle");
   const iceDragonToggleText = (await iceDragonToggle.textContent()).trim();
-  if (!iceDragonToggleText.includes("Req <= 70")) {
-    throw new Error(`Ice Dragon ranking did not default to skill requirement 70: "${iceDragonToggleText}"`);
+  if (!iceDragonToggleText.includes("Item Lv <= 70")) {
+    throw new Error(`Ice Dragon ranking did not default to item level 70: "${iceDragonToggleText}"`);
   }
   const iceDragonArmorToggleText = (
     await page.locator("#recommended-armors > .armor-ranking-toggle").textContent()
@@ -894,14 +932,68 @@ async function assertMonsterRecommendationEnhancements(page) {
   }
   await iceDragonToggle.click();
   const darknessFallsRow = page
-    .locator('#recommended-weapons .weapon-ranking-row[data-level="70"][data-item-level="75"]')
-    .filter({ hasText: "Darkness Falls" })
-    .first();
+    .locator(
+      '#recommended-weapons .weapon-ranking-row[data-skill-requirement="70"][data-item-level="75"]'
+    )
+    .filter({ hasText: "Darkness Falls" });
+  if ((await darknessFallsRow.count()) !== 0) {
+    throw new Error("Ice Dragon default recommendations incorrectly included item-level 75 Darkness Falls");
+  }
+  const iceDragonMaxItemLevel = page.locator(
+    "#recommended-weapons .weapon-ranking-item-level-input"
+  );
+  await iceDragonMaxItemLevel.fill("75");
   await darknessFallsRow.waitFor({ state: "attached" });
   const darknessFallsText = (await darknessFallsRow.textContent()).trim();
-  if (!darknessFallsText.includes("Req 70")) {
-    throw new Error(`Darkness Falls did not use its skill requirement in rankings: "${darknessFallsText}"`);
+  if (!darknessFallsText.includes("Item Lv 75") || !darknessFallsText.includes("Req 70")) {
+    throw new Error(`Darkness Falls ranking context was incomplete: "${darknessFallsText}"`);
   }
+
+  await iceDragonMaxItemLevel.fill("100");
+  const dragonfireSpearRow = page
+    .locator('#recommended-weapons .weapon-ranking-row[data-item-level="100"]')
+    .filter({ hasText: "Dragonfire Spear" });
+  await dragonfireSpearRow.waitFor({ state: "attached" });
+  const dragonfirePerkState = await dragonfireSpearRow.evaluate((row) => ({
+    text: row.textContent || "",
+    category: row.dataset.perkCategory || "",
+    bonus: Number(row.dataset.perkBonus),
+    effective: Number(row.dataset.effectiveDps),
+    estimated: Number(row.dataset.estimatedDps),
+  }));
+  if (
+    !dragonfirePerkState.text.includes("Ice Shatter (Tier 2)") ||
+    dragonfirePerkState.category !== "matchup" ||
+    Math.abs(dragonfirePerkState.bonus - 0.13) > 0.0001 ||
+    Math.abs(
+      dragonfirePerkState.estimated -
+        dragonfirePerkState.effective * (1 + dragonfirePerkState.bonus)
+    ) > 0.0001
+  ) {
+    throw new Error(
+      `Weapon perk damage adjustment was incorrect: ${JSON.stringify(dragonfirePerkState)}`
+    );
+  }
+
+  const iceDragonPerksInput = page.locator("#recommended-weapons .weapon-ranking-perks input");
+  await iceDragonPerksInput.uncheck();
+  const dragonfireBaseState = await dragonfireSpearRow.evaluate((row) => ({
+    text: row.textContent || "",
+    bonus: Number(row.dataset.perkBonus),
+    effective: Number(row.dataset.effectiveDps),
+    estimated: Number(row.dataset.estimatedDps),
+  }));
+  if (
+    dragonfireBaseState.text.includes("Ice Shatter (Tier 2)") ||
+    dragonfireBaseState.bonus !== 0 ||
+    Math.abs(dragonfireBaseState.estimated - dragonfireBaseState.effective) > 0.0001
+  ) {
+    throw new Error(
+      `Weapon perk toggle did not restore base DPS: ${JSON.stringify(dragonfireBaseState)}`
+    );
+  }
+  await iceDragonPerksInput.check();
+  await page.locator("#recommended-weapons .weapon-ranking-reset").click();
 
   const originalViewport = page.viewportSize();
   await page.setViewportSize({ width: 390, height: 844 });

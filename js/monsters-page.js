@@ -589,18 +589,18 @@ const tooltipFields = {
 };
 let pinnedTooltip = null;
 let pinDocumentListenerAttached = false;
-const WEAPON_RANKING_STORAGE_KEY = "project-rogue-codex:monster-weapon-ranking";
+const WEAPON_RANKING_STORAGE_KEY = "project-rogue-codex:monster-weapon-ranking-v2";
 const ARMOR_RANKING_STORAGE_KEY = "project-rogue-codex:monster-armor-ranking-v3";
 const ARMOR_SET_SLOTS = ["helmet", "chest", "gauntlets", "leggings", "shield"];
 const ARMOR_RESISTANCE_CAP = 60;
 const ARMOR_SET_RESULT_LIMIT = 8;
-const ARMOR_COMBAT_PERK_GROUPS = new Set([
+const COMBAT_PERK_GROUPS = new Set([
   "Slayer & Bane",
   "General Offense",
   "Mitigation & Shields",
   "Resistances",
 ]);
-const ARMOR_SLAYER_MATCHUPS = new Map([
+const SLAYER_PERK_MATCHUPS = new Map([
   ["beastslayer", new Set(["animal", "beast"])],
   ["consecration", new Set(["undead", "disease beast"])],
   ["demonsbane", new Set(["demon", "fire beast"])],
@@ -609,7 +609,7 @@ const ARMOR_SLAYER_MATCHUPS = new Map([
   ["slayer", new Set(["*"])],
   ["venomshock", new Set(["electric beast", "poison beast"])],
 ]);
-const ARMOR_RESISTANCE_PERK_MATCHUPS = new Map([
+const RESISTANCE_PERK_MATCHUPS = new Map([
   ["antacid", "acid"],
   ["demonblood", "fire"],
   ["frozenheart", "cold"],
@@ -617,6 +617,17 @@ const ARMOR_RESISTANCE_PERK_MATCHUPS = new Map([
   ["lightningfield", "electric"],
   ["magicshield", "*"],
   ["tourniquet", "poison"],
+]);
+const WEAPON_DIRECT_DAMAGE_BONUSES = new Map([
+  ["beastslayer", [0.11, 0.13, 0.15]],
+  ["consecration", [0.11, 0.13, 0.15]],
+  ["demonsbane", [0.11, 0.13, 0.15]],
+  ["executioner", [0.11, 0.13, 0.15]],
+  ["iceshatter", [0.11, 0.13, 0.15]],
+  ["venomshock", [0.11, 0.13, 0.15]],
+  ["slayer", [0.05, 0.07, 0.09]],
+  ["destruction", [0.04, 0.05, 0.06]],
+  ["desperation", [0.02, 0.02, 0.02]],
 ]);
 const CRAFTED_ARMOR_RECOMMENDATION_LEVELS = new Map(
   [
@@ -659,15 +670,24 @@ const CRAFTED_ARMOR_RECOMMENDATION_LEVELS = new Map(
   let armorRankingOpen = false;
 
   const loadWeaponRankingPreferences = () => {
-    const defaults = { maxLevel: null, type: "all", includeUnleveled: true };
+    const defaults = {
+      maxItemLevel: null,
+      type: "all",
+      includeUnleveled: true,
+      includePerks: true,
+    };
     try {
       const saved = JSON.parse(localStorage.getItem(WEAPON_RANKING_STORAGE_KEY) || "null");
       if (!saved || typeof saved !== "object") return defaults;
-      const savedMaxLevel = Number(saved.maxLevel);
+      const savedMaxItemLevel = Number(saved.maxItemLevel);
       return {
-        maxLevel: Number.isFinite(savedMaxLevel) && savedMaxLevel > 0 ? Math.round(savedMaxLevel) : null,
+        maxItemLevel:
+          Number.isFinite(savedMaxItemLevel) && savedMaxItemLevel > 0
+            ? Math.round(savedMaxItemLevel)
+            : null,
         type: typeof saved.type === "string" && saved.type.trim() ? saved.type : "all",
         includeUnleveled: saved.includeUnleveled !== false,
+        includePerks: saved.includePerks !== false,
       };
     } catch {
       return defaults;
@@ -890,6 +910,7 @@ const renderEmpty = (message) => {
       skillRequirement: toNumber(fields.skill_requirement ?? raw.skillRequirement),
       elementalDamageType: fields.element_label || fields.element || raw.elementalDamageType || raw.element,
       type: fields.subtype_label || fields.subtype || raw.type || raw.Type,
+      perk: fields.perk_label || fields.perk || "None",
     };
   };
 
@@ -947,22 +968,23 @@ const renderEmpty = (message) => {
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "");
 
-  const getArmorPerkProfile = (perkLabel, monsterType, elementKey) => {
+  const getCombatPerkProfile = (perkLabel, monsterType, elementKey) => {
     const label = (perkLabel || "").toString().trim();
     const perkKey = normalizePerkNameKey(label);
     if (!perkKey || perkKey === "none" || perkKey === "unknown") return null;
 
     const definition = perkDefinitions.get(perkKey);
-    if (!definition || !ARMOR_COMBAT_PERK_GROUPS.has(definition.group)) return null;
+    if (!definition || !COMBAT_PERK_GROUPS.has(definition.group)) return null;
 
     const tierMatch = label.match(/\(tier\s+(\d+)\)/i);
     const tier = tierMatch ? Number(tierMatch[1]) : 1;
     const typeKey = normalizeType(monsterType);
 
     if (definition.group === "Slayer & Bane") {
-      const matchups = ARMOR_SLAYER_MATCHUPS.get(perkKey);
+      const matchups = SLAYER_PERK_MATCHUPS.get(perkKey);
       if (!matchups || (!matchups.has("*") && !matchups.has(typeKey))) return null;
       return {
+        key: perkKey,
         category: "matchup",
         group: definition.group,
         label,
@@ -974,9 +996,10 @@ const renderEmpty = (message) => {
     }
 
     if (definition.group === "Resistances") {
-      const matchup = ARMOR_RESISTANCE_PERK_MATCHUPS.get(perkKey);
+      const matchup = RESISTANCE_PERK_MATCHUPS.get(perkKey);
       if (!elementKey || !matchup || (matchup !== "*" && matchup !== elementKey)) return null;
       return {
+        key: perkKey,
         category: "matchup",
         group: definition.group,
         label,
@@ -989,11 +1012,23 @@ const renderEmpty = (message) => {
     }
 
     return {
+      key: perkKey,
       category: "combat",
       group: definition.group,
       label,
       tier,
       reason: definition.group,
+    };
+  };
+
+  const getWeaponPerkProfile = (perkLabel, monsterType, elementKey) => {
+    const profile = getCombatPerkProfile(perkLabel, monsterType, elementKey);
+    if (!profile) return null;
+    const tierBonuses = WEAPON_DIRECT_DAMAGE_BONUSES.get(profile.key);
+    const tierIndex = Math.min(Math.max(profile.tier, 1), 3) - 1;
+    return {
+      ...profile,
+      directDamageBonus: tierBonuses ? tierBonuses[tierIndex] || 0 : 0,
     };
   };
 
@@ -1070,6 +1105,7 @@ const renderEmpty = (message) => {
       return;
     }
 
+    const elementKey = normalizeElementKey(monster.elementalAttack);
     const level = Number(monster.level);
     if (!Number.isFinite(level)) {
       const pill = document.createElement("span");
@@ -1079,7 +1115,7 @@ const renderEmpty = (message) => {
       return;
     }
 
-    const defaultMaxLevel = Math.max(1, Math.round(level + 5));
+    const defaultMaxItemLevel = Math.max(1, Math.round(level + 5));
     const weaponTypes = Array.from(
       new Set(weapons.map((weapon) => (weapon.type || "").toString().trim()).filter(Boolean))
     ).sort((a, b) => a.localeCompare(b));
@@ -1095,18 +1131,23 @@ const renderEmpty = (message) => {
         const itemLevel = Number(weapon.level);
         const skillRequirement = Number(weapon.skillRequirement);
         const isUnleveled = !Number.isFinite(itemLevel) || itemLevel <= 0;
-        const effectiveRequirement =
+        const effectiveSkillRequirement =
           Number.isFinite(skillRequirement) && skillRequirement >= 0
             ? skillRequirement
-            : Number.isFinite(itemLevel) && itemLevel > 0
-              ? itemLevel
-              : 0;
+            : 0;
         const multiplier = getElementMultiplier(monster.monsterType, weapon.elementalDamageType);
+        const perkProfile = getWeaponPerkProfile(
+          weapon.perk,
+          monster.monsterType,
+          elementKey
+        );
         return {
           name: weapon.name || "Unknown Weapon",
           element: weapon.elementalDamageType || "None",
           type: (weapon.type || "Unknown").toString(),
-          level: effectiveRequirement,
+          perk: weapon.perk || "None",
+          perkProfile,
+          skillRequirement: effectiveSkillRequirement,
           itemLevel: Number.isFinite(itemLevel) ? itemLevel : 0,
           isUnleveled,
           base,
@@ -1161,14 +1202,16 @@ const renderEmpty = (message) => {
     rankingSearch.autocomplete = "off";
     controls.appendChild(createControl("Search", rankingSearch, "weapon-ranking-search-control"));
 
-    const maxLevelInput = document.createElement("input");
-    maxLevelInput.type = "number";
-    maxLevelInput.className = "weapon-ranking-input weapon-ranking-level-input";
-    maxLevelInput.min = "1";
-    maxLevelInput.max = "999";
-    maxLevelInput.step = "5";
-    maxLevelInput.value = String(weaponRankingPreferences.maxLevel || defaultMaxLevel);
-    controls.appendChild(createControl("Max Skill Req.", maxLevelInput));
+    const maxItemLevelInput = document.createElement("input");
+    maxItemLevelInput.type = "number";
+    maxItemLevelInput.className = "weapon-ranking-input weapon-ranking-item-level-input";
+    maxItemLevelInput.min = "1";
+    maxItemLevelInput.max = "999";
+    maxItemLevelInput.step = "5";
+    maxItemLevelInput.value = String(
+      weaponRankingPreferences.maxItemLevel || defaultMaxItemLevel
+    );
+    controls.appendChild(createControl("Max Item Level", maxItemLevelInput));
 
     const typeSelect = document.createElement("select");
     typeSelect.className = "weapon-ranking-input weapon-ranking-type-select";
@@ -1196,6 +1239,19 @@ const renderEmpty = (message) => {
     uniqueControl.appendChild(uniqueLabel);
     controls.appendChild(uniqueControl);
 
+    const perksControl = document.createElement("label");
+    perksControl.className = "weapon-ranking-perks";
+    perksControl.title =
+      "Include confirmed innate combat perks in damage estimates and ranking tie-breaks.";
+    const perksInput = document.createElement("input");
+    perksInput.type = "checkbox";
+    perksInput.checked = weaponRankingPreferences.includePerks;
+    const perksLabel = document.createElement("span");
+    perksLabel.textContent = "Perks";
+    perksControl.appendChild(perksInput);
+    perksControl.appendChild(perksLabel);
+    controls.appendChild(perksControl);
+
     const resetButton = document.createElement("button");
     resetButton.type = "button";
     resetButton.className = "weapon-ranking-reset";
@@ -1207,7 +1263,7 @@ const renderEmpty = (message) => {
     const summary = document.createElement("div");
     summary.className = "weapon-ranking-summary";
     const summaryLabel = document.createElement("span");
-    summaryLabel.textContent = `Effective DPS vs. ${formatTypeLabel(monster.monsterType)}`;
+    summaryLabel.textContent = `Estimated DPS vs. ${formatTypeLabel(monster.monsterType)}`;
     const resultCount = document.createElement("span");
     resultCount.className = "weapon-ranking-count";
     resultCount.setAttribute("aria-live", "polite");
@@ -1218,11 +1274,12 @@ const renderEmpty = (message) => {
     results.className = "weapon-ranking-results";
     const resultHeader = document.createElement("div");
     resultHeader.className = "weapon-ranking-row weapon-ranking-header";
-    ["#", "Weapon", "Requirement / Type / Matchup", "Effective DPS"].forEach((labelText) => {
+    ["#", "Weapon", "Item Level / Req. / Type / Matchup", "Effective DPS"].forEach((labelText) => {
       const cell = document.createElement("span");
       cell.textContent = labelText;
       resultHeader.appendChild(cell);
     });
+    const dpsHeader = resultHeader.lastElementChild;
     const resultBody = document.createElement("div");
     resultBody.className = "weapon-ranking-body";
     results.appendChild(resultHeader);
@@ -1232,34 +1289,65 @@ const renderEmpty = (message) => {
     panel.appendChild(summary);
     panel.appendChild(results);
 
-    const getActiveMaxLevel = () => weaponRankingPreferences.maxLevel || defaultMaxLevel;
+    const getActiveMaxItemLevel = () =>
+      weaponRankingPreferences.maxItemLevel || defaultMaxItemLevel;
+    const getEstimatedDps = (entry) => {
+      const directDamageBonus =
+        weaponRankingPreferences.includePerks
+          ? Number(entry.perkProfile?.directDamageBonus) || 0
+          : 0;
+      return entry.effective * (1 + directDamageBonus);
+    };
+    const compareWeaponPerkRank = (left, right) => {
+      if (!weaponRankingPreferences.includePerks) return 0;
+      const leftProfile = left.perkProfile;
+      const rightProfile = right.perkProfile;
+      return (
+        Number(rightProfile?.category === "matchup") -
+          Number(leftProfile?.category === "matchup") ||
+        Number(rightProfile?.category === "combat") -
+          Number(leftProfile?.category === "combat") ||
+        (Number(rightProfile?.tier) || 0) - (Number(leftProfile?.tier) || 0)
+      );
+    };
 
     const updateToggle = () => {
       toggleLabel.textContent = weaponRankingOpen ? "Hide rankings" : "View rankings";
-      toggleLimit.textContent = `Req <= ${formatNumber(getActiveMaxLevel())}`;
+      toggleLimit.textContent = `Item Lv <= ${formatNumber(getActiveMaxItemLevel())}`;
       toggle.classList.toggle("is-open", weaponRankingOpen);
       toggle.setAttribute("aria-expanded", String(weaponRankingOpen));
     };
 
     const renderRankingResults = () => {
       const search = weaponRankingSearch.trim().toLowerCase();
-      const maxLevel = getActiveMaxLevel();
+      const maxItemLevel = getActiveMaxItemLevel();
       const selectedType = weaponRankingPreferences.type;
+      const includePerks = weaponRankingPreferences.includePerks;
+      summaryLabel.textContent = `${
+        includePerks ? "Estimated" : "Effective"
+      } DPS vs. ${formatTypeLabel(monster.monsterType)}`;
+      dpsHeader.textContent = `${includePerks ? "Estimated" : "Effective"} DPS`;
       const filtered = rankedWeapons
         .filter((entry) => {
-          if (entry.isUnleveled && !weaponRankingPreferences.includeUnleveled) return false;
-          if (entry.level > maxLevel) return false;
+          if (entry.isUnleveled) {
+            if (!weaponRankingPreferences.includeUnleveled) return false;
+          } else if (entry.itemLevel > maxItemLevel) {
+            return false;
+          }
           if (selectedType !== "all" && entry.type !== selectedType) return false;
           if (!search) return true;
-          return `${entry.name} ${entry.type} ${entry.element} ${entry.level} ${entry.itemLevel}`
+          return `${entry.name} ${entry.type} ${entry.element} ${entry.perk} ${entry.skillRequirement} ${entry.itemLevel}`
             .toLowerCase()
             .includes(search);
         })
         .sort(
           (a, b) =>
+            getEstimatedDps(b) - getEstimatedDps(a) ||
+            compareWeaponPerkRank(a, b) ||
             b.effective - a.effective ||
             b.base - a.base ||
-            a.level - b.level ||
+            a.itemLevel - b.itemLevel ||
+            a.skillRequirement - b.skillRequirement ||
             a.name.localeCompare(b.name)
         );
 
@@ -1279,9 +1367,16 @@ const renderEmpty = (message) => {
         row.className = "weapon-ranking-row";
         row.dataset.element = entry.element;
         row.dataset.multiplier = String(entry.multiplier);
-        row.dataset.level = String(entry.level);
+        row.dataset.skillRequirement = String(entry.skillRequirement);
         row.dataset.itemLevel = String(entry.itemLevel);
         row.dataset.type = entry.type;
+        row.dataset.perkCategory =
+          includePerks && entry.perkProfile ? entry.perkProfile.category : "";
+        row.dataset.perkBonus = String(
+          includePerks ? Number(entry.perkProfile?.directDamageBonus) || 0 : 0
+        );
+        row.dataset.effectiveDps = String(entry.effective);
+        row.dataset.estimatedDps = String(getEstimatedDps(entry));
 
         const rank = document.createElement("span");
         rank.className = "weapon-ranking-rank";
@@ -1294,18 +1389,57 @@ const renderEmpty = (message) => {
 
         const context = document.createElement("span");
         context.className = "weapon-ranking-context";
-        const requirementLabel = entry.level > 0 ? `Req ${formatNumber(entry.level)}` : "No req.";
-        context.textContent = `${requirementLabel} / ${entry.type} / ${entry.element} ${formatResistanceValue(entry.multiplier)}`;
+        const itemLevelLabel = entry.isUnleveled
+          ? "Unique tier"
+          : `Item Lv ${formatNumber(entry.itemLevel)}`;
+        const requirementLabel =
+          entry.skillRequirement > 0
+            ? `Req ${formatNumber(entry.skillRequirement)}`
+            : "No req.";
+        context.textContent = `${itemLevelLabel} / ${requirementLabel} / ${entry.type} / ${entry.element} ${formatResistanceValue(entry.multiplier)}`;
         context.title = entry.isUnleveled
-          ? `Unique item tier; skill requirement ${formatNumber(entry.level)}`
-          : `Item level ${formatNumber(entry.itemLevel)}; skill requirement ${formatNumber(entry.level)}`;
+          ? `Unique item tier; skill requirement ${formatNumber(entry.skillRequirement)}`
+          : `Item level ${formatNumber(entry.itemLevel)}; skill requirement ${formatNumber(entry.skillRequirement)}`;
         const elementColor = ELEMENT_COLORS[(entry.element || "").toLowerCase()];
         if (elementColor) context.style.color = elementColor;
 
+        if (includePerks && entry.perkProfile) {
+          const separator = document.createElement("span");
+          separator.className = "weapon-ranking-separator";
+          separator.textContent = " / ";
+          const perk = document.createElement("span");
+          const hasDirectBonus = entry.perkProfile.directDamageBonus > 0;
+          perk.className = `weapon-ranking-perk ${
+            hasDirectBonus
+              ? "is-direct"
+              : entry.perkProfile.category === "matchup"
+                ? "is-matchup"
+                : "is-combat"
+          }`;
+          perk.textContent = entry.perkProfile.label;
+          perk.title = hasDirectBonus
+            ? `${entry.perkProfile.reason}; +${formatNumber(
+                entry.perkProfile.directDamageBonus * 100
+              )}% direct damage included in estimated DPS`
+            : `${entry.perkProfile.reason}; used as a ranking tie-breaker`;
+          context.appendChild(separator);
+          context.appendChild(perk);
+        }
+
+        const estimatedDps = getEstimatedDps(entry);
         const effective = document.createElement("span");
         effective.className = "weapon-ranking-dps";
-        effective.textContent = `${formatDps(entry.effective)} DPS`;
-        effective.title = `${formatDps(entry.base)} base DPS at ${formatResistanceValue(entry.multiplier)} matchup`;
+        effective.textContent = `${formatDps(estimatedDps)} DPS`;
+        effective.title =
+          includePerks && entry.perkProfile?.directDamageBonus > 0
+            ? `${formatDps(entry.base)} base DPS at ${formatResistanceValue(
+                entry.multiplier
+              )} matchup = ${formatDps(entry.effective)} DPS; ${
+                entry.perkProfile.label
+              } +${formatNumber(
+                entry.perkProfile.directDamageBonus * 100
+              )}% = ${formatDps(estimatedDps)} estimated DPS`
+            : `${formatDps(entry.base)} base DPS at ${formatResistanceValue(entry.multiplier)} matchup`;
         if (elementColor) effective.style.color = elementColor;
 
         row.appendChild(rank);
@@ -1328,10 +1462,10 @@ const renderEmpty = (message) => {
       renderRankingResults();
     });
 
-    maxLevelInput.addEventListener("input", () => {
-      const value = Number(maxLevelInput.value);
+    maxItemLevelInput.addEventListener("input", () => {
+      const value = Number(maxItemLevelInput.value);
       if (!Number.isFinite(value) || value <= 0) return;
-      weaponRankingPreferences.maxLevel = Math.round(value);
+      weaponRankingPreferences.maxItemLevel = Math.round(value);
       saveWeaponRankingPreferences();
       updateToggle();
       renderRankingResults();
@@ -1349,19 +1483,31 @@ const renderEmpty = (message) => {
       renderRankingResults();
     });
 
+    perksInput.addEventListener("change", () => {
+      weaponRankingPreferences.includePerks = perksInput.checked;
+      saveWeaponRankingPreferences();
+      renderRankingResults();
+    });
+
     resetButton.addEventListener("click", () => {
-      weaponRankingPreferences = { maxLevel: null, type: "all", includeUnleveled: true };
+      weaponRankingPreferences = {
+        maxItemLevel: null,
+        type: "all",
+        includeUnleveled: true,
+        includePerks: true,
+      };
       weaponRankingSearch = "";
-      maxLevelInput.value = String(defaultMaxLevel);
+      maxItemLevelInput.value = String(defaultMaxItemLevel);
       typeSelect.value = "all";
       uniqueInput.checked = true;
+      perksInput.checked = true;
       rankingSearch.value = "";
       saveWeaponRankingPreferences();
       updateToggle();
       renderRankingResults();
     });
 
-    container.dataset.defaultMaxLevel = String(defaultMaxLevel);
+    container.dataset.defaultMaxItemLevel = String(defaultMaxItemLevel);
     container.appendChild(toggle);
     container.appendChild(panel);
     updateToggle();
@@ -1421,7 +1567,7 @@ const renderEmpty = (message) => {
           : Number.isFinite(itemLevel) && itemLevel > 0
             ? itemLevel
             : 0;
-        const perkProfile = getArmorPerkProfile(
+        const perkProfile = getCombatPerkProfile(
           armor.perk,
           monster.monsterType,
           elementKey
@@ -2938,7 +3084,7 @@ const unpinTooltip = (tooltip) => {
         }
         perkDefinitions = new Map(
           (Array.isArray(perksData?.perks) ? perksData.perks : [])
-            .filter((perk) => perk && ARMOR_COMBAT_PERK_GROUPS.has(perk.group))
+            .filter((perk) => perk && COMBAT_PERK_GROUPS.has(perk.group))
             .map((perk) => [normalizePerkNameKey(perk.name), perk])
         );
         applyAllowlists(allowlists);
