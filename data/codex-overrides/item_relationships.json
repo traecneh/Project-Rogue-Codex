@@ -63,17 +63,6 @@
     },
     {
       "kind": "collectable",
-      "name": "Demonic Remains",
-      "relationships": [
-        {
-          "type": "found_from",
-          "target": "Demon",
-          "evidence": "reviewed exact monster trophy item"
-        }
-      ]
-    },
-    {
-      "kind": "collectable",
       "name": "Feather",
       "relationships": [
         {

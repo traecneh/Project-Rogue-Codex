@@ -45,7 +45,7 @@ const smokeSpecs = [
     detailSelector: "#item-details",
     rowSelector: "#items-body tr[data-id]",
     detailLinkSelector: "",
-    duplicateRoute: { id: "36", detailName: "Demonic Remains" },
+    duplicateRoute: { id: "37", detailName: "Wraithfire Shard" },
     detailTextIncludes: ["Item Context", "Used In", "Ascend System", "Found From", "Deconstruct System"],
     detailHrefIncludes: ["pages/systems/ascend.html", "pages/systems/deconstruct.html"],
     queryKey: "collectable",

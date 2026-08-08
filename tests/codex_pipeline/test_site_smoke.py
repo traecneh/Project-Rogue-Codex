@@ -342,7 +342,7 @@ class SiteSmokeTests(unittest.TestCase):
         for expected in [
             'detailName: "Ascendancy Shard"',
             'detailQuery: "54"',
-            'duplicateRoute: { id: "36", detailName: "Demonic Remains" }',
+            'duplicateRoute: { id: "37", detailName: "Wraithfire Shard" }',
             'detailTextIncludes: ["Item Context", "Used In", "Ascend System", "Found From", "Deconstruct System"]',
             'detailHrefIncludes: ["pages/systems/ascend.html", "pages/systems/deconstruct.html"]',
             'label: "collectables"',

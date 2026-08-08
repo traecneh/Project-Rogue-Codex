@@ -24,8 +24,7 @@
   "images/collectables/Dark Ore.png",
   "images/collectables/Demon Bones.png",
   "images/collectables/Demon Skull.png",
-  "images/collectables/Demonic Remains-35.png",
-  "images/collectables/Demonic Remains-36.gif",
+  "images/collectables/Emberash Core.gif",
   "images/collectables/Ethereal Shard.gif",
   "images/collectables/Feather.png",
   "images/collectables/Fish1.png",
@@ -65,6 +64,7 @@
   "images/collectables/Lucky Key.png",
   "images/collectables/Magical Healing Potion.png",
   "images/collectables/Obsidian Shards.png",
+  "images/collectables/Plaguelight Cinder.gif",
   "images/collectables/Plank.png",
   "images/collectables/Poison Potion.png",
   "images/collectables/Red Dragon Scale.png",
@@ -90,5 +90,6 @@
   "images/collectables/Uncooked Chicken.png",
   "images/collectables/Uncooked Drumstick.png",
   "images/collectables/Uncooked Liver.png",
-  "images/collectables/Uncooked Ribs.png"
+  "images/collectables/Uncooked Ribs.png",
+  "images/collectables/Wraithfire Shard.gif"
 ]

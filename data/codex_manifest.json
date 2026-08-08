@@ -2,15 +2,15 @@
   "assets": {
     "armors": {
       "entries": 255,
-      "files_sha256": "4f58b20d77da8d98c7eb433a4fbe1c7cb633aa6bd8187e1948cedd2cf0acd9bf",
+      "files_sha256": "3d137296d056053d3a7fc42a3594103383157713b6315a2c60e33fc8eafe28e7",
       "manifest_path": "images/armors/manifest.json",
-      "manifest_sha256": "bcedc6bbef27f8bd97e83d3ec649c27ab87629e2a92089a4fc37aeecc42028f4"
+      "manifest_sha256": "a5efee23dca2d4b178b05a871f313d2555cc6bea184608c7b20ee129d602d50b"
     },
     "collectables": {
-      "entries": 92,
-      "files_sha256": "beb27456f631918110d341a60e1e16ab670dbace857af44b1683f58d271f804b",
+      "entries": 93,
+      "files_sha256": "29771af4d233a95c17fbc258ceb778a5b60d46830e32b2f32e3353a68f8ac1ba",
       "manifest_path": "images/collectables/manifest.json",
-      "manifest_sha256": "c5936eb4c7804976596ac69c329ad1984076268381362c5e3b184e2125fcd40f"
+      "manifest_sha256": "7770fbd9e80c70dc88f3776a51dffe351ae66fe95ca8b81ae24af97d894c7125"
     },
     "monsters": {
       "entries": 191,
@@ -26,7 +26,7 @@
     },
     "weapons": {
       "entries": 250,
-      "files_sha256": "7735fd1b7e32fc6fe45450ad80ea3430331f3c00206b9b446cc13c84b9e84a6c",
+      "files_sha256": "32e6164c1387d9114c98b64e978937a4c2a5d83e29a806de660dfef839e78758",
       "manifest_path": "images/weapons/manifest.json",
       "manifest_sha256": "a460939c4e84ee650642393622d1cf57456352d37a5288d8e609bbf16ab2c334"
     }
@@ -35,12 +35,12 @@
     "armors": {
       "path": "pages/items/armors_data06.json",
       "records": 255,
-      "sha256": "953595c94b94374a4f2d40c4cfc8af8e832e5663b8e4ca0df952da3cbaed8dd4"
+      "sha256": "a074ddf9b4a9129335c8f7d81760e4a142ed7385a993bbb52e28721e16dd9b85"
     },
     "collectables": {
       "path": "pages/items/collectables_data.json",
-      "records": 92,
-      "sha256": "ec5b9fad1431046d00bd7961bdd5a239b847cce5ce4c7cfb7ed3c6283972eaa6"
+      "records": 93,
+      "sha256": "6188f6977ac4aea4507c857e82b65822ccd394803162fe5c88e3d6bc04aaeb2f"
     },
     "monsters": {
       "path": "pages/enemies/monsters_data03.json",
@@ -55,16 +55,16 @@
     "weapons": {
       "path": "pages/items/weapons_data05.json",
       "records": 251,
-      "sha256": "7c66d1bfe42b3690d008c626907888384263c62eb94b7b7b6ac85f4bae71069d"
+      "sha256": "4a7604a20b7dcef1b4820f700e0615dca674ef985cf491f2959948977f45c4e6"
     }
   },
-  "generated_at_utc": "2026-07-29T17:04:08Z",
+  "generated_at_utc": "2026-08-08T03:45:24Z",
   "schema": "project-rogue-codex-manifest",
-  "source_commit": "36a718df207bc92afaac10bbcde30e57e9857df5",
+  "source_commit": "cfc6cfbcf31baf2fa63e80e4735e689b509e7a01",
   "summary": {
-    "asset_entries": 810,
-    "content_sha256": "52b7b4491dd7c51b82f58863349f13e2abbca27c04be42bb10682a53bf41333a",
-    "data_records": 811
+    "asset_entries": 811,
+    "content_sha256": "4a51e37626cb73fe64dd17fbec08e66c3ccf3dfad977f7d414ffe6ed5ce73714",
+    "data_records": 812
   },
   "version": 1
 }

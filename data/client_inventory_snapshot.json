@@ -60,8 +60,8 @@
       "height": 1024,
       "name": "itemgraph",
       "path": "itemgraph.json",
-      "sha256": "A238F9D006F55061BD542F13861AD143DC46B2426B9AD8F8D11E5E7DBC3B1C22",
-      "size_bytes": 197816,
+      "sha256": "7D3C2CF7A95B4D38F0F22F7DAE6FC842BAA3A390252BDF3B054C2D132ACD2470",
+      "size_bytes": 198689,
       "width": 1024
     },
     {
@@ -124,8 +124,8 @@
       "height": 640,
       "name": "objects",
       "path": "objects.json",
-      "sha256": "EF222290CBCA2FF27262628716F20128FB5ADECF0CEDAB82ADD296FA990FD349",
-      "size_bytes": 70453,
+      "sha256": "F0B45EBF21ECDC8920E058FCECC2E3153E7A6EF1D5748509C781E4BD32F2A859",
+      "size_bytes": 70610,
       "width": 512
     },
     {
@@ -364,7 +364,7 @@
       "group_count": 0,
       "path": "objecttypes.json",
       "primary_collection": "objecttypes",
-      "record_count": 190
+      "record_count": 193
     },
     {
       "fields": [
@@ -431,6 +431,21 @@
     },
     {
       "fields": [
+        "element_count",
+        "encoding",
+        "generated_at",
+        "grid",
+        "height",
+        "schema_version",
+        "width"
+      ],
+      "group_count": 0,
+      "path": "warfronts.json",
+      "primary_collection": null,
+      "record_count": 1
+    },
+    {
+      "fields": [
         "animated",
         "animation_frame_count",
         "animation_type",
@@ -485,7 +500,7 @@
       "extension": ".json",
       "kind": "diagnostic",
       "path": "GUI.json",
-      "size_bytes": 6323,
+      "size_bytes": 6347,
       "zeroed_binary": false
     },
     {
@@ -506,14 +521,14 @@
       "extension": ".exe",
       "kind": "runtime",
       "path": "Project Rogue Client.exe",
-      "size_bytes": 1306112,
+      "size_bytes": 1533952,
       "zeroed_binary": false
     },
     {
       "extension": ".log",
       "kind": "log",
       "path": "ProjectRogue.log",
-      "size_bytes": 7045,
+      "size_bytes": 7325,
       "zeroed_binary": false
     },
     {
@@ -550,7 +565,7 @@
     "build_version": 1,
     "compression": "gzip-per-file",
     "exists": true,
-    "file_count": 12,
+    "file_count": 13,
     "log_build_version": null,
     "log_file_count": null,
     "log_loaded_files": [
@@ -565,33 +580,34 @@
       "safezones.json",
       "tiles.json",
       "useables.json",
+      "warfronts.json",
       "weapons.json"
     ],
     "schema_version": 1,
-    "sha256": "2D7A6B3EF1F6A4DE471E6098E8450CAE3F80FFB5E1DCC2F300B410F9778D019B",
-    "size_bytes": 672913
+    "sha256": "B3246CD44A4F901D8752DE1D3162F5ADF4EEA9ACF728074DB03E6ED46871B6FB",
+    "size_bytes": 675967
   },
   "vpack_files": [
     {
-      "compressed_size": 54421,
-      "original_size": 4615848,
+      "compressed_size": 54528,
+      "original_size": 4615884,
       "path": "armors.json",
       "sha256_ok": true
     },
     {
-      "compressed_size": 3156,
-      "original_size": 136096,
+      "compressed_size": 3229,
+      "original_size": 136235,
       "path": "collectables.json",
       "sha256_ok": true
     },
     {
-      "compressed_size": 4203,
+      "compressed_size": 4204,
       "original_size": 699282,
       "path": "locales.json",
       "sha256_ok": true
     },
     {
-      "compressed_size": 531897,
+      "compressed_size": 531903,
       "original_size": 11884243,
       "path": "map.json",
       "sha256_ok": true
@@ -609,26 +625,26 @@
       "sha256_ok": true
     },
     {
-      "compressed_size": 4856,
-      "original_size": 219562,
+      "compressed_size": 4917,
+      "original_size": 223036,
       "path": "objecttypes.json",
       "sha256_ok": true
     },
     {
-      "compressed_size": 753,
+      "compressed_size": 752,
       "original_size": 4049,
       "path": "player_tables.json",
       "sha256_ok": true
     },
     {
-      "compressed_size": 1705,
+      "compressed_size": 1792,
       "original_size": 699266,
       "path": "safezones.json",
       "sha256_ok": true
     },
     {
-      "compressed_size": 18136,
-      "original_size": 1863557,
+      "compressed_size": 18217,
+      "original_size": 1863628,
       "path": "tiles.json",
       "sha256_ok": true
     },
@@ -639,8 +655,14 @@
       "sha256_ok": true
     },
     {
-      "compressed_size": 34876,
-      "original_size": 2512675,
+      "compressed_size": 2264,
+      "original_size": 699284,
+      "path": "warfronts.json",
+      "sha256_ok": true
+    },
+    {
+      "compressed_size": 35030,
+      "original_size": 2512765,
       "path": "weapons.json",
       "sha256_ok": true
     }
