@@ -236,11 +236,11 @@ const SITE_SEARCH_INDEX = [
     keywords: ["imbuements", "enchant", "upgrade"],
   },
   {
-    title: "Re-Roll",
+    title: "Reforge",
     url: "pages/systems/re-roll.html",
     category: "Ascendancy",
-    description: "Re-rolling stats and perks workflow.",
-    keywords: ["reroll", "stats", "perks"],
+    description: "Reforge Epic-or-higher equipment using rarity shards.",
+    keywords: ["reforge", "reroll", "rarity shards", "stats", "perks"],
   },
   {
     title: "Craft (Ascendancy)",

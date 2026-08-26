@@ -136,9 +136,9 @@ async function main() {
     }
     try {
       await runRerollSpec(browser, baseUrl);
-      console.log("SMOKE OK re-roll: decision reference, flow, related links");
+      console.log("SMOKE OK reforge: decision reference, flow, related links");
     } catch (error) {
-      failures.push(`SMOKE ERROR re-roll: ${formatError(error)}`);
+      failures.push(`SMOKE ERROR reforge: ${formatError(error)}`);
     }
     try {
       await runDeconstructSpec(browser, baseUrl);
@@ -499,8 +499,8 @@ async function runBuildPlannerSpec(browser, baseUrl) {
     await page.reload({ waitUntil: "load" });
     await assertBuildPlannerWeapon(page, "Rune Sword");
     const restoredRarity = (await page.locator('[data-slot="Weapon"] [data-rarity-label]').textContent()).trim();
-    if (restoredRarity !== "Uncommon") {
-      throw new Error(`share reload restored weapon rarity "${restoredRarity}" instead of "Uncommon"`);
+    if (restoredRarity !== "Rare") {
+      throw new Error(`share reload restored weapon rarity "${restoredRarity}" instead of "Rare"`);
     }
 
     await page.locator("#reset-build").click();
@@ -647,13 +647,17 @@ async function assertMonsterRecommendationEnhancements(page) {
   );
 
   const typeSelect = page.locator("#recommended-weapons .weapon-ranking-type-select");
-  await typeSelect.selectOption("Bow");
-  const bowState = await page.evaluate(() => {
+  const hiddenRangedOptionCount = await typeSelect.locator('option[value="Bow"], option[value="Crossbow"]').count();
+  if (hiddenRangedOptionCount) {
+    throw new Error(`Hidden ranged weapon types remained in recommendation filters: ${hiddenRangedOptionCount}`);
+  }
+  await typeSelect.selectOption("Sword");
+  const typeState = await page.evaluate(() => {
     const rows = Array.from(document.querySelectorAll("#recommended-weapons .weapon-ranking-body .weapon-ranking-row"));
-    return { count: rows.length, allBows: rows.every((row) => row.dataset.type === "Bow") };
+    return { count: rows.length, allSwords: rows.every((row) => row.dataset.type === "Sword") };
   });
-  if (!bowState.count || !bowState.allBows) {
-    throw new Error(`Weapon-type ranking filter failed: ${JSON.stringify(bowState)}`);
+  if (!typeState.count || !typeState.allSwords) {
+    throw new Error(`Weapon-type ranking filter failed: ${JSON.stringify(typeState)}`);
   }
 
   await maxItemLevelInput.fill("70");
@@ -662,7 +666,7 @@ async function assertMonsterRecommendationEnhancements(page) {
   await page.locator("#monster-details.show").waitFor({ state: "visible" });
   if (
     (await page.locator("#recommended-weapons .weapon-ranking-item-level-input").inputValue()) !== "70" ||
-    (await page.locator("#recommended-weapons .weapon-ranking-type-select").inputValue()) !== "Bow"
+    (await page.locator("#recommended-weapons .weapon-ranking-type-select").inputValue()) !== "Sword"
   ) {
     throw new Error("Weapon-ranking preferences did not persist across monster navigation");
   }
@@ -670,7 +674,7 @@ async function assertMonsterRecommendationEnhancements(page) {
   await page.locator("#monster-details.show").waitFor({ state: "visible" });
   if (
     (await page.locator("#recommended-weapons .weapon-ranking-item-level-input").inputValue()) !== "70" ||
-    (await page.locator("#recommended-weapons .weapon-ranking-type-select").inputValue()) !== "Bow"
+    (await page.locator("#recommended-weapons .weapon-ranking-type-select").inputValue()) !== "Sword"
   ) {
     throw new Error("Weapon-ranking preferences did not persist across reload");
   }
@@ -1811,9 +1815,9 @@ async function runRaritySpec(browser, baseUrl) {
     }
 
     await upgradeButton.click();
-    await page.waitForFunction(() => document.querySelector("[data-rarity-result]")?.textContent?.includes("Uncommon"));
+    await page.waitForFunction(() => document.querySelector("[data-rarity-result]")?.textContent?.includes("Rare"));
     const upgradedText = (await page.locator("[data-rarity-result]").textContent()).trim();
-    for (const expected of ["Rarity", "Uncommon", "Max Rarity", "Ascendant", "Item Power", "x2"]) {
+    for (const expected of ["Rarity", "Rare", "Max Rarity", "Ascendant", "Item Power", "x4"]) {
       if (!upgradedText.includes(expected)) {
         throw new Error(`Rarity upgrade result missing "${expected}": "${upgradedText}"`);
       }
@@ -1844,16 +1848,16 @@ async function runRerollSpec(browser, baseUrl) {
     for (const expected of [
       "What Changes",
       "What Does Not Change",
-      "Re-Roll Flow",
-      "Before You Roll",
-      "When Re-Roll Helps",
-      "Reroll Shards",
-      "Reroll Stone",
+      "Reforge Flow",
+      "Before You Reforge",
+      "When Reforge Helps",
+      "Rarity Shards",
+      "Tinker Tools",
       "Current Rarity",
       "Max Rarity",
     ]) {
       if (!pageText.includes(expected)) {
-        throw new Error(`Re-Roll page missing "${expected}": "${pageText}"`);
+        throw new Error(`Reforge page missing "${expected}": "${pageText}"`);
       }
     }
 
@@ -1866,7 +1870,7 @@ async function runRerollSpec(browser, baseUrl) {
     ]) {
       const count = await page.locator(`.reroll-link-grid a[href="${href}"]`).count();
       if (count !== 1) {
-        throw new Error(`Re-Roll related link expected one "${href}", found ${count}`);
+        throw new Error(`Reforge related link expected one "${href}", found ${count}`);
       }
     }
 
@@ -4545,6 +4549,15 @@ async function assertSuperDuperBowHidden(page) {
   }
   if (await page.locator("#item-details.show").count()) {
     throw new Error("Super Duper Bow direct route should not open a detail panel");
+  }
+  url.searchParams.set("weapon", "1000");
+  await page.goto(url.toString(), { waitUntil: "load" });
+  await page.locator("#items-body tr[data-id]").first().waitFor({ state: "attached" });
+  if ((await page.locator("#items-body").textContent()).includes("Wooden Bow")) {
+    throw new Error("Wooden Bow should be hidden from the weapons table");
+  }
+  if (await page.locator("#item-details.show").count()) {
+    throw new Error("Wooden Bow direct route should not open a detail panel");
   }
   await page.goto(originalUrl, { waitUntil: "load" });
   await page.locator("#item-details.show").waitFor({ state: "visible" });

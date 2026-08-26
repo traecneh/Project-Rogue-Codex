@@ -20,9 +20,9 @@
     },
     "useables": {
       "entries": 22,
-      "files_sha256": "f2f6cd3b3363851499ad5fa1ee91aa4e3c1d305421228279333a59c7b59e1f81",
+      "files_sha256": "577726d3895495ee9ec6a2ca6407189691ab79b99a6abfc961b28c89adb58714",
       "manifest_path": "images/useables/manifest.json",
-      "manifest_sha256": "75d9079ae695b3fc6999c953b745c8ff193b00cefdbd26a3cd809254b23c4c76"
+      "manifest_sha256": "849821c2fd1c966cddb072f280aa553dddd2a3a5f1fe4af83cf9235f62c7b1f9"
     },
     "weapons": {
       "entries": 250,
@@ -35,7 +35,7 @@
     "armors": {
       "path": "pages/items/armors_data06.json",
       "records": 255,
-      "sha256": "a074ddf9b4a9129335c8f7d81760e4a142ed7385a993bbb52e28721e16dd9b85"
+      "sha256": "080ae050595cbe1e31d8c659d8e0501955c5dc375676dc03f1c49c1c1ef137cf"
     },
     "collectables": {
       "path": "pages/items/collectables_data.json",
@@ -50,21 +50,21 @@
     "useables": {
       "path": "pages/items/useables_data.json",
       "records": 22,
-      "sha256": "afa835c270fc5895abb8f3eceaeadf8313ddfb2fa4e320cf57c8878ebbd99ad3"
+      "sha256": "244bbdd34b75d0a5a49979ae70fc578afbaeb32eff3cfc78bd85db941ed7fcb1"
     },
     "weapons": {
       "path": "pages/items/weapons_data05.json",
-      "records": 251,
-      "sha256": "4a7604a20b7dcef1b4820f700e0615dca674ef985cf491f2959948977f45c4e6"
+      "records": 261,
+      "sha256": "64da26316e9b77ea4fc55e3de8baba9263ee5acd1dc39069ca8568428ea85d25"
     }
   },
-  "generated_at_utc": "2026-08-08T03:45:24Z",
+  "generated_at_utc": "2026-08-26T20:09:35Z",
   "schema": "project-rogue-codex-manifest",
-  "source_commit": "cfc6cfbcf31baf2fa63e80e4735e689b509e7a01",
+  "source_commit": "2ada53f922741507587157eb4cd94311f6889812",
   "summary": {
     "asset_entries": 811,
-    "content_sha256": "4a51e37626cb73fe64dd17fbec08e66c3ccf3dfad977f7d414ffe6ed5ce73714",
-    "data_records": 812
+    "content_sha256": "18e53e4517200842d77e27e7bb10078073e8696758b1dd872151caeaafaa8aa1",
+    "data_records": 822
   },
   "version": 1
 }

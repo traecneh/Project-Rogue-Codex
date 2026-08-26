@@ -124,7 +124,7 @@ class PackedJsonMapperTests(unittest.TestCase):
                                 "level": 0,
                                 "elemental_damage_type": 0,
                                 "elemental_damage_max": 0,
-                                "maximum_rarity": 6,
+                                "maximum_rarity": 4,
                                 "shards_deconstruction": 0,
                                 "shards_promotion": 0,
                                 "innate_special_effect": 612,

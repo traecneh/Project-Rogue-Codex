@@ -677,7 +677,7 @@
   },
   {
     "id": 50,
-    "name": "Epic Reroll Shard",
+    "name": "Rare Reroll Shard",
     "fields": {
       "value": 500000,
       "use_type": 0,
@@ -729,7 +729,7 @@
   },
   {
     "id": 51,
-    "name": "Legendary Reroll Shard",
+    "name": "Epic Reroll Shard",
     "fields": {
       "value": 1000000,
       "use_type": 0,

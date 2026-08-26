@@ -9,6 +9,21 @@ class HiddenItemRulesTests(unittest.TestCase):
         allowlists = json.loads(ALLOWLISTS_PATH.read_text(encoding="utf-8"))
 
         self.assertIn("Super Duper Bow", allowlists["weapons"]["block"])
+        for name in ["Wooden Bow", "Crossbow", "Small Crossbow", "Four Elements Crossbow", "Dragon Fire Gauntlets"]:
+            self.assertIn(name, allowlists["weapons"]["block"])
+        for name in [
+            "Sword of Rage",
+            "Dagger of Rage",
+            "Axe of Rage",
+            "Warmace of Rage",
+            "Spear of Rage",
+            "Sword of Divinity",
+            "Dagger of Divinity",
+            "Axe of Divinity",
+            "Warmace of Divinity",
+            "Spear of Divinity",
+        ]:
+            self.assertIn(name, allowlists["weapons"]["block"])
 
     def test_allowlist_block_rules_match_records_and_image_variants(self):
         from tools.codex_pipeline.hidden_items import HiddenItemRules

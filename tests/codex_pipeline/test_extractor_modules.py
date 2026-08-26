@@ -203,7 +203,7 @@ class ExtractorModuleTests(unittest.TestCase):
 
         self.assertEqual("Frozen Heart (Tier 1)", PERK_LABELS[22])
         self.assertEqual("Frozen Heart (Tier 2)", resolve_corrupted_perk_label(278, 22))
-        self.assertEqual("Rare", RARITY_LABELS[2])
+        self.assertEqual("Epic", RARITY_LABELS[2])
         self.assertEqual("Holy", WEAPON_ELEMENT_LABELS[3])
         self.assertEqual("Cold", WEAPON_ELEMENT_LABELS[4])
         self.assertEqual("Dark", WEAPON_ELEMENT_LABELS[5])
@@ -240,7 +240,7 @@ class ExtractorModuleTests(unittest.TestCase):
         self.assertEqual("Bow", weapon_fields["subtype_label"])
         self.assertEqual("Strength", weapon_fields["specialty_label"])
         self.assertEqual("Cold", weapon_fields["element_label"])
-        self.assertEqual("Epic", weapon_fields["max_rarity_label"])
+        self.assertEqual("Mythical", weapon_fields["max_rarity_label"])
         self.assertEqual("Frozen Heart (Tier 1)", weapon_fields["perk_label"])
         self.assertEqual("Frozen Heart (Tier 2)", weapon_fields["corrupted_perk_label"])
         unknown_weapon_fields = {"perk": 570, "corrupted_perk": 41}
@@ -249,7 +249,7 @@ class ExtractorModuleTests(unittest.TestCase):
         self.assertEqual("Unknown", unknown_weapon_fields["corrupted_perk_label"])
         self.assertEqual(300, armor_fields["value"])
         self.assertEqual("Arrows", armor_fields["slot_label"])
-        self.assertEqual("Rare", armor_fields["max_rarity_label"])
+        self.assertEqual("Epic", armor_fields["max_rarity_label"])
         self.assertEqual("Frozen Heart (Tier 1)", armor_fields["perk_label"])
         self.assertEqual("Frozen Heart (Tier 2)", armor_fields["corrupted_perk_label"])
         report_records = [

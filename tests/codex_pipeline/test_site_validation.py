@@ -363,7 +363,7 @@ class SiteValidationTests(unittest.TestCase):
         }
         self.assertEqual("pages/systems/ascend.html", target_links["Ascend System"])
         self.assertEqual("pages/systems/deconstruct.html", target_links["Deconstruct System"])
-        self.assertEqual("pages/systems/re-roll.html", target_links["Re-Roll System"])
+        self.assertEqual("pages/systems/re-roll.html", target_links["Reforge System"])
         self.assertEqual("pages/systems/imbuements.html", target_links["Imbuements System"])
         self.assertEqual("pages/stats/skills.html#blacksmithing", target_links["Blacksmithing"])
         self.assertEqual("pages/stats/skills.html#carpentry", target_links["Carpentry"])
@@ -907,6 +907,11 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn("decompressFromEncodedURIComponent", script)
         self.assertIn("getBuildParamFromSearch", script)
         self.assertIn("applySavedState", script)
+        self.assertIn("const BUILD_STATE_VERSION = 2;", script)
+        self.assertIn("const LEGACY_RARITY_INDEX_MAP = [0, 1, 1, 2, 2, 3, 4];", script)
+        self.assertIn("migrateRarityIndex(entry[3], packed.v)", script)
+        self.assertNotIn('{ label: "Uncommon"', script)
+        self.assertNotIn('{ label: "Legendary"', script)
 
     def test_build_planner_compact_ui_contracts(self):
         from tools.codex_pipeline.config import REPO_ROOT
@@ -1198,8 +1203,12 @@ class SiteValidationTests(unittest.TestCase):
 
         self.assertIn("Common", html)
         self.assertNotIn(">Normal<", html)
+        self.assertNotIn("Uncommon", html)
+        self.assertNotIn("Legendary", html)
         self.assertIn('{ name: "Common"', script)
         self.assertNotIn('{ name: "Normal"', script)
+        self.assertNotIn('{ name: "Uncommon"', script)
+        self.assertNotIn('{ name: "Legendary"', script)
         self.assertIn("Upgrade +1", html)
         self.assertIn("currentMaxIndex", script)
         self.assertIn(".rarity-reference-table", css)
@@ -1235,16 +1244,16 @@ class SiteValidationTests(unittest.TestCase):
         for expected in [
             "What Changes",
             "What Does Not Change",
-            "Re-Roll Flow",
-            "Before You Roll",
-            "When Re-Roll Helps",
+            "Reforge Flow",
+            "Before You Reforge",
+            "When Reforge Helps",
             "Related Item Pages",
             "Stat Spread",
             "Current Rarity",
             "Item Identity",
             "Max Rarity",
-            "Reroll Shards",
-            "Reroll Stone",
+            "Rarity Shards",
+            "Tinker Tools",
             "pages/systems/rarity.html",
             "pages/items/weapons.html",
             "pages/items/armors.html",
@@ -2246,6 +2255,8 @@ class SiteValidationTests(unittest.TestCase):
             'role="slider"',
         ]:
             self.assertIn(expected, html)
+
+        self.assertNotIn("Reroll Stone", html)
 
         self.assertNotIn("Level at a Glance", html)
         self.assertNotIn("Related Pages", html)

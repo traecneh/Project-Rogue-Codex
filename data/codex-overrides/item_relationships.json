@@ -111,7 +111,7 @@
       "relationships": [
         {
           "type": "used_in",
-          "target": "Re-Roll System",
+          "target": "Reforge System",
           "evidence": "reviewed reroll shard item family"
         }
       ]
@@ -133,7 +133,7 @@
       "relationships": [
         {
           "type": "used_in",
-          "target": "Re-Roll System",
+          "target": "Reforge System",
           "evidence": "reviewed reroll shard item family"
         }
       ]
@@ -162,11 +162,11 @@
     },
     {
       "kind": "useable",
-      "name": "Legendary Reroll Shard",
+      "name": "Rare Reroll Shard",
       "relationships": [
         {
           "type": "used_in",
-          "target": "Re-Roll System",
+          "target": "Reforge System",
           "evidence": "reviewed reroll shard item family"
         }
       ]
@@ -221,7 +221,7 @@
       "relationships": [
         {
           "type": "used_in",
-          "target": "Re-Roll System",
+          "target": "Reforge System",
           "evidence": "reviewed reroll shard item family"
         }
       ]

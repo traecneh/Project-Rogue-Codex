@@ -2,7 +2,7 @@
   const DEFAULT_JSON_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
   const PROJECT_ROGUE_MAP_URL = "https://traecneh.github.io/Project-Rogue-Map/";
   const PERKS_INDEX_SCHEMA_VERSION = 3;
-  const ALLOWLISTS_SCHEMA_VERSION = 2;
+  const ALLOWLISTS_SCHEMA_VERSION = 3;
   const FORCE_JSON_REFRESH = true;
   const jsonMemoryCache = new Map();
   let perkIndexPromise = null;

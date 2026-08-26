@@ -49,10 +49,8 @@
 
   const RARITY_MULTIPLIERS = [
     { key: "normal", label: "Normal", multiplier: 1 },
-    { key: "uncommon", label: "Uncommon", multiplier: 2 },
     { key: "rare", label: "Rare", multiplier: 4 },
     { key: "epic", label: "Epic", multiplier: 6 },
-    { key: "legendary", label: "Legendary", multiplier: 8 },
     { key: "mythical", label: "Mythical", multiplier: 10 },
     { key: "ascendant", label: "Ascendant", multiplier: 12 },
   ];

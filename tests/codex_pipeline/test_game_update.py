@@ -50,6 +50,117 @@ def write_gf_json_png(path: Path, image: Image.Image) -> None:
 
 
 class GameUpdateReportTests(unittest.TestCase):
+    def test_weapon_data_quality_guard_blocks_mass_item_level_resets(self):
+        from tools.codex_pipeline.game_update import _validate_generated_weapon_data
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            output_dir = root / "generated"
+            site_path = root / "site" / "weapons.json"
+            generated_path = output_dir / "weapons.json"
+            current = [
+                {"id": item_id, "name": f"Bow {item_id}", "fields": {"level_requirement": 25}}
+                for item_id in range(1, 11)
+            ]
+            generated = [
+                {
+                    "id": item_id,
+                    "name": f"Bow {item_id}",
+                    "fields": {"level_requirement": 0, "min_damage": 5, "max_damage": 10},
+                }
+                for item_id in range(1, 11)
+            ]
+            write_json(site_path, current)
+            write_json(generated_path, generated)
+            target = ExportTarget("weapons", root / "extract.py", root / "source", "weapons.json", site_path)
+
+            issues = _validate_generated_weapon_data(
+                [target],
+                output_dir=output_dir,
+                skipped_sections=[],
+            )
+
+        self.assertTrue(any(issue.severity == "error" and "mass weapon item-level reset" in issue.message for issue in issues))
+
+    def test_weapon_data_quality_guard_allows_hidden_item_level_resets(self):
+        from tools.codex_pipeline.game_update import _validate_generated_weapon_data
+        from tools.codex_pipeline.hidden_items import HiddenItemRules
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            output_dir = root / "generated"
+            site_path = root / "site" / "weapons.json"
+            generated_path = output_dir / "weapons.json"
+            current = [
+                {"id": item_id, "name": f"Bow {item_id}", "fields": {"level_requirement": 25}}
+                for item_id in range(1, 11)
+            ]
+            generated = [
+                {
+                    "id": item_id,
+                    "name": f"Bow {item_id}",
+                    "fields": {"level_requirement": 0, "min_damage": 5, "max_damage": 10},
+                }
+                for item_id in range(1, 11)
+            ]
+            write_json(site_path, current)
+            write_json(generated_path, generated)
+            target = ExportTarget("weapons", root / "extract.py", root / "source", "weapons.json", site_path)
+            rules = HiddenItemRules.from_allowlists({"weapons": {"block": ["Bow"]}})
+
+            issues = _validate_generated_weapon_data(
+                [target],
+                output_dir=output_dir,
+                skipped_sections=[],
+                hidden_item_rules=rules,
+            )
+
+        self.assertFalse(any(issue.severity == "error" for issue in issues))
+        self.assertTrue(any("10 hidden weapon records" in issue.message for issue in issues))
+
+    def test_weapon_data_quality_guard_requires_incomplete_definitions_to_be_hidden(self):
+        from tools.codex_pipeline.game_update import _validate_generated_weapon_data
+        from tools.codex_pipeline.hidden_items import HiddenItemRules
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            output_dir = root / "generated"
+            site_path = root / "site" / "weapons.json"
+            generated_path = output_dir / "weapons.json"
+            zero_fields = {
+                "unknown_35": 4,
+                "min_damage": 0,
+                "max_damage": 0,
+                "skill_requirement": 0,
+                "level_requirement": 0,
+                "max_rarity": 0,
+                "perk": 0,
+                "shard_decomposition_amount": 0,
+                "shard_promotion_amount": 0,
+                "value_low": 0,
+                "value_high": 0,
+            }
+            write_json(site_path, [])
+            write_json(
+                generated_path,
+                [
+                    {"id": 1, "name": "Sword of Rage", "fields": zero_fields},
+                    {"id": 2, "name": "Visible Placeholder", "fields": zero_fields},
+                ],
+            )
+            target = ExportTarget("weapons", root / "extract.py", root / "source", "weapons.json", site_path)
+            rules = HiddenItemRules.from_allowlists({"weapons": {"block": ["Sword of Rage"]}})
+
+            issues = _validate_generated_weapon_data(
+                [target],
+                output_dir=output_dir,
+                skipped_sections=[],
+                hidden_item_rules=rules,
+            )
+
+        self.assertTrue(any(issue.severity == "error" and "Visible Placeholder" in issue.message for issue in issues))
+        self.assertTrue(any(issue.severity == "warning" and "Sword of Rage" in issue.message for issue in issues))
+
     def test_build_game_update_report_exports_and_summarizes_review_changes(self):
         from tools.codex_pipeline.game_update import build_game_update_report
 

@@ -35,6 +35,7 @@ from tools.codex_pipeline.exports import (
     build_generated_diff_reports,
     export_client_data,
 )
+from tools.codex_pipeline.hidden_items import HiddenItemRules, load_hidden_item_rules
 from tools.codex_pipeline.perks import load_perk_label_overrides
 from tools.codex_pipeline.sources import SourceCheckResult, validate_export_sources
 from tools.codex_pipeline.unknowns import UnknownFieldTargetReport, build_unknown_field_reports
@@ -144,6 +145,128 @@ def _validate_generated_corrupted_perks(
         for name, target in item_targets.items()
     }
     return validate_corrupted_perk_labels(item_data, corrupted_perk_overrides=overrides)
+
+
+def _record_fields(record: object) -> dict[str, Any]:
+    if not isinstance(record, dict):
+        return {}
+    fields = record.get("fields")
+    return fields if isinstance(fields, dict) else {}
+
+
+def _numeric_field(fields: dict[str, Any], name: str) -> float:
+    try:
+        return float(fields.get(name, 0) or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
+def _looks_like_incomplete_weapon(record: object) -> bool:
+    fields = _record_fields(record)
+    if not fields or _numeric_field(fields, "unknown_35") <= 0:
+        return False
+    gameplay_fields = (
+        "min_damage",
+        "max_damage",
+        "skill_requirement",
+        "level_requirement",
+        "max_rarity",
+        "perk",
+        "shard_decomposition_amount",
+        "shard_promotion_amount",
+        "value_low",
+        "value_high",
+    )
+    return all(_numeric_field(fields, name) == 0 for name in gameplay_fields)
+
+
+def _validate_generated_weapon_data(
+    targets: list[ExportTarget],
+    *,
+    output_dir: Path,
+    skipped_sections: list[str],
+    hidden_item_rules: HiddenItemRules | None = None,
+) -> list[ValidationIssue]:
+    weapon_target = _target_by_name(targets).get("weapons")
+    if weapon_target is None:
+        skipped_sections.append("weapon data-quality validation requires generated weapons")
+        return []
+
+    generated = _read_json_list(weapon_target.generated_path(output_dir), "weapons")
+    rules = hidden_item_rules or load_hidden_item_rules()
+    issues: list[ValidationIssue] = []
+
+    incomplete = [record for record in generated if _looks_like_incomplete_weapon(record)]
+    exposed = [record for record in incomplete if not rules.is_hidden_record("weapons", record)]
+    quarantined = [record for record in incomplete if rules.is_hidden_record("weapons", record)]
+    if exposed:
+        labels = ", ".join(str(record.get("name") or record.get("id")) for record in exposed[:8])
+        issues.append(
+            ValidationIssue(
+                "error",
+                f"generated weapons contain {len(exposed)} visible incomplete definitions with zero gameplay values: {labels}",
+            )
+        )
+    if quarantined:
+        labels = ", ".join(str(record.get("name") or record.get("id")) for record in quarantined[:8])
+        issues.append(
+            ValidationIssue(
+                "warning",
+                f"quarantined {len(quarantined)} incomplete weapon definitions through data/allowlists.json: {labels}",
+            )
+        )
+
+    try:
+        current = _read_json_list(weapon_target.site_path, "current weapons")
+    except ExportError as exc:
+        issues.append(ValidationIssue("error", str(exc)))
+        return issues
+
+    current_by_id = {
+        str(record.get("id")): record
+        for record in current
+        if isinstance(record, dict) and record.get("id") is not None
+    }
+    level_resets: list[object] = []
+    for record in generated:
+        if not isinstance(record, dict) or record.get("id") is None:
+            continue
+        previous = current_by_id.get(str(record.get("id")))
+        if previous is None:
+            continue
+        old_level = _numeric_field(_record_fields(previous), "level_requirement")
+        new_level = _numeric_field(_record_fields(record), "level_requirement")
+        if old_level > 0 and new_level <= 0:
+            level_resets.append(record)
+
+    visible_level_resets = [
+        record for record in level_resets if not rules.is_hidden_record("weapons", record)
+    ]
+    hidden_level_resets = [
+        record for record in level_resets if rules.is_hidden_record("weapons", record)
+    ]
+    if len(visible_level_resets) >= 10:
+        labels = ", ".join(
+            str(record.get("name") or record.get("id")) for record in visible_level_resets[:8]
+        )
+        issues.append(
+            ValidationIssue(
+                "error",
+                f"mass weapon item-level reset detected: {len(visible_level_resets)} visible records changed from a positive level to 0; "
+                f"confirm the client data before sync ({labels})",
+            )
+        )
+    if hidden_level_resets:
+        labels = ", ".join(
+            str(record.get("name") or record.get("id")) for record in hidden_level_resets[:8]
+        )
+        issues.append(
+            ValidationIssue(
+                "warning",
+                f"ignored item-level resets for {len(hidden_level_resets)} hidden weapon records: {labels}",
+            )
+        )
+    return issues
 
 
 def _validate_generated_asset_data_parity(
@@ -291,6 +414,13 @@ def build_game_update_report(
             output_dir=output_dir,
             perk_label_overrides_path=perk_label_overrides_path,
             skipped_sections=skipped_sections,
+        )
+        validation_issues.extend(
+            _validate_generated_weapon_data(
+                target_list,
+                output_dir=output_dir,
+                skipped_sections=skipped_sections,
+            )
         )
         validation_issues.extend(atlas_issues)
         validation_issues.extend(
