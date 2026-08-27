@@ -1743,7 +1743,9 @@ async function runPerksSpec(browser, baseUrl) {
     await page.locator("#perk-speed-context").waitFor({ state: "visible" });
     await page.locator('[data-perk-name="Runic"].perk-selected').waitFor({ state: "visible" });
     await assertPerkSources(page);
+    await assertPerkTatterSources(page);
     await assertPerkMathTooltip(page);
+    await assertMobilePerkTatterLayout(browser, baseUrl);
 
     await page.locator("#perk-search").fill("lifesteal");
     await page.waitForFunction(() => {
@@ -4480,7 +4482,7 @@ async function assertTooltipCoversOverlappingTriggers(page, activeCard) {
           rect.bottom > tooltipRect.top
       );
 
-    if (!overlappingTriggers.length) return { error: "No overlapping stacking trigger found for regression check" };
+    if (!overlappingTriggers.length) return { leaks: [], overlapCount: 0 };
 
     const leaks = overlappingTriggers
       .map(({ trigger, rect }) => {
@@ -4556,6 +4558,71 @@ async function assertWeaponDetailEnhancements(page) {
   await page.locator('#details-properties a.perk-link[href*="pages/systems/perks.html?perk=Runic"]').first().waitFor({
     state: "attached",
   });
+}
+
+async function assertPerkTatterSources(page) {
+  const parry = page.locator('[data-perk-name="Parry"]');
+  const chips = parry.locator(".perk-tatter-chip");
+  if ((await chips.count()) !== 6) {
+    throw new Error(`Parry expected six visible tatter sources, found ${await chips.count()}`);
+  }
+  const uncommonNames = await parry
+    .locator('.perk-tatter-chip[data-tatter-type="uncommon"] .perk-tatter-monster')
+    .allTextContents();
+  const rareNames = await parry
+    .locator('.perk-tatter-chip[data-tatter-type="rare"] .perk-tatter-monster')
+    .allTextContents();
+  if (uncommonNames.join(",") !== "Balron,Anubis") {
+    throw new Error(`Parry uncommon tatter sources are out of order: ${uncommonNames.join(", ")}`);
+  }
+  if (rareNames.join(",") !== "Werewolf,Death,Juggernaut,Orcus") {
+    throw new Error(`Parry rare tatter sources are out of order: ${rareNames.join(", ")}`);
+  }
+  const balronHref = await parry
+    .locator('.perk-tatter-chip[data-tatter-type="uncommon"][href*="monsters.html?monster=93"]')
+    .getAttribute("href");
+  if (!balronHref) {
+    throw new Error("Parry tatter sources missing Balron monster detail link");
+  }
+  const balronTitle = (await parry
+    .locator('.perk-tatter-chip[href*="monsters.html?monster=93"]')
+    .getAttribute("title")) || "";
+  if (!balronTitle.includes("Level 95") || !balronTitle.includes("roughly 1 in 10")) {
+    throw new Error(`Balron tatter tooltip missing level/drop context: "${balronTitle}"`);
+  }
+  if ((await page.locator('[data-perk-name="Runic"] .perk-tatter-list').count()) !== 0) {
+    throw new Error("Unique Runic perk should not display an empty tatter source section");
+  }
+
+  await page.locator("#perk-search").fill("balron");
+  await page.waitForFunction(() => {
+    const parry = document.querySelector('[data-perk-name="Parry"]');
+    const runic = document.querySelector('[data-perk-name="Runic"]');
+    return parry && !parry.classList.contains("perk-card-hidden") && runic?.classList.contains("perk-card-hidden");
+  });
+  await page.locator("#perk-search").fill("");
+  await page.waitForFunction(
+    () => !document.querySelector('[data-perk-name="Runic"]')?.classList.contains("perk-card-hidden")
+  );
+}
+
+async function assertMobilePerkTatterLayout(browser, baseUrl) {
+  const mobilePage = await browser.newPage();
+  try {
+    mobilePage.setDefaultTimeout(timeoutMs);
+    await mobilePage.setViewportSize({ width: 390, height: 844 });
+    await mobilePage.goto(joinUrl(baseUrl, "/pages/systems/perks.html?perk=Parry"), { waitUntil: "load" });
+    await mobilePage.locator('[data-perk-name="Parry"] .perk-tatter-chip').first().waitFor({ state: "visible" });
+    const layout = await mobilePage.evaluate(() => ({
+      chipCount: document.querySelectorAll('[data-perk-name="Parry"] .perk-tatter-chip').length,
+      overflow: document.documentElement.scrollWidth > window.innerWidth + 1,
+    }));
+    if (layout.chipCount !== 6 || layout.overflow) {
+      throw new Error(`Perk tatter sources do not fit mobile: ${JSON.stringify(layout)}`);
+    }
+  } finally {
+    await mobilePage.close();
+  }
 }
 
 async function assertSuperDuperBowHidden(page) {

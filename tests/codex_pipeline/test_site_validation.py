@@ -1057,6 +1057,7 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(calc_script_path, cli.VALIDATED_SCRIPT_PATHS)
         self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
         self.assertIn(f'<link rel="stylesheet" href="css/perks.css?v={STATIC_ASSET_VERSION}" />', html)
+        self.assertIn(f'<script src="js/utils.js?v={STATIC_ASSET_VERSION}"></script>', html)
         self.assertIn(f'<script src="js/perk-calculations.js?v={STATIC_ASSET_VERSION}" defer></script>', html)
         self.assertIn(f'<script src="js/perks-page.js?v={STATIC_ASSET_VERSION}" defer></script>', html)
         self.assertNotIn("<style>", html)
@@ -1088,7 +1089,9 @@ class SiteValidationTests(unittest.TestCase):
         for expected in [
             'const PERK_ROUTE_PARAM = "perk";',
             "const buildPerkSourceIndex",
+            "const buildTatterSourceIndex",
             "const renderPerkSources",
+            "const renderTatterSources",
             "const renderPerkMath",
             "const updatePerkMath",
             "const applyPerkFilters",
@@ -1097,6 +1100,8 @@ class SiteValidationTests(unittest.TestCase):
             "url.searchParams.delete(PERK_ROUTE_PARAM)",
             "pages/items/weapons_data05.json",
             "pages/items/armors_data06.json",
+            "pages/enemies/monsters_data03.json",
+            "data/allowlists.json",
             "pages/items/weapons.html?weapon=",
             "pages/items/armors.html?armor=",
             "pages/stats/races.html",
@@ -1143,6 +1148,10 @@ class SiteValidationTests(unittest.TestCase):
             ".perk-math-scenario",
             ".perk-math-example-title",
             ".perk-source-chip",
+            ".perk-tatter-list",
+            ".perk-tatter-chip",
+            '[data-tatter-type="uncommon"]',
+            '[data-tatter-type="rare"]',
             ".perk-card-hidden",
             ".stat-card.perk-selected",
             ".perk-empty-state",
