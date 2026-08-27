@@ -2891,6 +2891,14 @@ class SiteValidationTests(unittest.TestCase):
 
         self.assertIn('String(a[1] ?? "").localeCompare(String(b[1] ?? ""))', script)
 
+    def test_armors_page_filters_holy_and_dark_resistances(self):
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        script = (REPO_ROOT / "js" / "armors-page.js").read_text(encoding="utf-8")
+
+        self.assertIn("holy: res.holy", script)
+        self.assertIn("dark: res.dark", script)
+
     def test_armors_page_detail_hides_empty_corrupted_perks_and_empty_requirements(self):
         from tools.codex_pipeline.config import REPO_ROOT
 

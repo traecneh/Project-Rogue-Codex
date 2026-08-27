@@ -858,6 +858,8 @@
           disease: res.disease,
           acid: res.acid,
           electric: res.electric || res.lightning,
+          holy: res.holy,
+          dark: res.dark,
         };
         const hasAll = Array.from(selectedResists).every(
           (key) => resMap[key] !== null && resMap[key] !== undefined && Number(resMap[key]) !== 0

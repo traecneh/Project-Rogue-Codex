@@ -28,6 +28,7 @@ const smokeSpecs = [
     queryKey: "weapon",
   },
   {
+    assertDetail: assertArmorResistanceFilters,
     detailName: "Bottomless Bag",
     detailQuery: "1006",
     label: "armors",
@@ -76,6 +77,26 @@ const smokeSpecs = [
     queryKey: "monster",
   },
 ];
+
+async function assertArmorResistanceFilters(page) {
+  const filter = page.locator("#filter-resist");
+  for (const [resistance, expectedCount] of [
+    ["holy", 14],
+    ["dark", 15],
+  ]) {
+    await filter.selectOption(resistance);
+    await page.waitForFunction(
+      ({ count }) => document.querySelectorAll("#items-body tr[data-id]").length === count,
+      { count: expectedCount },
+      { timeout: timeoutMs }
+    );
+    const countText = (await page.locator("#item-count").textContent()).trim();
+    if (!countText.startsWith(String(expectedCount))) {
+      throw new Error(`Armor ${resistance} filter expected ${expectedCount} results, got "${countText}"`);
+    }
+  }
+  await filter.selectOption([]);
+}
 
 main().catch((error) => {
   console.error(`SMOKE ERROR site: ${formatError(error)}`);
