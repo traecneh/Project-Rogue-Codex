@@ -65,8 +65,8 @@ const smokeSpecs = [
   },
   {
     assertDetail: assertMonsterRecommendationEnhancements,
-    detailName: "Bat",
-    detailQuery: "bat",
+    detailName: "Goblin",
+    detailQuery: "goblin",
     label: "monsters",
     listPath: "/pages/enemies/monsters.html",
     detailSelector: "#monster-details",

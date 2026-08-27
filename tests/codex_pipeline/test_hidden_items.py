@@ -1,10 +1,73 @@
 import json
 import unittest
+from pathlib import Path
 
-from tools.codex_pipeline.config import ALLOWLISTS_PATH
+from tools.codex_pipeline.config import ALLOWLISTS_PATH, MONSTERS_DATA_PATH, MONSTER_IMAGES_DIR
+
+
+AUDITED_COMBAT_MONSTERS = {
+    "Abberation",
+    "Abyssal Ravager",
+    "Bee",
+    "Blue Druid",
+    "Bug Swarm",
+    "Carrion Crawler",
+    "Duskmaw",
+    "Fire Fiend",
+    "Forest Troll",
+    "Frost Goblin",
+    "Frozen Skull",
+    "Goblin",
+    "Greater Goblin",
+    "Grimlock",
+    "Haunting",
+    "Kelumna",
+    "Lesser Ettin",
+    "Lesser Giant",
+    "Malevolence",
+    "Mimic",
+    "Mummy",
+    "Purple Druid",
+    "Queen Spider",
+    "Reaper",
+    "Reindeer",
+    "Scorpion",
+    "Shock Bat",
+    "Stoneclaw",
+    "Troll Shaman",
+    "Visage",
+    "Void Disciple",
+    "Voidmaw",
+    "Wolf",
+}
 
 
 class HiddenItemRulesTests(unittest.TestCase):
+    def test_audited_combat_monsters_are_visible_and_complete(self):
+        allowlists = json.loads(ALLOWLISTS_PATH.read_text(encoding="utf-8"))
+        allowed_monsters = set(allowlists["monsters"]["allow"])
+        held_monsters = {"Cow", "Chicken", "Dragon Spire", "Winter Spire", "Master Spire"}
+
+        self.assertLessEqual(AUDITED_COMBAT_MONSTERS, allowed_monsters)
+        self.assertTrue(held_monsters.isdisjoint(allowed_monsters))
+        self.assertIn(23, allowlists["monsters"]["block_ids"])
+
+        records = json.loads(MONSTERS_DATA_PATH.read_text(encoding="utf-8"))
+        records_by_name = {record["name"]: record for record in records}
+        manifest = json.loads((MONSTER_IMAGES_DIR / "manifest.json").read_text(encoding="utf-8"))
+        image_names = {Path(path).stem for path in manifest}
+
+        for name in AUDITED_COMBAT_MONSTERS:
+            with self.subTest(monster=name):
+                record = records_by_name[name]
+                fields = record["fields"]
+                self.assertGreater(fields["level"], 0)
+                self.assertGreater(fields["health"], 0)
+                self.assertGreater(fields["max_damage"], 0)
+                self.assertGreater(fields["movement_speed"], 0)
+                self.assertGreater(fields["attack_speed"], 0)
+                self.assertIn(name, image_names)
+
     def test_site_allowlist_blocks_super_duper_bow_by_exact_name(self):
         allowlists = json.loads(ALLOWLISTS_PATH.read_text(encoding="utf-8"))
 
