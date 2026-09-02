@@ -84,7 +84,7 @@ python -m tools.codex_pipeline release-check
 After pushing `main`, confirm the public site:
 
 ```powershell
-python -m tools.codex_pipeline verify-deploy
+python -m tools.codex_pipeline verify-deploy --impact-plan generated-output/codex-data/impact_validation_plan.json
 ```
 
 ## Command Surface
@@ -113,8 +113,16 @@ Important commands:
   reviewed generated data and image assets. After apply syncs and validation
   succeed, the workflow refreshes `data/client_inventory_snapshot.json` with the
   accepted client install baseline. Use `--write-summary` to write
-  `generated-output/codex-data/game_update_workflow_summary.md`, a compact
-  review artifact covering client inventory changes, generated data diffs,
+  `generated-output/codex-data/game_update_workflow_summary.md`,
+  `generated-output/codex-data/gameplay_impact_report.md`, the deterministic
+  machine-readable companion `generated-output/codex-data/gameplay_impact_report.json`,
+  and `generated-output/codex-data/impact_validation_plan.json`. The validation
+  plan maps changed elements, perks, public records, and other gameplay fields to
+  the exact interconnected site surfaces and automated runners that must verify
+  them.
+  The gameplay report filters animation, price, raw, and metadata churn while
+  preserving readable player-facing changes. The workflow summary covers
+  client inventory changes, generated data diffs,
   hidden exclusion counts, image diffs, priority-vs-churn image counts, capped
   priority image details, unknown-field counts, blockers, and the recommended
   next action. Use it with `--write-image-review` to add links to the generated
@@ -124,8 +132,45 @@ Important commands:
   block sync readiness; added, removed, meaningful, or unreadable images still
   require review before apply. Workflow asset sync defaults to priority scope;
   pass `--image-sync-scope all` only when intentionally syncing low-priority
-  changed-image churn. Use `verify-deploy` after deployment to wait for GitHub
-  Actions/Pages and check the live site.
+  changed-image churn. Add `--risk-gate` to an apply run to enforce the impact
+  policy: low-risk-only changes may apply automatically, medium risk requires
+  `--write-summary`, and high risk additionally requires
+  `--acknowledge-impact DIGEST`, using the exact deterministic digest printed by
+  the reviewed report. The apply run rebuilds the impact report and rejects a
+  stale or mismatched digest. This opt-in gate is independent of the existing
+  `--force-apply` sync-readiness override. After apply validation, any routed
+  browser checks automatically run through `smoke-site`; a failure prevents the
+  client inventory snapshot from being accepted. Pass an existing artifact with
+  `smoke-site --impact-plan PATH` to reproduce the routed page groups and record
+  probes directly. The plan retains every affected public record; browser
+  execution checks every addition/removal and five deterministic changed records
+  per target for search, deep links, rendered images, and relationship
+  destinations. Each CLI smoke run writes `impact_validation_results.json` with
+  the reviewed report digest, selected groups and records, status, timing,
+  failure evidence, and a deterministic fingerprint of the tested static site
+  tree. Apply workflows link the result from the workflow summary,
+  including failed evidence before refusing snapshot acceptance. After push,
+  `verify-deploy --impact-plan PATH` requires that passed local evidence, a
+  clean tracked worktree, no untracked deployable files, and a local `HEAD`
+  matching the requested deployment commit. Before marking deployment as
+  running, it also requires `origin` to identify the configured GitHub
+  repository and `origin/<branch>` to resolve remotely to the same commit. It
+  rejects evidence whose static site fingerprint differs from that commit,
+  waits for GitHub Actions/Pages, reruns the same routed checks live without
+  overwriting the local result, and writes `deployment_validation_results.json`.
+  That final evidence binds the report digest to the deployed commit, Codex
+  content digest, workflow outcomes, live file checks, and live smoke result.
+  A successful run then atomically archives the finalized ledger and every
+  hashed artifact under `generated-output/game-update-history/<run-id>/`.
+  The archive manifest records the commit, report and source digests, sizes, and
+  checksums; an existing matching archive is verified rather than overwritten.
+  The sibling `game_update_run.json` ledger uses the report digest plus a stable
+  client-inventory fingerprint as its run identity. It preserves progress for a
+  repeated review of the same client, starts fresh for a different client, and
+  tracks discovery, review, apply, local validation, baseline acceptance,
+  commit, deployment, and live validation. `game-update-status` revalidates
+  recorded artifact hashes and, after local validation, derives the exact next
+  action from source-tree, worktree, local-commit, and remote-branch provenance.
 - `export-client-data`: runs configured extractors and writes generated JSON to
   `generated-output/codex-data/`.
 - `unknown-fields`: inventories `unknown_*` fields in current site data, or in
@@ -154,7 +199,22 @@ Important commands:
 - `drop-report`: audits drop-source overrides and prints both the item-centric
   source view and derived monster-centric loot view.
 - `verify-deploy`: waits for the expected GitHub Actions and Pages runs for the
-  current commit, then runs `verify-live` and `smoke-site --live`.
+  current clean commit, then runs `verify-live` and `smoke-site --live`. It
+  fingerprints the deployable HTML, CSS, JavaScript, data, and image tree before
+  polling GitHub, verifies the configured repository and pushed branch directly
+  from `origin`, and requires live smoke evidence to identify the same tree. Pass
+  `--impact-plan PATH` to require its sibling local smoke evidence and rerun the
+  exact routed checks. The command writes separate live-smoke and deployment
+  evidence artifacts and seals completed update-run evidence into an immutable
+  archive; without a plan it retains full-site smoke behavior.
+- `game-update-status`: reads `game_update_run.json`, revalidates artifact hashes
+  and source provenance, and reports whether the run is ready to commit, push,
+  or deploy, or is blocked by stale evidence or a diverged remote. It does not
+  change pipeline state.
+- `game-update-history`: lists immutable completed-run archives and verifies
+  their identities, required evidence files, sizes, and checksums. With
+  `--update-run-path`, it also detects a completed active run whose matching
+  archive is missing or invalid.
 - `verify-live`: fetches the deployed GitHub Pages site and confirms live JSON,
   image manifests, and deployed image hashes match local site files.
 
@@ -166,6 +226,17 @@ sync, diff, and source-check commands.
 Core package:
 
 - `tools/codex_pipeline/cli.py`: command dispatch and validation orchestration.
+- `tools/codex_pipeline/deployment_validation.py`: reviewed-plan/local-smoke
+  binding, evidence validation, artifact hashing, and deployment-result output.
+- `tools/codex_pipeline/evidence_archive.py`: atomic, idempotent completed-run
+  evidence archiving and checksum verification.
+- `tools/codex_pipeline/provenance.py`: deterministic deployable-site
+  fingerprinting and clean Git worktree inspection for smoke and deployment
+  evidence.
+- `tools/codex_pipeline/update_run.py`: update-run identity, stage transitions,
+  artifact hashes, deployment prerequisites, and next-action derivation.
+- `tools/codex_pipeline/update_status.py`: read-only artifact, source-tree,
+  worktree, commit, and remote provenance assessment for update-run status.
 - `tools/codex_pipeline/config.py`: repository paths, external client paths, site
   data paths, override paths, and image directories.
 - `tools/codex_pipeline/assets.py`: client-vs-site image inventory, hash
@@ -177,6 +248,10 @@ Core package:
   sync.
 - `tools/codex_pipeline/game_update.py`: review-only game update report
   orchestration.
+- `tools/codex_pipeline/gameplay_impact.py`: semantic player-facing change and
+  risk classification with compact Markdown and machine-readable JSON reports.
+- `tools/codex_pipeline/impact_validation.py`: deterministic impact-to-surface
+  validation routing and machine-readable plan generation.
 - `tools/codex_pipeline/sources.py`: pre-export source checks used by `doctor`.
 - `tools/codex_pipeline/deploy.py`: live GitHub Pages data, manifest, and image
   hash comparison.
@@ -278,7 +353,7 @@ python -m tools.codex_pipeline release-check
 After pushing `main`, confirm the public site:
 
 ```powershell
-python -m tools.codex_pipeline verify-deploy
+python -m tools.codex_pipeline verify-deploy --impact-plan generated-output/codex-data/impact_validation_plan.json
 ```
 
 GitHub Actions runs `release-check`, unit tests, local smoke checks, and
@@ -290,9 +365,9 @@ deployment then publishes the static site from `main`.
 For data or extractor changes:
 
 1. Run `game-update-workflow`.
-2. Review the client inventory diff, generated-vs-site diffs, asset image diffs,
-   update warnings, or rerun with `--write-summary` for the compact workflow
-   artifact.
+2. Review the gameplay impact, client inventory diff, generated-vs-site diffs,
+   asset image diffs, and update warnings, or rerun with `--write-summary` for
+   the compact workflow artifacts.
 3. Sync only intentional generated data and asset changes, or rerun with
    `--apply` after review. Successful apply refreshes the client inventory
    snapshot after validation.
@@ -300,7 +375,7 @@ For data or extractor changes:
 5. If CSS or JavaScript changed, run `bump-static-version`.
 6. Commit.
 7. Run `release-check` from the clean worktree.
-8. Push and run `verify-deploy`.
+8. Push and run `verify-deploy --impact-plan generated-output/codex-data/impact_validation_plan.json`.
 
 For override-only changes:
 

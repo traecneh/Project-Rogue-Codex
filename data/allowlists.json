@@ -24,6 +24,7 @@
       "Carrion Crawler",
       "Centaur",
       "Centaur Warrior",
+      "Cinderbone Harrower",
       "Cinderdrake",
       "Crawling Defiler",
       "Cryoblade Revenant",
@@ -119,6 +120,7 @@
       "Nightmare",
       "Nycadaemon",
       "Obsidian Leviathan",
+      "Obsidian Ravager",
       "Oglah",
       "Oglah Soldier",
       "Orc",
@@ -259,6 +261,12 @@
       "Great Fire Crossbow",
       "Steel Fire Crossbow",
       "Four Elements Crossbow",
+      "Blade of Rage",
+      "Blade of Divinity",
+      "Reaper of Rage",
+      "Reaper of Divinity",
+      "Battlespear of Rage",
+      "Battlespear of Divinity",
       "Sword of Rage",
       "Dagger of Rage",
       "Axe of Rage",
@@ -269,7 +277,8 @@
       "Axe of Divinity",
       "Warmace of Divinity",
       "Spear of Divinity"
-    ]
+    ],
+    "block_ids": [287, 288, 289, 290, 437, 438, 641, 642, 847, 848]
   },
   "armors": {
     "block": [

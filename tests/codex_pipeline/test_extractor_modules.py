@@ -203,6 +203,8 @@ class ExtractorModuleTests(unittest.TestCase):
 
         self.assertEqual("Frozen Heart (Tier 1)", PERK_LABELS[22])
         self.assertEqual("Frozen Heart (Tier 2)", resolve_corrupted_perk_label(278, 22))
+        self.assertEqual("Retribution (Tier 2)", PERK_LABELS[313])
+        self.assertEqual("Rampage (Tier 3)", PERK_LABELS[572])
         self.assertEqual("Epic", RARITY_LABELS[2])
         self.assertEqual("Holy", WEAPON_ELEMENT_LABELS[3])
         self.assertEqual("Cold", WEAPON_ELEMENT_LABELS[4])
@@ -245,8 +247,8 @@ class ExtractorModuleTests(unittest.TestCase):
         self.assertEqual("Frozen Heart (Tier 2)", weapon_fields["corrupted_perk_label"])
         unknown_weapon_fields = {"perk": 570, "corrupted_perk": 41}
         enrich_weapon_fields(unknown_weapon_fields)
-        self.assertEqual("Unknown", unknown_weapon_fields["perk_label"])
-        self.assertEqual("Unknown", unknown_weapon_fields["corrupted_perk_label"])
+        self.assertEqual("Finisher (Tier 3)", unknown_weapon_fields["perk_label"])
+        self.assertEqual("Demonsbane (Tier 1)", unknown_weapon_fields["corrupted_perk_label"])
         self.assertEqual(300, armor_fields["value"])
         self.assertEqual("Arrows", armor_fields["slot_label"])
         self.assertEqual("Epic", armor_fields["max_rarity_label"])
@@ -328,6 +330,7 @@ class ExtractorModuleTests(unittest.TestCase):
         self.assertEqual("Dark", ELEMENTAL_LABELS[5])
         self.assertEqual("Freeze", STATUS_EFFECT_LABELS[3856])
         self.assertEqual("Frozen Heart", TATTER_LABELS[22])
+        self.assertEqual("Rampage", TATTER_LABELS[60])
         fields = {
             "type": 3,
             "elemental_attack": 4,

@@ -116,6 +116,28 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn("overflow: auto;", wrapper_body)
         self.assertIn("max-height: 70vh;", wrapper_body)
 
+    def test_item_catalog_tables_contain_horizontal_overflow(self):
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        shared_css = (REPO_ROOT / "css" / "styles.css").read_text(encoding="utf-8")
+        main_match = re.search(r"\.main-content\s*\{(?P<body>[^}]*)\}", shared_css)
+        self.assertIsNotNone(main_match)
+        main_body = main_match.group("body") if main_match else ""
+        self.assertIn("min-width: 0;", main_body)
+
+        for css_name in ("weapons.css", "armors.css", "misc-items.css"):
+            with self.subTest(css=css_name):
+                css = (REPO_ROOT / "css" / css_name).read_text(encoding="utf-8")
+                wrapper_match = re.search(r"\.items-table-wrapper\s*\{(?P<body>[^}]*)\}", css)
+                self.assertIsNotNone(wrapper_match)
+                wrapper_body = wrapper_match.group("body") if wrapper_match else ""
+                self.assertIn("overflow-x: auto;", wrapper_body)
+                if css_name != "misc-items.css":
+                    self.assertIn(
+                        "grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));",
+                        css,
+                    )
+
     def test_monsters_page_uses_external_page_stylesheet(self):
         from tools.codex_pipeline import cli
         from tools.codex_pipeline.config import REPO_ROOT
@@ -697,8 +719,8 @@ class SiteValidationTests(unittest.TestCase):
 
         weapons = json.loads((REPO_ROOT / "pages" / "items" / "weapons_data05.json").read_text(encoding="utf-8"))
         darkness_falls = next(record for record in weapons if record.get("name") == "Darkness Falls")
-        self.assertEqual(75, darkness_falls["fields"]["level_requirement"])
-        self.assertEqual(70, darkness_falls["fields"]["skill_requirement"])
+        self.assertEqual(50, darkness_falls["fields"]["level_requirement"])
+        self.assertEqual(50, darkness_falls["fields"]["skill_requirement"])
         dark_sword = next(record for record in weapons if record.get("name") == "Dark Sword")
         self.assertEqual(145, dark_sword["fields"]["level_requirement"])
         self.assertEqual(85, dark_sword["fields"]["skill_requirement"])
@@ -968,6 +990,14 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn('setQuickSummary("health"', script)
         self.assertIn('setQuickSummary("dr"', script)
         self.assertIn(".quick-summary-card[title]", css)
+
+    def test_build_planner_imports_corrupted_perks_for_weapons_and_armors(self):
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        script = (REPO_ROOT / "js" / "build-planner.js").read_text(encoding="utf-8")
+
+        self.assertEqual(2, script.count("corruptedPerk: fields.corrupted_perk"))
+        self.assertIn("perkSet.add(String(i.corruptedPerk).trim());", script)
 
     def test_build_planner_has_compact_issue_indicators(self):
         from tools.codex_pipeline.config import REPO_ROOT
@@ -3044,6 +3074,26 @@ class SiteValidationTests(unittest.TestCase):
         messages = "\n".join(issue.message for issue in issues)
         self.assertIn("expected corrupted perk 41 label", messages)
         self.assertIn("expected corrupted perk 24 label 'Unknown'", messages)
+
+    def test_record_id_validation_reports_duplicates_by_data_kind(self):
+        from tools.codex_pipeline.validators.site import validate_unique_record_ids
+
+        issues = validate_unique_record_ids(
+            {
+                "weapons": [{"id": 1, "name": "Sword"}],
+                "monsters": [
+                    {"id": 100, "name": "Ice Devil"},
+                    {"id": "100", "name": "Obsidian Ravager"},
+                ],
+            }
+        )
+
+        self.assertEqual(1, len(issues))
+        self.assertEqual("error", issues[0].severity)
+        self.assertIn(
+            "monsters duplicate record ID 100: Ice Devil, Obsidian Ravager",
+            issues[0].message,
+        )
 
     def test_inline_script_parser_reports_syntax_errors(self):
         from tools.codex_pipeline.validators.site import validate_inline_scripts

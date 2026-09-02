@@ -76,17 +76,30 @@ class HiddenItemRulesTests(unittest.TestCase):
             self.assertIn(name, allowlists["weapons"]["block"])
         for name in [
             "Sword of Rage",
+            "Blade of Rage",
             "Dagger of Rage",
             "Axe of Rage",
+            "Reaper of Rage",
             "Warmace of Rage",
             "Spear of Rage",
+            "Battlespear of Rage",
             "Sword of Divinity",
+            "Blade of Divinity",
             "Dagger of Divinity",
             "Axe of Divinity",
+            "Reaper of Divinity",
             "Warmace of Divinity",
             "Spear of Divinity",
+            "Battlespear of Divinity",
         ]:
             self.assertIn(name, allowlists["weapons"]["block"])
+        self.assertEqual(
+            {287, 288, 289, 290, 437, 438, 641, 642, 847, 848},
+            set(allowlists["weapons"]["block_ids"]),
+        )
+
+        for name in ("Obsidian Ravager", "Cinderbone Harrower"):
+            self.assertIn(name, allowlists["monsters"]["allow"])
 
     def test_allowlist_block_rules_match_records_and_image_variants(self):
         from tools.codex_pipeline.hidden_items import HiddenItemRules
@@ -97,7 +110,8 @@ class HiddenItemRulesTests(unittest.TestCase):
                     "block": [
                         "Super Duper",
                         "GM Deathbringer",
-                    ]
+                    ],
+                    "block_ids": [287],
                 },
                 "armors": {"block": ["stone of jordan"]},
                 "monsters": {"block_ids": [23]},
@@ -107,6 +121,8 @@ class HiddenItemRulesTests(unittest.TestCase):
         self.assertTrue(rules.is_hidden_record("weapons", {"name": "Super Duper Bow"}))
         self.assertTrue(rules.is_hidden_image("weapons", "Super Duper Bow-1037.png"))
         self.assertTrue(rules.is_hidden_image("weapons", "GM Deathbringer.png"))
+        self.assertTrue(rules.is_hidden_record("weapons", {"id": 287, "name": "Blade of Rage"}))
+        self.assertTrue(rules.is_hidden_image("weapons", "Blade of Rage-287.gif"))
         self.assertTrue(rules.is_hidden_image("armors", "Stone of Jordan.gif"))
         self.assertFalse(rules.is_hidden_image("weapons", "Rune Sword.png"))
         self.assertTrue(rules.is_hidden_record("monsters", {"id": 23, "name": "Zombie"}))

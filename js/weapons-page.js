@@ -186,6 +186,7 @@
             : "pages/enemies/monsters.html";
         };
   let hiddenWeaponNames = new Set();
+  let hiddenWeaponIds = new Set();
   let allowedMonsterNames = new Set();
   let blockedMonsterIds = new Set();
   let dropSources =
@@ -195,6 +196,11 @@
 
   const applyAllowlists = (allowlists) => {
     hiddenWeaponNames = buildNameSet(allowlists?.weapons?.block);
+    hiddenWeaponIds = new Set(
+      (Array.isArray(allowlists?.weapons?.blockIds) ? allowlists.weapons.blockIds : []).map((id) =>
+        String(id).trim()
+      )
+    );
     allowedMonsterNames = buildNameSet(allowlists?.monsters?.allow);
     blockedMonsterIds = new Set(
       (Array.isArray(allowlists?.monsters?.blockIds) ? allowlists.monsters.blockIds : []).map((id) =>
@@ -1317,7 +1323,7 @@
             const nameLower = (weapon.name || "").toLowerCase();
             const levelNum = Number(weapon.level);
             if (nameLower === "flaming sword" && levelNum === 0) return false;
-            return !hiddenWeaponNames.has(nameLower);
+            return !hiddenWeaponNames.has(nameLower) && !hiddenWeaponIds.has(String(weapon.id).trim());
           });
         if (!items.length) {
           renderEmpty("Add weapons_data05.json beside this page to see weapons.");

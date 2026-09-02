@@ -1,4 +1,5 @@
 import io
+import json
 from pathlib import Path
 import tempfile
 import unittest
@@ -11,6 +12,8 @@ from tools.codex_pipeline.assets import AssetChangeReport
 from tools.codex_pipeline.client_inventory import ClientInventoryDiffEntry, ClientInventoryDiffReport
 from tools.codex_pipeline.exports import DataDiffReport, ExportTarget, FieldChange, RecordChange
 from tools.codex_pipeline.game_update import GameUpdateReport
+from tools.codex_pipeline.gameplay_impact import build_gameplay_impact_report, gameplay_impact_digest
+from tools.codex_pipeline.impact_validation import build_impact_validation_plan
 from tools.codex_pipeline.unknowns import UnknownFieldReport, UnknownFieldTargetReport
 
 
@@ -107,6 +110,46 @@ def workflow_summary_report() -> GameUpdateReport:
     )
 
 
+def gameplay_risk_workflow_report(*, high_risk: bool) -> GameUpdateReport:
+    target = ExportTarget(
+        name="weapons",
+        extractor_script=Path("tools/extract_weapons.py"),
+        source_data=Path("client/data05.dat"),
+        output_filename="weapons_data05.json",
+        site_path=Path("site/data/weapons.json"),
+    )
+    diff = DataDiffReport(
+        target=target,
+        generated_path=Path("generated/weapons_data05.json"),
+        site_path=target.site_path,
+        added=[] if high_risk else ["Crystal Sword (3)"],
+        removed=[],
+        changed=(
+            [
+                RecordChange(
+                    key="1",
+                    label="Iron Sword (1)",
+                    field_changes=[FieldChange("fields.min_damage", 8, 9)],
+                )
+            ]
+            if high_risk
+            else []
+        ),
+    )
+    return GameUpdateReport(
+        output_dir=Path("generated"),
+        source_checks=[],
+        export_results=[],
+        diff_reports=[diff],
+        unknown_reports=[],
+        asset_reports=[],
+        drop_report=None,
+        validation_issues=[],
+        export_errors=[],
+        skipped_sections=[],
+    )
+
+
 def write_pixel_image(path: Path, pixel: tuple[int, int, int, int]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     image = Image.new("RGBA", (1, 1), pixel)
@@ -128,10 +171,20 @@ class GameUpdateWorkflowTests(unittest.TestCase):
             ],
             issues=[],
         )
+        report = workflow_summary_report()
+        impact = build_gameplay_impact_report(report.diff_reports)
+        validation_plan = build_impact_validation_plan(
+            impact,
+            report_digest=gameplay_impact_digest(impact),
+        )
         markdown = cli.build_game_update_workflow_summary_markdown(
             inventory_diff,
-            workflow_summary_report(),
+            report,
             apply_requested=False,
+            impact_validation_plan=validation_plan,
+            impact_validation_results_artifact=Path("generated/impact_validation_results.json"),
+            impact_validation_results_status="passed",
+            game_update_run_artifact=Path("generated/game_update_run.json"),
         )
 
         self.assertIn("# Project Rogue Codex Workflow Summary", markdown)
@@ -141,8 +194,21 @@ class GameUpdateWorkflowTests(unittest.TestCase):
         self.assertIn("- Data: +1 -0 ~1", markdown)
         self.assertIn("- Images: +1 -0 ~0", markdown)
         self.assertIn("- Changed: packed_json weapons.json: fields added: holyResist, darkResist", markdown)
+        self.assertIn("## Gameplay Impact", markdown)
+        self.assertIn("- Public records: +1 -0", markdown)
+        self.assertIn("- Routine-only changed records hidden: 1", markdown)
         self.assertIn("- Added: Frost Bow", markdown)
         self.assertIn("- Changed: Iron Sword: damage", markdown)
+        self.assertIn("## Impact-Aware Validation Plan", markdown)
+        self.assertIn("- Routed checks: 6", markdown)
+        self.assertIn("- Affected records: 1", markdown)
+        self.assertIn("impact_validation_results.json", markdown)
+        self.assertIn("- Validation evidence status: PASSED", markdown)
+        self.assertIn("## Automated Update Run", markdown)
+        self.assertIn("game_update_run.json", markdown)
+        self.assertIn("- Post-apply browser smoke: required", markdown)
+        self.assertIn("- `site-search`: Site search indexing", markdown)
+        self.assertIn("  - Automated by: smoke-site", markdown)
         self.assertIn("- weapons: 1 unknown field(s), 1 with nonzero values across 2 record(s)", markdown)
 
     def test_build_game_update_workflow_summary_includes_hidden_exclusions(self):
@@ -408,7 +474,16 @@ class GameUpdateWorkflowTests(unittest.TestCase):
 
             def record_game_update_report_with_artifact(args):
                 record_game_update_report(args)
+                impact = build_gameplay_impact_report(report.diff_reports)
+                validation_plan = build_impact_validation_plan(
+                    impact,
+                    report_digest=gameplay_impact_digest(impact),
+                )
                 setattr(args, "_asset_image_review_artifact", image_artifact)
+                setattr(args, "_gameplay_impact_artifact", output_dir / "gameplay_impact_report.md")
+                setattr(args, "_gameplay_impact_json_artifact", output_dir / "gameplay_impact_report.json")
+                setattr(args, "_impact_validation_plan", validation_plan)
+                setattr(args, "_impact_validation_plan_artifact", output_dir / "impact_validation_plan.json")
                 return 0
 
             output = io.StringIO()
@@ -427,11 +502,20 @@ class GameUpdateWorkflowTests(unittest.TestCase):
                 exit_code = cli.main(["game-update-workflow", "--write-summary", "--output-dir", str(output_dir)])
 
             summary_path = output_dir / "game_update_workflow_summary.md"
+            run_path = output_dir / "game_update_run.json"
             self.assertEqual(0, exit_code)
             self.assertTrue(summary_path.is_file())
+            self.assertTrue(run_path.is_file())
             self.assertIn("WROTE WORKFLOW SUMMARY:", output.getvalue())
             self.assertIn("sha256 changed", summary_path.read_text(encoding="utf-8"))
             self.assertIn("../image-review/asset_image_review.md", summary_path.read_text(encoding="utf-8"))
+            self.assertIn("[gameplay_impact_report.md](gameplay_impact_report.md)", summary_path.read_text(encoding="utf-8"))
+            self.assertIn("[gameplay_impact_report.json](gameplay_impact_report.json)", summary_path.read_text(encoding="utf-8"))
+            self.assertIn("[impact_validation_plan.json](impact_validation_plan.json)", summary_path.read_text(encoding="utf-8"))
+            self.assertIn("[game_update_run.json](game_update_run.json)", summary_path.read_text(encoding="utf-8"))
+            run_payload = json.loads(run_path.read_text(encoding="utf-8"))
+            self.assertEqual("review_blocked", run_payload["status"])
+            self.assertEqual("passed", run_payload["stages"]["discovery"]["status"])
 
     def test_cli_game_update_workflow_runs_review_steps_in_order(self):
         from tools.codex_pipeline import cli
@@ -560,6 +644,139 @@ class GameUpdateWorkflowTests(unittest.TestCase):
 
         self.assertEqual(0, exit_code)
         self.assertEqual([(True, "priority"), (False, "priority")], scopes)
+
+    def test_cli_risk_gate_requires_summary_for_medium_risk(self):
+        from tools.codex_pipeline import cli
+
+        report = gameplay_risk_workflow_report(high_risk=False)
+        sync_generated_dry_runs = []
+
+        def record_game_update(args):
+            setattr(args, "_game_update_report", report)
+            setattr(args, "_game_update_report_safe_to_sync", report.safe_to_sync)
+            return 0
+
+        output = io.StringIO()
+        with (
+            patch.object(cli, "run_client_inventory", lambda args: 0),
+            patch.object(cli, "run_doctor", lambda args: 0),
+            patch.object(cli, "run_game_update_report", record_game_update),
+            patch.object(cli, "run_sync_generated", lambda args: sync_generated_dry_runs.append(args.dry_run) or 0),
+            patch.object(cli, "run_extract_atlas_assets", lambda args: 0),
+            patch.object(cli, "run_sync_assets", lambda args: 0),
+            patch.object(cli, "run_refresh_manifest", side_effect=AssertionError("refresh-manifest should not run")),
+            patch.object(cli, "run_validate", side_effect=AssertionError("validate should not run")),
+            patch("sys.stdout", output),
+        ):
+            exit_code = cli.main(["game-update-workflow", "--apply", "--risk-gate"])
+
+        self.assertEqual(1, exit_code)
+        self.assertEqual([True], sync_generated_dry_runs)
+        self.assertIn("RISK GATE: MEDIUM - SUMMARY REQUIRED", output.getvalue())
+        self.assertIn("gameplay risk MEDIUM requires --write-summary", output.getvalue())
+
+    def test_cli_risk_gate_requires_high_risk_acknowledgement(self):
+        from tools.codex_pipeline import cli
+
+        report = gameplay_risk_workflow_report(high_risk=True)
+        sync_generated_dry_runs = []
+
+        def record_game_update(args):
+            setattr(args, "_game_update_report", report)
+            setattr(args, "_game_update_report_safe_to_sync", report.safe_to_sync)
+            return 0
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            output = io.StringIO()
+            with (
+                patch.object(cli, "run_client_inventory", lambda args: 0),
+                patch.object(cli, "run_doctor", lambda args: 0),
+                patch.object(cli, "run_game_update_report", record_game_update),
+                patch.object(cli, "run_sync_generated", lambda args: sync_generated_dry_runs.append(args.dry_run) or 0),
+                patch.object(cli, "run_extract_atlas_assets", lambda args: 0),
+                patch.object(cli, "run_sync_assets", lambda args: 0),
+                patch.object(cli, "run_refresh_manifest", side_effect=AssertionError("refresh-manifest should not run")),
+                patch.object(cli, "run_validate", side_effect=AssertionError("validate should not run")),
+                patch("sys.stdout", output),
+            ):
+                exit_code = cli.main(
+                    [
+                        "game-update-workflow",
+                        "--apply",
+                        "--risk-gate",
+                        "--write-summary",
+                        "--output-dir",
+                        tmp_dir,
+                    ]
+                )
+
+        self.assertEqual(1, exit_code)
+        self.assertEqual([True], sync_generated_dry_runs)
+        self.assertIn("RISK GATE: HIGH - ACKNOWLEDGEMENT REQUIRED", output.getvalue())
+        expected_digest = gameplay_impact_digest(build_gameplay_impact_report(report.diff_reports))
+        self.assertIn(f"gameplay risk HIGH requires --acknowledge-impact {expected_digest}", output.getvalue())
+
+    def test_risk_gate_rejects_stale_high_risk_digest(self):
+        from argparse import Namespace
+        from tools.codex_pipeline import cli
+
+        report = gameplay_risk_workflow_report(high_risk=True)
+        stale_digest = f"sha256:{'0' * 64}"
+        output = io.StringIO()
+        with patch("sys.stdout", output):
+            allowed = cli._enforce_gameplay_risk_gate(
+                report,
+                Namespace(write_summary=True, acknowledge_impact=stale_digest),
+            )
+
+        expected_digest = gameplay_impact_digest(build_gameplay_impact_report(report.diff_reports))
+        self.assertFalse(allowed)
+        self.assertIn(
+            f"acknowledgement {stale_digest} does not match current report digest {expected_digest}",
+            output.getvalue(),
+        )
+
+    def test_cli_risk_gate_allows_acknowledged_high_risk_apply(self):
+        from tools.codex_pipeline import cli
+
+        report = gameplay_risk_workflow_report(high_risk=True)
+        report_digest = gameplay_impact_digest(build_gameplay_impact_report(report.diff_reports))
+        sync_generated_dry_runs = []
+
+        def record_game_update(args):
+            setattr(args, "_game_update_report", report)
+            setattr(args, "_game_update_report_safe_to_sync", report.safe_to_sync)
+            return 0
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            output = io.StringIO()
+            with (
+                patch.object(cli, "run_client_inventory", lambda args: 0),
+                patch.object(cli, "run_doctor", lambda args: 0),
+                patch.object(cli, "run_game_update_report", record_game_update),
+                patch.object(cli, "run_sync_generated", lambda args: sync_generated_dry_runs.append(args.dry_run) or 0),
+                patch.object(cli, "run_extract_atlas_assets", lambda args: 0),
+                patch.object(cli, "run_sync_assets", lambda args: 0),
+                patch.object(cli, "run_refresh_manifest", lambda: 0),
+                patch.object(cli, "run_validate", lambda: 0),
+                patch("sys.stdout", output),
+            ):
+                exit_code = cli.main(
+                    [
+                        "game-update-workflow",
+                        "--apply",
+                        "--risk-gate",
+                        "--write-summary",
+                        "--acknowledge-impact",
+                        report_digest,
+                        "--output-dir",
+                        tmp_dir,
+                    ]
+                )
+
+        self.assertEqual(0, exit_code)
+        self.assertEqual([True, False], sync_generated_dry_runs)
+        self.assertIn("RISK GATE OK: gameplay risk HIGH requirements satisfied", output.getvalue())
 
     def test_cli_game_update_workflow_can_opt_into_full_image_sync_scope(self):
         from tools.codex_pipeline import cli
@@ -751,3 +968,150 @@ class GameUpdateWorkflowTests(unittest.TestCase):
         self.assertEqual(1, exit_code)
         self.assertEqual(1, sum(1 for event in events if event == ("client-inventory", True, False)))
         self.assertNotIn(("client-inventory", False, True), events)
+
+    def test_cli_game_update_workflow_runs_routed_smoke_before_accepting_snapshot(self):
+        from tools.codex_pipeline import cli
+
+        report = gameplay_risk_workflow_report(high_risk=True)
+        impact = build_gameplay_impact_report(report.diff_reports)
+        validation_plan = build_impact_validation_plan(
+            impact,
+            report_digest=gameplay_impact_digest(impact),
+        )
+        events = []
+
+        def record_game_update(args):
+            events.append("game-update-report")
+            setattr(args, "_game_update_report", report)
+            setattr(args, "_game_update_report_safe_to_sync", report.safe_to_sync)
+            setattr(args, "_impact_validation_plan", validation_plan)
+            return 0
+
+        def record_inventory(args):
+            events.append("snapshot-write" if args.write_snapshot else "inventory-diff")
+            return 0
+
+        def record_smoke(args):
+            self.assertIs(validation_plan, args._impact_validation_plan)
+            events.append("smoke-site")
+            return 0
+
+        with (
+            patch.object(cli, "run_client_inventory", record_inventory),
+            patch.object(cli, "run_doctor", lambda args: events.append("doctor") or 0),
+            patch.object(cli, "run_game_update_report", record_game_update),
+            patch.object(cli, "run_sync_generated", lambda args: events.append(f"sync-generated:{args.dry_run}") or 0),
+            patch.object(cli, "run_extract_atlas_assets", lambda args: events.append("extract-atlas-assets") or 0),
+            patch.object(cli, "run_sync_assets", lambda args: events.append(f"sync-assets:{args.dry_run}") or 0),
+            patch.object(cli, "run_refresh_manifest", lambda: events.append("refresh-manifest") or 0),
+            patch.object(cli, "run_validate", lambda: events.append("validate") or 0),
+            patch.object(cli, "run_smoke_site", record_smoke),
+            patch("sys.stdout", io.StringIO()),
+        ):
+            exit_code = cli.main(["game-update-workflow", "--apply"])
+
+        self.assertEqual(0, exit_code)
+        self.assertLess(events.index("validate"), events.index("smoke-site"))
+        self.assertLess(events.index("smoke-site"), events.index("snapshot-write"))
+
+    def test_cli_game_update_workflow_links_successful_smoke_evidence_in_summary(self):
+        from tools.codex_pipeline import cli
+
+        report = gameplay_risk_workflow_report(high_risk=True)
+        impact = build_gameplay_impact_report(report.diff_reports)
+        validation_plan = build_impact_validation_plan(
+            impact,
+            report_digest=gameplay_impact_digest(impact),
+        )
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            output_dir = Path(tmp_dir)
+
+            def record_game_update(args):
+                setattr(args, "_game_update_report", report)
+                setattr(args, "_game_update_report_safe_to_sync", report.safe_to_sync)
+                setattr(args, "_impact_validation_plan", validation_plan)
+                setattr(args, "_impact_validation_plan_artifact", output_dir / "impact_validation_plan.json")
+                return 0
+
+            def record_smoke(args):
+                results_path = output_dir / "impact_validation_results.json"
+                results_path.write_text(
+                    '{"schemaVersion": 1, "status": "passed"}',
+                    encoding="utf-8",
+                )
+                setattr(args, "_impact_validation_results_artifact", results_path)
+                return 0
+
+            output = io.StringIO()
+            with (
+                patch.object(cli, "run_client_inventory", lambda args: 0),
+                patch.object(cli, "run_doctor", lambda args: 0),
+                patch.object(cli, "run_game_update_report", record_game_update),
+                patch.object(cli, "run_sync_generated", lambda args: 0),
+                patch.object(cli, "run_extract_atlas_assets", lambda args: 0),
+                patch.object(cli, "run_sync_assets", lambda args: 0),
+                patch.object(cli, "run_refresh_manifest", lambda: 0),
+                patch.object(cli, "run_validate", lambda: 0),
+                patch.object(cli, "run_smoke_site", record_smoke),
+                patch("sys.stdout", output),
+            ):
+                exit_code = cli.main(
+                    ["game-update-workflow", "--apply", "--write-summary", "--output-dir", str(output_dir)]
+                )
+
+            summary = (output_dir / "game_update_workflow_summary.md").read_text(encoding="utf-8")
+            run_payload = json.loads(
+                (output_dir / "game_update_run.json").read_text(encoding="utf-8")
+            )
+
+        self.assertEqual(0, exit_code)
+        self.assertIn("[impact_validation_results.json](impact_validation_results.json)", summary)
+        self.assertIn("- Validation evidence status: PASSED", summary)
+        self.assertIn("UPDATED WORKFLOW SUMMARY:", output.getvalue())
+        self.assertEqual("ready_to_commit", run_payload["status"])
+        self.assertEqual("passed", run_payload["stages"]["review"]["status"])
+        self.assertEqual("passed", run_payload["stages"]["apply"]["status"])
+        self.assertEqual("passed", run_payload["stages"]["localValidation"]["status"])
+        self.assertEqual("passed", run_payload["stages"]["baseline"]["status"])
+        self.assertIn("localValidation", run_payload["artifacts"])
+
+    def test_cli_game_update_workflow_does_not_accept_snapshot_when_routed_smoke_fails(self):
+        from tools.codex_pipeline import cli
+
+        report = gameplay_risk_workflow_report(high_risk=True)
+        impact = build_gameplay_impact_report(report.diff_reports)
+        validation_plan = build_impact_validation_plan(
+            impact,
+            report_digest=gameplay_impact_digest(impact),
+        )
+        snapshot_writes = []
+
+        def record_game_update(args):
+            setattr(args, "_game_update_report", report)
+            setattr(args, "_game_update_report_safe_to_sync", report.safe_to_sync)
+            setattr(args, "_impact_validation_plan", validation_plan)
+            return 0
+
+        def record_inventory(args):
+            snapshot_writes.append(args.write_snapshot)
+            return 0
+
+        output = io.StringIO()
+        with (
+            patch.object(cli, "run_client_inventory", record_inventory),
+            patch.object(cli, "run_doctor", lambda args: 0),
+            patch.object(cli, "run_game_update_report", record_game_update),
+            patch.object(cli, "run_sync_generated", lambda args: 0),
+            patch.object(cli, "run_extract_atlas_assets", lambda args: 0),
+            patch.object(cli, "run_sync_assets", lambda args: 0),
+            patch.object(cli, "run_refresh_manifest", lambda: 0),
+            patch.object(cli, "run_validate", lambda: 0),
+            patch.object(cli, "run_smoke_site", lambda args: 1),
+            patch("sys.stdout", output),
+        ):
+            exit_code = cli.main(["game-update-workflow", "--apply"])
+
+        self.assertEqual(1, exit_code)
+        self.assertEqual([False], snapshot_writes)
+        self.assertIn("WORKFLOW STEP impact smoke-site", output.getvalue())

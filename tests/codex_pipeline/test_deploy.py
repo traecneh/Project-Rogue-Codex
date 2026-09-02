@@ -6,6 +6,19 @@ from pathlib import Path
 from unittest.mock import patch
 
 
+SOURCE_TREE_SHA256 = "c" * 64
+
+
+def source_tree_payload(sha256: str = SOURCE_TREE_SHA256) -> dict[str, object]:
+    return {
+        "schemaVersion": 1,
+        "algorithm": "sha256-path-content-v1",
+        "sha256": sha256,
+        "fileCount": 7,
+        "roots": ["index.html", "nav.html", "css", "data", "images", "js", "pages"],
+    }
+
+
 class LiveDeploymentTests(unittest.TestCase):
     def test_default_live_targets_include_collectables_and_useables(self):
         from tools.codex_pipeline.config import (
@@ -298,69 +311,631 @@ class LiveDeploymentTests(unittest.TestCase):
     def test_cli_verify_deploy_waits_then_runs_live_checks(self):
         from tools.codex_pipeline import cli
         from tools.codex_pipeline.deploy import LiveCheckResult, WorkflowRunStatus
+        from tools.codex_pipeline.provenance import (
+            GitRemoteBranchState,
+            GitWorktreeState,
+            SourceTreeFingerprint,
+        )
         from tools.codex_pipeline.site_smoke import SiteSmokeRun
 
         output = io.StringIO()
-        with (
-            patch.object(cli, "resolve_git_commit", return_value="abc123"),
-            patch.object(
-                cli,
-                "wait_for_github_workflows",
-                return_value=[
-                    WorkflowRunStatus(
-                        "Codex Data Checks",
-                        "completed",
-                        "success",
-                        "https://github.test/runs/checks",
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            output_dir = Path(tmp_dir)
+            live_results_path = output_dir / "live_impact_validation_results.json"
+
+            def write_live_results(**kwargs):
+                kwargs["results_path"].write_text(
+                    json.dumps(
+                        {
+                            "schemaVersion": 1,
+                            "reportDigest": None,
+                            "mode": "full",
+                            "target": "live",
+                            "status": "passed",
+                            "summary": {"groupCount": 34, "passedGroups": 34},
+                            "sourceTree": source_tree_payload(),
+                            "failures": [],
+                        }
                     ),
-                    WorkflowRunStatus(
-                        "pages build and deployment",
-                        "completed",
-                        "success",
-                        "https://github.test/runs/pages",
+                    encoding="utf-8",
+                )
+                return SiteSmokeRun(returncode=0, stdout="SMOKE OK site\n", stderr="")
+
+            with (
+                patch.object(cli, "resolve_git_commit", return_value="abc123"),
+                patch.object(
+                    cli,
+                    "inspect_git_worktree",
+                    return_value=GitWorktreeState((), ()),
+                ),
+                patch.object(
+                    cli,
+                    "build_source_tree_fingerprint",
+                    return_value=SourceTreeFingerprint(
+                        SOURCE_TREE_SHA256,
+                        7,
+                        ("index.html", "nav.html", "css", "data", "images", "js", "pages"),
                     ),
-                ],
-            ) as wait_for_workflows,
-            patch.object(
-                cli,
-                "verify_live_site",
-                return_value=[
-                    LiveCheckResult("site", "https://example.test/codex/", True, "site reachable"),
-                ],
-            ) as verify_live,
-            patch.object(
-                cli,
-                "run_site_smoke_command",
-                return_value=SiteSmokeRun(returncode=0, stdout="SMOKE OK site\n", stderr=""),
-            ) as smoke_site,
-            patch("sys.stdout", output),
-        ):
-            exit_code = cli.main(
-                [
-                    "verify-deploy",
-                    "--site-url",
-                    "https://example.test/codex/",
-                    "--deploy-timeout-seconds",
-                    "12",
-                    "--poll-seconds",
-                    "0",
-                ]
+                ),
+                patch.object(
+                    cli,
+                    "inspect_git_remote_branch",
+                    return_value=GitRemoteBranchState(
+                        "origin",
+                        "https://github.com/traecneh/Project-Rogue-Codex.git",
+                        "traecneh/Project-Rogue-Codex",
+                        "main",
+                        "abc123",
+                    ),
+                ),
+                patch.object(
+                    cli,
+                    "wait_for_github_workflows",
+                    return_value=[
+                        WorkflowRunStatus(
+                            "Codex Data Checks",
+                            "completed",
+                            "success",
+                            "https://github.test/runs/checks",
+                        ),
+                        WorkflowRunStatus(
+                            "pages build and deployment",
+                            "completed",
+                            "success",
+                            "https://github.test/runs/pages",
+                        ),
+                    ],
+                ) as wait_for_workflows,
+                patch.object(
+                    cli,
+                    "verify_live_site",
+                    return_value=[
+                        LiveCheckResult("site", "https://example.test/codex/", True, "site reachable"),
+                    ],
+                ) as verify_live,
+                patch.object(cli, "run_site_smoke_command", side_effect=write_live_results) as smoke_site,
+                patch("sys.stdout", output),
+            ):
+                exit_code = cli.main(
+                    [
+                        "verify-deploy",
+                        "--site-url",
+                        "https://example.test/codex/",
+                        "--deploy-timeout-seconds",
+                        "12",
+                        "--poll-seconds",
+                        "0",
+                        "--output-dir",
+                        str(output_dir),
+                    ]
+                )
+
+            self.assertEqual(0, exit_code)
+            wait_for_workflows.assert_called_once_with(
+                "traecneh/Project-Rogue-Codex",
+                "main",
+                "abc123",
+                timeout_seconds=12,
+                poll_seconds=0,
+            )
+            verify_live.assert_called_once_with("https://example.test/codex/", timeout_seconds=20)
+            smoke_site.assert_called_once_with(
+                timeout_ms=20000,
+                base_url="https://example.test/codex/",
+                results_path=live_results_path,
+            )
+            evidence = json.loads(
+                (output_dir / "deployment_validation_results.json").read_text(encoding="utf-8")
             )
 
-        self.assertEqual(0, exit_code)
-        wait_for_workflows.assert_called_once_with(
-            "traecneh/Project-Rogue-Codex",
-            "main",
-            "abc123",
-            timeout_seconds=12,
-            poll_seconds=0,
-        )
-        verify_live.assert_called_once_with("https://example.test/codex/", timeout_seconds=20)
-        smoke_site.assert_called_once_with(timeout_ms=20000, base_url="https://example.test/codex/")
+        self.assertEqual("passed", evidence["status"])
+        self.assertEqual("abc123", evidence["commitSha"])
+        self.assertTrue(evidence["provenance"]["remote"]["repositoryMatchesConfigured"])
+        self.assertTrue(evidence["provenance"]["remote"]["branchMatchesLocalHead"])
+        self.assertEqual(64, len(evidence["codexContentSha256"]))
+        self.assertIsNone(evidence["reportDigest"])
+        self.assertEqual("live", evidence["liveValidation"]["target"])
         printed = output.getvalue()
         self.assertIn("DEPLOY OK Codex Data Checks: completed success", printed)
         self.assertIn("WORKFLOW STEP verify-live", printed)
         self.assertIn("WORKFLOW STEP smoke-site --live", printed)
+        self.assertIn("DEPLOYMENT RESULTS:", printed)
+
+    def test_cli_verify_deploy_binds_local_and_live_results_to_reviewed_digest(self):
+        from tools.codex_pipeline import cli
+        from tools.codex_pipeline.deploy import LiveCheckResult, WorkflowRunStatus
+        from tools.codex_pipeline.evidence_archive import REQUIRED_ARCHIVE_ROLES
+        from tools.codex_pipeline.provenance import (
+            GitRemoteBranchState,
+            GitWorktreeState,
+            SourceTreeFingerprint,
+        )
+        from tools.codex_pipeline.site_smoke import SiteSmokeRun
+        from tools.codex_pipeline.update_run import (
+            initialize_game_update_run,
+            update_game_update_stage,
+        )
+
+        digest = "sha256:" + "a" * 64
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            output_dir = Path(tmp_dir) / "review"
+            output_dir.mkdir()
+            unrelated_output_dir = Path(tmp_dir) / "default-output"
+            plan_path = output_dir / "impact_validation_plan.json"
+            local_results_path = output_dir / "impact_validation_results.json"
+            plan_path.write_text(
+                json.dumps(
+                    {
+                        "schemaVersion": 2,
+                        "reportDigest": digest,
+                        "checks": [{"id": "weapons-page", "automatedBy": ["smoke-site"]}],
+                        "affectedRecords": [{"target": "weapons", "changeType": "changed"}],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            local_results_path.write_text(
+                json.dumps(
+                    {
+                        "schemaVersion": 1,
+                        "reportDigest": digest,
+                        "mode": "impact-plan",
+                        "target": "local",
+                        "status": "passed",
+                        "summary": {"groupCount": 1, "passedGroups": 1},
+                        "plan": {"routedCheckIds": ["weapons-page"]},
+                        "sourceTree": source_tree_payload(),
+                        "failures": [],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            run_path = output_dir / "game_update_run.json"
+            initialize_game_update_run(
+                run_path,
+                report_digest=digest,
+                source_fingerprint="client-reviewed",
+                metadata={"syncReady": True, "outputDir": str(output_dir)},
+                artifacts={"impactValidationPlan": plan_path},
+            )
+            update_game_update_stage(
+                run_path,
+                expected_digest=digest,
+                stage="review",
+                status="passed",
+            )
+            update_game_update_stage(
+                run_path,
+                expected_digest=digest,
+                stage="apply",
+                status="passed",
+            )
+            update_game_update_stage(
+                run_path,
+                expected_digest=digest,
+                stage="localValidation",
+                status="passed",
+                artifacts={"localValidation": local_results_path},
+            )
+            update_game_update_stage(
+                run_path,
+                expected_digest=digest,
+                stage="baseline",
+                status="passed",
+            )
+
+            def write_live_results(**kwargs):
+                kwargs["results_path"].write_text(
+                    json.dumps(
+                        {
+                            "schemaVersion": 1,
+                            "reportDigest": digest,
+                            "mode": "impact-plan",
+                            "target": "live",
+                            "status": "passed",
+                            "summary": {"groupCount": 1, "passedGroups": 1},
+                            "plan": {"routedCheckIds": ["weapons-page"]},
+                            "sourceTree": source_tree_payload(),
+                            "failures": [],
+                        }
+                    ),
+                    encoding="utf-8",
+                )
+                return SiteSmokeRun(returncode=0, stdout="SMOKE OK site\n", stderr="")
+
+            workflow_results = [
+                WorkflowRunStatus("Codex Data Checks", "completed", "success", "https://github.test/checks"),
+                WorkflowRunStatus("pages build and deployment", "completed", "success", "https://github.test/pages"),
+            ]
+            with (
+                patch.object(cli, "resolve_git_commit", return_value="deadbeef"),
+                patch.object(
+                    cli,
+                    "inspect_git_worktree",
+                    return_value=GitWorktreeState((), ()),
+                ),
+                patch.object(
+                    cli,
+                    "build_source_tree_fingerprint",
+                    return_value=SourceTreeFingerprint(
+                        SOURCE_TREE_SHA256,
+                        7,
+                        ("index.html", "nav.html", "css", "data", "images", "js", "pages"),
+                    ),
+                ),
+                patch.object(
+                    cli,
+                    "inspect_git_remote_branch",
+                    return_value=GitRemoteBranchState(
+                        "origin",
+                        "git@github.com:traecneh/Project-Rogue-Codex.git",
+                        "traecneh/Project-Rogue-Codex",
+                        "main",
+                        "deadbeef",
+                    ),
+                ),
+                patch.object(cli, "wait_for_github_workflows", return_value=workflow_results),
+                patch.object(
+                    cli,
+                    "verify_live_site",
+                    return_value=[LiveCheckResult("site", "https://example.test/", True, "site reachable")],
+                ),
+                patch.object(cli, "run_site_smoke_command", side_effect=write_live_results) as smoke_site,
+                patch("sys.stdout", io.StringIO()),
+            ):
+                exit_code = cli.main(
+                    [
+                        "verify-deploy",
+                        "--impact-plan",
+                        str(plan_path),
+                        "--output-dir",
+                        str(unrelated_output_dir),
+                        "--site-url",
+                        "https://example.test/",
+                        "--update-archive-dir",
+                        str(Path(tmp_dir) / "history"),
+                    ]
+                )
+
+            self.assertEqual(0, exit_code)
+            smoke_site.assert_called_once_with(
+                timeout_ms=20000,
+                impact_plan_path=plan_path.resolve(),
+                base_url="https://example.test/",
+                results_path=output_dir / "live_impact_validation_results.json",
+            )
+            evidence = json.loads(
+                (output_dir / "deployment_validation_results.json").read_text(encoding="utf-8")
+            )
+            run_payload = json.loads(run_path.read_text(encoding="utf-8"))
+            archive_path = Path(evidence["evidenceArchive"]["path"])
+            archive_manifest = json.loads(
+                (archive_path / "archive_manifest.json").read_text(encoding="utf-8")
+            )
+
+        self.assertEqual("passed", evidence["status"])
+        self.assertEqual(digest, evidence["reportDigest"])
+        self.assertEqual("deadbeef", evidence["commitSha"])
+        self.assertTrue(evidence["provenance"]["matchesLocalEvidence"])
+        self.assertEqual(SOURCE_TREE_SHA256, evidence["provenance"]["sourceTree"]["sha256"])
+        self.assertEqual(64, len(evidence["reviewPlan"]["sha256"]))
+        self.assertEqual(64, len(evidence["localValidation"]["sha256"]))
+        self.assertEqual(64, len(evidence["liveValidation"]["sha256"]))
+        self.assertEqual("complete", evidence["updateRun"]["status"])
+        self.assertEqual("complete", run_payload["status"])
+        self.assertEqual("deadbeef", run_payload["stages"]["commit"]["details"]["commitSha"])
+        self.assertIn("deploymentValidation", run_payload["artifacts"])
+        self.assertIn("liveValidation", run_payload["artifacts"])
+        self.assertEqual("deadbeef", archive_manifest["commitSha"])
+        self.assertEqual(digest, archive_manifest["reportDigest"])
+        self.assertTrue(REQUIRED_ARCHIVE_ROLES.issubset({entry["role"] for entry in archive_manifest["files"]}))
+
+    def test_cli_verify_deploy_rejects_stale_local_smoke_before_waiting(self):
+        from tools.codex_pipeline import cli
+        from tools.codex_pipeline.provenance import GitWorktreeState, SourceTreeFingerprint
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            output_dir = Path(tmp_dir)
+            plan_path = output_dir / "impact_validation_plan.json"
+            results_path = output_dir / "impact_validation_results.json"
+            plan_path.write_text(
+                json.dumps(
+                    {
+                        "schemaVersion": 2,
+                        "reportDigest": "sha256:" + "a" * 64,
+                        "checks": [],
+                        "affectedRecords": [],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            results_path.write_text(
+                json.dumps(
+                    {
+                        "schemaVersion": 1,
+                        "reportDigest": "sha256:" + "b" * 64,
+                        "mode": "impact-plan",
+                        "target": "local",
+                        "status": "passed",
+                        "plan": {"routedCheckIds": []},
+                        "failures": [],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            with (
+                patch.object(cli, "resolve_git_commit", return_value="deadbeef"),
+                patch.object(
+                    cli,
+                    "inspect_git_worktree",
+                    return_value=GitWorktreeState((), ()),
+                ),
+                patch.object(
+                    cli,
+                    "build_source_tree_fingerprint",
+                    return_value=SourceTreeFingerprint(
+                        SOURCE_TREE_SHA256,
+                        7,
+                        ("index.html", "nav.html", "css", "data", "images", "js", "pages"),
+                    ),
+                ),
+                patch.object(cli, "wait_for_github_workflows") as wait_for_workflows,
+                patch("sys.stdout", io.StringIO()),
+            ):
+                exit_code = cli.main(
+                    [
+                        "verify-deploy",
+                        "--impact-plan",
+                        str(plan_path),
+                        "--output-dir",
+                        str(output_dir),
+                    ]
+                )
+            evidence = json.loads(
+                (output_dir / "deployment_validation_results.json").read_text(encoding="utf-8")
+            )
+
+        self.assertEqual(1, exit_code)
+        wait_for_workflows.assert_not_called()
+        self.assertEqual("failed", evidence["status"])
+        self.assertIn("report digest does not match", evidence["failures"][0])
+
+    def test_cli_verify_deploy_rejects_dirty_tracked_worktree_before_waiting(self):
+        from tools.codex_pipeline import cli
+        from tools.codex_pipeline.provenance import GitWorktreeState, SourceTreeFingerprint
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            output_dir = Path(tmp_dir)
+            with (
+                patch.object(cli, "resolve_git_commit", return_value="deadbeef"),
+                patch.object(
+                    cli,
+                    "inspect_git_worktree",
+                    return_value=GitWorktreeState((" M js/utils.js",), ()),
+                ),
+                patch.object(
+                    cli,
+                    "build_source_tree_fingerprint",
+                    return_value=SourceTreeFingerprint(
+                        SOURCE_TREE_SHA256,
+                        7,
+                        ("index.html", "nav.html", "css", "data", "images", "js", "pages"),
+                    ),
+                ),
+                patch.object(cli, "wait_for_github_workflows") as wait_for_workflows,
+                patch("sys.stdout", io.StringIO()),
+            ):
+                exit_code = cli.main(["verify-deploy", "--output-dir", str(output_dir)])
+            evidence = json.loads(
+                (output_dir / "deployment_validation_results.json").read_text(encoding="utf-8")
+            )
+
+        self.assertEqual(1, exit_code)
+        wait_for_workflows.assert_not_called()
+        self.assertFalse(evidence["provenance"]["trackedWorktreeClean"])
+        self.assertIn("tracked worktree has uncommitted changes", evidence["failures"])
+
+    def test_cli_verify_deploy_rejects_requested_commit_that_is_not_head(self):
+        from tools.codex_pipeline import cli
+        from tools.codex_pipeline.provenance import GitWorktreeState, SourceTreeFingerprint
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            output_dir = Path(tmp_dir)
+            with (
+                patch.object(cli, "resolve_git_commit", side_effect=["head-sha", "other-sha"]),
+                patch.object(
+                    cli,
+                    "inspect_git_worktree",
+                    return_value=GitWorktreeState((), ()),
+                ),
+                patch.object(
+                    cli,
+                    "build_source_tree_fingerprint",
+                    return_value=SourceTreeFingerprint(
+                        SOURCE_TREE_SHA256,
+                        7,
+                        ("index.html", "nav.html", "css", "data", "images", "js", "pages"),
+                    ),
+                ),
+                patch.object(cli, "wait_for_github_workflows") as wait_for_workflows,
+                patch("sys.stdout", io.StringIO()),
+            ):
+                exit_code = cli.main(
+                    [
+                        "verify-deploy",
+                        "--commit",
+                        "release-candidate",
+                        "--output-dir",
+                        str(output_dir),
+                    ]
+                )
+            evidence = json.loads(
+                (output_dir / "deployment_validation_results.json").read_text(encoding="utf-8")
+            )
+
+        self.assertEqual(1, exit_code)
+        wait_for_workflows.assert_not_called()
+        self.assertFalse(evidence["provenance"]["headMatchesRequestedCommit"])
+        self.assertIn("does not match local HEAD", evidence["failures"][0])
+
+    def test_cli_verify_deploy_rejects_local_evidence_for_an_older_source_tree(self):
+        from tools.codex_pipeline import cli
+        from tools.codex_pipeline.provenance import GitWorktreeState, SourceTreeFingerprint
+
+        digest = "sha256:" + "a" * 64
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            output_dir = Path(tmp_dir)
+            plan_path = output_dir / "impact_validation_plan.json"
+            results_path = output_dir / "impact_validation_results.json"
+            plan_path.write_text(
+                json.dumps(
+                    {
+                        "schemaVersion": 2,
+                        "reportDigest": digest,
+                        "checks": [],
+                        "affectedRecords": [],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            results_path.write_text(
+                json.dumps(
+                    {
+                        "schemaVersion": 1,
+                        "reportDigest": digest,
+                        "mode": "impact-plan",
+                        "target": "local",
+                        "status": "passed",
+                        "summary": {"groupCount": 0, "passedGroups": 0},
+                        "plan": {"routedCheckIds": []},
+                        "sourceTree": source_tree_payload("d" * 64),
+                        "failures": [],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            with (
+                patch.object(cli, "resolve_git_commit", return_value="deadbeef"),
+                patch.object(
+                    cli,
+                    "inspect_git_worktree",
+                    return_value=GitWorktreeState((), ()),
+                ),
+                patch.object(
+                    cli,
+                    "build_source_tree_fingerprint",
+                    return_value=SourceTreeFingerprint(
+                        SOURCE_TREE_SHA256,
+                        7,
+                        ("index.html", "nav.html", "css", "data", "images", "js", "pages"),
+                    ),
+                ),
+                patch.object(cli, "wait_for_github_workflows") as wait_for_workflows,
+                patch("sys.stdout", io.StringIO()),
+            ):
+                exit_code = cli.main(
+                    ["verify-deploy", "--impact-plan", str(plan_path), "--output-dir", str(output_dir)]
+                )
+            evidence = json.loads(
+                (output_dir / "deployment_validation_results.json").read_text(encoding="utf-8")
+            )
+
+        self.assertEqual(1, exit_code)
+        wait_for_workflows.assert_not_called()
+        self.assertFalse(evidence["provenance"]["matchesLocalEvidence"])
+        self.assertIn("does not match the current site tree", evidence["failures"][0])
+
+    def test_cli_verify_deploy_rejects_wrong_github_remote_before_waiting(self):
+        from tools.codex_pipeline import cli
+        from tools.codex_pipeline.provenance import (
+            GitRemoteBranchState,
+            GitWorktreeState,
+            SourceTreeFingerprint,
+        )
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            output_dir = Path(tmp_dir)
+            with (
+                patch.object(cli, "resolve_git_commit", return_value="deadbeef"),
+                patch.object(cli, "inspect_git_worktree", return_value=GitWorktreeState((), ())),
+                patch.object(
+                    cli,
+                    "build_source_tree_fingerprint",
+                    return_value=SourceTreeFingerprint(
+                        SOURCE_TREE_SHA256,
+                        7,
+                        ("index.html", "nav.html", "css", "data", "images", "js", "pages"),
+                    ),
+                ),
+                patch.object(
+                    cli,
+                    "inspect_git_remote_branch",
+                    return_value=GitRemoteBranchState(
+                        "origin",
+                        "https://github.com/other/project.git",
+                        "other/project",
+                        "main",
+                        "deadbeef",
+                    ),
+                ),
+                patch.object(cli, "wait_for_github_workflows") as wait_for_workflows,
+                patch("sys.stdout", io.StringIO()),
+            ):
+                exit_code = cli.main(["verify-deploy", "--output-dir", str(output_dir)])
+            evidence = json.loads(
+                (output_dir / "deployment_validation_results.json").read_text(encoding="utf-8")
+            )
+
+        self.assertEqual(1, exit_code)
+        wait_for_workflows.assert_not_called()
+        self.assertFalse(evidence["provenance"]["remote"]["repositoryMatchesConfigured"])
+        self.assertIn("does not match configured repository", evidence["failures"][0])
+
+    def test_cli_verify_deploy_rejects_unpushed_local_head_before_waiting(self):
+        from tools.codex_pipeline import cli
+        from tools.codex_pipeline.provenance import (
+            GitRemoteBranchState,
+            GitWorktreeState,
+            SourceTreeFingerprint,
+        )
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            output_dir = Path(tmp_dir)
+            with (
+                patch.object(cli, "resolve_git_commit", return_value="local-head"),
+                patch.object(cli, "inspect_git_worktree", return_value=GitWorktreeState((), ())),
+                patch.object(
+                    cli,
+                    "build_source_tree_fingerprint",
+                    return_value=SourceTreeFingerprint(
+                        SOURCE_TREE_SHA256,
+                        7,
+                        ("index.html", "nav.html", "css", "data", "images", "js", "pages"),
+                    ),
+                ),
+                patch.object(
+                    cli,
+                    "inspect_git_remote_branch",
+                    return_value=GitRemoteBranchState(
+                        "origin",
+                        "https://github.com/traecneh/Project-Rogue-Codex.git",
+                        "traecneh/Project-Rogue-Codex",
+                        "main",
+                        "remote-head",
+                    ),
+                ),
+                patch.object(cli, "wait_for_github_workflows") as wait_for_workflows,
+                patch("sys.stdout", io.StringIO()),
+            ):
+                exit_code = cli.main(["verify-deploy", "--output-dir", str(output_dir)])
+            evidence = json.loads(
+                (output_dir / "deployment_validation_results.json").read_text(encoding="utf-8")
+            )
+
+        self.assertEqual(1, exit_code)
+        wait_for_workflows.assert_not_called()
+        self.assertFalse(evidence["provenance"]["remote"]["branchMatchesLocalHead"])
+        self.assertIn("does not match local HEAD", evidence["failures"][0])
 
     def test_wait_for_github_workflows_reports_matching_completed_runs(self):
         from tools.codex_pipeline.deploy import wait_for_github_workflows

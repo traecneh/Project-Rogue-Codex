@@ -39,7 +39,11 @@ from tools.codex_pipeline.hidden_items import HiddenItemRules, load_hidden_item_
 from tools.codex_pipeline.perks import load_perk_label_overrides
 from tools.codex_pipeline.sources import SourceCheckResult, validate_export_sources
 from tools.codex_pipeline.unknowns import UnknownFieldTargetReport, build_unknown_field_reports
-from tools.codex_pipeline.validators.site import ValidationIssue, validate_corrupted_perk_labels
+from tools.codex_pipeline.validators.site import (
+    ValidationIssue,
+    validate_corrupted_perk_labels,
+    validate_unique_record_ids,
+)
 
 
 @dataclass(frozen=True)
@@ -145,6 +149,18 @@ def _validate_generated_corrupted_perks(
         for name, target in item_targets.items()
     }
     return validate_corrupted_perk_labels(item_data, corrupted_perk_overrides=overrides)
+
+
+def _validate_generated_record_ids(
+    targets: list[ExportTarget],
+    *,
+    output_dir: Path,
+) -> list[ValidationIssue]:
+    record_data = {
+        target.name: _read_json_list(target.generated_path(output_dir), target.name)
+        for target in targets
+    }
+    return validate_unique_record_ids(record_data)
 
 
 def _record_fields(record: object) -> dict[str, Any]:
@@ -414,6 +430,12 @@ def build_game_update_report(
             output_dir=output_dir,
             perk_label_overrides_path=perk_label_overrides_path,
             skipped_sections=skipped_sections,
+        )
+        validation_issues.extend(
+            _validate_generated_record_ids(
+                target_list,
+                output_dir=output_dir,
+            )
         )
         validation_issues.extend(
             _validate_generated_weapon_data(

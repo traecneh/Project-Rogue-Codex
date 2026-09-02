@@ -768,6 +768,7 @@
           const fields = (raw && raw.fields) || {};
           const dps = computeDps(fields.min_damage, fields.max_damage, fields.attack_speed);
           return {
+            id: raw.id ?? raw.ID ?? raw.name ?? "",
             kind: "weapon",
             name: raw.name || raw.Name,
             slot: "Weapon",
@@ -792,6 +793,9 @@
               dark: toNumber(fields.dark_resistance),
             },
             perk: fields.perk ? fields.perk_label || fields.perk : null,
+            corruptedPerk: fields.corrupted_perk
+              ? fields.corrupted_perk_label || fields.corrupted_perk
+              : null,
           };
         };
 
@@ -1482,10 +1486,16 @@
         const loadAllowlists =
           typeof utils.loadAllowlists === "function" ? () => utils.loadAllowlists() : () => Promise.resolve(null);
         let hiddenWeaponNames = new Set();
+        let hiddenWeaponIds = new Set();
         let hiddenArmorNames = new Set();
 
         const applyAllowlists = (allowlists) => {
           hiddenWeaponNames = buildNameSet(allowlists?.weapons?.block);
+          hiddenWeaponIds = new Set(
+            (Array.isArray(allowlists?.weapons?.blockIds) ? allowlists.weapons.blockIds : []).map((id) =>
+              String(id).trim()
+            )
+          );
           hiddenArmorNames = buildNameSet(allowlists?.armors?.block);
         };
 
@@ -1507,7 +1517,12 @@
               dataset.weapons = Array.isArray(weapons)
                 ? weapons
                     .map((w) => toWeapon(w))
-                    .filter((weapon) => weapon && !hiddenWeaponNames.has((weapon.name || "").toLowerCase()))
+                    .filter(
+                      (weapon) =>
+                        weapon &&
+                        !hiddenWeaponNames.has((weapon.name || "").toLowerCase()) &&
+                        !hiddenWeaponIds.has(String(weapon.id).trim())
+                    )
                 : [];
               dataset.armors = Array.isArray(armors)
                 ? armors

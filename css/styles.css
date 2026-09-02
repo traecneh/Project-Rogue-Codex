@@ -654,6 +654,7 @@ body {
 /* Main content area */
 .main-content {
   flex: 1;
+  min-width: 0;
   background: radial-gradient(circle at top left, #1b2330, #0c1018 55%);
   border-radius: var(--radius-md);
   padding: 1.2rem 1.4rem 1.6rem;

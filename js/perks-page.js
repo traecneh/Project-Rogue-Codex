@@ -157,11 +157,22 @@
     return "";
   };
 
-  const buildPerkSourceIndex = ({ weapons, armors }) => {
+  const buildPerkSourceIndex = ({ weapons, armors, allowlists }) => {
     const map = new Map();
+    const hiddenWeaponNames = buildNameSet(allowlists?.weapons?.block);
+    const hiddenWeaponIds = new Set(
+      (
+        Array.isArray(allowlists?.weapons?.blockIds)
+          ? allowlists.weapons.blockIds
+          : Array.isArray(allowlists?.weapons?.block_ids)
+            ? allowlists.weapons.block_ids
+            : []
+      ).map((id) => String(id).trim())
+    );
     weapons.forEach((row) => {
       const name = String(row?.name || row?.Name || "").trim();
-      if (!name) return;
+      const id = String(row?.id ?? row?.ID ?? "").trim();
+      if (!name || hiddenWeaponNames.has(name.toLowerCase()) || hiddenWeaponIds.has(id)) return;
       itemPerkLabels(row?.fields || {}).forEach((perkName) => {
         addSource(map, perkName, { kind: "weapon", label: "Weapon", name, href: itemHref("weapon", name) });
       });

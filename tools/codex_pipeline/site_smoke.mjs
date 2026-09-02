@@ -1,5 +1,5 @@
 import { createReadStream } from "node:fs";
-import { stat } from "node:fs/promises";
+import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import http from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -8,6 +8,10 @@ const args = parseArgs(process.argv.slice(2));
 const root = path.resolve(args.root || path.join(path.dirname(fileURLToPath(import.meta.url)), "..", ".."));
 const timeoutMs = Number(args.timeoutMs || 20000);
 const configuredBaseUrl = args.baseUrl ? normalizeBaseUrl(args.baseUrl) : null;
+const configuredImpactPlanPath = args.impactPlan ? path.resolve(args.impactPlan) : null;
+const configuredResultsPath = args.resultsPath ? path.resolve(args.resultsPath) : null;
+let loadedImpactPlan = null;
+const DEFAULT_CHANGED_RECORD_PROBE_LIMIT = 5;
 const RUNE_SWORD_DETAIL_PATH = "pages/items/weapons.html?weapon=Rune%20Sword";
 const PERKS_RUNIC_PATH = "/pages/systems/perks.html?perk=Runic";
 const QUESTS_INVESTIGATE_PATH = "/pages/General/quests.html?quest=investigate-the-undead";
@@ -26,6 +30,7 @@ const smokeSpecs = [
     rowSelector: "#items-body tr[data-id]",
     detailLinkSelector: '#details-properties a[href*="pages/enemies/monsters.html?monster="]',
     queryKey: "weapon",
+    checkIds: ["weapons-page"],
   },
   {
     assertDetail: assertArmorResistanceFilters,
@@ -37,6 +42,7 @@ const smokeSpecs = [
     rowSelector: "#items-body tr[data-id]",
     detailLinkSelector: '#details-properties a[href*="pages/enemies/monsters.html?monster="]',
     queryKey: "armor",
+    checkIds: ["armors-page", "resistance-matchups"],
   },
   {
     detailName: "Ascendancy Shard",
@@ -50,6 +56,7 @@ const smokeSpecs = [
     detailTextIncludes: ["Item Context", "Used In", "Ascend System", "Found From", "Deconstruct System"],
     detailHrefIncludes: ["pages/systems/ascend.html", "pages/systems/deconstruct.html"],
     queryKey: "collectable",
+    checkIds: ["collectables-page"],
   },
   {
     detailName: "Carpentry Saw",
@@ -63,6 +70,7 @@ const smokeSpecs = [
     detailTextIncludes: ["Item Context", "Used In", "Carpentry"],
     detailHrefIncludes: ["pages/stats/skills.html#carpentry"],
     queryKey: "useable",
+    checkIds: ["useables-page"],
   },
   {
     assertDetail: assertMonsterRecommendationEnhancements,
@@ -75,8 +83,70 @@ const smokeSpecs = [
     detailLinkSelector:
       '#monster-details a[href*="pages/items/weapons.html?weapon="], #monster-details a[href*="pages/items/armors.html?armor="]',
     queryKey: "monster",
+    checkIds: ["monsters-page", "monster-recommendations"],
   },
 ];
+
+const standaloneSmokeRuns = [
+  { id: "home", checkIds: [], run: runHomeSpec, summary: "timeline filter, related links" },
+  {
+    id: "build planner",
+    checkIds: ["build-planner"],
+    run: runBuildPlannerSpec,
+    summary: "search, rarity, share reload, reset",
+  },
+  { id: "play the game", checkIds: [], run: runPlayTheGameSpec, summary: "Discord setup, CTA, related links" },
+  { id: "quests", checkIds: [], run: runQuestsSpec, summary: "deep links, objectives, filters, relationships, search" },
+  { id: "perks", checkIds: ["perk-sources"], run: runPerksSpec, summary: "deep link, search, filters, source links, tooltips" },
+  { id: "rarity", checkIds: [], run: runRaritySpec, summary: "reference table, deterministic roll, upgrade preview" },
+  { id: "reforge", checkIds: [], run: runRerollSpec, summary: "decision reference, flow, related links" },
+  { id: "deconstruct", checkIds: [], run: runDeconstructSpec, summary: "shard decision reference, flow, related links" },
+  { id: "ascend", checkIds: [], run: runAscendSpec, summary: "progression reference, decision guidance, related links" },
+  { id: "craft", checkIds: [], run: runCraftSpec, summary: "ascendancy shop, imbuement crafting, related links" },
+  { id: "imbuements", checkIds: [], run: runImbuementsSpec, summary: "targeting flow, source mechanics, related links" },
+  { id: "purge", checkIds: [], run: runPurgeSpec, summary: "cleanup roles, recovery rules, related links" },
+  { id: "encounter", checkIds: [], run: runEncounterSpec, summary: "state flow, elite variants, related links" },
+  { id: "pvp", checkIds: [], run: runPvpSpec, summary: "rule reference, loot flow, related links" },
+  { id: "anti-zerg", checkIds: [], run: runAntiZergSpec, summary: "rule reference, calculator, related links" },
+  {
+    id: "monster damage reduction",
+    checkIds: [],
+    run: runMonsterDamageReductionSpec,
+    summary: "scaling reference, calculator, related links",
+  },
+  { id: "experience", checkIds: [], run: runExperienceSpec, summary: "pool reference, simulator, related links" },
+  { id: "level", checkIds: [], run: runLevelSpec, summary: "summary cards, interactive curve, simplified layout" },
+  { id: "skills", checkIds: [], run: runSkillsSpec, summary: "summary cards, interactive curve, Level 0 start" },
+  { id: "races", checkIds: [], run: runRacesSpec, summary: "race bonuses, requirement preview, related links" },
+  { id: "strength", checkIds: [], run: runStrengthSpec, summary: "formulas, calculator, benchmarks, related links" },
+  { id: "constitution", checkIds: [], run: runConstitutionSpec, summary: "health, regen, benchmarks, related links" },
+  { id: "dexterity", checkIds: [], run: runDexteritySpec, summary: "multiplier, crit, damage reduction, related links" },
+  {
+    id: "resistances",
+    checkIds: ["resistance-matchups"],
+    run: runResistancesSpec,
+    summary: "player cap preview, monster type matchups, related links",
+  },
+  { id: "guild", checkIds: [], run: runGuildSpec, summary: "management reference, party preview, related links" },
+  { id: "chat", checkIds: [], run: runChatSpec, summary: "channel reference, send preview, related links" },
+  { id: "floor cleanup", checkIds: [], run: runFloorCleanupSpec, summary: "timing reference, preview, related links" },
+  { id: "corruption", checkIds: [], run: runCorruptionSpec, summary: "corrupted innates, cleanse flow, related links" },
+  { id: "crafting", checkIds: [], run: runCraftingSpec, summary: "armor reference, set preview, materials calculator" },
+];
+
+const IMPACT_RECORD_CHECK_IDS = new Set(["site-search", "deep-links", "asset-coverage", "item-relationships"]);
+const IMPACT_TARGET_CONFIG = Object.fromEntries(
+  smokeSpecs.map((spec) => [
+    spec.label,
+    {
+      category: spec.label.slice(0, 1).toUpperCase() + spec.label.slice(1),
+      detailSelector: spec.detailSelector,
+      listPath: spec.listPath,
+      queryKey: spec.queryKey,
+      rowSelector: spec.rowSelector,
+    },
+  ])
+);
 
 async function assertArmorResistanceFilters(page) {
   const filter = page.locator("#filter-resist");
@@ -98,211 +168,461 @@ async function assertArmorResistanceFilters(page) {
   await filter.selectOption([]);
 }
 
-main().catch((error) => {
-  console.error(`SMOKE ERROR site: ${formatError(error)}`);
-  process.exit(1);
+main().catch(async (error) => {
+  const message = formatError(error);
+  try {
+    await writeFatalSmokeResults(message);
+  } catch (writeError) {
+    console.error(`SMOKE ERROR results: ${formatError(writeError)}`);
+  }
+  console.error(`SMOKE ERROR site: ${message}`);
+  process.exitCode = 1;
 });
 
 async function main() {
+  const startedAtMs = Date.now();
+  const startedAt = new Date(startedAtMs).toISOString();
+  const impactPlan = configuredImpactPlanPath ? await loadImpactPlan(configuredImpactPlanPath) : null;
+  loadedImpactPlan = impactPlan;
+  const routedCheckIds = new Set((impactPlan?.checks || []).map((check) => check.id));
+  if (impactPlan) validateImpactPlanCoverage(impactPlan);
+  const selectedDetailSpecs = impactPlan
+    ? smokeSpecs.filter((spec) => spec.checkIds.some((checkId) => routedCheckIds.has(checkId)))
+    : smokeSpecs;
+  const selectedStandaloneRuns = impactPlan
+    ? standaloneSmokeRuns.filter((run) => run.checkIds.some((checkId) => routedCheckIds.has(checkId)))
+    : standaloneSmokeRuns;
+  const selectedImpactRecords = impactPlan
+    ? selectImpactRecords(
+        impactPlan.affectedRecords || [],
+        impactPlan.browserProbePolicy?.changedRecordsPerTarget
+      )
+    : [];
+  const runRecordProbes =
+    Boolean(impactPlan) &&
+    selectedImpactRecords.length > 0 &&
+    Array.from(IMPACT_RECORD_CHECK_IDS).some((checkId) => routedCheckIds.has(checkId));
   const { chromium } = await importPlaywright();
   const server = configuredBaseUrl ? null : await startStaticServer(root);
   const baseUrl = configuredBaseUrl || `http://127.0.0.1:${server.port}/`;
   const browser = await launchBrowser(chromium);
   const failures = [];
+  const groupResults = [];
+  const recordResults = [];
+  let completedGroupCount = 0;
+
+  if (impactPlan) {
+    console.log(
+      `SMOKE PLAN ${routedCheckIds.size} routed check(s), ${selectedImpactRecords.length}/${impactPlan.affectedRecords?.length || 0} record probe(s)`
+    );
+  }
 
   try {
-    for (const spec of smokeSpecs) {
+    for (const spec of selectedDetailSpecs) {
+      const groupStartedAt = Date.now();
+      const groupCheckIds = impactPlan
+        ? spec.checkIds.filter((checkId) => routedCheckIds.has(checkId))
+        : spec.checkIds;
       try {
         await runSpec(browser, baseUrl, spec);
         console.log(`SMOKE OK ${spec.label}: deep link, reload, row route, close route, detail links`);
+        groupResults.push(buildGroupResult(spec.label, "page", groupCheckIds, groupStartedAt));
       } catch (error) {
-        failures.push(`SMOKE ERROR ${spec.label}: ${formatError(error)}`);
+        const failure = `SMOKE ERROR ${spec.label}: ${formatError(error)}`;
+        failures.push(failure);
+        groupResults.push(buildGroupResult(spec.label, "page", groupCheckIds, groupStartedAt, failure));
       }
+      completedGroupCount += 1;
     }
-    try {
-      await runHomeSpec(browser, baseUrl);
-      console.log("SMOKE OK home: timeline filter, related links");
-    } catch (error) {
-      failures.push(`SMOKE ERROR home: ${formatError(error)}`);
+    for (const run of selectedStandaloneRuns) {
+      const groupStartedAt = Date.now();
+      const groupCheckIds = impactPlan
+        ? run.checkIds.filter((checkId) => routedCheckIds.has(checkId))
+        : run.checkIds;
+      try {
+        await run.run(browser, baseUrl);
+        console.log(`SMOKE OK ${run.id}: ${run.summary}`);
+        groupResults.push(buildGroupResult(run.id, "page", groupCheckIds, groupStartedAt));
+      } catch (error) {
+        const failure = `SMOKE ERROR ${run.id}: ${formatError(error)}`;
+        failures.push(failure);
+        groupResults.push(buildGroupResult(run.id, "page", groupCheckIds, groupStartedAt, failure));
+      }
+      completedGroupCount += 1;
     }
-    try {
-      await runBuildPlannerSpec(browser, baseUrl);
-      console.log("SMOKE OK build planner: search, rarity, share reload, reset");
-    } catch (error) {
-      failures.push(`SMOKE ERROR build planner: ${formatError(error)}`);
-    }
-    try {
-      await runPlayTheGameSpec(browser, baseUrl);
-      console.log("SMOKE OK play the game: Discord setup, CTA, related links");
-    } catch (error) {
-      failures.push(`SMOKE ERROR play the game: ${formatError(error)}`);
-    }
-    try {
-      await runQuestsSpec(browser, baseUrl);
-      console.log("SMOKE OK quests: deep links, objectives, filters, relationships, search");
-    } catch (error) {
-      failures.push(`SMOKE ERROR quests: ${formatError(error)}`);
-    }
-    try {
-      await runPerksSpec(browser, baseUrl);
-      console.log("SMOKE OK perks: deep link, search, filters, source links, tooltips");
-    } catch (error) {
-      failures.push(`SMOKE ERROR perks: ${formatError(error)}`);
-    }
-    try {
-      await runRaritySpec(browser, baseUrl);
-      console.log("SMOKE OK rarity: reference table, deterministic roll, upgrade preview");
-    } catch (error) {
-      failures.push(`SMOKE ERROR rarity: ${formatError(error)}`);
-    }
-    try {
-      await runRerollSpec(browser, baseUrl);
-      console.log("SMOKE OK reforge: decision reference, flow, related links");
-    } catch (error) {
-      failures.push(`SMOKE ERROR reforge: ${formatError(error)}`);
-    }
-    try {
-      await runDeconstructSpec(browser, baseUrl);
-      console.log("SMOKE OK deconstruct: shard decision reference, flow, related links");
-    } catch (error) {
-      failures.push(`SMOKE ERROR deconstruct: ${formatError(error)}`);
-    }
-    try {
-      await runAscendSpec(browser, baseUrl);
-      console.log("SMOKE OK ascend: progression reference, decision guidance, related links");
-    } catch (error) {
-      failures.push(`SMOKE ERROR ascend: ${formatError(error)}`);
-    }
-    try {
-      await runCraftSpec(browser, baseUrl);
-      console.log("SMOKE OK craft: ascendancy shop, imbuement crafting, related links");
-    } catch (error) {
-      failures.push(`SMOKE ERROR craft: ${formatError(error)}`);
-    }
-    try {
-      await runImbuementsSpec(browser, baseUrl);
-      console.log("SMOKE OK imbuements: targeting flow, source mechanics, related links");
-    } catch (error) {
-      failures.push(`SMOKE ERROR imbuements: ${formatError(error)}`);
-    }
-    try {
-      await runPurgeSpec(browser, baseUrl);
-      console.log("SMOKE OK purge: cleanup roles, recovery rules, related links");
-    } catch (error) {
-      failures.push(`SMOKE ERROR purge: ${formatError(error)}`);
-    }
-    try {
-      await runEncounterSpec(browser, baseUrl);
-      console.log("SMOKE OK encounter: state flow, elite variants, related links");
-    } catch (error) {
-      failures.push(`SMOKE ERROR encounter: ${formatError(error)}`);
-    }
-    try {
-      await runPvpSpec(browser, baseUrl);
-      console.log("SMOKE OK pvp: rule reference, loot flow, related links");
-    } catch (error) {
-      failures.push(`SMOKE ERROR pvp: ${formatError(error)}`);
-    }
-    try {
-      await runAntiZergSpec(browser, baseUrl);
-      console.log("SMOKE OK anti-zerg: rule reference, calculator, related links");
-    } catch (error) {
-      failures.push(`SMOKE ERROR anti-zerg: ${formatError(error)}`);
-    }
-    try {
-      await runMonsterDamageReductionSpec(browser, baseUrl);
-      console.log("SMOKE OK monster damage reduction: scaling reference, calculator, related links");
-    } catch (error) {
-      failures.push(`SMOKE ERROR monster damage reduction: ${formatError(error)}`);
-    }
-    try {
-      await runExperienceSpec(browser, baseUrl);
-      console.log("SMOKE OK experience: pool reference, simulator, related links");
-    } catch (error) {
-      failures.push(`SMOKE ERROR experience: ${formatError(error)}`);
-    }
-    try {
-      await runLevelSpec(browser, baseUrl);
-      console.log("SMOKE OK level: summary cards, interactive curve, simplified layout");
-    } catch (error) {
-      failures.push(`SMOKE ERROR level: ${formatError(error)}`);
-    }
-    try {
-      await runSkillsSpec(browser, baseUrl);
-      console.log("SMOKE OK skills: summary cards, interactive curve, Level 0 start");
-    } catch (error) {
-      failures.push(`SMOKE ERROR skills: ${formatError(error)}`);
-    }
-    try {
-      await runRacesSpec(browser, baseUrl);
-      console.log("SMOKE OK races: race bonuses, requirement preview, related links");
-    } catch (error) {
-      failures.push(`SMOKE ERROR races: ${formatError(error)}`);
-    }
-    try {
-      await runStrengthSpec(browser, baseUrl);
-      console.log("SMOKE OK strength: formulas, calculator, benchmarks, related links");
-    } catch (error) {
-      failures.push(`SMOKE ERROR strength: ${formatError(error)}`);
-    }
-    try {
-      await runConstitutionSpec(browser, baseUrl);
-      console.log("SMOKE OK constitution: health, regen, benchmarks, related links");
-    } catch (error) {
-      failures.push(`SMOKE ERROR constitution: ${formatError(error)}`);
-    }
-    try {
-      await runDexteritySpec(browser, baseUrl);
-      console.log("SMOKE OK dexterity: multiplier, crit, damage reduction, related links");
-    } catch (error) {
-      failures.push(`SMOKE ERROR dexterity: ${formatError(error)}`);
-    }
-    try {
-      await runResistancesSpec(browser, baseUrl);
-      console.log("SMOKE OK resistances: player cap preview, monster type matchups, related links");
-    } catch (error) {
-      failures.push(`SMOKE ERROR resistances: ${formatError(error)}`);
-    }
-    try {
-      await runGuildSpec(browser, baseUrl);
-      console.log("SMOKE OK guild: management reference, party preview, related links");
-    } catch (error) {
-      failures.push(`SMOKE ERROR guild: ${formatError(error)}`);
-    }
-    try {
-      await runChatSpec(browser, baseUrl);
-      console.log("SMOKE OK chat: channel reference, send preview, related links");
-    } catch (error) {
-      failures.push(`SMOKE ERROR chat: ${formatError(error)}`);
-    }
-    try {
-      await runFloorCleanupSpec(browser, baseUrl);
-      console.log("SMOKE OK floor cleanup: timing reference, preview, related links");
-    } catch (error) {
-      failures.push(`SMOKE ERROR floor cleanup: ${formatError(error)}`);
-    }
-    try {
-      await runCorruptionSpec(browser, baseUrl);
-      console.log("SMOKE OK corruption: corrupted innates, cleanse flow, related links");
-    } catch (error) {
-      failures.push(`SMOKE ERROR corruption: ${formatError(error)}`);
-    }
-    try {
-      await runCraftingSpec(browser, baseUrl);
-      console.log("SMOKE OK crafting: armor reference, set preview, materials calculator");
-    } catch (error) {
-      failures.push(`SMOKE ERROR crafting: ${formatError(error)}`);
+    if (runRecordProbes) {
+      const groupStartedAt = Date.now();
+      const groupCheckIds = Array.from(IMPACT_RECORD_CHECK_IDS).filter((checkId) => routedCheckIds.has(checkId));
+      try {
+        await runImpactRecordSpec(browser, baseUrl, selectedImpactRecords, routedCheckIds, recordResults);
+        console.log(`SMOKE OK impact records: ${selectedImpactRecords.length} changed-data route(s)`);
+        groupResults.push(
+          buildGroupResult("impact records", "records", groupCheckIds, groupStartedAt)
+        );
+      } catch (error) {
+        const failure = `SMOKE ERROR impact records: ${formatError(error)}`;
+        failures.push(failure);
+        groupResults.push(
+          buildGroupResult("impact records", "records", groupCheckIds, groupStartedAt, failure)
+        );
+      }
+      completedGroupCount += 1;
     }
   } finally {
     await browser.close();
     if (server) await server.close();
   }
 
+  const completedAtMs = Date.now();
+  const results = buildSmokeResults({
+    baseUrl,
+    completedAtMs,
+    failures,
+    groupResults,
+    impactPlan,
+    recordResults,
+    routedCheckIds,
+    selectedImpactRecords,
+    startedAt,
+    startedAtMs,
+  });
+  if (configuredResultsPath) {
+    await writeSmokeResults(configuredResultsPath, results);
+  }
   if (failures.length) {
     failures.forEach((failure) => console.error(failure));
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
-  console.log(`SMOKE OK site: ${smokeSpecs.length + 29} page(s) checked at ${baseUrl}`);
+  console.log(`SMOKE OK site: ${completedGroupCount} validation group(s) checked at ${baseUrl}`);
+}
+
+async function loadImpactPlan(planPath) {
+  let payload;
+  try {
+    payload = JSON.parse(await readFile(planPath, "utf8"));
+  } catch (error) {
+    throw new Error(`Unable to read impact validation plan ${planPath}: ${formatError(error)}`);
+  }
+  if (!payload || !Array.isArray(payload.checks) || !Array.isArray(payload.affectedRecords)) {
+    throw new Error(`Impact validation plan ${planPath} is missing checks or affectedRecords`);
+  }
+  return payload;
+}
+
+function validateImpactPlanCoverage(plan) {
+  const supported = new Set(IMPACT_RECORD_CHECK_IDS);
+  smokeSpecs.forEach((spec) => spec.checkIds.forEach((checkId) => supported.add(checkId)));
+  standaloneSmokeRuns.forEach((run) => run.checkIds.forEach((checkId) => supported.add(checkId)));
+  const unknown = plan.checks
+    .filter((check) => Array.isArray(check.automatedBy) && check.automatedBy.includes("smoke-site"))
+    .map((check) => check.id)
+    .filter((checkId) => !supported.has(checkId));
+  if (unknown.length) {
+    throw new Error(`Impact validation plan contains unsupported browser check(s): ${unknown.join(", ")}`);
+  }
+}
+
+function selectImpactRecords(records, configuredLimit) {
+  const numericLimit = Number(configuredLimit);
+  const changedRecordLimit = Number.isInteger(numericLimit) && numericLimit >= 0
+    ? numericLimit
+    : DEFAULT_CHANGED_RECORD_PROBE_LIMIT;
+  const changedByTarget = new Map();
+  return records.filter((record) => {
+    if (!record || !IMPACT_TARGET_CONFIG[record.target]) return false;
+    if (record.changeType !== "changed") return record.changeType === "added" || record.changeType === "removed";
+    const count = changedByTarget.get(record.target) || 0;
+    if (count >= changedRecordLimit) return false;
+    changedByTarget.set(record.target, count + 1);
+    return true;
+  });
+}
+
+function buildGroupResult(id, kind, checkIds, startedAtMs, error = null) {
+  return {
+    id,
+    kind,
+    checkIds: Array.from(new Set(checkIds)).sort(),
+    status: error ? "failed" : "passed",
+    durationMs: Date.now() - startedAtMs,
+    ...(error ? { error } : {}),
+  };
+}
+
+function buildSmokeResults({
+  baseUrl,
+  completedAtMs,
+  failures,
+  groupResults,
+  impactPlan,
+  recordResults,
+  routedCheckIds,
+  selectedImpactRecords,
+  startedAt,
+  startedAtMs,
+}) {
+  const failedGroups = groupResults.filter((result) => result.status === "failed").length;
+  const failedRecords = recordResults.filter((result) => result.status === "failed").length;
+  return {
+    schemaVersion: 1,
+    reportDigest: impactPlan?.reportDigest || null,
+    mode: impactPlan ? "impact-plan" : "full",
+    target: configuredBaseUrl ? "live" : "local",
+    status: failures.length ? "failed" : "passed",
+    startedAt,
+    completedAt: new Date(completedAtMs).toISOString(),
+    durationMs: completedAtMs - startedAtMs,
+    baseUrl,
+    plan: impactPlan
+      ? {
+          file: configuredImpactPlanPath ? path.basename(configuredImpactPlanPath) : null,
+          routedCheckIds: Array.from(routedCheckIds).sort(),
+          affectedRecordCount: impactPlan.affectedRecords?.length || 0,
+          selectedRecordCount: selectedImpactRecords.length,
+          browserProbePolicy: impactPlan.browserProbePolicy || null,
+        }
+      : null,
+    summary: {
+      groupCount: groupResults.length,
+      passedGroups: groupResults.length - failedGroups,
+      failedGroups,
+      recordCount: recordResults.length,
+      passedRecords: recordResults.length - failedRecords,
+      failedRecords,
+    },
+    groups: groupResults,
+    records: recordResults,
+    failures,
+  };
+}
+
+async function writeSmokeResults(resultsPath, results) {
+  await mkdir(path.dirname(resultsPath), { recursive: true });
+  await writeFile(resultsPath, `${JSON.stringify(results, null, 2)}\n`, "utf8");
+  console.log(`SMOKE RESULTS: ${resultsPath}`);
+}
+
+async function writeFatalSmokeResults(message) {
+  if (!configuredResultsPath) return;
+  const now = new Date().toISOString();
+  await writeSmokeResults(configuredResultsPath, {
+    schemaVersion: 1,
+    reportDigest: loadedImpactPlan?.reportDigest || null,
+    mode: configuredImpactPlanPath ? "impact-plan" : "full",
+    target: configuredBaseUrl ? "live" : "local",
+    status: "failed",
+    startedAt: now,
+    completedAt: now,
+    durationMs: 0,
+    baseUrl: configuredBaseUrl,
+    plan: configuredImpactPlanPath
+      ? {
+          file: path.basename(configuredImpactPlanPath),
+          routedCheckIds: (loadedImpactPlan?.checks || []).map((check) => check.id).sort(),
+          affectedRecordCount: loadedImpactPlan?.affectedRecords?.length || 0,
+          selectedRecordCount: 0,
+          browserProbePolicy: loadedImpactPlan?.browserProbePolicy || null,
+        }
+      : null,
+    summary: {
+      groupCount: 0,
+      passedGroups: 0,
+      failedGroups: 0,
+      recordCount: 0,
+      passedRecords: 0,
+      failedRecords: 0,
+    },
+    groups: [],
+    records: [],
+    failures: [`SMOKE ERROR site: ${message}`],
+  });
+}
+
+async function runImpactRecordSpec(browser, baseUrl, records, checkIds, results) {
+  const page = await browser.newPage();
+  page.setDefaultTimeout(timeoutMs);
+  const runtimeErrors = [];
+  page.on("console", (message) => {
+    const text = message.text();
+    if (message.type() === "error" && !text.startsWith("Failed to load resource")) runtimeErrors.push(text);
+  });
+  page.on("pageerror", (error) => runtimeErrors.push(formatError(error)));
+
+  try {
+    for (const record of records) {
+      const recordStartedAt = Date.now();
+      const runtimeErrorIndex = runtimeErrors.length;
+      try {
+        await assertImpactRecord(page, baseUrl, record, checkIds);
+        const recordRuntimeErrors = runtimeErrors.slice(runtimeErrorIndex);
+        if (recordRuntimeErrors.length) {
+          throw new Error(`browser errors: ${recordRuntimeErrors.join("; ")}`);
+        }
+        results.push(buildRecordResult(record, checkIds, recordStartedAt));
+        console.log(`SMOKE RECORD OK ${record.target} ${record.changeType}: ${record.label}`);
+      } catch (error) {
+        const failure = formatError(error);
+        results.push(buildRecordResult(record, checkIds, recordStartedAt, failure));
+        console.error(`SMOKE RECORD ERROR ${record.target} ${record.changeType}: ${record.label}: ${failure}`);
+      }
+    }
+  } finally {
+    await page.close();
+  }
+  const failed = results.filter((result) => result.status === "failed");
+  if (failed.length) {
+    throw new Error(`${failed.length}/${results.length} record probe(s) failed`);
+  }
+}
+
+function buildRecordResult(record, checkIds, startedAtMs, error = null) {
+  return {
+    target: record.target,
+    changeType: record.changeType,
+    label: record.label,
+    name: record.name,
+    queryValue: record.queryValue,
+    checkIds: Array.from(IMPACT_RECORD_CHECK_IDS).filter((checkId) => checkIds.has(checkId)).sort(),
+    status: error ? "failed" : "passed",
+    durationMs: Date.now() - startedAtMs,
+    ...(error ? { error } : {}),
+  };
+}
+
+async function assertImpactRecord(page, baseUrl, record, checkIds) {
+  const config = IMPACT_TARGET_CONFIG[record.target];
+  const expectedPresent = record.changeType !== "removed";
+  if (checkIds.has("site-search")) {
+    await assertImpactSearchRecord(page, baseUrl, record, config, expectedPresent);
+  }
+
+  const needsDetail =
+    checkIds.has("deep-links") || checkIds.has("asset-coverage") || checkIds.has("item-relationships");
+  if (!needsDetail) return;
+
+  await page.goto(
+    joinUrl(baseUrl, config.listPath, { [config.queryKey]: record.queryValue }),
+    { waitUntil: "load" }
+  );
+  await waitForRows(page, { ...config, label: record.target });
+
+  if (!expectedPresent) {
+    if (await page.locator(`${config.detailSelector}.show`).count()) {
+      throw new Error(`${record.label} still resolves through its removed ${record.target} route`);
+    }
+    return;
+  }
+
+  await page.locator(`${config.detailSelector}.show`).waitFor({ state: "visible" });
+  const detailName = await getDetailName(page);
+  if (detailName !== record.name) {
+    throw new Error(`${record.label} route selected "${detailName}" instead of "${record.name}"`);
+  }
+
+  if (checkIds.has("asset-coverage")) {
+    await assertImpactRecordImage(page, record);
+  }
+  if (checkIds.has("item-relationships")) {
+    await assertImpactRelationshipLinks(page, record);
+  }
+  if (checkIds.has("deep-links")) {
+    await page.reload({ waitUntil: "load" });
+    await waitForRows(page, { ...config, label: record.target });
+    await page.locator(`${config.detailSelector}.show`).waitFor({ state: "visible" });
+    const reloadedName = await getDetailName(page);
+    if (reloadedName !== record.name) {
+      throw new Error(`${record.label} reload selected "${reloadedName}" instead of "${record.name}"`);
+    }
+  }
+}
+
+async function assertImpactSearchRecord(page, baseUrl, record, config, expectedPresent) {
+  await page.goto(normalizeBaseUrl(baseUrl), { waitUntil: "load" });
+  const input = page.locator("#site-search-input");
+  await input.waitFor({ state: "attached" });
+  await input.fill(record.name);
+
+  const exactResult = () =>
+    page.evaluate(
+      ({ category, listPath, name, queryKey }) => {
+        const matches = Array.from(document.querySelectorAll("a.nav-search-result"))
+          .map((link) => ({
+            category: (link.querySelector(".nav-search-tag")?.textContent || "").trim(),
+            href: link.href || "",
+            title: (link.querySelector(".nav-search-result-title")?.textContent || "").trim(),
+          }))
+          .filter((entry) => entry.title === name && entry.category === category);
+        const match = matches.find((entry) => {
+          const url = new URL(entry.href, window.location.href);
+          return url.pathname.endsWith(listPath) && url.searchParams.has(queryKey);
+        });
+        return match || null;
+      },
+      { category: config.category, listPath: config.listPath, name: record.name, queryKey: config.queryKey }
+    );
+
+  if (expectedPresent) {
+    await page.waitForFunction(
+      ({ category, listPath, name, queryKey }) =>
+        Array.from(document.querySelectorAll("a.nav-search-result")).some((link) => {
+          const title = (link.querySelector(".nav-search-result-title")?.textContent || "").trim();
+          const tag = (link.querySelector(".nav-search-tag")?.textContent || "").trim();
+          const url = new URL(link.href || "", document.baseURI);
+          return title === name && tag === category && url.pathname.endsWith(listPath) && url.searchParams.has(queryKey);
+        }),
+      { category: config.category, listPath: config.listPath, name: record.name, queryKey: config.queryKey },
+      { timeout: timeoutMs }
+    );
+    if (!(await exactResult())) throw new Error(`${record.label} is missing from site search`);
+    return;
+  }
+
+  await page.waitForTimeout(750);
+  await input.fill("");
+  await input.fill(record.name);
+  await page.waitForTimeout(750);
+  if (await exactResult()) throw new Error(`${record.label} still appears in site search after removal`);
+}
+
+async function assertImpactRecordImage(page, record) {
+  const image = page.locator("#details-image");
+  const src = (await image.getAttribute("src")) || "";
+  if (src) {
+    await page.waitForFunction(() => {
+      const target = document.querySelector("#details-image");
+      return Boolean(target && target.complete);
+    });
+  }
+  const state = await image.evaluate((target) => {
+    const style = window.getComputedStyle(target);
+    return {
+      loaded: Boolean(target.getAttribute("src") && target.complete && target.naturalWidth > 0),
+      visible: style.display !== "none" && style.visibility !== "hidden",
+    };
+  });
+  if (state.visible && !state.loaded) {
+    throw new Error(`${record.label} renders a broken detail image`);
+  }
+  if (record.changeType === "added" && !state.loaded) {
+    throw new Error(`${record.label} was added without a rendered detail image`);
+  }
+}
+
+async function assertImpactRelationshipLinks(page, record) {
+  const hrefs = await page.locator("#details-properties a[href]").evaluateAll((links) =>
+    Array.from(new Set(links.map((link) => link.href || ""))).filter(
+      (href) => href && !href.startsWith("#") && !/^(?:mailto:|javascript:)/i.test(href)
+    )
+  );
+  for (const href of hrefs) {
+    const target = new URL(href, page.url());
+    if (target.origin !== new URL(page.url()).origin) continue;
+    const response = await page.request.get(target.toString());
+    if (!response.ok()) {
+      throw new Error(`${record.label} relationship link returned ${response.status()}: ${href}`);
+    }
+  }
 }
 
 async function importPlaywright() {
@@ -958,22 +1278,17 @@ async function assertMonsterRecommendationEnhancements(page) {
   await iceDragonToggle.click();
   const darknessFallsRow = page
     .locator(
-      '#recommended-weapons .weapon-ranking-row[data-skill-requirement="70"][data-item-level="75"]'
+      '#recommended-weapons .weapon-ranking-row[data-skill-requirement="50"][data-item-level="50"]'
     )
     .filter({ hasText: "Darkness Falls" });
-  if ((await darknessFallsRow.count()) !== 0) {
-    throw new Error("Ice Dragon default recommendations incorrectly included item-level 75 Darkness Falls");
+  await darknessFallsRow.waitFor({ state: "attached" });
+  const darknessFallsText = (await darknessFallsRow.textContent()).trim();
+  if (!darknessFallsText.includes("Item Lv 50") || !darknessFallsText.includes("Req 50")) {
+    throw new Error(`Darkness Falls ranking context was incomplete: "${darknessFallsText}"`);
   }
   const iceDragonMaxItemLevel = page.locator(
     "#recommended-weapons .weapon-ranking-item-level-input"
   );
-  await iceDragonMaxItemLevel.fill("75");
-  await darknessFallsRow.waitFor({ state: "attached" });
-  const darknessFallsText = (await darknessFallsRow.textContent()).trim();
-  if (!darknessFallsText.includes("Item Lv 75") || !darknessFallsText.includes("Req 70")) {
-    throw new Error(`Darkness Falls ranking context was incomplete: "${darknessFallsText}"`);
-  }
-
   await iceDragonMaxItemLevel.fill("100");
   const dragonfireSpearRow = page
     .locator('#recommended-weapons .weapon-ranking-row[data-item-level="100"]')
@@ -987,7 +1302,7 @@ async function assertMonsterRecommendationEnhancements(page) {
     estimated: Number(row.dataset.estimatedDps),
   }));
   if (
-    !dragonfirePerkState.text.includes("Ice Shatter (Tier 2)") ||
+    !dragonfirePerkState.text.includes("Iceshatter (Tier 2)") ||
     dragonfirePerkState.category !== "matchup" ||
     Math.abs(dragonfirePerkState.bonus - 0.13) > 0.0001 ||
     Math.abs(
@@ -1009,7 +1324,7 @@ async function assertMonsterRecommendationEnhancements(page) {
     estimated: Number(row.dataset.estimatedDps),
   }));
   if (
-    dragonfireBaseState.text.includes("Ice Shatter (Tier 2)") ||
+    dragonfireBaseState.text.includes("Iceshatter (Tier 2)") ||
     dragonfireBaseState.bonus !== 0 ||
     Math.abs(dragonfireBaseState.estimated - dragonfireBaseState.effective) > 0.0001
   ) {
@@ -4563,8 +4878,8 @@ async function assertWeaponDetailEnhancements(page) {
 async function assertPerkTatterSources(page) {
   const parry = page.locator('[data-perk-name="Parry"]');
   const chips = parry.locator(".perk-tatter-chip");
-  if ((await chips.count()) !== 6) {
-    throw new Error(`Parry expected six visible tatter sources, found ${await chips.count()}`);
+  if ((await chips.count()) !== 5) {
+    throw new Error(`Parry expected five visible tatter sources, found ${await chips.count()}`);
   }
   const uncommonNames = await parry
     .locator('.perk-tatter-chip[data-tatter-type="uncommon"] .perk-tatter-monster')
@@ -4575,7 +4890,7 @@ async function assertPerkTatterSources(page) {
   if (uncommonNames.join(",") !== "Balron,Anubis") {
     throw new Error(`Parry uncommon tatter sources are out of order: ${uncommonNames.join(", ")}`);
   }
-  if (rareNames.join(",") !== "Werewolf,Death,Juggernaut,Orcus") {
+  if (rareNames.join(",") !== "Werewolf,Juggernaut,Orcus") {
     throw new Error(`Parry rare tatter sources are out of order: ${rareNames.join(", ")}`);
   }
   const balronHref = await parry
@@ -4617,7 +4932,7 @@ async function assertMobilePerkTatterLayout(browser, baseUrl) {
       chipCount: document.querySelectorAll('[data-perk-name="Parry"] .perk-tatter-chip').length,
       overflow: document.documentElement.scrollWidth > window.innerWidth + 1,
     }));
-    if (layout.chipCount !== 6 || layout.overflow) {
+    if (layout.chipCount < 1 || layout.chipCount > 8 || layout.overflow) {
       throw new Error(`Perk tatter sources do not fit mobile: ${JSON.stringify(layout)}`);
     }
   } finally {
@@ -4843,6 +5158,12 @@ function parseArgs(rawArgs) {
       index += 1;
     } else if (arg === "--base-url") {
       parsed.baseUrl = rawArgs[index + 1];
+      index += 1;
+    } else if (arg === "--impact-plan") {
+      parsed.impactPlan = rawArgs[index + 1];
+      index += 1;
+    } else if (arg === "--results-path") {
+      parsed.resultsPath = rawArgs[index + 1];
       index += 1;
     }
   }

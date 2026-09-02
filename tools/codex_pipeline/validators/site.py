@@ -109,6 +109,33 @@ def validate_corrupted_perk_labels(
     return issues
 
 
+def validate_unique_record_ids(
+    record_data_by_kind: dict[str, Iterable[Any]],
+) -> list[ValidationIssue]:
+    issues: list[ValidationIssue] = []
+    for kind, records in record_data_by_kind.items():
+        records_by_id: dict[int, list[str]] = {}
+        for record in records:
+            if not isinstance(record, dict):
+                continue
+            record_id = _int_or_none(record.get("id"))
+            if record_id is None:
+                continue
+            name = str(record.get("name") or f"unnamed record {record_id}")
+            records_by_id.setdefault(record_id, []).append(name)
+
+        for record_id, names in sorted(records_by_id.items()):
+            if len(names) < 2:
+                continue
+            issues.append(
+                ValidationIssue(
+                    "error",
+                    f"{kind} duplicate record ID {record_id}: {', '.join(names)}",
+                )
+            )
+    return issues
+
+
 def _int_or_none(value: Any) -> int | None:
     if isinstance(value, bool):
         return None

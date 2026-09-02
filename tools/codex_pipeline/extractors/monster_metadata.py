@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from collections.abc import MutableMapping
 
+from tools.codex_pipeline.perk_catalog import TATTER_LABELS
+
 
 FLAG_TARGET_HIT_RANGE_TRAP = 0x8000
 FLAG_FLYING = 0x0200
@@ -59,52 +61,6 @@ STATUS_EFFECT_LABELS = {
     5122: "Disease",
     5126: "Bleed",
 }
-
-TATTER_LABELS = {
-    0: "None",
-    1: "Lifesteal",
-    2: "Bloodthirster",
-    3: "Rejuvenation",
-    4: "Antitoxin",
-    5: "Immunization",
-    6: "Vitality",
-    7: "Bolstered Strength",
-    9: "Magic Shield",
-    10: "Juggernaut",
-    11: "Parry",
-    12: "Alchemist",
-    13: "Knowledge",
-    14: "Moneybags",
-    21: "Demon Blood",
-    22: "Frozen Heart",
-    23: "Lightning Field",
-    24: "Tourniquet",
-    25: "Hazmat",
-    26: "Antacid",
-    29: "Vampirism",
-    30: "Garrote",
-    31: "Brutality",
-    32: "Tenacity",
-    33: "Swiftness",
-    35: "Epidemic",
-    36: "Lethal Toxins",
-    37: "Destruction",
-    38: "Impenetrable",
-    39: "Hawkeye",
-    40: "Overpower",
-    41: "Demonsbane",
-    42: "Beastslayer",
-    43: "Executioner",
-    44: "Consecration",
-    45: "Venomshock",
-    46: "Iceshatter",
-    47: "Desperation",
-    48: "Bloodlust",
-    49: "Slayer",
-    51: "Critical Aegis",
-    52: "Toxic Shell",
-}
-
 
 def _add_field_label(
     fields: MutableMapping[str, object],

@@ -135,9 +135,14 @@ def fetch_url_bytes(url: str, timeout_seconds: float) -> bytes:
         return response.read()
 
 
-def resolve_git_commit(*, repo_root: Path = REPO_ROOT, git_executable: str = "git") -> str:
+def resolve_git_commit(
+    revision: str = "HEAD",
+    *,
+    repo_root: Path = REPO_ROOT,
+    git_executable: str = "git",
+) -> str:
     return subprocess.check_output(
-        [git_executable, "rev-parse", "HEAD"],
+        [git_executable, "rev-parse", "--verify", f"{revision}^{{commit}}"],
         cwd=repo_root,
         text=True,
     ).strip()

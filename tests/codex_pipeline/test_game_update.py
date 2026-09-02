@@ -651,10 +651,19 @@ class GameUpdateReportTests(unittest.TestCase):
                 exit_code = cli.main(["game-update-report", "--write-summary", "--output-dir", str(output_dir)])
 
             summary_path = output_dir / "game_update_summary.md"
+            gameplay_impact_path = output_dir / "gameplay_impact_report.md"
+            gameplay_impact_json_path = output_dir / "gameplay_impact_report.json"
+            impact_validation_plan_path = output_dir / "impact_validation_plan.json"
             self.assertEqual(0, exit_code)
             self.assertTrue(summary_path.is_file())
+            self.assertTrue(gameplay_impact_path.is_file())
+            self.assertTrue(gameplay_impact_json_path.is_file())
+            self.assertTrue(impact_validation_plan_path.is_file())
             printed = output.getvalue()
             self.assertIn(f"WROTE SUMMARY: {summary_path}", printed)
+            self.assertIn(f"WROTE GAMEPLAY IMPACT: {gameplay_impact_path}", printed)
+            self.assertIn(f"WROTE GAMEPLAY IMPACT JSON: {gameplay_impact_json_path}", printed)
+            self.assertIn(f"WROTE IMPACT VALIDATION PLAN: {impact_validation_plan_path}", printed)
             markdown = summary_path.read_text(encoding="utf-8")
             self.assertIn("# Project Rogue Codex Game Update Summary", markdown)
             self.assertIn("- Data: +1 -0 ~1", markdown)
@@ -667,6 +676,17 @@ class GameUpdateReportTests(unittest.TestCase):
             self.assertIn("- Changed: Rune Sword.gif", markdown)
             self.assertIn("## Review Notes", markdown)
             self.assertIn("- WARNING: sample warning", markdown)
+            impact_markdown = gameplay_impact_path.read_text(encoding="utf-8")
+            self.assertIn("# Project Rogue Codex Gameplay Impact", impact_markdown)
+            self.assertIn("- Added: New Sword (3)", impact_markdown)
+            impact_payload = json.loads(gameplay_impact_json_path.read_text(encoding="utf-8"))
+            self.assertEqual(1, impact_payload["schemaVersion"])
+            self.assertRegex(impact_payload["reportDigest"], r"^sha256:[0-9a-f]{64}$")
+            self.assertIn(f"GAMEPLAY IMPACT DIGEST: {impact_payload['reportDigest']}", printed)
+            self.assertEqual(1, impact_payload["summary"]["publicRecords"]["added"])
+            validation_plan = json.loads(impact_validation_plan_path.read_text(encoding="utf-8"))
+            self.assertEqual(impact_payload["reportDigest"], validation_plan["reportDigest"])
+            self.assertIn("site-search", [check["id"] for check in validation_plan["checks"]])
 
     def test_cli_can_write_game_update_image_review_artifact(self):
         from tools.codex_pipeline import cli

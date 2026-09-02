@@ -11,6 +11,8 @@ class PipelineDocumentationTests(unittest.TestCase):
             self.assertIn("python -m tools.codex_pipeline bump-static-version", document)
             self.assertIn("python -m tools.codex_pipeline release-check", document)
             self.assertIn("python -m tools.codex_pipeline verify-deploy", document)
+            self.assertIn("game-update-history", document)
+            self.assertIn("game-update-status", document)
 
         self.assertIn("static asset", readme.lower())
         self.assertIn("GitHub Actions runs `release-check`", architecture)

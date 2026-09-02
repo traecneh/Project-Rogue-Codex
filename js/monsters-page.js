@@ -313,6 +313,7 @@
   let allowedMonsterNames = new Set();
   let blockedMonsterIds = new Set();
   let hiddenWeaponNames = new Set();
+  let hiddenWeaponIds = new Set();
   let hiddenArmorNames = new Set();
 
   const applyAllowlists = (allowlists) => {
@@ -323,6 +324,11 @@
       )
     );
     hiddenWeaponNames = buildNameSet(allowlists?.weapons?.block);
+    hiddenWeaponIds = new Set(
+      (Array.isArray(allowlists?.weapons?.blockIds) ? allowlists.weapons.blockIds : []).map((id) =>
+        String(id).trim()
+      )
+    );
     hiddenArmorNames = buildNameSet(allowlists?.armors?.block);
   };
 
@@ -904,6 +910,7 @@ const renderEmpty = (message) => {
     const dps = computeDps(min, max, speed);
 
     return {
+      id: raw.id ?? raw.ID ?? raw.name ?? "",
       name: raw.name || fields.name_label || "Unknown Weapon",
       dps,
       level: toNumber(fields.level_requirement ?? raw.level),
@@ -3101,7 +3108,7 @@ const unpinTooltip = (tooltip) => {
                 if (!w) return false;
                 const nameLower = (w.name || "").toLowerCase();
                 if (nameLower === "flaming sword" && Number(w.level) === 0) return false;
-                return !hiddenWeaponNames.has(nameLower);
+                return !hiddenWeaponNames.has(nameLower) && !hiddenWeaponIds.has(String(w.id).trim());
               })
           : [];
         armors = Array.isArray(armorData)

@@ -149,6 +149,76 @@
       "group": "General Offense"
     },
     {
+      "name": "Berserker",
+      "slug": "perk-berserker",
+      "isUnique": false,
+      "abbreviation": "BZ",
+      "details": [
+        "Increases damage dealt and damage taken."
+      ],
+      "group": "General Offense"
+    },
+    {
+      "name": "Finisher",
+      "slug": "perk-finisher",
+      "isUnique": false,
+      "abbreviation": "FN",
+      "details": [
+        "Deals bonus damage against enemies below a health threshold."
+      ],
+      "group": "General Offense"
+    },
+    {
+      "name": "Radiance",
+      "slug": "perk-radiance",
+      "isUnique": false,
+      "abbreviation": "RA",
+      "details": [
+        "Transforms weapon damage to Holy."
+      ],
+      "group": "General Offense"
+    },
+    {
+      "name": "Rampage",
+      "slug": "perk-rampage",
+      "isUnique": false,
+      "abbreviation": "RP",
+      "details": [
+        "Gains a stacking damage bonus on kill that decays over time."
+      ],
+      "group": "General Offense"
+    },
+    {
+      "name": "Shadowstrike",
+      "slug": "perk-shadowstrike",
+      "isUnique": false,
+      "abbreviation": "SS",
+      "details": [
+        "Transforms weapon damage to Dark."
+      ],
+      "group": "General Offense"
+    },
+    {
+      "name": "Whirlwind",
+      "slug": "perk-whirlwind",
+      "isUnique": false,
+      "abbreviation": "WH",
+      "details": [
+        "Chance to perform a whirlwind attack on your target."
+      ],
+      "group": "General Offense"
+    },
+    {
+      "name": "Augmentation",
+      "slug": "perk-augmentation",
+      "isUnique": false,
+      "abbreviation": "AU",
+      "details": [
+        "Chance to gain increased Intelligence after attacking."
+      ],
+      "group": "Proc Buffs"
+    },
+    {
       "name": "Bloodlust",
       "slug": "perk-bloodlust",
       "isUnique": false,
@@ -242,6 +312,16 @@
       "group": "Sustain & Healing"
     },
     {
+      "name": "Second Wind",
+      "slug": "perk-second-wind",
+      "isUnique": false,
+      "abbreviation": "SE",
+      "details": [
+        "Restores health when you become close to death."
+      ],
+      "group": "Sustain & Healing"
+    },
+    {
       "name": "Critical Aegis",
       "slug": "perk-critical-aegis",
       "isUnique": false,
@@ -290,6 +370,26 @@
       "details": [
         "Grants an Overshield for [25/35/45]% of Poison Damage dealt.",
         "Doubles in PvP as damage is mitigatable."
+      ],
+      "group": "Mitigation & Shields"
+    },
+    {
+      "name": "Retribution",
+      "slug": "perk-retribution",
+      "isUnique": false,
+      "abbreviation": "RT",
+      "details": [
+        "Reflects a portion of incoming damage back to the attacker."
+      ],
+      "group": "Mitigation & Shields"
+    },
+    {
+      "name": "Spartan",
+      "slug": "perk-spartan",
+      "isUnique": false,
+      "abbreviation": "SP",
+      "details": [
+        "Increases armor class and reduces damage from bows."
       ],
       "group": "Mitigation & Shields"
     },
@@ -369,6 +469,28 @@
       "group": "Resistances"
     },
     {
+      "name": "Nether Shield",
+      "slug": "perk-nether-shield",
+      "isUnique": false,
+      "abbreviation": "NS",
+      "group": "Resistances",
+      "resistance": "dark",
+      "details": [
+        "Increases Dark resistance."
+      ]
+    },
+    {
+      "name": "Sanctified Guard",
+      "slug": "perk-sanctified-guard",
+      "isUnique": false,
+      "abbreviation": "SG",
+      "group": "Resistances",
+      "resistance": "holy",
+      "details": [
+        "Increases Holy resistance."
+      ]
+    },
+    {
       "name": "Tourniquet",
       "slug": "perk-tourniquet",
       "isUnique": false,
@@ -430,6 +552,16 @@
       "group": "Utility & Economy"
     },
     {
+      "name": "Windwalker",
+      "slug": "perk-windwalker",
+      "isUnique": false,
+      "abbreviation": "WK",
+      "details": [
+        "Reduces the chance of being blocked by other players."
+      ],
+      "group": "Utility & Economy"
+    },
+    {
       "name": "Blood Siphon",
       "slug": "perk-blood-siphon",
       "isUnique": true,
@@ -452,6 +584,14 @@
       "details": [
         "Allows poisons regardless of weapon element.",
         "+[5/10/15]% poison chance, additive."
+      ]
+    },
+    {
+      "name": "Elementalist",
+      "slug": "perk-elementalist",
+      "isUnique": true,
+      "details": [
+        "Each attack randomly selects an element from an expanding pool."
       ]
     },
     {

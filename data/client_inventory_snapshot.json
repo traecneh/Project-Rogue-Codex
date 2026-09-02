@@ -12,8 +12,8 @@
       "height": 1024,
       "name": "avatars",
       "path": "avatars.json",
-      "sha256": "FF1111AC921F9BBD6E4AF2E8AB4054B02427EF22FA8BDD793FDDCF5326035163",
-      "size_bytes": 205003,
+      "sha256": "F73AD6ECC8A42C2FA4314D73E109773B5BF96288E6A70998B628AAA9D755B256",
+      "size_bytes": 207232,
       "width": 1104
     },
     {
@@ -60,8 +60,8 @@
       "height": 1024,
       "name": "itemgraph",
       "path": "itemgraph.json",
-      "sha256": "FABC372BEDFF093C5805C57FCACAAA351C7C93001C148BF5B7182C8EC5EFD072",
-      "size_bytes": 202448,
+      "sha256": "F40E43A6F24B0432400E91E8FEDA1F0FD556A03B228D945780A7F19B1739389D",
+      "size_bytes": 202911,
       "width": 1024
     },
     {
@@ -161,6 +161,7 @@
         "Bank",
         "Body",
         "Chat",
+        "Choose Mastery Keystone",
         "Combat Statistics",
         "Confirmation Dialog",
         "Crafting",
@@ -222,6 +223,7 @@
         "bonus_dexterity",
         "bonus_intelligence",
         "bonus_strength",
+        "corruption",
         "crafting_difficulty",
         "crafting_material_amount",
         "crafting_material_type",
@@ -230,6 +232,7 @@
         "frames",
         "id",
         "innate_special_effect",
+        "item_class",
         "items",
         "level",
         "maximum_rarity",
@@ -321,6 +324,8 @@
         "animation_frame_count",
         "animation_type",
         "attack_speed",
+        "chaos_mode_special_effect_rare",
+        "chaos_mode_special_effect_uncommon",
         "dam_max",
         "dam_min",
         "element",
@@ -337,7 +342,7 @@
       "group_count": 0,
       "path": "monsters.json",
       "primary_collection": "monsters",
-      "record_count": 191
+      "record_count": 193
     },
     {
       "fields": [
@@ -433,7 +438,7 @@
       "group_count": 0,
       "path": "useables.json",
       "primary_collection": "useables",
-      "record_count": 22
+      "record_count": 24
     },
     {
       "fields": [
@@ -459,6 +464,7 @@
         "bonus_dexterity",
         "bonus_intelligence",
         "bonus_strength",
+        "corruption",
         "crafting_difficulty",
         "crafting_material_amount",
         "crafting_material_type",
@@ -471,6 +477,7 @@
         "frames",
         "id",
         "innate_special_effect",
+        "item_class",
         "items",
         "level",
         "maximum_rarity",
@@ -506,7 +513,7 @@
       "extension": ".json",
       "kind": "diagnostic",
       "path": "GUI.json",
-      "size_bytes": 10251,
+      "size_bytes": 10573,
       "zeroed_binary": false
     },
     {
@@ -527,14 +534,14 @@
       "extension": ".exe",
       "kind": "runtime",
       "path": "Project Rogue Client.exe",
-      "size_bytes": 1556480,
+      "size_bytes": 1560064,
       "zeroed_binary": false
     },
     {
       "extension": ".log",
       "kind": "log",
       "path": "ProjectRogue.log",
-      "size_bytes": 7692,
+      "size_bytes": 7461,
       "zeroed_binary": false
     },
     {
@@ -562,7 +569,7 @@
       "extension": ".json",
       "kind": "diagnostic",
       "path": "Settings.json",
-      "size_bytes": 1402,
+      "size_bytes": 1399,
       "zeroed_binary": false
     }
   ],
@@ -590,13 +597,13 @@
       "weapons.json"
     ],
     "schema_version": 1,
-    "sha256": "5BB643134C75D3646EB1925EBED866B407596EDCAE7B366925EAC85BE2519BC5",
-    "size_bytes": 676280
+    "sha256": "33F87AD876735E7B99E59C1E70170F15B16EBCD4EF033A501A1235BFA625A2B7",
+    "size_bytes": 689000
   },
   "vpack_files": [
     {
-      "compressed_size": 54479,
-      "original_size": 4615889,
+      "compressed_size": 57081,
+      "original_size": 4727989,
       "path": "armors.json",
       "sha256_ok": true
     },
@@ -607,20 +614,20 @@
       "sha256_ok": true
     },
     {
-      "compressed_size": 4204,
+      "compressed_size": 4232,
       "original_size": 699282,
       "path": "locales.json",
       "sha256_ok": true
     },
     {
-      "compressed_size": 531901,
+      "compressed_size": 537171,
       "original_size": 11884243,
       "path": "map.json",
       "sha256_ok": true
     },
     {
-      "compressed_size": 10156,
-      "original_size": 250702,
+      "compressed_size": 10937,
+      "original_size": 271254,
       "path": "monsters.json",
       "sha256_ok": true
     },
@@ -637,13 +644,13 @@
       "sha256_ok": true
     },
     {
-      "compressed_size": 752,
+      "compressed_size": 751,
       "original_size": 4049,
       "path": "player_tables.json",
       "sha256_ok": true
     },
     {
-      "compressed_size": 1794,
+      "compressed_size": 1800,
       "original_size": 699266,
       "path": "safezones.json",
       "sha256_ok": true
@@ -655,20 +662,20 @@
       "sha256_ok": true
     },
     {
-      "compressed_size": 1069,
-      "original_size": 28328,
+      "compressed_size": 1125,
+      "original_size": 30864,
       "path": "useables.json",
       "sha256_ok": true
     },
     {
-      "compressed_size": 2264,
+      "compressed_size": 2310,
       "original_size": 699284,
       "path": "warfronts.json",
       "sha256_ok": true
     },
     {
-      "compressed_size": 35397,
-      "original_size": 2513194,
+      "compressed_size": 39329,
+      "original_size": 2572123,
       "path": "weapons.json",
       "sha256_ok": true
     }

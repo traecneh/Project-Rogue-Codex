@@ -368,7 +368,7 @@ function getPerkSlug(name) {
 
 const EMPTY_ALLOWLISTS = {
   monsters: { allow: [], block: [], blockIds: [] },
-  weapons: { block: [] },
+  weapons: { block: [], blockIds: [] },
   armors: { block: [] },
 };
 const buildNameSet = (list) => {
@@ -387,6 +387,7 @@ let allowedMonsterNames = new Set();
 let blockedMonsterNames = new Set();
 let blockedMonsterIds = new Set();
 let hiddenWeaponNames = new Set();
+let hiddenWeaponIds = new Set();
 let hiddenArmorNames = new Set();
 
 const applyAllowlists = (allowlists) => {
@@ -397,6 +398,9 @@ const applyAllowlists = (allowlists) => {
     (Array.isArray(safe.monsters?.blockIds) ? safe.monsters.blockIds : []).map((id) => String(id).trim())
   );
   hiddenWeaponNames = buildNameSet(safe.weapons?.block);
+  hiddenWeaponIds = new Set(
+    (Array.isArray(safe.weapons?.blockIds) ? safe.weapons.blockIds : []).map((id) => String(id).trim())
+  );
   hiddenArmorNames = buildNameSet(safe.armors?.block);
 };
 
@@ -1006,7 +1010,9 @@ function loadWeaponData() {
     .then((data) => {
       const list = Array.isArray(data) ? data : [];
       const filtered = list.filter(
-        (weapon) => !hiddenWeaponNames.has(String(weapon.name || weapon.Name || "").toLowerCase())
+        (weapon) =>
+          !hiddenWeaponNames.has(String(weapon.name || weapon.Name || "").toLowerCase()) &&
+          !hiddenWeaponIds.has(String(weapon.id ?? weapon.ID ?? "").trim())
       );
       return filtered.map((weapon) => normalizeNavWeapon(weapon)).filter(Boolean);
     })

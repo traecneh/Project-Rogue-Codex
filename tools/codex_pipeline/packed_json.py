@@ -179,6 +179,19 @@ def _int_value(item: Mapping[str, Any], key: str, default: int = 0) -> int:
     return default if value is None else value
 
 
+def _add_int_field_if_present(
+    fields: dict[str, Any],
+    item: Mapping[str, Any],
+    source_key: str,
+    target_key: str,
+    site_record: Mapping[str, Any] | None = None,
+) -> None:
+    if source_key in item:
+        value = _int_value(item, source_key)
+        if value or target_key in _site_fields(site_record):
+            fields[target_key] = value
+
+
 def _split_value(value: int) -> tuple[int, int]:
     return value & 0xFFFF, (value >> 16) & 0xFFFF
 
@@ -327,6 +340,9 @@ def _map_weapons(data: Mapping[str, Any], site_index: Mapping[str, Any]) -> list
             "constitution": _int_value(item, "bonus_constitution"),
             "to_hit": _int_value(item, "to_hit"),
         }
+        _add_int_field_if_present(fields, item, "corruption", "corrupted_perk", site_record)
+        _add_int_field_if_present(fields, item, "item_class", "item_class", site_record)
+        _add_int_field_if_present(fields, item, "emits_light", "emits_light", site_record)
         _add_value_fields(fields, _int_value(item, "value"))
         _add_frames(fields, item.get("frames"))
         _merge_site_only_fields(fields, site_record)
@@ -367,6 +383,9 @@ def _map_armors(data: Mapping[str, Any], site_index: Mapping[str, Any]) -> list[
             "constitution": _int_value(item, "bonus_constitution"),
             "to_hit": _int_value(item, "to_hit"),
         }
+        _add_int_field_if_present(fields, item, "corruption", "corrupted_perk", site_record)
+        _add_int_field_if_present(fields, item, "item_class", "item_class", site_record)
+        _add_int_field_if_present(fields, item, "emits_light", "emits_light", site_record)
         _add_value_fields(fields, _int_value(item, "value"))
         _add_frames(fields, item.get("frames"))
         _merge_site_only_fields(fields, site_record)
@@ -380,6 +399,9 @@ def _map_monsters(data: Mapping[str, Any], site_index: Mapping[str, Any]) -> lis
     if not isinstance(monsters, list):
         raise VpackError("packed monsters JSON does not contain a monsters array")
 
+    reserved_ids = set(site_index["by_id"])
+    assigned_ids: set[int] = set()
+    next_available_id = max(reserved_ids, default=-1) + 1
     records: list[dict[str, Any]] = []
     for item in monsters:
         if not isinstance(item, Mapping) or not _is_named_record(item):
@@ -406,8 +428,34 @@ def _map_monsters(data: Mapping[str, Any], site_index: Mapping[str, Any]) -> lis
             "unknown_166": _int_value(item, "animated"),
             "unknown_168": _int_value(item, "animation_frame_count") + (_int_value(item, "animation_type") << 8),
         }
+        _add_int_field_if_present(
+            fields,
+            item,
+            "chaos_mode_special_effect_uncommon",
+            "uncommon_tatter",
+            site_record,
+        )
+        _add_int_field_if_present(
+            fields,
+            item,
+            "chaos_mode_special_effect_rare",
+            "rare_tatter",
+            site_record,
+        )
         _add_frames(fields, item.get("frames"))
         _merge_site_only_fields(fields, site_record)
         enrich_monster_fields(fields, name)
-        records.append({"id": _site_record_id(site_record, packed_id), "name": name, "fields": fields})
+        preferred_id = _site_record_id(site_record, packed_id)
+        can_use_preferred = preferred_id not in assigned_ids and (
+            site_record is not None or preferred_id not in reserved_ids
+        )
+        if can_use_preferred:
+            record_id = preferred_id
+        else:
+            while next_available_id in reserved_ids or next_available_id in assigned_ids:
+                next_available_id += 1
+            record_id = next_available_id
+            next_available_id += 1
+        assigned_ids.add(record_id)
+        records.append({"id": record_id, "name": name, "fields": fields})
     return records
