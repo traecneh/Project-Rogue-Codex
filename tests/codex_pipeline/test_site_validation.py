@@ -2937,9 +2937,13 @@ class SiteValidationTests(unittest.TestCase):
         from tools.codex_pipeline.config import REPO_ROOT
 
         script = (REPO_ROOT / "js" / "armors-page.js").read_text(encoding="utf-8")
+        css = (REPO_ROOT / "css" / "armors.css").read_text(encoding="utf-8")
 
         self.assertIn("holy: res.holy", script)
         self.assertIn("dark: res.dark", script)
+        self.assertIn('{ key: "holyResist", label: "Holy"', script)
+        self.assertIn('{ key: "darkResist", label: "Dark"', script)
+        self.assertRegex(css, r"\.items-table th,\s*\.items-table td\s*\{[^}]*padding:\s*0\.55rem 0\.3rem;")
 
     def test_armors_page_detail_hides_empty_corrupted_perks_and_empty_requirements(self):
         from tools.codex_pipeline.config import REPO_ROOT
