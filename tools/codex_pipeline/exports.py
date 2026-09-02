@@ -15,6 +15,7 @@ from tools.codex_pipeline.config import (
     COLLECTABLES_DATA_PATH,
     EXTRACTORS_DIR,
     GENERATED_OUTPUT_DIR,
+    ITEM_FIELD_OVERRIDES_PATH,
     MONSTERS_DATA_PATH,
     PERK_LABEL_OVERRIDES_PATH,
     USEABLES_DATA_PATH,
@@ -289,11 +290,51 @@ def _apply_corrupted_perk_override(fields: dict[str, Any], overrides: CorruptedP
     return True
 
 
+def _load_item_field_overrides(path: Path) -> dict[str, dict[str, dict[str, Any]]]:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict) or payload.get("schemaVersion") != 1:
+        raise ValueError("item field overrides must use schemaVersion 1")
+    targets = payload.get("targets", {})
+    if not isinstance(targets, dict):
+        raise ValueError("item field overrides targets must be an object")
+
+    normalized: dict[str, dict[str, dict[str, Any]]] = {}
+    for target_name, records in targets.items():
+        if not isinstance(records, dict):
+            raise ValueError(f"item field overrides target {target_name} must be an object")
+        normalized_records: dict[str, dict[str, Any]] = {}
+        for record_id, entry in records.items():
+            if not isinstance(entry, dict) or not isinstance(entry.get("fields"), dict):
+                raise ValueError(f"item field override {target_name}/{record_id} must contain fields")
+            normalized_records[str(record_id)] = entry
+        normalized[str(target_name)] = normalized_records
+    return normalized
+
+
+def _apply_item_field_override(
+    target: ExportTarget,
+    record: dict[str, Any],
+    fields: dict[str, Any],
+    overrides: dict[str, dict[str, dict[str, Any]]],
+) -> None:
+    entry = overrides.get(target.name, {}).get(str(record.get("id")))
+    if entry is None:
+        return
+    expected_name = str(entry.get("name") or "").strip()
+    actual_name = str(record.get("name") or "").strip()
+    if expected_name and expected_name != actual_name:
+        raise ValueError(
+            f"item field override {target.name}/{record.get('id')} expects {expected_name!r}, found {actual_name!r}"
+        )
+    fields.update(deepcopy(entry["fields"]))
+
+
 def _normalize_generated_records_for_site(
     target: ExportTarget,
     generated_records: list[Any],
     site_records: list[Any],
     corrupted_perk_overrides: CorruptedPerkOverrides,
+    item_field_overrides: dict[str, dict[str, dict[str, Any]]],
 ) -> list[Any]:
     normalized_field_names = SITE_NORMALIZED_FIELD_NAMES_BY_TARGET.get(target.name, set())
     normalized_records = deepcopy(generated_records)
@@ -304,6 +345,8 @@ def _normalize_generated_records_for_site(
         fields = record.get("fields")
         if not isinstance(fields, dict):
             continue
+
+        _apply_item_field_override(target, record, fields, item_field_overrides)
 
         if normalized_field_names:
             site_record = site_by_key.get(_record_key(record, index))
@@ -333,12 +376,22 @@ def _normalize_generated_output_for_site(target: ExportTarget, generated_path: P
         corrupted_perk_overrides = load_perk_label_overrides(PERK_LABEL_OVERRIDES_PATH)
     except (OSError, json.JSONDecodeError, ValueError) as exc:
         raise ExportError(f"{PERK_LABEL_OVERRIDES_PATH} failed to read perk label overrides: {exc}") from exc
-    normalized_records = _normalize_generated_records_for_site(
-        target,
-        generated_records,
-        site_records,
-        corrupted_perk_overrides,
-    )
+    try:
+        item_field_overrides = _load_item_field_overrides(ITEM_FIELD_OVERRIDES_PATH)
+    except (OSError, json.JSONDecodeError, ValueError) as exc:
+        raise ExportError(f"{ITEM_FIELD_OVERRIDES_PATH} failed to read item field overrides: {exc}") from exc
+    try:
+        normalized_records = _normalize_generated_records_for_site(
+            target,
+            generated_records,
+            site_records,
+            corrupted_perk_overrides,
+            item_field_overrides,
+        )
+    except ValueError as exc:
+        raise ExportError(
+            f"{ITEM_FIELD_OVERRIDES_PATH} failed to apply item field overrides: {exc}"
+        ) from exc
     _write_json_list(generated_path, normalized_records)
 
 

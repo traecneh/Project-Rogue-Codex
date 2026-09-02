@@ -568,6 +568,66 @@ class ExportCommandTests(unittest.TestCase):
             exported = json.loads((output_dir / "weapons.json").read_text(encoding="utf-8"))
             self.assertEqual("Mapped Frost Effect", exported[0]["fields"]["corrupted_perk_label"])
 
+    def test_export_client_data_applies_item_field_overrides(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            script = root / "extract_weapons.py"
+            source = root / "source.dat"
+            site_path = root / "site" / "weapons.json"
+            output_dir = root / "generated"
+            override_path = root / "item_field_overrides.json"
+            source.write_bytes(b"fake source")
+            override_path.write_text(
+                json.dumps(
+                    {
+                        "schemaVersion": 1,
+                        "targets": {
+                            "weapons": {
+                                "289": {
+                                    "name": "Blade of Divinity",
+                                    "fields": {"subtype": 1, "subtype_label": "Sword"},
+                                }
+                            }
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            script.write_text(
+                textwrap.dedent(
+                    """
+                    import json
+                    import sys
+                    from pathlib import Path
+
+                    output = Path(sys.argv[2])
+                    output.write_text(json.dumps([
+                        {
+                            "id": 289,
+                            "name": "Blade of Divinity",
+                            "fields": {"subtype": 0}
+                        }
+                    ]), encoding="utf-8")
+                    """
+                ).strip()
+                + "\n",
+                encoding="utf-8",
+            )
+            target = ExportTarget(
+                name="weapons",
+                extractor_script=script,
+                source_data=source,
+                output_filename="weapons.json",
+                site_path=site_path,
+            )
+
+            with patch("tools.codex_pipeline.exports.ITEM_FIELD_OVERRIDES_PATH", override_path):
+                export_client_data([target], output_dir=output_dir, python_executable=sys.executable)
+
+            exported = json.loads((output_dir / "weapons.json").read_text(encoding="utf-8"))
+            self.assertEqual(1, exported[0]["fields"]["subtype"])
+            self.assertEqual("Sword", exported[0]["fields"]["subtype_label"])
+
     def test_build_generated_diff_report_normalizes_untrusted_corrupted_perk_labels(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

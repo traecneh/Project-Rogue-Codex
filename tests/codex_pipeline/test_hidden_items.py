@@ -2,7 +2,13 @@ import json
 import unittest
 from pathlib import Path
 
-from tools.codex_pipeline.config import ALLOWLISTS_PATH, MONSTERS_DATA_PATH, MONSTER_IMAGES_DIR
+from tools.codex_pipeline.config import (
+    ALLOWLISTS_PATH,
+    MONSTERS_DATA_PATH,
+    MONSTER_IMAGES_DIR,
+    WEAPONS_DATA_PATH,
+    WEAPON_IMAGES_DIR,
+)
 
 
 AUDITED_COMBAT_MONSTERS = {
@@ -41,6 +47,19 @@ AUDITED_COMBAT_MONSTERS = {
     "Wolf",
 }
 
+RAGE_DIVINITY_WEAPONS = {
+    287: "Blade of Rage",
+    288: "Dagger of Rage",
+    289: "Blade of Divinity",
+    290: "Dagger of Divinity",
+    437: "Reaper of Rage",
+    438: "Reaper of Divinity",
+    641: "Warmace of Rage",
+    642: "Warmace of Divinity",
+    847: "Battlespear of Rage",
+    848: "Battlespear of Divinity",
+}
+
 
 class HiddenItemRulesTests(unittest.TestCase):
     def test_audited_combat_monsters_are_visible_and_complete(self):
@@ -74,32 +93,33 @@ class HiddenItemRulesTests(unittest.TestCase):
         self.assertIn("Super Duper Bow", allowlists["weapons"]["block"])
         for name in ["Wooden Bow", "Crossbow", "Small Crossbow", "Four Elements Crossbow", "Dragon Fire Gauntlets"]:
             self.assertIn(name, allowlists["weapons"]["block"])
-        for name in [
-            "Sword of Rage",
-            "Blade of Rage",
-            "Dagger of Rage",
-            "Axe of Rage",
-            "Reaper of Rage",
-            "Warmace of Rage",
-            "Spear of Rage",
-            "Battlespear of Rage",
-            "Sword of Divinity",
-            "Blade of Divinity",
-            "Dagger of Divinity",
-            "Axe of Divinity",
-            "Reaper of Divinity",
-            "Warmace of Divinity",
-            "Spear of Divinity",
-            "Battlespear of Divinity",
-        ]:
-            self.assertIn(name, allowlists["weapons"]["block"])
-        self.assertEqual(
-            {287, 288, 289, 290, 437, 438, 641, 642, 847, 848},
-            set(allowlists["weapons"]["block_ids"]),
+        self.assertFalse(
+            any("rage" in name.lower() or "divinity" in name.lower() for name in allowlists["weapons"]["block"])
         )
+        self.assertTrue(set(RAGE_DIVINITY_WEAPONS).isdisjoint(allowlists["weapons"].get("block_ids", [])))
 
         for name in ("Obsidian Ravager", "Cinderbone Harrower"):
             self.assertIn(name, allowlists["monsters"]["allow"])
+
+    def test_rage_and_divinity_weapons_are_visible_and_complete(self):
+        from tools.codex_pipeline.hidden_items import load_hidden_item_rules
+
+        rules = load_hidden_item_rules()
+        records = json.loads(WEAPONS_DATA_PATH.read_text(encoding="utf-8"))
+        records_by_id = {record["id"]: record for record in records}
+        manifest = json.loads((WEAPON_IMAGES_DIR / "manifest.json").read_text(encoding="utf-8"))
+        image_names = {Path(path).stem for path in manifest}
+
+        for weapon_id, name in RAGE_DIVINITY_WEAPONS.items():
+            with self.subTest(weapon=name):
+                record = records_by_id[weapon_id]
+                self.assertEqual(name, record["name"])
+                self.assertFalse(rules.is_hidden_record("weapons", record))
+                self.assertIn(name, image_names)
+                self.assertIn(record["fields"].get("subtype_label"), {"Sword", "Dagger", "Axe", "Blunt", "Polearm"})
+
+        self.assertEqual("Sword", records_by_id[289]["fields"]["subtype_label"])
+        self.assertEqual("Dagger", records_by_id[290]["fields"]["subtype_label"])
 
     def test_allowlist_block_rules_match_records_and_image_variants(self):
         from tools.codex_pipeline.hidden_items import HiddenItemRules

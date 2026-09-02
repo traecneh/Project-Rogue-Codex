@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "targets": {
+    "weapons": {
+      "289": {
+        "name": "Blade of Divinity",
+        "fields": {
+          "subtype": 1,
+          "subtype_label": "Sword"
+        }
+      },
+      "290": {
+        "name": "Dagger of Divinity",
+        "fields": {
+          "subtype": 2,
+          "subtype_label": "Dagger"
+        }
+      }
+    }
+  }
+}

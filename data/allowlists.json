@@ -260,25 +260,8 @@
       "Steel Air Crossbow",
       "Great Fire Crossbow",
       "Steel Fire Crossbow",
-      "Four Elements Crossbow",
-      "Blade of Rage",
-      "Blade of Divinity",
-      "Reaper of Rage",
-      "Reaper of Divinity",
-      "Battlespear of Rage",
-      "Battlespear of Divinity",
-      "Sword of Rage",
-      "Dagger of Rage",
-      "Axe of Rage",
-      "Warmace of Rage",
-      "Spear of Rage",
-      "Sword of Divinity",
-      "Dagger of Divinity",
-      "Axe of Divinity",
-      "Warmace of Divinity",
-      "Spear of Divinity"
-    ],
-    "block_ids": [287, 288, 289, 290, 437, 438, 641, 642, 847, 848]
+      "Four Elements Crossbow"
+    ]
   },
   "armors": {
     "block": [

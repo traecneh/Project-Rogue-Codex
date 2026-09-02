@@ -8819,7 +8819,7 @@
       "attack_speed": 1000,
       "skill_requirement": 75,
       "unknown_21": 6,
-      "subtype": 0,
+      "subtype": 1,
       "level_requirement": 80,
       "element": 3,
       "proc_chance": 0,
@@ -8883,7 +8883,8 @@
       "frame_9_height": 0,
       "value": 175000,
       "element_label": "Holy",
-      "max_rarity_label": "Ascendant"
+      "max_rarity_label": "Ascendant",
+      "subtype_label": "Sword"
     }
   },
   {
@@ -8895,7 +8896,7 @@
       "attack_speed": 750,
       "skill_requirement": 75,
       "unknown_21": 6,
-      "subtype": 0,
+      "subtype": 2,
       "level_requirement": 85,
       "element": 3,
       "proc_chance": 0,
@@ -8959,7 +8960,8 @@
       "frame_9_height": 0,
       "value": 200000,
       "element_label": "Holy",
-      "max_rarity_label": "Ascendant"
+      "max_rarity_label": "Ascendant",
+      "subtype_label": "Dagger"
     }
   },
   {
