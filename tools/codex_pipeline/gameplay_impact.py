@@ -515,7 +515,8 @@ def _format_value(value: Any) -> str:
         text = value
     else:
         text = json.dumps(value, ensure_ascii=True, sort_keys=True)
-    return f"`{text.replace('`', '\\`')}`"
+    escaped_text = text.replace("`", "\\`")
+    return f"`{escaped_text}`"
 
 
 def _heading(value: str) -> str:
