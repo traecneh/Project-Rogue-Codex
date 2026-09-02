@@ -223,6 +223,7 @@
     { key: "dps", label: "DPS", render: (_, item) => createDpsBreakdownPill(item) },
     { key: "attackSpeed", label: "Speed", render: (value) => createTableSpeedPill(value), className: "speed-column" },
     { key: "perk", label: "Perk", render: (value) => createPerkLinkBadge(value) },
+    { key: "corruptedPerk", label: "Corrupted", render: (value) => createPerkLinkBadge(value) },
     { key: "element", label: "Element", render: (value) => createElementBadge(value) },
   ];
 

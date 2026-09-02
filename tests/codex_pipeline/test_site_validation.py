@@ -842,6 +842,8 @@ class SiteValidationTests(unittest.TestCase):
 
         self.assertIn('{ key: "attackSpeed", label: "Speed"', script)
         self.assertIn('render: (_, item) => createDpsBreakdownPill(item)', script)
+        self.assertIn('{ key: "corruptedPerk", label: "Corrupted"', script)
+        self.assertIn('render: (value) => createPerkLinkBadge(value)', script)
         self.assertIn("const createDpsBreakdownPill", script)
         self.assertIn("const createTableSpeedPill", script)
         self.assertIn('"DPS Breakdown"', script)
@@ -850,6 +852,7 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(".table-metric-pill", css)
         self.assertIn(".dps-breakdown-tooltip", css)
         self.assertIn(".speed-column", css)
+        self.assertRegex(css, r"\.items-table th,\s*\.items-table td\s*\{[^}]*padding:\s*0\.55rem 0\.45rem;")
         self.assertRegex(css, r"\.detail-tooltip\.dps-breakdown-tooltip\s*\{[^}]*bottom:\s*110%;")
 
     def test_weapons_page_search_includes_detail_and_drop_source_text(self):
