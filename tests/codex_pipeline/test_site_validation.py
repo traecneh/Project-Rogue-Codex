@@ -2835,15 +2835,60 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(".resistance-link-grid", css)
 
         self.assertIn("const RESISTANCE_CAP", script)
-        self.assertIn("const RESISTANCES_SCHEMA_VERSION = 2", script)
+        self.assertIn("const RESISTANCES_SCHEMA_VERSION = 3", script)
         self.assertIn("function initResistanceCalculator", script)
         self.assertIn("function renderMonsterTypeResistances", script)
         self.assertIn("function updateNeutralVisibility", script)
         self.assertIn('document.addEventListener("DOMContentLoaded"', script)
-        self.assertEqual(2, data["schemaVersion"])
-        self.assertIn({"element": "Dark", "value": 1.3}, data["typeResistances"]["humanoid"])
-        self.assertIn({"element": "Holy", "value": 1.3}, data["typeResistances"]["undead"])
-        self.assertIn({"element": "Dark", "value": 0.8}, data["typeResistances"]["demon"])
+        self.assertEqual(3, data["schemaVersion"])
+
+        element_order = ("Fire", "Electric", "Holy", "Cold", "Dark", "Acid", "Poison", "Disease")
+        expected_rows = {
+            "humanoid": (1.0, 1.0, 1.0, 0.9, 1.3, 1.15, 1.25, 1.25),
+            "giant": (0.8, 1.3, 1.0, 1.15, 1.15, 0.8, 0.8, 1.0),
+            "animal": (1.1, 1.0, 1.0, 1.0, 1.15, 1.0, 1.25, 1.1),
+            "beast": (0.9, 0.8, 1.0, 1.1, 1.25, 1.1, 1.0, 1.25),
+            "undead": (1.25, 1.15, 1.3, 1.0, 0.8, 0.8, 0.8, 1.0),
+            "demon": (0.7, 1.15, 1.25, 1.3, 0.8, 1.0, 1.0, 1.0),
+            "fire beast": (0.7, 1.0, 1.0, 1.3, 1.0, 1.0, 1.0, 1.0),
+            "ice beast": (1.3, 1.0, 1.0, 0.7, 1.15, 1.2, 1.15, 1.0),
+            "electric beast": (1.0, 0.7, 1.0, 1.15, 1.15, 1.3, 1.0, 1.15),
+            "poison beast": (1.2, 1.0, 1.1, 1.0, 1.0, 1.25, 0.8, 1.15),
+            "disease beast": (1.25, 1.2, 1.15, 1.0, 1.0, 1.0, 1.15, 0.8),
+        }
+        expected_type_resistances = {
+            type_name: dict(zip(element_order, values)) for type_name, values in expected_rows.items()
+        }
+        actual_type_resistances = {
+            type_name: {entry["element"]: entry["value"] for entry in entries}
+            for type_name, entries in data["typeResistances"].items()
+        }
+        self.assertEqual(expected_type_resistances, actual_type_resistances)
+
+        for consumer_path in [
+            REPO_ROOT / "js" / "resistances.js",
+            REPO_ROOT / "js" / "weapons-page.js",
+            REPO_ROOT / "js" / "monsters-page.js",
+        ]:
+            self.assertIn("const RESISTANCES_SCHEMA_VERSION = 3", consumer_path.read_text(encoding="utf-8"))
+
+        monsters_script = (REPO_ROOT / "js" / "monsters-page.js").read_text(encoding="utf-8")
+        fallback_match = re.search(r"let TYPE_RESISTANCES = \{([\s\S]*?)\n  \};", monsters_script)
+        self.assertIsNotNone(fallback_match)
+        fallback_type_resistances = {}
+        for row_match in re.finditer(
+            r'^    (?:"([^"]+)"|([a-z]+)):\s*\[([\s\S]*?)^    \],',
+            fallback_match.group(1),
+            flags=re.MULTILINE,
+        ):
+            type_name = row_match.group(1) or row_match.group(2)
+            fallback_type_resistances[type_name] = {
+                element: float(value)
+                for element, value in re.findall(
+                    r'\{ element: "([^"]+)", value: ([0-9.]+) \}', row_match.group(3)
+                )
+            }
+        self.assertEqual(expected_type_resistances, fallback_type_resistances)
 
         perk_embed_script = (REPO_ROOT / "js" / "perks.js").read_text(encoding="utf-8")
         self.assertIn('name: "resistances"', perk_embed_script)

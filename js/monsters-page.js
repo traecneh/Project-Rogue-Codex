@@ -399,7 +399,7 @@
     return Array.from(new Set(candidates.filter(Boolean)));
   };
 
-  const RESISTANCES_SCHEMA_VERSION = 2;
+  const RESISTANCES_SCHEMA_VERSION = 3;
   const resistancesUrl = (() => {
     try {
       const resolved = new URL("../systems/resistances.json", window.location.href);
@@ -424,7 +424,7 @@
       { element: "Dark", value: 1.3 },
     ],
     giant: [
-      { element: "Electric", value: 1.25 },
+      { element: "Electric", value: 1.3 },
       { element: "Cold", value: 1.15 },
       { element: "Disease", value: 1.0 },
       { element: "Fire", value: 0.8 },
@@ -435,7 +435,7 @@
     ],
     animal: [
       { element: "Poison", value: 1.25 },
-      { element: "Disease", value: 1.25 },
+      { element: "Disease", value: 1.1 },
       { element: "Fire", value: 1.1 },
       { element: "Cold", value: 1.0 },
       { element: "Electric", value: 1.0 },
@@ -446,7 +446,7 @@
     beast: [
       { element: "Cold", value: 1.1 },
       { element: "Acid", value: 1.1 },
-      { element: "Disease", value: 1.1 },
+      { element: "Disease", value: 1.25 },
       { element: "Poison", value: 1.0 },
       { element: "Fire", value: 0.9 },
       { element: "Electric", value: 0.8 },
@@ -487,7 +487,7 @@
       { element: "Fire", value: 1.3 },
       { element: "Acid", value: 1.2 },
       { element: "Electric", value: 1.0 },
-      { element: "Poison", value: 1.0 },
+      { element: "Poison", value: 1.15 },
       { element: "Disease", value: 1.0 },
       { element: "Cold", value: 0.7 },
       { element: "Holy", value: 1.0 },
@@ -498,7 +498,7 @@
       { element: "Cold", value: 1.15 },
       { element: "Fire", value: 1.0 },
       { element: "Poison", value: 1.0 },
-      { element: "Disease", value: 1.0 },
+      { element: "Disease", value: 1.15 },
       { element: "Electric", value: 0.7 },
       { element: "Holy", value: 1.0 },
       { element: "Dark", value: 1.15 },
@@ -508,17 +508,17 @@
       { element: "Fire", value: 1.2 },
       { element: "Cold", value: 1.0 },
       { element: "Electric", value: 1.0 },
-      { element: "Disease", value: 1.0 },
+      { element: "Disease", value: 1.15 },
       { element: "Poison", value: 0.8 },
       { element: "Holy", value: 1.1 },
       { element: "Dark", value: 1.0 },
     ],
     "disease beast": [
       { element: "Fire", value: 1.25 },
-      { element: "Electric", value: 1.1 },
+      { element: "Electric", value: 1.2 },
       { element: "Cold", value: 1.0 },
       { element: "Acid", value: 1.0 },
-      { element: "Poison", value: 1.0 },
+      { element: "Poison", value: 1.15 },
       { element: "Disease", value: 0.8 },
       { element: "Holy", value: 1.15 },
       { element: "Dark", value: 1.0 },

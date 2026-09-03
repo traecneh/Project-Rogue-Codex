@@ -110,7 +110,7 @@
     return RARITY_KEY_INDEX.has(label) ? RARITY_KEY_INDEX.get(label) : null;
   };
 
-  const RESISTANCES_SCHEMA_VERSION = 2;
+  const RESISTANCES_SCHEMA_VERSION = 3;
   const MONSTER_TYPE_ORDER = [
     "humanoid",
     "giant",
