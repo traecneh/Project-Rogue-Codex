@@ -58,6 +58,9 @@ class SiteValidationTests(unittest.TestCase):
         for path in cli.VALIDATED_HTML_PATHS:
             label = str(path.relative_to(REPO_ROOT))
             html = path.read_text(encoding="utf-8")
+            if 'id="sidebar-root"' in html:
+                for asset in ("css/refresh.css", "js/refresh.js"):
+                    self.assertEqual(1, html.count(f'{asset}?v={STATIC_ASSET_VERSION}'), label)
             for match in local_asset_re.finditer(html):
                 url = match.group("url")
                 expected_suffix = f"?v={STATIC_ASSET_VERSION}"
