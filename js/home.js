@@ -1,67 +1,68 @@
-(function () {
-  const HOME_TIMELINE_FILTERS = Object.freeze({
-    all: "All",
-    origins: "Origins",
-    forks: "Community Forks",
-    "project-rogue": "Project Rogue",
+(() => {
+  const timeline = document.querySelector('[data-home-timeline]');
+  if (!timeline) return;
+  const items = [...timeline.querySelectorAll('[data-home-timeline-item]')];
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  let frame = 0;
+  let activeIndex = -1;
+
+  function updateFocus() {
+    frame = 0;
+    const center = innerHeight * 0.5;
+    let nearest = 0;
+    let distance = Infinity;
+    items.forEach((item, index) => {
+      const rect = item.getBoundingClientRect();
+      const delta = Math.abs(rect.top + rect.height / 2 - center);
+      if (delta < distance) { distance = delta; nearest = index; }
+    });
+    if (nearest === activeIndex) return;
+    activeIndex = nearest;
+    items.forEach((item, index) => {
+      const steps = Math.min(Math.abs(index - nearest), 3);
+      item.classList.toggle('is-timeline-focus', index === nearest);
+      item.style.setProperty('--timeline-scale', String(1 - steps * 0.055));
+      item.style.setProperty('--timeline-opacity', String(1 - steps * 0.13));
+    });
+  }
+
+  function scheduleFocus() {
+    if (!frame) frame = requestAnimationFrame(updateFocus);
+  }
+
+  function updateMotion() {
+    timeline.classList.toggle('timeline-focus-enabled', !reducedMotion.matches);
+    activeIndex = -1;
+    scheduleFocus();
+  }
+
+  function revealLinkedStory() {
+    let id;
+    try { id = decodeURIComponent(location.hash.slice(1)); } catch { return; }
+    if (!id) return;
+    const entry = document.getElementById(id);
+    const story = entry?.querySelector('.history-story');
+    if (!story) return;
+    story.open = true;
+    requestAnimationFrame(() => entry.scrollIntoView({block: 'start', behavior: 'instant'}));
+  }
+
+  document.querySelectorAll('.history-story').forEach(story => {
+    story.addEventListener('toggle', () => { activeIndex = -1; scheduleFocus(); });
+    story.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && story.open) {
+        event.preventDefault();
+        story.open = false;
+        story.querySelector('summary').focus({preventScroll: true});
+      }
+    });
   });
+  addEventListener('hashchange', revealLinkedStory);
+  revealLinkedStory();
 
-  function getTimelineItems(root) {
-    return Array.from(root.querySelectorAll("[data-home-timeline-item]"));
-  }
-
-  function getFilterButtons(root) {
-    return Array.from(root.querySelectorAll("[data-era-filter]"));
-  }
-
-  function updateHomeTimelineFilter(filterName, root = document) {
-    const normalizedFilter = HOME_TIMELINE_FILTERS[filterName] ? filterName : "all";
-    const items = getTimelineItems(root);
-    const buttons = getFilterButtons(root);
-    let visibleCount = 0;
-
-    items.forEach((item) => {
-      const isVisible = normalizedFilter === "all" || item.dataset.era === normalizedFilter;
-      item.hidden = !isVisible;
-      if (isVisible) visibleCount += 1;
-    });
-
-    buttons.forEach((button) => {
-      const isActive = button.dataset.eraFilter === normalizedFilter;
-      button.classList.toggle("is-active", isActive);
-      button.setAttribute("aria-pressed", String(isActive));
-    });
-
-    const countLabel = root.querySelector("[data-home-result-count]");
-    if (countLabel) {
-      const itemLabel = visibleCount === 1 ? "entry" : "entries";
-      countLabel.textContent = `${visibleCount} ${itemLabel} shown`;
-    }
-
-    return visibleCount;
-  }
-
-  function initHomeTimelineFilters(root = document) {
-    const buttons = getFilterButtons(root);
-    if (!buttons.length) return;
-
-    buttons.forEach((button) => {
-      button.addEventListener("click", () => {
-        updateHomeTimelineFilter(button.dataset.eraFilter || "all", root);
-      });
-    });
-
-    const activeButton = buttons.find((button) => button.getAttribute("aria-pressed") === "true");
-    updateHomeTimelineFilter(activeButton?.dataset.eraFilter || "all", root);
-  }
-
-  window.RogueCodexHome = {
-    HOME_TIMELINE_FILTERS,
-    initHomeTimelineFilters,
-    updateHomeTimelineFilter,
-  };
-
-  document.addEventListener("DOMContentLoaded", () => {
-    initHomeTimelineFilters();
-  });
+  addEventListener('scroll', scheduleFocus, { passive: true });
+  addEventListener('resize', scheduleFocus);
+  new ResizeObserver(scheduleFocus).observe(timeline);
+  reducedMotion.addEventListener('change', updateMotion);
+  updateMotion();
 })();

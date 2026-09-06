@@ -13,7 +13,7 @@ def write_temp_json(data):
 
 
 class PerkLabelOverrideTests(unittest.TestCase):
-    def test_perk_label_override_file_lists_current_unresolved_corrupted_perks(self):
+    def test_previously_unresolved_perks_are_decoded_without_overrides(self):
         self.assertEqual(
             PERK_LABEL_OVERRIDES_PATH,
             REPO_ROOT / "data" / "codex-overrides" / "perk_labels.json",
@@ -23,9 +23,14 @@ class PerkLabelOverrideTests(unittest.TestCase):
         from tools.codex_pipeline.perks import load_perk_label_overrides
 
         overrides = load_perk_label_overrides(PERK_LABEL_OVERRIDES_PATH)
-        for code in (2, 24, 41, 544, 553):
-            self.assertIn(code, overrides)
-            self.assertIsNone(overrides[code])
+        from tools.codex_pipeline.extractors.item_metadata import resolve_corrupted_perk_label
+
+        for code, label in {2: "Bloodthirster (Tier 1)", 24: "Tourniquet (Tier 1)",
+                            41: "Demonsbane (Tier 1)", 544: "Tenacity (Tier 3)",
+                            553: "Demonsbane (Tier 3)"}.items():
+            self.assertNotIn(code, overrides)
+            self.assertEqual(label, resolve_corrupted_perk_label(code, 518))
+        self.assertIsNone(resolve_corrupted_perk_label(9999, 518))
 
     def test_load_perk_label_overrides_accepts_strings_and_known_unknowns(self):
         from tools.codex_pipeline.perks import load_perk_label_overrides

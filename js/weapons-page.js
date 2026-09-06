@@ -67,6 +67,8 @@
     acid: "Acid Resistance",
     poison: "Poison Resistance",
     disease: "Disease Resistance",
+    holy: "Holy Resistance",
+    dark: "Dark Resistance",
   };
 
   const STAT_LABELS = {
@@ -110,7 +112,38 @@
     return RARITY_KEY_INDEX.has(label) ? RARITY_KEY_INDEX.get(label) : null;
   };
 
-  const RESISTANCES_SCHEMA_VERSION = 1;
+  const formatRarityLabel = (value) => {
+    if (value === null || value === undefined || value === "") return "-";
+    const numeric = Number(value);
+    if (Number.isFinite(numeric)) {
+      const rarity = RARITY_MULTIPLIERS[Math.min(Math.max(Math.floor(numeric), 0), RARITY_MULTIPLIERS.length - 1)];
+      return rarity?.key === "normal" ? "Regular" : rarity?.label || formatValue(value);
+    }
+    const normalized = normalizeFilterValue(value);
+    if (normalized === "normal" || normalized === "common") return "Regular";
+    return formatValue(value);
+  };
+
+  const CRAFTING_FIELD_NAMES = [
+    "crafting_requirement",
+    "crafting_material_type",
+    "crafting_material_amount",
+    "crafting_difficulty",
+  ];
+  const hasCraftingFields = (fields) =>
+    CRAFTING_FIELD_NAMES.some((fieldName) => Number(fields[fieldName] || 0) > 0);
+
+  const resolveSellValue = (fields, buyValue) => {
+    const explicitSellValue = Number(fields.sale_value);
+    if (Number.isFinite(explicitSellValue) && explicitSellValue > 0) {
+      return explicitSellValue;
+    }
+    if (buyValue === null || buyValue === undefined || buyValue === "") return null;
+    const numericBuyValue = Number(buyValue);
+    return Number.isNaN(numericBuyValue) ? null : numericBuyValue / 2;
+  };
+
+  const RESISTANCES_SCHEMA_VERSION = 2;
   const MONSTER_TYPE_ORDER = [
     "humanoid",
     "giant",
@@ -174,6 +207,12 @@
       ));
   const loadAllowlists =
     typeof utils.loadAllowlists === "function" ? () => utils.loadAllowlists() : () => Promise.resolve(null);
+  const isRecordHidden =
+    typeof utils.isRecordHidden === "function"
+      ? (record, hiddenNames) => utils.isRecordHidden(record, hiddenNames)
+      : (record, hiddenNames) =>
+          Boolean(record && (record.codex_hidden === true || record.codexHidden === true)) ||
+          Boolean(hiddenNames?.has((record?.name || record?.Name || "").toLowerCase()));
   const loadDropSources =
     typeof utils.loadDropSources === "function" ? () => utils.loadDropSources() : () => Promise.resolve(null);
   const buildMonsterDetailUrl =
@@ -209,7 +248,8 @@
     { key: "level", label: "Level", format: (value) => formatNumber(value) },
     { key: "dps", label: "DPS", render: (_, item) => createDpsBreakdownPill(item) },
     { key: "attackSpeed", label: "Speed", render: (value) => createTableSpeedPill(value), className: "speed-column" },
-    { key: "perk", label: "Perk", render: (value) => createPerkLinkBadge(value) },
+    { key: "perk", label: "Innate", render: (value) => createPerkLinkBadge(value) },
+    { key: "corruptedPerk", label: "Corrupted", render: (value) => createPerkLinkBadge(value), className: "weapon-corrupted-column" },
     { key: "element", label: "Element", render: (value) => createElementBadge(value) },
   ];
 
@@ -226,7 +266,7 @@
   const normalizeMonsterId = itemUtils.normalizeItemId;
   const rawWeaponQuery = (urlParams.get("weapon") || urlParams.get("weaponName") || "").trim();
   const initialWeaponId = normalizeWeaponId(rawWeaponQuery);
-  const initialWeaponSearchTerm = rawWeaponQuery.replace(/-/g, " ").trim();
+  const initialWeaponSearchTerm = /^\d+$/.test(rawWeaponQuery) ? "" : rawWeaponQuery.replace(/-/g, " ").trim();
   let pendingWeaponId = initialWeaponId;
   let pendingWeaponName = rawWeaponQuery.toLowerCase();
 
@@ -287,7 +327,7 @@
 
   const extractPerkBaseName = (value) => {
     const raw = (value || "").toString().trim();
-    if (!raw || raw === "-" || raw.toLowerCase() === "none") return "";
+    if (!raw || raw === "-" || raw.toLowerCase() === "none" || /^\d+$/.test(raw)) return "";
     return raw
       .replace(/\s*\(\s*tier\s*\d+\s*\)\s*$/i, "")
       .replace(/\s*\(\s*t\s*\d+\s*\)\s*$/i, "")
@@ -775,24 +815,20 @@
   };
 
   const buildRarity = (fields) => {
+    const min = formatRarityLabel(fields.minimum_rarity ?? 0);
     const max = fields.max_rarity_label || fields.max_rarity;
-    const maxLabel = max === null || max === undefined || max === "" ? "-" : max;
-    return `Regular - ${maxLabel}`;
+    const maxLabel = max === null || max === undefined || max === "" ? "-" : formatRarityLabel(max);
+    return `${min} - ${maxLabel}`;
   };
 
   const normalizeWeapon = (raw) => {
     const fields = (raw && typeof raw.fields === "object" && raw.fields) || {};
     const value = fields.value;
-    const sellValue =
-      value === null || value === undefined || value === ""
-        ? null
-        : Number.isNaN(Number(value))
-          ? null
-          : Number(value) / 2;
 
     return {
       id: raw && (raw.id ?? raw.ID) ? raw.id ?? raw.ID : normalizeWeaponId(raw && (raw.name || raw.Name)),
       name: (raw && (raw.name || raw.Name)) || "Unknown",
+      codexHidden: Boolean(raw && (raw.codex_hidden === true || raw.codexHidden === true)),
       image: raw && (raw.image || raw.icon || raw.thumbnail) ? raw.image || raw.icon || raw.thumbnail : "",
       level: fields.level_requirement,
       minDamage: fields.min_damage,
@@ -809,10 +845,13 @@
       specialty: fields.specialty ? fields.specialty_label || fields.specialty : "None",
       specialtyAmount: fields.specialty_amount,
       rarity: buildRarity(fields),
+      minRarity: fields.minimum_rarity ?? 0,
       maxRarityLabel: fields.max_rarity_label || fields.max_rarity,
       toHit: fields.to_hit,
       value,
-      sellValue,
+      sellValue: resolveSellValue(fields, value),
+      isCraftable: hasCraftingFields(fields),
+      emitsLight: Number(fields.emits_light) === 1,
       shardDecompositionAmount: fields.shard_decomposition_amount,
       shardPromotionAmount: fields.shard_promotion_amount,
       resistances: {
@@ -822,6 +861,8 @@
         acid: fields.acid_resistance,
         poison: fields.poison_resistance,
         disease: fields.disease_resistance,
+        holy: fields.holy_resistance ?? fields.unknown_88,
+        dark: fields.dark_resistance ?? fields.unknown_89,
       },
       stats: {
         strength: fields.strength,
@@ -855,7 +896,7 @@
       .filter((monster) => isMonsterAllowed(monster));
   };
 
-  const getWeaponId = (item) => normalizeWeaponId(item && (item.id || item.name));
+  const getWeaponId = (item) => normalizeWeaponId(item && (item.id ?? item.name));
   const weaponRouteHelpers = itemUtils.createRouteHelpers({
     fallbackPath: "pages/items/weapons.html",
     getItemId: getWeaponId,
@@ -875,6 +916,7 @@
     if (!item) return;
     if (options.updateUrl) updateWeaponDetailUrl(item, { replace: options.replaceUrl });
     setDetails(item, { scroll: options.scroll });
+    details.dispatchEvent(new CustomEvent('codex:select-detail', { detail: { id: item.id, scroll: options.scroll !== false } }));
   };
 
   const maybeSelectPendingWeapon = (list) => {
@@ -962,6 +1004,24 @@
       .filter(Boolean);
   };
 
+  const createDetailBadge = (label, modifier) => {
+    const badge = document.createElement("span");
+    badge.className = `detail-pill item-flag-pill${modifier ? ` ${modifier}` : ""}`;
+    badge.textContent = label;
+    return badge;
+  };
+
+  const createTraitBadges = (item) => {
+    const badges = [];
+    if (item.isCraftable) badges.push(createDetailBadge("Craftable", "is-craftable"));
+    if (item.emitsLight) badges.push(createDetailBadge("Emits Light", "emits-light"));
+    if (!badges.length) return null;
+    const wrapper = document.createElement("span");
+    wrapper.className = "detail-badge-list";
+    badges.forEach((badge) => wrapper.appendChild(badge));
+    return wrapper;
+  };
+
   const getWeaponSearchText = (item) => {
     const res = item.resistances || {};
     const stats = item.stats || {};
@@ -974,7 +1034,10 @@
       formatValue(item.specialty),
       formatNumber(item.specialtyAmount),
       formatValue(item.rarity),
+      formatRarityLabel(item.minRarity),
       formatValue(item.maxRarityLabel),
+      item.isCraftable ? "Craftable" : "",
+      item.emitsLight ? "Emits Light" : "",
       formatNumber(item.weight),
       formatNumber(item.toHit),
       formatNumber(item.shardDecompositionAmount),
@@ -992,6 +1055,8 @@
       formatNumber(res.disease ?? 0),
       formatNumber(res.acid ?? 0),
       formatNumber(res.electric ?? 0),
+      formatNumber(res.holy ?? 0),
+      formatNumber(res.dark ?? 0),
       ...getWeaponDropSourceNames(item),
     ]
       .join(" ")
@@ -1044,6 +1109,10 @@
       ],
       4
     );
+    const traitBadges = createTraitBadges(item);
+    if (traitBadges) {
+      addRow([["Traits", traitBadges]], 1);
+    }
 
     addDivider();
 
@@ -1074,16 +1143,18 @@
         makeResistEntry("fire", "Fire", res.fire),
         makeResistEntry("poison", "Poison", res.poison),
         makeResistEntry("cold", "Cold", res.cold),
+        makeResistEntry("holy", "Holy", res.holy),
       ],
-      3
+      4
     );
     addRow(
       [
         makeResistEntry("disease", "Disease", res.disease),
         makeResistEntry("acid", "Acid", res.acid),
         makeResistEntry("electric", "Electric", res.electric),
+        makeResistEntry("dark", "Dark", res.dark),
       ],
-      3
+      4
     );
 
     addDivider();
@@ -1104,6 +1175,7 @@
 
     addRow(
       [
+        ["Min Rarity", formatRarityLabel(item.minRarity)],
         ["Max Rarity", formatValue(item.maxRarityLabel || item.rarity)],
         [
           "Deconstruction",
@@ -1122,7 +1194,7 @@
           ),
         ],
       ],
-      3
+      4
     );
 
     addDivider();
@@ -1145,7 +1217,7 @@
 
     attachTooltipPinning(details);
     details.classList.add("show");
-    if (options.scroll !== false) {
+    if (options.scroll !== false && !details.classList.contains("refresh-detail")) {
       details.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   };
@@ -1296,7 +1368,7 @@
             const nameLower = (weapon.name || "").toLowerCase();
             const levelNum = Number(weapon.level);
             if (nameLower === "flaming sword" && levelNum === 0) return false;
-            return !hiddenWeaponNames.has(nameLower);
+            return !isRecordHidden(weapon, hiddenWeaponNames);
           });
         if (!items.length) {
           renderEmpty("Add weapons_data05.json beside this page to see weapons.");

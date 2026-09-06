@@ -115,11 +115,59 @@ def _add_field_label(
         fields[label_field] = labels[value]
 
 
+def _int_or_none(value: object) -> int | None:
+    if isinstance(value, bool):
+        return int(value)
+    if isinstance(value, int):
+        return value
+    if isinstance(value, str):
+        stripped = value.strip()
+        if stripped and stripped.lstrip("-").isdigit():
+            return int(stripped)
+    return None
+
+
+def _add_confirmed_animation_aliases(fields: MutableMapping[str, object]) -> None:
+    if "extra_flags" in fields:
+        fields.setdefault("unknown_27", fields["extra_flags"])
+    elif "unknown_27" in fields:
+        fields["extra_flags"] = fields["unknown_27"]
+
+    if "animated" in fields:
+        fields.setdefault("unknown_166", fields["animated"])
+    elif "unknown_166" in fields:
+        fields["animated"] = fields["unknown_166"]
+
+    frame_count = _int_or_none(fields.get("animation_frame_count"))
+    animation_type = _int_or_none(fields.get("animation_type"))
+    metadata = _int_or_none(fields.get("animation_metadata"))
+    legacy_metadata = _int_or_none(fields.get("unknown_168"))
+
+    if metadata is not None and legacy_metadata is None:
+        fields.setdefault("unknown_168", metadata)
+        legacy_metadata = metadata
+    elif legacy_metadata is not None:
+        fields.setdefault("animation_metadata", legacy_metadata)
+
+    if frame_count is None and legacy_metadata is not None:
+        fields["animation_frame_count"] = legacy_metadata & 0xFF
+        frame_count = _int_or_none(fields.get("animation_frame_count"))
+    if animation_type is None and legacy_metadata is not None:
+        fields["animation_type"] = legacy_metadata >> 8
+        animation_type = _int_or_none(fields.get("animation_type"))
+
+    if frame_count is not None and animation_type is not None:
+        packed = frame_count + (animation_type << 8)
+        fields.setdefault("animation_metadata", packed)
+        fields.setdefault("unknown_168", packed)
+
+
 def enrich_monster_fields(
     fields: MutableMapping[str, object],
     monster_name: str,
 ) -> list[str]:
     warnings = []
+    _add_confirmed_animation_aliases(fields)
 
     _add_field_label(fields, "type", "type_label", TYPE_LABELS)
     _add_field_label(fields, "elemental_attack", "elemental_attack_label", ELEMENTAL_LABELS)

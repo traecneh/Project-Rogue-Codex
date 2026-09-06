@@ -380,6 +380,26 @@
   position: relative;
 }
 
+.detail-badge-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.detail-pill.item-flag-pill {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+}
+
+.detail-pill.item-flag-pill.is-craftable {
+  border-color: rgba(75, 255, 75, 0.35);
+}
+
+.detail-pill.item-flag-pill.emits-light {
+  border-color: rgba(255, 210, 105, 0.42);
+  color: #ffe2a1;
+}
+
 .table-metric-pill {
   display: inline-flex;
   align-items: center;

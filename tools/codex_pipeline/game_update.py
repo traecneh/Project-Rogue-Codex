@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import json
 import sys
+from collections import Counter
 from dataclasses import dataclass
+from dataclasses import field as dataclass_field
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -31,6 +33,10 @@ from tools.codex_pipeline.exports import (
     ExportError,
     ExportResult,
     ExportTarget,
+    _field_changes,
+    _record_key,
+    _record_label,
+    _sort_record_key,
     build_generated_diff_reports,
     export_client_data,
 )
@@ -38,6 +44,53 @@ from tools.codex_pipeline.perks import load_perk_label_overrides
 from tools.codex_pipeline.sources import SourceCheckResult, validate_export_sources
 from tools.codex_pipeline.unknowns import UnknownFieldTargetReport, build_unknown_field_reports
 from tools.codex_pipeline.validators.site import ValidationIssue, validate_corrupted_perk_labels
+
+
+@dataclass(frozen=True)
+class HiddenItemRecord:
+    label: str
+    reason: str
+
+
+@dataclass(frozen=True)
+class HiddenItemReasonChange:
+    key: str
+    label: str
+    old_reason: str
+    new_reason: str
+
+
+@dataclass(frozen=True)
+class HiddenItemFieldChange:
+    key: str
+    label: str
+    field_paths: list[str]
+
+
+@dataclass(frozen=True)
+class HiddenItemReasonSummary:
+    reason: str
+    count: int
+
+
+@dataclass(frozen=True)
+class HiddenItemAuditReport:
+    target_name: str
+    generated_path: Path
+    site_path: Path
+    added: list[HiddenItemRecord]
+    removed: list[HiddenItemRecord]
+    changed: list[HiddenItemReasonChange]
+    generated_reasons: list[HiddenItemReasonSummary]
+    field_changed: list[HiddenItemFieldChange] = dataclass_field(default_factory=list)
+
+    @property
+    def has_changes(self) -> bool:
+        return bool(self.added or self.removed or self.changed or self.field_changed)
+
+    @property
+    def generated_hidden_count(self) -> int:
+        return sum(summary.count for summary in self.generated_reasons)
 
 
 @dataclass(frozen=True)
@@ -52,6 +105,7 @@ class GameUpdateReport:
     validation_issues: list[ValidationIssue]
     export_errors: list[str]
     skipped_sections: list[str]
+    hidden_item_reports: list[HiddenItemAuditReport] = dataclass_field(default_factory=list)
 
     @property
     def has_changes(self) -> bool:
@@ -94,6 +148,112 @@ def _read_json_list(path: Path, label: str) -> list[Any]:
     if not isinstance(data, list):
         raise ExportError(f"{label} generated data must be a JSON list: {path}")
     return data
+
+
+def _is_hidden_item(record: Any) -> bool:
+    return isinstance(record, dict) and record.get("codex_hidden") is True
+
+
+def _hidden_reason(record: dict[str, Any]) -> str:
+    reason = str(record.get("codex_hidden_reason") or "").strip()
+    return reason or "unspecified"
+
+
+def _hidden_records_by_key(records: list[Any]) -> dict[str, dict[str, Any]]:
+    indexed: dict[str, dict[str, Any]] = {}
+    for index, record in enumerate(records):
+        if not _is_hidden_item(record):
+            continue
+        key = _record_key(record, index)
+        if key not in indexed:
+            indexed[key] = record
+    return indexed
+
+
+def _hidden_item_record(record: dict[str, Any], key: str) -> HiddenItemRecord:
+    return HiddenItemRecord(_record_label(record, key), _hidden_reason(record))
+
+
+VISIBILITY_FIELD_PATHS = {"codex_hidden", "codex_hidden_reason", "codexHidden", "codexHiddenReason"}
+
+
+def _hidden_item_field_change(
+    key: str,
+    site_record: dict[str, Any],
+    generated_record: dict[str, Any],
+) -> HiddenItemFieldChange | None:
+    field_paths = [
+        change.path
+        for change in _field_changes(site_record, generated_record)
+        if change.path not in VISIBILITY_FIELD_PATHS
+    ]
+    if not field_paths:
+        return None
+    return HiddenItemFieldChange(key, _record_label(generated_record, key), field_paths)
+
+
+def _build_hidden_item_audit_report(
+    target: ExportTarget,
+    *,
+    output_dir: Path,
+) -> HiddenItemAuditReport | None:
+    if target.name not in {"weapons", "armors"}:
+        return None
+
+    generated_path = target.generated_path(output_dir)
+    generated_records = _read_json_list(generated_path, f"{target.name} generated")
+    site_records = _read_json_list(target.site_path, f"{target.name} site")
+    generated_hidden = _hidden_records_by_key(generated_records)
+    site_hidden = _hidden_records_by_key(site_records)
+
+    added_keys = sorted(set(generated_hidden) - set(site_hidden), key=_sort_record_key)
+    removed_keys = sorted(set(site_hidden) - set(generated_hidden), key=_sort_record_key)
+    common_keys = sorted(set(generated_hidden) & set(site_hidden), key=_sort_record_key)
+    changed = [
+        HiddenItemReasonChange(
+            key,
+            _record_label(generated_hidden[key], key),
+            _hidden_reason(site_hidden[key]),
+            _hidden_reason(generated_hidden[key]),
+        )
+        for key in common_keys
+        if _hidden_reason(site_hidden[key]) != _hidden_reason(generated_hidden[key])
+    ]
+    field_changed = [
+        field_change
+        for key in common_keys
+        if (field_change := _hidden_item_field_change(key, site_hidden[key], generated_hidden[key])) is not None
+    ]
+    reason_counts = Counter(_hidden_reason(record) for record in generated_hidden.values())
+    generated_reasons = [
+        HiddenItemReasonSummary(reason, count)
+        for reason, count in sorted(reason_counts.items(), key=lambda item: (-item[1], item[0]))
+    ]
+    report = HiddenItemAuditReport(
+        target_name=target.name,
+        generated_path=generated_path,
+        site_path=target.site_path,
+        added=[_hidden_item_record(generated_hidden[key], key) for key in added_keys],
+        removed=[_hidden_item_record(site_hidden[key], key) for key in removed_keys],
+        changed=changed,
+        field_changed=field_changed,
+        generated_reasons=generated_reasons,
+    )
+    return report if report.has_changes or report.generated_reasons else None
+
+
+def build_hidden_item_audit_reports(
+    targets: Iterable[ExportTarget],
+    *,
+    output_dir: Path,
+) -> list[HiddenItemAuditReport]:
+    output_dir = output_dir.expanduser().resolve()
+    reports: list[HiddenItemAuditReport] = []
+    for target in targets:
+        report = _build_hidden_item_audit_report(target, output_dir=output_dir)
+        if report is not None:
+            reports.append(report)
+    return reports
 
 
 def _build_generated_drop_report(
@@ -266,6 +426,7 @@ def build_game_update_report(
             python_executable=python_executable,
         )
         diff_reports = build_generated_diff_reports(target_list, output_dir=output_dir)
+        hidden_item_reports = build_hidden_item_audit_reports(target_list, output_dir=output_dir)
         unknown_reports = build_unknown_field_reports(target_list, source="generated", output_dir=output_dir)
         report_asset_targets, atlas_issues = _resolve_game_update_asset_targets(
             target_list,
@@ -317,6 +478,7 @@ def build_game_update_report(
         source_checks=source_checks,
         export_results=export_results,
         diff_reports=diff_reports,
+        hidden_item_reports=hidden_item_reports,
         unknown_reports=unknown_reports,
         asset_reports=asset_reports,
         drop_report=drop_report,

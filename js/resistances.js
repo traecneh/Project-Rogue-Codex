@@ -1,6 +1,6 @@
 (() => {
   const RESISTANCE_CAP = 60;
-  const RESISTANCES_SCHEMA_VERSION = 1;
+  const RESISTANCES_SCHEMA_VERSION = 2;
   const MONSTERS_SCHEMA_VERSION = 3;
   const MONSTER_TYPE_ORDER = Object.freeze([
     "humanoid",
@@ -199,10 +199,6 @@
     card.className = "resistance-type-card";
     card.setAttribute("data-resistance-type-card", typeKey);
 
-    const label = document.createElement("p");
-    label.className = "stat-label";
-    label.textContent = "Monster Type";
-
     const heading = document.createElement("h3");
     heading.textContent = titleCaseWords(typeKey);
 
@@ -211,7 +207,7 @@
     icons.setAttribute("data-resistance-examples", typeKey);
     icons.appendChild(Object.assign(document.createElement("span"), { textContent: "..." }));
 
-    card.append(label, heading, icons);
+    card.append(heading, icons);
     STATE_ORDER.forEach((group) => {
       const groupEntries = entries.filter((entry) => getResistanceState(Number(entry.value)) === group.key);
       if (!groupEntries.length) return;

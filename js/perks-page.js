@@ -107,16 +107,42 @@
     return fetchJson(new URL("pages/systems/perks.json", document.baseURI).toString());
   };
 
+  const buildNameSet =
+    window.RogueCodexUtils?.buildNameSet ||
+    ((list) =>
+      new Set(
+        (Array.isArray(list) ? list : [])
+          .map((value) => (value === null || value === undefined ? "" : String(value)).trim().toLowerCase())
+          .filter(Boolean)
+      ));
+  const loadAllowlists =
+    typeof window.RogueCodexUtils?.loadAllowlists === "function"
+      ? () => window.RogueCodexUtils.loadAllowlists()
+      : () => Promise.resolve(null);
+  const isRecordHidden =
+    typeof window.RogueCodexUtils?.isRecordHidden === "function"
+      ? (record, hiddenNames) => window.RogueCodexUtils.isRecordHidden(record, hiddenNames)
+      : (record, hiddenNames) =>
+          Boolean(record && (record.codex_hidden === true || record.codexHidden === true)) ||
+          Boolean(hiddenNames?.has(String(record?.name || record?.Name || "").toLowerCase()));
+
   const loadReferenceData = async () => {
-    const [index, weapons, armors] = await Promise.all([
+    const [index, weapons, armors, allowlists] = await Promise.all([
       fetchPerksIndex(),
       fetchJson(new URL("pages/items/weapons_data05.json", document.baseURI).toString()).catch(() => []),
       fetchJson(new URL("pages/items/armors_data06.json", document.baseURI).toString()).catch(() => []),
+      loadAllowlists(),
     ]);
+    const hiddenWeaponNames = buildNameSet(allowlists?.weapons?.block);
+    const hiddenArmorNames = buildNameSet(allowlists?.armors?.block);
     return {
       perks: Array.isArray(index?.perks) ? index.perks : [],
-      weapons: Array.isArray(weapons) ? weapons : [],
-      armors: Array.isArray(armors) ? armors : [],
+      weapons: Array.isArray(weapons)
+        ? weapons.filter((row) => !isRecordHidden(row, hiddenWeaponNames))
+        : [],
+      armors: Array.isArray(armors)
+        ? armors.filter((row) => !isRecordHidden(row, hiddenArmorNames))
+        : [],
     };
   };
 
@@ -136,8 +162,9 @@
       .map((value) => (value === null || value === undefined ? "" : String(value).trim()))
       .filter(Boolean);
 
-  const itemHref = (kind, name) => {
-    const encoded = encodeURIComponent(name || "");
+  const itemHref = (kind, item) => {
+    const routeKey = item?.id ?? item?.ID ?? item?.name ?? item?.Name ?? "";
+    const encoded = encodeURIComponent(routeKey);
     if (kind === "weapon") return `pages/items/weapons.html?weapon=${encoded}`;
     if (kind === "armor") return `pages/items/armors.html?armor=${encoded}`;
     return "";
@@ -149,14 +176,14 @@
       const name = String(row?.name || row?.Name || "").trim();
       if (!name) return;
       itemPerkLabels(row?.fields || {}).forEach((perkName) => {
-        addSource(map, perkName, { kind: "weapon", label: "Weapon", name, href: itemHref("weapon", name) });
+        addSource(map, perkName, { kind: "weapon", label: "Weapon", name, href: itemHref("weapon", row) });
       });
     });
     armors.forEach((row) => {
       const name = String(row?.name || row?.Name || "").trim();
       if (!name) return;
       itemPerkLabels(row?.fields || {}).forEach((perkName) => {
-        addSource(map, perkName, { kind: "armor", label: "Armor", name, href: itemHref("armor", name) });
+        addSource(map, perkName, { kind: "armor", label: "Armor", name, href: itemHref("armor", row) });
       });
     });
     RACE_PERK_SOURCES.forEach((source) => {

@@ -13,7 +13,7 @@
   const normalizeArmorId = itemUtils.normalizeItemId;
   const initialArmorQuery = (urlParams.get("armor") || urlParams.get("armorName") || "").trim();
   const initialArmorId = normalizeArmorId(initialArmorQuery);
-  const initialArmorSearchTerm = initialArmorQuery.replace(/-/g, " ").trim();
+  const initialArmorSearchTerm = /^\d+$/.test(initialArmorQuery) ? "" : initialArmorQuery.replace(/-/g, " ").trim();
   let pendingArmorId = initialArmorId;
   let pendingArmorName = initialArmorQuery.toLowerCase();
   const tableHeadRow = document.getElementById("items-head-row");
@@ -83,6 +83,35 @@
     return RARITY_KEY_INDEX.has(label) ? RARITY_KEY_INDEX.get(label) : null;
   };
 
+  const formatRarityLabel = (value) => {
+    if (value === null || value === undefined || value === "") return "-";
+    const numeric = Number(value);
+    if (Number.isFinite(numeric)) {
+      const rarity = RARITY_MULTIPLIERS[Math.min(Math.max(Math.floor(numeric), 0), RARITY_MULTIPLIERS.length - 1)];
+      return rarity?.key === "normal" ? "Regular" : rarity?.label || formatValue(value);
+    }
+    const normalized = normalizeFilterValue(value);
+    if (normalized === "normal" || normalized === "common") return "Regular";
+    return formatValue(value);
+  };
+
+  const CRAFTING_FIELD_NAMES = [
+    "crafting_requirement",
+    "crafting_material_type",
+    "crafting_material_amount",
+    "crafting_difficulty",
+  ];
+  const hasCraftingFields = (fields) =>
+    CRAFTING_FIELD_NAMES.some((fieldName) => Number(fields[fieldName] || 0) > 0);
+
+  const resolveSellValue = (fields, buyValue) => {
+    const explicitSellValue = Number(fields.sale_value);
+    if (Number.isFinite(explicitSellValue) && explicitSellValue > 0) {
+      return explicitSellValue;
+    }
+    return buyValue !== null ? buyValue / 2 : null;
+  };
+
   const PERKS_SCHEMA_VERSION = 3;
   let perkIndexByName = new Map();
   const perksUrl = (() => {
@@ -121,6 +150,10 @@
     { key: "diseaseResist", label: "Disease", format: (v) => formatNumber(v) },
     { key: "acidResist", label: "Acid", format: (v) => formatNumber(v) },
     { key: "electricResist", label: "Electric", format: (v) => formatNumber(v) },
+    { key: "holyResist", label: "Holy", format: (v) => formatNumber(v) },
+    { key: "darkResist", label: "Dark", format: (v) => formatNumber(v) },
+    { key: "perk", label: "Innate", className: "armor-perk-column" },
+    { key: "corruptedPerk", label: "Corrupted", className: "armor-perk-column" },
   ];
 
   let items = [];
@@ -140,6 +173,12 @@
       ));
   const loadAllowlists =
     typeof utils.loadAllowlists === "function" ? () => utils.loadAllowlists() : () => Promise.resolve(null);
+  const isRecordHidden =
+    typeof utils.isRecordHidden === "function"
+      ? (record, hiddenNames) => utils.isRecordHidden(record, hiddenNames)
+      : (record, hiddenNames) =>
+          Boolean(record && (record.codex_hidden === true || record.codexHidden === true)) ||
+          Boolean(hiddenNames?.has((record?.name || record?.Name || "").toLowerCase()));
   const loadDropSources =
     typeof utils.loadDropSources === "function" ? () => utils.loadDropSources() : () => Promise.resolve(null);
   const buildMonsterDetailUrl =
@@ -200,7 +239,7 @@
   const setOptions = itemUtils.setOptions;
   const enableToggleSelect = itemUtils.enableToggleSelect;
 
-  const getArmorId = (item) => normalizeArmorId(item && (item.id || item.name));
+  const getArmorId = (item) => normalizeArmorId(item && (item.id ?? item.name));
   const armorRouteHelpers = itemUtils.createRouteHelpers({
     fallbackPath: "pages/items/armors.html",
     getItemId: getArmorId,
@@ -220,6 +259,7 @@
     if (!item) return;
     if (options.updateUrl) updateArmorDetailUrl(item, { replace: options.replaceUrl });
     setDetails(item, { scroll: options.scroll });
+    details.dispatchEvent(new CustomEvent('codex:select-detail', { detail: { id: item.id, scroll: options.scroll !== false } }));
   };
 
   const createCell = itemUtils.createCell;
@@ -248,16 +288,20 @@
     return {
       id: raw && raw.id ? raw.id : (raw.name || "").toLowerCase().replace(/[^a-z0-9_-]+/g, "-"),
       name: raw.name || "Unknown",
+      codexHidden: Boolean(raw && (raw.codex_hidden === true || raw.codexHidden === true)),
       slot: fields.slot_label || fields.slot,
       level: fields.level,
       armor: fields.armor,
       weight: fields.weight,
+      minRarity: fields.minimum_rarity ?? 0,
       maxRarity: fields.max_rarity_label || fields.max_rarity,
       perk: fields.perk_label || (fields.perk ? fields.perk : "None"),
       corruptedPerk:
         fields.corrupted_perk_label || (fields.corrupted_perk ? fields.corrupted_perk : "None"),
       value: valueNum,
-      sellValue: valueNum !== null ? valueNum / 2 : null,
+      sellValue: resolveSellValue(fields, valueNum),
+      isCraftable: hasCraftingFields(fields),
+      emitsLight: Number(fields.emits_light) === 1,
       promotion: fields.promotion,
       deconstruction: fields.deconstruction,
       toHit: fields.to_hit,
@@ -269,6 +313,8 @@
         acid: fields.acid_resistance,
         poison: fields.poison_resistance,
         disease: fields.disease_resistance,
+        holy: fields.holy_resistance ?? fields.unknown_81,
+        dark: fields.dark_resistance ?? fields.unknown_85,
       },
       fireResist: fields.fire_resistance,
       poisonResist: fields.poison_resistance,
@@ -276,6 +322,8 @@
       diseaseResist: fields.disease_resistance,
       acidResist: fields.acid_resistance,
       electricResist: fields.lightning_resistance,
+      holyResist: fields.holy_resistance ?? fields.unknown_81,
+      darkResist: fields.dark_resistance ?? fields.unknown_85,
       stats: {
         strength: fields.strength,
         constitution: fields.constitution,
@@ -325,6 +373,8 @@
         ["disease", res.disease],
         ["acid", res.acid],
         ["electric", res.electric || res.lightning],
+        ["holy", res.holy],
+        ["dark", res.dark],
       ].forEach(([key, val]) => {
         if (val !== null && val !== undefined && Number(val) !== 0) {
           resistOptions.add(key);
@@ -342,6 +392,8 @@
       disease: "Disease",
       acid: "Acid",
       electric: "Electric",
+      holy: "Holy",
+      dark: "Dark",
     };
     const resistList = Array.from(resistOptions)
       .sort((a, b) => resistLabels[a].localeCompare(resistLabels[b]))
@@ -366,6 +418,7 @@
     tableHeadRow.innerHTML = "";
     COLUMNS.forEach((col) => {
       const th = document.createElement("th");
+      if (col.className) th.className = col.className;
       th.setAttribute("scope", "col");
 
       const labelSpan = document.createElement("span");
@@ -413,7 +466,7 @@
 
   const extractPerkBaseName = (value) => {
     const raw = (value || "").toString().trim();
-    if (!raw || raw === "-" || raw.toLowerCase() === "none") return "";
+    if (!raw || raw === "-" || raw.toLowerCase() === "none" || /^\d+$/.test(raw)) return "";
     return raw
       .replace(/\s*\(\s*tier\s*\d+\s*\)\s*$/i, "")
       .replace(/\s*\(\s*t\s*\d+\s*\)\s*$/i, "")
@@ -567,6 +620,24 @@
       .filter(Boolean);
   };
 
+  const createDetailBadge = (label, modifier) => {
+    const badge = document.createElement("span");
+    badge.className = `detail-pill item-flag-pill${modifier ? ` ${modifier}` : ""}`;
+    badge.textContent = label;
+    return badge;
+  };
+
+  const createTraitBadges = (item) => {
+    const badges = [];
+    if (item.isCraftable) badges.push(createDetailBadge("Craftable", "is-craftable"));
+    if (item.emitsLight) badges.push(createDetailBadge("Emits Light", "emits-light"));
+    if (!badges.length) return null;
+    const wrapper = document.createElement("span");
+    wrapper.className = "detail-badge-list";
+    badges.forEach((badge) => wrapper.appendChild(badge));
+    return wrapper;
+  };
+
   const getArmorSearchText = (item) => {
     const res = item.resistances || {};
     const stats = item.stats || {};
@@ -574,7 +645,10 @@
       ...COLUMNS.map((col) => formatValue(item[col.key])),
       formatValue(item.slot),
       formatRequirement(item.playerLevelRequirement),
+      formatRarityLabel(item.minRarity),
       formatValue(item.maxRarity),
+      item.isCraftable ? "Craftable" : "",
+      item.emitsLight ? "Emits Light" : "",
       formatValue(item.perk),
       formatValue(item.corruptedPerk),
       formatNumber(item.weight),
@@ -592,6 +666,8 @@
       formatNumber(res.disease ?? 0),
       formatNumber(res.acid ?? 0),
       formatNumber(res.lightning ?? res.electric ?? 0),
+      formatNumber(res.holy ?? 0),
+      formatNumber(res.dark ?? 0),
       ...getArmorDropSourceNames(item),
     ]
       .join(" ")
@@ -622,6 +698,10 @@
       ],
       5
     );
+    const traitBadges = createTraitBadges(item);
+    if (traitBadges) {
+      addRow(container, [["Traits", traitBadges]], 1);
+    }
 
     addDivider(container);
 
@@ -654,8 +734,9 @@
         makeResistEntry("fire", "Fire", res.fire),
         makeResistEntry("poison", "Poison", res.poison),
         makeResistEntry("cold", "Cold", res.cold),
+        makeResistEntry("holy", "Holy", res.holy),
       ],
-      3
+      4
     );
     addRow(
       container,
@@ -663,8 +744,9 @@
         makeResistEntry("disease", "Disease", res.disease),
         makeResistEntry("acid", "Acid", res.acid),
         makeResistEntry("electric", "Electric", res.lightning ?? res.electric),
+        makeResistEntry("dark", "Dark", res.dark),
       ],
-      3
+      4
     );
 
     addDivider(container);
@@ -687,6 +769,7 @@
     addRow(
       container,
       [
+        ["Min Rarity", formatRarityLabel(item.minRarity)],
         ["Max Rarity", formatValue(item.maxRarity)],
         [
           "Deconstruction",
@@ -694,7 +777,7 @@
         ],
         ["Promotion", createRarityValuePill(item.promotion, "Promotion", item.maxRarity)],
       ],
-      3
+      4
     );
 
     addDivider(container);
@@ -722,7 +805,7 @@
 
     attachTooltipPinning(details);
     details.classList.add("show");
-    if (options.scroll !== false) {
+    if (options.scroll !== false && !details.classList.contains("refresh-detail")) {
       details.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   };
@@ -766,6 +849,7 @@
 
       COLUMNS.forEach((col) => {
         const td = document.createElement("td");
+        if (col.className) td.className = col.className;
         const value = item[col.key];
         if (col.key === "image") {
           const img = document.createElement("img");
@@ -788,6 +872,17 @@
             selectArmor(item, { updateUrl: true });
           });
           td.appendChild(nameLink);
+        } else if (col.key === "perk" || col.key === "corruptedPerk") {
+          const badge = createPerkBadge(value);
+          const baseName = extractPerkBaseName(value);
+          if (baseName) {
+            const link = document.createElement("a");
+            link.className = "perk-table-link";
+            link.href = `pages/systems/perks.html?perk=${encodeURIComponent(baseName)}`;
+            link.setAttribute("aria-label", `View ${baseName} perk details`);
+            link.addEventListener("click", event => event.stopPropagation());
+            link.append(badge); td.append(link);
+          } else td.append(badge);
         } else if (col.format) {
           td.textContent = col.format(value);
         } else {
@@ -842,6 +937,8 @@
           disease: res.disease,
           acid: res.acid,
           electric: res.electric || res.lightning,
+          holy: res.holy,
+          dark: res.dark,
         };
         const hasAll = Array.from(selectedResists).every(
           (key) => resMap[key] !== null && resMap[key] !== undefined && Number(resMap[key]) !== 0
@@ -895,7 +992,7 @@
           items = (Array.isArray(data) ? data : [])
             .map((row) => normalizeArmor(row))
             .filter(
-              (row) => row && !hiddenArmorNames.has((row.name || "").toLowerCase()) && !isSlotZero(row.slot)
+              (row) => row && !isRecordHidden(row, hiddenArmorNames) && !isSlotZero(row.slot)
             );
         if (!items.length) {
           renderEmpty("Add armors_data06.json beside this page to see armors.");

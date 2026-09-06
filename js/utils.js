@@ -1,7 +1,7 @@
 (() => {
   const DEFAULT_JSON_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
   const PERKS_INDEX_SCHEMA_VERSION = 3;
-  const ALLOWLISTS_SCHEMA_VERSION = 1;
+  const ALLOWLISTS_SCHEMA_VERSION = 2;
   const FORCE_JSON_REFRESH = true;
   const jsonMemoryCache = new Map();
   let perkIndexPromise = null;
@@ -281,6 +281,8 @@
     cold: "#7cc9ff",
     acid: "#b38b00",
     disease: "#ff9c42",
+    holy: "#f2d36b",
+    dark: "#a88cff",
   };
 
   const RESIST_COLORS = { ...ELEMENT_COLORS };
@@ -375,6 +377,20 @@
       .replace(/^-+|-+$/g, "");
   }
 
+  function isCodexHidden(record) {
+    if (!record || typeof record !== "object") return false;
+    return record.codex_hidden === true || record.codexHidden === true;
+  }
+
+  function isRecordHidden(record, hiddenNames) {
+    const name = record && typeof record === "object" ? record.name || record.Name : record;
+    const hiddenByName =
+      hiddenNames &&
+      typeof hiddenNames.has === "function" &&
+      hiddenNames.has(normalizeDropKey(name));
+    return isCodexHidden(record) || Boolean(hiddenByName);
+  }
+
   function buildMonsterDetailUrl(monster) {
     const raw = monster && typeof monster === "object" ? monster.name || monster.id : monster;
     const slug = normalizeDropSlug(raw);
@@ -382,13 +398,13 @@
   }
 
   function buildWeaponDetailUrl(item) {
-    const raw = item && typeof item === "object" ? item.name || item.id : item;
+    const raw = item && typeof item === "object" ? item.id ?? item.name : item;
     const name = normalizeDropName(raw);
     return name ? `pages/items/weapons.html?weapon=${encodeURIComponent(name)}` : "pages/items/weapons.html";
   }
 
   function buildArmorDetailUrl(item) {
-    const raw = item && typeof item === "object" ? item.name || item.id : item;
+    const raw = item && typeof item === "object" ? item.id ?? item.name : item;
     const name = normalizeDropName(raw);
     return name ? `pages/items/armors.html?armor=${encodeURIComponent(name)}` : "pages/items/armors.html";
   }
@@ -490,6 +506,8 @@
     loadDropSources,
     normalizeDropSourceData,
     normalizeDropSlug,
+    isCodexHidden,
+    isRecordHidden,
     toNumber,
     titleCaseWords,
     getElementColor,

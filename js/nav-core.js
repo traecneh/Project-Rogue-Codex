@@ -288,7 +288,7 @@ function initializeSidebar() {
     });
   });
 
-  document.querySelectorAll('a[href^="#"]').forEach((link) => {
+  document.querySelectorAll('a[href^="#"]:not(.history-permalink)').forEach((link) => {
     link.addEventListener("click", (event) => {
       const targetId = link.getAttribute("href").slice(1);
       const target = document.getElementById(targetId);

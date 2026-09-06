@@ -97,7 +97,7 @@ class SiteSmokeTests(unittest.TestCase):
         self.assertIn('[data-quick-stat="dps"]', runner)
         self.assertIn("assertBuildPlannerItemLinks", runner)
         self.assertIn(".suggestion-link", runner)
-        self.assertIn("pages/items/weapons.html?weapon=Rune%20Sword", runner)
+        self.assertIn("pages/items/weapons.html?weapon=227", runner)
         self.assertIn("assertBuildPlannerSuggestionDeltas", runner)
         self.assertIn(".suggestion-deltas", runner)
         self.assertIn("data-delta-direction", runner)
@@ -123,9 +123,9 @@ class SiteSmokeTests(unittest.TestCase):
         self.assertNotIn("assertHomeFreshness", runner)
         self.assertNotIn(".home-freshness-panel", runner)
         self.assertNotIn("data-freshness-content-hash", runner)
-        self.assertIn("assertHomeTimelineFilter", runner)
-        self.assertIn('[data-era-filter="project-rogue"]', runner)
-        self.assertIn("data-home-result-count", runner)
+        self.assertIn("assertHomeTimelineFocus", runner)
+        self.assertIn('is-timeline-focus', runner)
+        self.assertIn("reducedMotion", runner)
         self.assertNotIn("runEndlessHuntSpec", runner)
         self.assertNotIn("/pages/General/endless-hunt.html", runner)
         self.assertIn("runPerksSpec", runner)
@@ -267,7 +267,7 @@ class SiteSmokeTests(unittest.TestCase):
         for expected in [
             'detailName: "Soul of Flame"',
             'detailQuery: "24"',
-            'duplicateRoute: { id: "36", detailName: "Demonic Remains" }',
+            'duplicateRoute: { id: "36", detailName: "Plaguelight Cinder" }',
             'label: "collectables"',
             'detailName: "Carpentry Saw"',
             'detailQuery: "10"',

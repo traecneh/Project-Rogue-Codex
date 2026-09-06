@@ -37,6 +37,7 @@ try:
         build_fields,
     )
     from tools.codex_pipeline.extractors.item_metadata import (
+        apply_item_visibility_metadata,
         enrich_weapon_fields,
         report_item_perk_values,
     )
@@ -53,6 +54,7 @@ except ModuleNotFoundError:
         build_fields,
     )
     from item_metadata import (
+        apply_item_visibility_metadata,
         enrich_weapon_fields,
         report_item_perk_values,
     )
@@ -104,6 +106,7 @@ def parse_data05(path: Path):
             "name": name,
             "fields": fields,
         }
+        apply_item_visibility_metadata(weapon)
         weapons.append(weapon)
 
     return weapons, skipped

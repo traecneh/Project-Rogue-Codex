@@ -4,101 +4,36 @@ import re
 from collections.abc import Mapping, MutableMapping, Sequence
 from typing import Any
 
+try:
+    from tools.codex_pipeline.extractors.monster_metadata import TATTER_LABELS
+except ModuleNotFoundError:
+    from monster_metadata import TATTER_LABELS
 
+
+# Item perks encode the perk ID in the low byte and tier minus one in
+# the high byte. Reuse tatter identities rather than maintaining separate
+# and potentially conflicting labels for each ordinary perk tier.
+_PERK_NAMES = {
+    **{code: name for code, name in TATTER_LABELS.items() if code},
+    15: "Flame Strike",
+    16: "Lightning Javelin",
+    17: "Iceburst",
+    18: "Sulfuric",
+    19: "Plague",
+    20: "Toxicity",
+    100: "Runic",
+    101: "Vengeance",
+    102: "Envenomation",
+    103: "Lycan",
+    104: "Flame Buffet",
+    105: "Crimson Feast",
+    106: "Plague Eater",
+    107: "Blood Siphon",
+}
 PERK_LABELS = {
-    1: "Lifesteal (Tier 2)",
-    6: "Vitality (Tier 1)",
-    10: "Juggernaut (Tier 1)",
-    22: "Frozen Heart (Tier 1)",
-    30: "Garrote (Tier 1)",
-    44: "Consecration (Tier 1)",
-    52: "Lethal Toxins (Tier 2)",
-    100: "Runic (Tier 1)",
-    104: "Flame Buffet (Tier 1)",
-    107: "Blood Siphon (Tier 1)",
-    257: "Lifesteal (Tier 2)",
-    258: "Vampirism (Tier 1)",
-    266: "Juggernaut (Tier 2)",
-    270: "Moneybags (Tier 2)",
-    285: "Vampirism (Tier 2)",
-    286: "Garrote (Tier 2)",
-    291: "Epidemic (Tier 2)",
-    293: "Destruction (Tier 2)",
-    295: "Hawkeye (Tier 2)",
-    296: "Overpower (Tier 2)",
-    297: "Demonsbane (Tier 2)",
-    302: "Ice Shatter (Tier 2)",
-    307: "Critical Aegis (Tier 2)",
-    308: "Toxic Shell (Tier 2)",
-    102: "Envenomation (Tier 1)",
-    105: "Crimson Feast (Tier 1)",
-    259: "Rejuvenation (Tier 2)",
-    260: "Antitoxin (Tier 2)",
-    261: "Immunization (Tier 2)",
-    262: "Vitality (Tier 2)",
-    263: "Bolstered Strength (Tier 2)",
-    265: "Magic Shield (Tier 2)",
-    267: "Parry (Tier 2)",
-    268: "Alchemist (Tier 2)",
-    269: "Knowledge (Tier 2)",
-    277: "Demon Blood (Tier 2)",
-    278: "Frozen Heart (Tier 2)",
-    21: "Demon Blood",
-    279: "Lightning Field (Tier 2)",
-    280: "Tourniquet (Tier 2)",
-    281: "Hazmat (Tier 2)",
-    282: "Antacid (Tier 2)",
-    287: "Brutality (Tier 2)",
-    288: "Tenacity (Tier 2)",
-    289: "Swiftness (Tier 2)",
-    292: "Lethal Toxins (Tier 2)",
-    300: "Consecration (Tier 2)",
-    301: "Venomshock (Tier 2)",
-    303: "Desperation (Tier 2)",
-    304: "Bloodlust (Tier 2)",
-    305: "Slayer (Tier 2)",
-    362: "Plague Eater (Tier 2)",
-    513: "Lifesteal (Tier 3)",
-    514: "Bloodthirster (Tier 3)",
-    515: "Rejuvenation (Tier 3)",
-    516: "Antitoxin (Tier 3)",
-    522: "Juggernaut (Tier 3)",
-    524: "Alchemist (Tier 3)",
-    525: "Knowledge (Tier 3)",
-    533: "Demon Blood (Tier 3)",
-    542: "Garrote (Tier 3)",
-    549: "Destruction (Tier 3)",
-    556: "Consecration (Tier 3)",
-    559: "Desperation (Tier 3)",
-    564: "Toxic Shell (Tier 3)",
-    614: "Envenomation (Tier 3)",
-    615: "Lycan (Tier 3)",
-    619: "Blood Siphon (Tier 3)",
-    3: "Rejuvenation (Tier 1)",
-    4: "Antitoxin (Tier 1)",
-    5: "Immunization (Tier 1)",
-    9: "Magic Shield (Tier 1)",
-    11: "Parry (Tier 1)",
-    12: "Alchemist (Tier 1)",
-    15: "Flame Strike (Tier 1)",
-    16: "Lightning Javelin (Tier 1)",
-    17: "Iceburst (Tier 1)",
-    18: "Sulfuric (Tier 1)",
-    19: "Plague (Tier 1)",
-    20: "Toxicity (Tier 1)",
-    36: "Lethal Toxins (Tier 1)",
-    37: "Destruction (Tier 1)",
-    101: "Vengeance (Tier 1)",
-    518: "Vitality (Tier 3)",
-    523: "Parry (Tier 3)",
-    547: "Epidemic (Tier 3)",
-    548: "Lethal Toxins (Tier 3)",
-    560: "Bloodlust (Tier 3)",
-    563: "Critical Aegis (Tier 3)",
-    612: "Runic (Tier 3)",
-    613: "Vengeance (Tier 3)",
-    616: "Flame Buffet (Tier 3)",
-    617: "Crimson Feast (Tier 3)",
+    code + (tier - 1) * 256: f"{name} (Tier {tier})"
+    for code, name in _PERK_NAMES.items()
+    for tier in (1, 2, 3)
 }
 
 WEAPON_SUBTYPE_LABELS = {
@@ -152,32 +87,36 @@ ARMOR_SLOT_LABELS = {
     18: "Cosmetic",
 }
 
-_TIER_PATTERN = re.compile(r"\(Tier\s*(\d+)\)", re.IGNORECASE)
+WEAPON_CONFIRMED_ALIASES = {
+    "unknown_21": "use_requirement_type",
+    "unknown_34": "animated",
+    "unknown_35": "animation_frame_count",
+    "unknown_37": "animation_type",
+    "unknown_88": "holy_resistance",
+    "unknown_89": "dark_resistance",
+    "unknown_93": "bonus_intelligence",
+    "unknown_98": "emits_light",
+}
 
+DEV_ONLY_ITEM_NAME_REASON = "dev_only_item_name"
+DEV_ONLY_ITEM_NAME_PATTERN = re.compile(r"^\s*super\s+duper\b", re.IGNORECASE)
 
-def _bump_tier_label(label: str) -> str:
-    def repl(match: re.Match[str]) -> str:
-        tier_num = int(match.group(1))
-        return f"(Tier {tier_num + 1})"
-
-    return _TIER_PATTERN.sub(repl, label, count=1)
+ARMOR_CONFIRMED_ALIASES = {
+    "unknown_18": "use_requirement_type",
+    "unknown_30": "animated",
+    "unknown_31": "animation_frame_count",
+    "unknown_33": "animation_type",
+    "unknown_70": "minimum_rarity",
+    "unknown_81": "holy_resistance",
+    "unknown_85": "dark_resistance",
+    "unknown_89": "bonus_intelligence",
+    "unknown_93": "avatar",
+    "unknown_94": "emits_light",
+}
 
 
 def resolve_corrupted_perk_label(corrupted_val: int, base_val: int | None = None) -> str | None:
-    if corrupted_val in PERK_LABELS:
-        return PERK_LABELS[corrupted_val]
-
-    if base_val is not None and base_val in PERK_LABELS:
-        base_label = PERK_LABELS[base_val]
-        if corrupted_val - base_val == 256:
-            return _bump_tier_label(base_label)
-        return base_label
-
-    offset_base = corrupted_val - 256
-    if offset_base in PERK_LABELS:
-        return _bump_tier_label(PERK_LABELS[offset_base])
-
-    return None
+    return PERK_LABELS.get(corrupted_val)
 
 
 def add_field_label(
@@ -189,6 +128,14 @@ def add_field_label(
     value = fields.get(source_field)
     if value in labels:
         fields[label_field] = labels[value]
+
+
+def add_confirmed_aliases(fields: MutableMapping[str, object], aliases: Mapping[str, str]) -> None:
+    for legacy_name, friendly_name in aliases.items():
+        if friendly_name in fields:
+            fields.setdefault(legacy_name, fields[friendly_name])
+        elif legacy_name in fields:
+            fields[friendly_name] = fields[legacy_name]
 
 
 def add_derived_value(fields: MutableMapping[str, object]) -> None:
@@ -209,6 +156,7 @@ def add_perk_labels(fields: MutableMapping[str, object]) -> None:
 
 
 def enrich_weapon_fields(fields: MutableMapping[str, object]) -> None:
+    add_confirmed_aliases(fields, WEAPON_CONFIRMED_ALIASES)
     add_derived_value(fields)
     add_field_label(fields, "subtype", "subtype_label", WEAPON_SUBTYPE_LABELS)
     add_field_label(fields, "specialty", "specialty_label", WEAPON_SPECIALTY_LABELS)
@@ -218,10 +166,24 @@ def enrich_weapon_fields(fields: MutableMapping[str, object]) -> None:
 
 
 def enrich_armor_fields(fields: MutableMapping[str, object]) -> None:
+    add_confirmed_aliases(fields, ARMOR_CONFIRMED_ALIASES)
     add_derived_value(fields)
     add_field_label(fields, "slot", "slot_label", ARMOR_SLOT_LABELS)
     add_field_label(fields, "max_rarity", "max_rarity_label", RARITY_LABELS)
     add_perk_labels(fields)
+
+
+def classify_item_visibility(name: object) -> str | None:
+    if DEV_ONLY_ITEM_NAME_PATTERN.search(str(name or "")):
+        return DEV_ONLY_ITEM_NAME_REASON
+    return None
+
+
+def apply_item_visibility_metadata(record: MutableMapping[str, object]) -> None:
+    reason = classify_item_visibility(record.get("name"))
+    if reason:
+        record["codex_hidden"] = True
+        record["codex_hidden_reason"] = reason
 
 
 def _record_fields(record: Mapping[str, Any]) -> Mapping[str, Any]:

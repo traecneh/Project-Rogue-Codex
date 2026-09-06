@@ -106,7 +106,7 @@
   const urlParams = new URLSearchParams(window.location.search);
   const initialItemQuery = (urlParams.get(page.queryKey) || urlParams.get(`${page.queryKey}Name`) || "").trim();
   const initialItemId = normalizeItemId(initialItemQuery);
-  const initialItemSearchTerm = initialItemQuery.replace(/-/g, " ").trim();
+  const initialItemSearchTerm = /^\d+$/.test(initialItemQuery) ? "" : initialItemQuery.replace(/-/g, " ").trim();
   let pendingItemId = initialItemId;
   let pendingItemName = initialItemQuery.toLowerCase();
 
@@ -378,7 +378,9 @@
 
     tooltipPinning.attachTooltipPinning(details);
     details.classList.add("show");
-    if (options.scroll !== false) details.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (options.scroll !== false && !details.classList.contains("refresh-detail")) {
+      details.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
   };
 
   const clearDetails = (options = {}) => {
@@ -391,6 +393,7 @@
     if (!item) return;
     if (options.updateUrl) updateDetailUrl(item, { replace: options.replaceUrl });
     setDetails(item, { scroll: options.scroll });
+    details.dispatchEvent(new CustomEvent('codex:select-detail', { detail: { id: getItemId(item), scroll: options.scroll !== false } }));
   };
 
   const maybeSelectPendingItem = (list) => {

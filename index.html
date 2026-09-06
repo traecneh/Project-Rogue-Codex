@@ -20,6 +20,10 @@
     <script src="js/rarity-roller.js" defer></script>
     <script src="js/home.js" defer></script>
     <script src="js/nav-core.js" defer></script>
+    <link rel="stylesheet" href="css/refresh.css" />
+    <script src="js/refresh.js" defer></script>
+    <link rel="stylesheet" href="css/timeline-refresh.css" />
+    <script src="js/timeline-refresh.js" defer></script>
   </head>
   <body>
     <div class="layout">
@@ -29,7 +33,7 @@
         <header class="content-header">
           <h1 class="content-title">Project Rogue Codex</h1>
           <p class="content-tagline">
-            Compact game reference for gear, monsters, systems, character stats, and update-safe Codex data.
+            Explore the worlds, community forks, and defining moments that led to Project Rogue.
           </p>
         </header>
 
@@ -38,143 +42,119 @@
             <div>
               <h2>Project Rogue Timeline</h2>
               <p>
-                Project Rogue grows from the Dransik/Ashen Empires lineage of 2D sandbox PvP. Filter the timeline
-                when you only want the pre-history, community forks, or Project Rogue era.
+                Project Rogue grows from the Dransik/Ashen Empires lineage of 2D sandbox PvP.
+                Scroll through the years, from the early worlds to the game today.
               </p>
             </div>
-            <div class="home-filter-summary" aria-live="polite">
-              <span class="stat-label">Timeline Filter</span>
-              <strong data-home-result-count>10 shown</strong>
-            </div>
           </div>
 
-          <div class="home-filter-bar" aria-label="Timeline filter">
-            <button class="home-filter-chip is-active" type="button" aria-pressed="true" data-era-filter="all">
-              All
-            </button>
-            <button class="home-filter-chip" type="button" aria-pressed="false" data-era-filter="origins">
-              Origins
-            </button>
-            <button class="home-filter-chip" type="button" aria-pressed="false" data-era-filter="forks">
-              Community Forks
-            </button>
-            <button class="home-filter-chip" type="button" aria-pressed="false" data-era-filter="project-rogue">
-              Project Rogue
-            </button>
-          </div>
+          <p class="timeline-scroll-hint">Scroll to explore <span aria-hidden="true">&darr;</span></p>
 
-          <div class="home-timeline" data-home-timeline>
-            <div class="home-timeline-item" data-home-timeline-item data-era="origins">
-              <div class="home-timeline-marker"></div>
-              <div class="home-timeline-date">1998&nbsp;&ndash;&nbsp;1999</div>
-              <div class="home-timeline-card">
-                <h3>Dransik Classic</h3>
-                <p>Ultima-style 2D MMO launches and sparks the community that chases every successor.</p>
-                <div class="home-timeline-media">
-                  <img src="images/dransik.png" alt="Dransik Classic screenshot" loading="lazy" />
-                </div>
-              </div>
-            </div>
-
-            <div class="home-timeline-item" data-home-timeline-item data-era="origins">
-              <div class="home-timeline-marker"></div>
-              <div class="home-timeline-date">2002&nbsp;&ndash;&nbsp;2003</div>
-              <div class="home-timeline-card">
-                <h3>Ashen Empires Era</h3>
-                <p>
-                  Upgraded Dransik enters open beta in September 2002 and rebrands as Ashen Empires with pay servers
-                  in March 2003.
-                </p>
-              </div>
-            </div>
-
-            <div class="home-timeline-item" data-home-timeline-item data-era="origins">
-              <div class="home-timeline-marker"></div>
-              <div class="home-timeline-date">2004&nbsp;&ndash;&nbsp;2006</div>
-              <div class="home-timeline-card">
-                <h3>Classic Goes Dark &amp; Returns</h3>
-                <p>Dransik Classic shuts down, then resurfaces in April 2006 under Iron Will / Pixel Mine.</p>
-              </div>
-            </div>
-
-            <div class="home-timeline-item" data-home-timeline-item data-era="forks">
-              <div class="home-timeline-marker"></div>
-              <div class="home-timeline-date">2005</div>
-              <div class="home-timeline-card">
-                <h3>Lothgar Online v1</h3>
-                <p>Jason Ely leaves the Dransik team and ships Lothgar Online as a spiritual clone.</p>
-              </div>
-            </div>
-
-            <div class="home-timeline-item" data-home-timeline-item data-era="forks">
-              <div class="home-timeline-marker"></div>
-              <div class="home-timeline-date">Mid-2000s</div>
-              <div class="home-timeline-card">
-                <h3>Vorlia Online</h3>
-                <p>Fans spin up Vorlia Online, a grassroots Dransik-like MMO that later becomes the foundation for Project Rogue.</p>
-              </div>
-            </div>
-
-            <div class="home-timeline-item" data-home-timeline-item data-era="forks">
-              <div class="home-timeline-marker"></div>
-              <div class="home-timeline-date">2013</div>
-              <div class="home-timeline-card">
-                <h3>Elderlands Alpha</h3>
-                <p>Ely's new 2D engine enters open alpha, fusing retro combat with modern tech.</p>
-              </div>
-            </div>
-
-            <div class="home-timeline-item" data-home-timeline-item data-era="forks">
-              <div class="home-timeline-marker"></div>
-              <div class="home-timeline-date">2016</div>
-              <div class="home-timeline-card">
-                <h3>Lothgar Reboot Plans</h3>
-                <p>
-                  While leading Asylumsoft on Elderlands, Ely announces a return of Lothgar Online styled after classic
-                  Dransik.
-                </p>
-              </div>
-            </div>
-
-            <div class="home-timeline-item" data-home-timeline-item data-era="forks">
-              <div class="home-timeline-marker"></div>
-              <div class="home-timeline-date">Mar 20&nbsp;2017</div>
-              <div class="home-timeline-card">
-                <h3>Lothgar Relaunch Falters</h3>
-                <p>Relaunch arrives with hype but fizzles; players cite direction issues and look elsewhere.</p>
-              </div>
-            </div>
-
-            <div class="home-timeline-item" data-home-timeline-item data-era="project-rogue">
-              <div class="home-timeline-marker"></div>
-              <div class="home-timeline-date">Jul&nbsp;2017</div>
-              <div class="home-timeline-card">
-                <h3>Project Rogue Begins</h3>
-                <p>
-                  Arakard and Acry reboot Vorlia as Project Rogue: 100-level cap, revamped stat math, Dransik-era
-                  systems, and a PvP logout timer.
-                </p>
-                <div class="home-timeline-media">
-                  <img src="images/project_rogue.png" alt="Project Rogue gameplay" loading="lazy" />
-                </div>
-              </div>
-            </div>
-
-            <div class="home-timeline-item home-timeline-current" data-home-timeline-item data-era="project-rogue">
-              <div class="home-timeline-marker"></div>
-              <div class="home-timeline-date">2017&nbsp;&ndash;&nbsp;Today</div>
-              <div class="home-timeline-card">
-                <h3>Fresh Wipes &amp; Live Upkeep</h3>
-                <p>
-                  Regular wipes, balance passes, and content drops keep the server active; each fresh start echoes the
-                  early days.
-                </p>
-                <div class="home-timeline-media">
-                  <img src="images/project_rogue_today.png" alt="Modern Project Rogue moments" loading="lazy" />
-                </div>
-              </div>
-            </div>
-          </div>
+<p class="history-reading-note">The line follows time, not a single chain of inheritance. Each story identifies its relationship and links to its evidence. Expand a card to read; open stories stay full size.</p>
+<div class="home-timeline" data-home-timeline>
+<div id="dransik-classic" class="home-timeline-item" data-home-timeline-item data-era="origins"><div class="home-timeline-marker" aria-hidden="true"></div><div class="home-timeline-date">1998–1999</div><details class="home-timeline-card history-story">
+ <summary><span class="history-kind">Official lineage</span><h3>Dransik Classic</h3><span class="history-summary">The original Dransik establishes the world and community behind the later branches.</span><span class="history-read"><span class="when-closed">Read the story</span><span class="when-open">Close story</span> <span aria-hidden="true">⌄</span></span></summary>
+ <div class="history-story-body"><p>The original top-down Dransik emerged in the late 1990s, with an Ultima-inspired world, skills, crafting, and player conflict. Historical accounts use both 1998 and 1999 for its beginnings; this range avoids assigning a single definitive launch day.</p><p>This original game became known as Dransik Classic. Its later history runs alongside the newer isometric Dransik, rather than disappearing into it.</p><div class="home-timeline-media"><img src="images/dransik.png" alt="Dransik Classic archive image" loading="lazy" /></div><p class="history-source-label">Sources</p><ul class="history-sources"><li><a href="https://www.mmorpg.com/dransik-classic" target="_blank" rel="noopener noreferrer">MMORPG.com · Classic history</a></li></ul><a class="history-permalink" href="#dransik-classic">Link to this entry</a></div>
+ </details></div>
+<div id="dransik-split" class="home-timeline-item" data-home-timeline-item data-era="origins"><div class="home-timeline-marker" aria-hidden="true"></div><div class="home-timeline-date">2002</div><details class="home-timeline-card history-story">
+ <summary><span class="history-kind">Official lineage</span><h3>The Dransik Split</h3><span class="history-summary">Classic and the newer isometric Dransik coexist as distinct versions.</span><span class="history-read"><span class="when-closed">Read the story</span><span class="when-open">Close story</span> <span aria-hidden="true">⌄</span></span></summary>
+ <div class="history-story-body"><p>Jeff Barrett’s October 2002 guide distinguishes an older-graphics YouCanGame server from the new isometric Dransik New World beta. Their quest and guild systems also differed.</p><p>The guide lists New World, Krythan Inception in California, Great Wall in Asia, and Mystery and Magic, an experimental magic-system server. These were server variants of the newer game—not four separate descendants.</p><p>The newer branch is also referred to in historical accounts as New World / Primordia / ISO and later becomes Ashen Empires.</p><p class="history-source-label">Sources</p><ul class="history-sources"><li><a href="https://www.cheatcodes.com/guide/quest-guide-dransik-pc-31384/" target="_blank" rel="noopener noreferrer">Jeff Barrett · October 2002 server notes</a></li><li><a href="https://www.gamespot.com/articles/ashen-empires-public-beta-launches/1100-6086405/" target="_blank" rel="noopener noreferrer">GameSpot · January 2004 public beta</a></li></ul><a class="history-permalink" href="#dransik-split">Link to this entry</a></div>
+ </details></div>
+<div id="dransik-commercial" class="home-timeline-item" data-home-timeline-item data-era="origins"><div class="home-timeline-marker" aria-hidden="true"></div><div class="home-timeline-date">Mar 2003</div><details class="home-timeline-card history-story">
+ <summary><span class="history-kind">Official lineage</span><h3>DRANSIK 1.0 Goes Commercial</h3><span class="history-summary">The newer game launches commercially under the Dransik name.</span><span class="history-read"><span class="when-closed">Read the story</span><span class="when-open">Close story</span> <span aria-hidden="true">⌄</span></span></summary>
+ <div class="history-story-body"><p>The March 18 announcement calls the commercial release DRANSIK 1.0 and describes a subscription service following its beta period. It separately mentions plans to re-release Dransik Classic.</p><p>This corrects the earlier timeline: March 2003 was not the Ashen Empires rebrand. That transition belongs to the following year.</p><p class="history-source-label">Sources</p><ul class="history-sources"><li><a href="https://www.worthplaying.com/article/2003/3/18/news/8889-commercial-launch-of-dransik/" target="_blank" rel="noopener noreferrer">WorthPlaying · March 2003 announcement</a></li></ul><a class="history-permalink" href="#dransik-commercial">Link to this entry</a></div>
+ </details></div>
+<div id="ashen-empires" class="home-timeline-item" data-home-timeline-item data-era="origins"><div class="home-timeline-marker" aria-hidden="true"></div><div class="home-timeline-date">Jan 13, 2004</div><details class="home-timeline-card history-story">
+ <summary><span class="history-kind">Official lineage</span><h3>Ashen Empires Public Beta</h3><span class="history-summary">The newer Dransik enters a public beta under its Ashen Empires identity.</span><span class="history-read"><span class="when-closed">Read the story</span><span class="when-open">Close story</span> <span aria-hidden="true">⌄</span></span></summary>
+ <div class="history-story-body"><p>GameSpot reports TKO’s public beta announcement on January 13, 2004, explicitly identifying Ashen Empires as the game formerly known as Dransik.</p><p>TKO describes phased development that lets existing subscribers continue playing while improvements are introduced. This is the newer/isometric product’s continuation, distinct from the Classic branch.</p><p class="history-source-label">Sources</p><ul class="history-sources"><li><a href="https://www.gamespot.com/articles/ashen-empires-public-beta-launches/1100-6086405/" target="_blank" rel="noopener noreferrer">GameSpot · January 2004 public beta</a></li></ul><a class="history-permalink" href="#ashen-empires">Link to this entry</a></div>
+ </details></div>
+<div id="classic-shutdown" class="home-timeline-item" data-home-timeline-item data-era="origins"><div class="home-timeline-marker" aria-hidden="true"></div><div class="home-timeline-date">Mar 8, 2004</div><details class="home-timeline-card history-story">
+ <summary><span class="history-kind">Official lineage</span><h3>Classic Goes Offline</h3><span class="history-summary">TKO discontinues Dransik Classic and invites its players to Ashen Empires.</span><span class="history-read"><span class="when-closed">Read the story</span><span class="when-open">Close story</span> <span aria-hidden="true">⌄</span></span></summary>
+ <div class="history-story-body"><p>A March 8 press release, reproduced by MMORPG.com, announces the immediate discontinuation of Dransik Classic. Players are invited to move to Ashen Empires.</p><p>The separate shutdown is another reason to show Classic and Ashen Empires as parallel product histories.</p><p class="history-source-label">Sources</p><ul class="history-sources"><li><a href="https://www.mmorpg.com/news/dransik-classic-discontinued-2000056391" target="_blank" rel="noopener noreferrer">MMORPG.com · Classic discontinued</a></li></ul><a class="history-permalink" href="#classic-shutdown">Link to this entry</a></div>
+ </details></div>
+<div id="lothgar-origin" class="home-timeline-item" data-home-timeline-item data-era="forks"><div class="home-timeline-marker" aria-hidden="true"></div><div class="home-timeline-date">2005</div><details class="home-timeline-card history-story">
+ <summary><span class="history-kind">Creator successor</span><h3>Lothgar Online: A Temporary Home</h3><span class="history-summary">Jason Ely builds a home for displaced Dransik players while developing new technology.</span><span class="history-read"><span class="when-closed">Read the story</span><span class="when-open">Close story</span> <span aria-hidden="true">⌄</span></span></summary>
+ <div class="history-story-body"><p>In his 2023 retrospective, Ely dates the original Lothgar Online launch to 2005 and describes it as a temporary sandbox while he developed a new technology base.</p><p>Lothgar returned several times at community request. Those revivals should not be reduced to one unsuccessful 2017 reboot; their individual dates are not all established.</p><p class="history-source-label">Sources</p><ul class="history-sources"><li><a href="https://ultimacodex.com/2023/09/asylumsoft-shutters-lothgar-online-sole-focus-will-now-be-elderlands/" target="_blank" rel="noopener noreferrer">Ultima Codex · Ely’s September 2023 announcement</a></li></ul><a class="history-permalink" href="#lothgar-origin">Link to this entry</a></div>
+ </details></div>
+<div id="vorlia-origin" class="home-timeline-item" data-home-timeline-item data-era="forks"><div class="home-timeline-marker" aria-hidden="true"></div><div class="home-timeline-date">By Jul 2005</div><details class="home-timeline-card history-story">
+ <summary><span class="history-kind">Inspired descendant</span><h3>Vorlia Takes Shape</h3><span class="history-summary">Contemporary discussion identifies Vorlia as a project made by Dransik fans.</span><span class="history-read"><span class="when-closed">Read the story</span><span class="when-open">Close story</span> <span aria-hidden="true">⌄</span></span></summary>
+ <div class="history-story-body"><p>A July 23, 2005 GameDev.net discussion describes Vorlia as being made by fans of the original Dransik. This establishes its existence by 2005, rather than a precise launch date.</p><p>Luxtrin’s later project description credits Covad with Vorlia. Fan inspiration establishes a community relationship; it does not by itself prove that Vorlia used Dransik source code.</p><p class="history-source-label">Sources</p><ul class="history-sources"><li><a href="https://gamedev.net/forums/topic/333788-tagen-mmorpg/3170902/" target="_blank" rel="noopener noreferrer">GameDev.net · July 2005 discussion</a></li><li><a href="https://luxtrin.com/" target="_blank" rel="noopener noreferrer">Luxtrin · official project description</a></li></ul><a class="history-permalink" href="#vorlia-origin">Link to this entry</a></div>
+ </details></div>
+<div id="classic-return" class="home-timeline-item" data-home-timeline-item data-era="origins"><div class="home-timeline-marker" aria-hidden="true"></div><div class="home-timeline-date">Apr 5, 2006</div><details class="home-timeline-card history-story">
+ <summary><span class="history-kind">Official lineage</span><h3>Dransik Classic Returns</h3><span class="history-summary">Iron Will Games brings the original branch back online.</span><span class="history-read"><span class="when-closed">Read the story</span><span class="when-open">Close story</span> <span aria-hidden="true">⌄</span></span></summary>
+ <div class="history-story-body"><p>MMORPG.com’s Classic history dates its return to April 5, 2006, under Iron Will Games. The revival continues the original Classic line rather than creating another isometric Dransik branch.</p><p class="history-source-label">Sources</p><ul class="history-sources"><li><a href="https://www.mmorpg.com/dransik-classic" target="_blank" rel="noopener noreferrer">MMORPG.com · Classic history</a></li></ul><a class="history-permalink" href="#classic-return">Link to this entry</a></div>
+ </details></div>
+<div id="stygian-worlds" class="home-timeline-item" data-home-timeline-item data-era="forks"><div class="home-timeline-marker" aria-hidden="true"></div><div class="home-timeline-date">2005–2007</div><details class="home-timeline-card history-story">
+ <summary><span class="history-kind">Creator successor</span><h3>Stygian Worlds and Early Elderlands</h3><span class="history-summary">Ely’s new technology has a name—and Elderlands is already using its engine by 2007.</span><span class="history-read"><span class="when-closed">Read the story</span><span class="when-open">Close story</span> <span aria-hidden="true">⌄</span></span></summary>
+ <div class="history-story-body"><p>An October 2005 community news reference associates Jason Ely with both Lothgar Online and Stygian Worlds. An April 2007 report then describes Elderlands as a demo built with the Stygian Worlds core engine.</p><p>This is a technology and creator relationship. The projects’ overlapping names and development do not establish a simple sequence of finished games replacing one another.</p><p class="history-source-label">Sources</p><ul class="history-sources"><li><a href="https://gigi.nullneuron.net/ultima/news.php?on=2005-10-09" target="_blank" rel="noopener noreferrer">Dino’s Ultima Page · October 2005</a></li><li><a href="https://www.neatorama.com/2007/04/03/stygian-worlds-elderlands/" target="_blank" rel="noopener noreferrer">Neatorama · April 2007 report</a></li></ul><a class="history-permalink" href="#stygian-worlds">Link to this entry</a></div>
+ </details></div>
+<div id="elderlands-alpha" class="home-timeline-item" data-home-timeline-item data-era="forks"><div class="home-timeline-marker" aria-hidden="true"></div><div class="home-timeline-date">2013</div><details class="home-timeline-card history-story">
+ <summary><span class="history-kind">Creator successor</span><h3>Elderlands Alpha Milestone</h3><span class="history-summary">The existing Codex records an alpha milestone, not the beginning of the engine.</span><span class="history-read"><span class="when-closed">Read the story</span><span class="when-open">Close story</span> <span aria-hidden="true">⌄</span></span></summary>
+ <div class="history-story-body"><p>The earlier Codex timeline places an Elderlands alpha milestone in 2013. Earlier reporting already names Elderlands in 2007, so 2013 should not be presented as the origin of its technology.</p><p class="history-evidence-note">Archive date: the 2013 alpha milestone is retained from the earlier Codex; its exact timing still needs a contemporary launch source.</p><p class="history-source-label">Sources</p><ul class="history-sources"><li><a href="https://traecneh.github.io/Project-Rogue-Codex/index.html" target="_blank" rel="noopener noreferrer">Previous Codex history</a></li><li><a href="https://www.neatorama.com/2007/04/03/stygian-worlds-elderlands/" target="_blank" rel="noopener noreferrer">Neatorama · April 2007 report</a></li></ul><a class="history-permalink" href="#elderlands-alpha">Link to this entry</a></div>
+ </details></div>
+<div id="nobles-land" class="home-timeline-item" data-home-timeline-item data-era="forks"><div class="home-timeline-marker" aria-hidden="true"></div><div class="home-timeline-date">Jul 2014</div><details class="home-timeline-card history-story">
+ <summary><span class="history-kind">Inspired descendant</span><h3>Noble’s Land</h3><span class="history-summary">Its creator describes an independent spiritual successor to Dransik.</span><span class="history-read"><span class="when-closed">Read the story</span><span class="when-open">Close story</span> <span aria-hidden="true">⌄</span></span></summary>
+ <div class="history-story-body"><p>In a July 2014 IndieDB comment, creator Noble describes a long history playing Dransik and calls Noble’s Land a spiritual successor. He also distinguishes the project from a clone and describes making its artwork himself.</p><p>This is evidence of deliberate inspiration, not a shared-source relationship. The cited development-era material does not establish the project’s current operating status.</p><p class="history-source-label">Sources</p><ul class="history-sources"><li><a href="https://www.indiedb.com/games/nobles-land" target="_blank" rel="noopener noreferrer">IndieDB · creator’s July 2014 comment</a></li></ul><a class="history-permalink" href="#nobles-land">Link to this entry</a></div>
+ </details></div>
+<div id="vorlia-source" class="home-timeline-item" data-home-timeline-item data-era="forks"><div class="home-timeline-marker" aria-hidden="true"></div><div class="home-timeline-date">Dec 18, 2016</div><details class="home-timeline-card history-story">
+ <summary><span class="history-kind">Source / engine</span><h3>Vorlia Source Release</h3><span class="history-summary">Vorlian posts a server, client, and tools release on RaGEZONE.</span><span class="history-read"><span class="when-closed">Read the story</span><span class="when-open">Close story</span> <span aria-hidden="true">⌄</span></span></summary>
+ <div class="history-story-body"><p>The dated release thread identifies Vorlian as its author and advertises Vorlia server, client, and tools. Replies describe it as full source; a later reply reports that the download links no longer work.</p><p>The release predates the Codex’s July 2017 Project Rogue origin by about seven months. That chronology is relevant, but does not establish that this public upload was the source used by Project Rogue.</p><p class="history-source-label">Sources</p><ul class="history-sources"><li><a href="https://forum.ragezone.com/threads/release-vorlia-source-server-client-and-tools.1122138/" target="_blank" rel="noopener noreferrer">RaGEZONE · Vorlia source release</a></li></ul><a class="history-permalink" href="#vorlia-source">Link to this entry</a></div>
+ </details></div>
+<div id="dransik-emulator" class="home-timeline-item" data-home-timeline-item data-era="forks"><div class="home-timeline-marker" aria-hidden="true"></div><div class="home-timeline-date">Feb–Oct 2017</div><details class="home-timeline-card history-story">
+ <summary><span class="history-kind">Emulator / private server</span><h3>Vorlian’s Dransik / AE Emulator</h3><span class="history-summary">Public development threads document a separate isometric-game emulation effort.</span><span class="history-read"><span class="when-closed">Read the story</span><span class="when-open">Close story</span> <span aria-hidden="true">⌄</span></span></summary>
+ <div class="history-story-body"><p>In February 2017, Vorlian confirms Ashen Empires as the target of an old-MMO reverse-engineering project. A subsequent Dransik Server Emu thread documents further development.</p><p>Keep this emulator branch separate from Vorlia and Project Rogue: a shared community participant is not proof that the projects share an engine.</p><p class="history-source-label">Sources</p><ul class="history-sources"><li><a href="https://forum.ragezone.com/threads/update-reversing-engineering-an-old-mmo.1125533/" target="_blank" rel="noopener noreferrer">RaGEZONE · Ashen Empires reverse engineering</a></li><li><a href="https://forum.ragezone.com/threads/dransik-server-emu.1138921/" target="_blank" rel="noopener noreferrer">RaGEZONE · Dransik Server Emu</a></li></ul><a class="history-permalink" href="#dransik-emulator">Link to this entry</a></div>
+ </details></div>
+<div id="project-rogue" class="home-timeline-item" data-home-timeline-item data-era="project-rogue"><div class="home-timeline-marker" aria-hidden="true"></div><div class="home-timeline-date">Jul 2017</div><details class="home-timeline-card history-story">
+ <summary><span class="history-kind">Community / engine lineage</span><h3>Project Rogue Begins</h3><span class="history-summary">The Codex records Arakard and Acry’s Vorlia-based Project Rogue beginnings.</span><span class="history-read"><span class="when-closed">Read the story</span><span class="when-open">Close story</span> <span aria-hidden="true">⌄</span></span></summary>
+ <div class="history-story-body"><p>The existing Codex dates the Project Rogue / Rogue Online branch to July 2017 and credits Arakard and Acry with rebooting Vorlia. Its account describes revised stats, Dransik-era systems, and PvP changes.</p><p>The Vorlia source release is a preceding milestone, not a proven delivery route. The exact source version and transfer history remain open research questions.</p><p class="history-evidence-note">Archive account: the founder/date account comes from the existing Codex. Direct provenance for the source transfer has not been established here.</p><div class="home-timeline-media"><img src="images/project_rogue.png" alt="Project Rogue Begins archive image" loading="lazy" /></div><p class="history-source-label">Sources</p><ul class="history-sources"><li><a href="https://traecneh.github.io/Project-Rogue-Codex/index.html" target="_blank" rel="noopener noreferrer">Previous Codex history</a></li><li><a href="https://forum.ragezone.com/threads/release-vorlia-source-server-client-and-tools.1122138/" target="_blank" rel="noopener noreferrer">RaGEZONE · Vorlia source release</a></li></ul><a class="history-permalink" href="#project-rogue">Link to this entry</a></div>
+ </details></div>
+<div id="emulator-opening" class="home-timeline-item" data-home-timeline-item data-era="forks"><div class="home-timeline-marker" aria-hidden="true"></div><div class="home-timeline-date">Dec 17, 2018</div><details class="home-timeline-card history-story">
+ <summary><span class="history-kind">Emulator / private server</span><h3>The Emulator Announces Public Opening</h3><span class="history-summary">Vorlian announces public access after roughly two years of work.</span><span class="history-read"><span class="when-closed">Read the story</span><span class="when-open">Close story</span> <span aria-hidden="true">⌄</span></span></summary>
+ <div class="history-story-body"><p>The Dransik Server Emu thread describes upcoming closed testing in September 2018. On December 17, Vorlian announces that the server will open publicly after two years of development.</p><p>The later connection to Dransik Rebirth is plausible, but the accessible thread does not definitively identify the projects as the same server.</p><p class="history-evidence-note">Probable relationship: emulator → Dransik Rebirth. The naming/identity link remains unconfirmed.</p><p class="history-source-label">Sources</p><ul class="history-sources"><li><a href="https://forum.ragezone.com/threads/dransik-server-emu.1138921/" target="_blank" rel="noopener noreferrer">RaGEZONE · Dransik Server Emu</a></li></ul><a class="history-permalink" href="#emulator-opening">Link to this entry</a></div>
+ </details></div>
+<div id="dransik-rebirth" class="home-timeline-item" data-home-timeline-item data-era="forks"><div class="home-timeline-marker" aria-hidden="true"></div><div class="home-timeline-date">May–Sep 2019</div><details class="home-timeline-card history-story">
+ <summary><span class="history-kind">Emulator / private server</span><h3>Dransik Rebirth and Its Shutdown</h3><span class="history-summary">Public coverage documents Rebirth, followed by a disputed shutdown account.</span><span class="history-read"><span class="when-closed">Read the story</span><span class="when-open">Close story</span> <span aria-hidden="true">⌄</span></span></summary>
+ <div class="history-story-body"><p>MassivelyOP covered Dransik Rebirth as an Ashen Empires rogue server in May 2019. In September, it reported that the server had gone offline following an operator-reported legal complaint.</p><p>The publication added an update questioning that account. The alleged DMCA / cease-and-desist explanation is therefore attributed to the operators, not presented as an independently settled legal finding.</p><p class="history-evidence-note">Probable relationship to Vorlian’s emulator; the shutdown explanation is disputed.</p><p class="history-source-label">Sources</p><ul class="history-sources"><li><a href="https://massivelyop.com/2019/05/05/mmos-youve-never-heard-of-mordhau-dransik-rebirth-aberoth-star-sonata-and-kicks-online/" target="_blank" rel="noopener noreferrer">MassivelyOP · May 2019 overview</a></li><li><a href="https://massivelyop.com/2019/09/12/ashen-empires-emulator-dransik-rebirth-is-shut-down-by-a-cease-and-desist-order/" target="_blank" rel="noopener noreferrer">MassivelyOP · September 2019 report and update</a></li></ul><a class="history-permalink" href="#dransik-rebirth">Link to this entry</a></div>
+ </details></div>
+<div id="elderlands-split" class="home-timeline-item" data-home-timeline-item data-era="forks"><div class="home-timeline-marker" aria-hidden="true"></div><div class="home-timeline-date">May 2022</div><details class="home-timeline-card history-story">
+ <summary><span class="history-kind">Creator successor</span><h3>Elderlands Legacy and Future</h3><span class="history-summary">The live 2016-era build and the refactored development branch receive separate names.</span><span class="history-read"><span class="when-closed">Read the story</span><span class="when-open">Close story</span> <span aria-hidden="true">⌄</span></span></summary>
+ <div class="history-story-body"><p>Asylumsoft’s announcement, reproduced by Ultima Codex, calls the live 2016 build Elderlands Legacy. Elderlands Future names the heavily refactored version under development.</p><p>These are two branches within Elderlands. The announcement describes plans at that time and does not establish that Future later launched.</p><p class="history-source-label">Sources</p><ul class="history-sources"><li><a href="https://ultimacodex.com/2022/05/elderlands-elderlands-legacy-launched-elderlands-future-announced/" target="_blank" rel="noopener noreferrer">Ultima Codex · Legacy and Future</a></li></ul><a class="history-permalink" href="#elderlands-split">Link to this entry</a></div>
+ </details></div>
+<div id="dransik-modern" class="home-timeline-item" data-home-timeline-item data-era="origins"><div class="home-timeline-marker" aria-hidden="true"></div><div class="home-timeline-date">Dec 9, 2022</div><details class="home-timeline-card history-story">
+ <summary><span class="history-kind">Official lineage</span><h3>Dransik 2.0</h3><span class="history-summary">A rewritten client modernizes the continuing Classic branch.</span><span class="history-read"><span class="when-closed">Read the story</span><span class="when-open">Close story</span> <span aria-hidden="true">⌄</span></span></summary>
+ <div class="history-story-body"><p>Iron Will Games’ launch announcement describes a completely rewritten client, modern UI controls, larger-monitor support, and Windows / OSX availability.</p><p>This is modernization of Dransik Classic, not a newly discovered historical fork. Further server modernization belongs to this continuing line; this entry anchors the verified client-launch milestone.</p><p class="history-source-label">Sources</p><ul class="history-sources"><li><a href="https://steamcommunity.com/games/1871470/announcements/detail/3645131352100173221" target="_blank" rel="noopener noreferrer">Iron Will Games · Dransik 2.0 announcement</a></li><li><a href="https://steamdb.info/patchnotes/10111255/" target="_blank" rel="noopener noreferrer">SteamDB · preserved launch announcement</a></li></ul><a class="history-permalink" href="#dransik-modern">Link to this entry</a></div>
+ </details></div>
+<div id="lothgar-end" class="home-timeline-item" data-home-timeline-item data-era="forks"><div class="home-timeline-marker" aria-hidden="true"></div><div class="home-timeline-date">Sep 17, 2023</div><details class="home-timeline-card history-story">
+ <summary><span class="history-kind">Creator successor</span><h3>Lothgar Development Ends</h3><span class="history-summary">Ely ends further Lothgar work and redirects attention toward Elderlands.</span><span class="history-read"><span class="when-closed">Read the story</span><span class="when-open">Close story</span> <span aria-hidden="true">⌄</span></span></summary>
+ <div class="history-story-body"><p>Ultima Codex’s September 18 report reproduces Ely’s announcement from the previous day. He recounts multiple revivals and explains that they repeatedly diverted effort from Elderlands.</p><p>Some newer Lothgar gameplay systems were intended to move into Elderlands. That is a stated development plan, not proof that every proposed transfer shipped.</p><p class="history-source-label">Sources</p><ul class="history-sources"><li><a href="https://ultimacodex.com/2023/09/asylumsoft-shutters-lothgar-online-sole-focus-will-now-be-elderlands/" target="_blank" rel="noopener noreferrer">Ultima Codex · Ely’s September 2023 announcement</a></li></ul><a class="history-permalink" href="#lothgar-end">Link to this entry</a></div>
+ </details></div>
+<div id="elderlands-team" class="home-timeline-item" data-home-timeline-item data-era="forks"><div class="home-timeline-marker" aria-hidden="true"></div><div class="home-timeline-date">Oct 2023</div><details class="home-timeline-card history-story">
+ <summary><span class="history-kind">Creator successor</span><h3>Elderlands Team Transition</h3><span class="history-summary">Josh Ely and a small team take on the project as Jason’s employment changes.</span><span class="history-read"><span class="when-closed">Read the story</span><span class="when-open">Close story</span> <span aria-hidden="true">⌄</span></span></summary>
+ <div class="history-story-body"><p>An October 31 report describes Jason Ely’s new employment limiting his ability to continue Elderlands work and a handover to his son Josh and a small team.</p><p>This dated handover does not establish the state of development in 2026. Current activity should be checked separately rather than labeling the game dead.</p><p class="history-source-label">Sources</p><ul class="history-sources"><li><a href="https://ultimacodex.com/2023/10/elderlands-lothgar-jr-takes-over/" target="_blank" rel="noopener noreferrer">Ultima Codex · Josh Ely takes over</a></li></ul><a class="history-permalink" href="#elderlands-team">Link to this entry</a></div>
+ </details></div>
+<div id="modern-vorlia" class="home-timeline-item" data-home-timeline-item data-era="forks"><div class="home-timeline-marker" aria-hidden="true"></div><div class="home-timeline-date">Feb 20, 2026</div><details class="home-timeline-card history-story">
+ <summary><span class="history-kind">Related project</span><h3>Modern Vorlia Online</h3><span class="history-summary">A modern release carries the Vorlia name; its original-source ancestry is unconfirmed.</span><span class="history-read"><span class="when-closed">Read the story</span><span class="when-open">Close story</span> <span aria-hidden="true">⌄</span></span></summary>
+ <div class="history-story-body"><p>The official site advertises a February 20, 2026 launch and Windows, Linux, and Android support. Its linked Google Play listing shows an August 30, 2026 update, providing evidence of maintenance in 2026.</p><p>The checked public pages do not establish whether this version uses Covad’s original source. Similar branding and genre do not settle its code ancestry.</p><p class="history-evidence-note">Unconfirmed relationship: original Vorlia → modern Vorlia Online. Activity checked September 6, 2026.</p><p class="history-source-label">Sources</p><ul class="history-sources"><li><a href="https://vorliaclassic.com/" target="_blank" rel="noopener noreferrer">Vorlia Online · official launch notice</a></li><li><a href="https://play.google.com/store/apps/details?id=com.vorlia.online" target="_blank" rel="noopener noreferrer">Google Play · Vorlia Online</a></li></ul><a class="history-permalink" href="#modern-vorlia">Link to this entry</a></div>
+ </details></div>
+<div id="kisnard" class="home-timeline-item" data-home-timeline-item data-era="forks"><div class="home-timeline-marker" aria-hidden="true"></div><div class="home-timeline-date">2026</div><details class="home-timeline-card history-story">
+ <summary><span class="history-kind">Inspired descendant</span><h3>Kisnard Online Continues</h3><span class="history-summary">An independently developed Dransik Classic-inspired MMO continues publishing updates.</span><span class="history-read"><span class="when-closed">Read the story</span><span class="when-open">Close story</span> <span aria-hidden="true">⌄</span></span></summary>
+ <div class="history-story-body"><p>Jay Avondoglio’s official FAQ names Dransik Classic as the inspiration and describes a Java client/server with MariaDB. The official homepage carries release notes from 2026.</p><p>Kisnard belongs to the wider family through inspiration, rather than being labeled a Dransik or Vorlia source fork. This entry marks observed 2026 activity, not its original launch.</p><p class="history-source-label">Sources</p><ul class="history-sources"><li><a href="https://www.kisnardonline.com/faq/" target="_blank" rel="noopener noreferrer">Kisnard Online · developer FAQ</a></li><li><a href="https://www.kisnardonline.com/" target="_blank" rel="noopener noreferrer">Kisnard Online · release notes</a></li></ul><a class="history-permalink" href="#kisnard">Link to this entry</a></div>
+ </details></div>
+<div id="rogue-today" class="home-timeline-item" data-home-timeline-item data-era="project-rogue"><div class="home-timeline-marker" aria-hidden="true"></div><div class="home-timeline-date">2017–Today</div><details class="home-timeline-card history-story">
+ <summary><span class="history-kind">Project Rogue</span><h3>Fresh Wipes &amp; Live Upkeep</h3><span class="history-summary">The community’s history continues through Project Rogue’s evolving world.</span><span class="history-read"><span class="when-closed">Read the story</span><span class="when-open">Close story</span> <span aria-hidden="true">⌄</span></span></summary>
+ <div class="history-story-body"><p>The Codex’s ongoing Project Rogue account describes wipes, balance changes, and content updates. This is the continuation of the Project Rogue branch, not evidence that all neighboring projects merged into it.</p><p>The archive preserves the older worlds and experiments as related histories, with uncertain connections kept explicit.</p><div class="home-timeline-media"><img src="images/project_rogue_today.png" alt="Fresh Wipes &amp; Live Upkeep archive image" loading="lazy" /></div><p class="history-source-label">Sources</p><ul class="history-sources"><li><a href="https://traecneh.github.io/Project-Rogue-Codex/index.html" target="_blank" rel="noopener noreferrer">Previous Codex history</a></li></ul><a class="history-permalink" href="#rogue-today">Link to this entry</a></div>
+ </details></div>
+</div>
+<section class="history-side-branches" aria-labelledby="related-histories"><h2 id="related-histories">Related branches &amp; open questions</h2><p>These connections belong in the history, but do not yet have reliable dates for the main timeline.</p><div id="arakard-experiment" class="history-side-entry"><details class="home-timeline-card history-story">
+ <summary><span class="history-kind">Source / engine lead</span><h3>Arakard’s Dransik-on-Vorlia Experiment</h3><span class="history-summary">A supplied community post reports Classic content running on the Vorlia engine.</span><span class="history-read"><span class="when-closed">Read the story</span><span class="when-open">Close story</span> <span aria-hidden="true">⌄</span></span></summary>
+ <div class="history-story-body"><p>The supplied Lothgar Online Facebook post reportedly says Arakard had Dransik Classic running using the Vorlia engine. It could help explain the technical context around Project Rogue.</p><p>The post could not be independently retrieved during this review. Its date and wording remain unverified here; it is preserved as a research lead, not used to prove a source transfer or a direct causal link.</p><p class="history-evidence-note">Unconfirmed source check: historical breadcrumb supplied by the research pack.</p><p class="history-source-label">Sources</p><ul class="history-sources"><li><a href="https://www.facebook.com/LothgarOnline/posts/as-many-of-you-know-vorlian-has-an-ae-private-server-up-and-running-we-just-foun/830876920603169/" target="_blank" rel="noopener noreferrer">Lothgar Online · supplied historical post</a></li></ul><a class="history-permalink" href="#arakard-experiment">Link to this entry</a></div>
+ </details></div><div id="luxtrin" class="history-side-entry"><details class="home-timeline-card history-story">
+ <summary><span class="history-kind">Vorlia clone</span><h3>Luxtrin</h3><span class="history-summary">The project’s own site explicitly identifies it as a Vorlia clone.</span><span class="history-read"><span class="when-closed">Read the story</span><span class="when-open">Close story</span> <span aria-hidden="true">⌄</span></span></summary>
+ <div class="history-story-body"><p>Luxtrin’s official page describes a work-in-progress clone of Vorlia and credits Covad with Vorlia. It directs visitors to Discord for an alpha client.</p><p>The self-described relationship is established. The page’s 2022 copyright footer is not a reliable launch date, and its availability alone does not prove active development in 2026.</p><p class="history-source-label">Sources</p><ul class="history-sources"><li><a href="https://luxtrin.com/" target="_blank" rel="noopener noreferrer">Luxtrin · official project description</a></li></ul><a class="history-permalink" href="#luxtrin">Link to this entry</a></div>
+ </details></div><div id="one-world" class="history-side-entry"><details class="home-timeline-card history-story">
+ <summary><span class="history-kind">Community descendant</span><h3>Empires Online → One World</h3><span class="history-summary">A Dransik fan-site community moves into an independently built game.</span><span class="history-read"><span class="when-closed">Read the story</span><span class="when-open">Close story</span> <span aria-hidden="true">⌄</span></span></summary>
+ <div class="history-story-body"><p>In a first-person retrospective, Tristin describes running Dransik Online / Inside AE, building Empires Online and later One World with players from that community, and moving from Player Worlds / Mirage to FSO.</p><p>He also describes later joining Jason Ely’s Lothgar team as a game designer. This establishes a reported community and personnel connection, not inheritance of Dransik source code. Precise project dates remain unresolved.</p><p class="history-source-label">Sources</p><ul class="history-sources"><li><a href="https://www.ascensiongamedev.com/profile/1838-intristin/" target="_blank" rel="noopener noreferrer">Tristin · first-person development history</a></li></ul><a class="history-permalink" href="#one-world">Link to this entry</a></div>
+ </details></div></section>
         </article>
 
         <article class="content-section">

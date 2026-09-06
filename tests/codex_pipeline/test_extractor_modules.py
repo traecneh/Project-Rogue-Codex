@@ -195,6 +195,7 @@ class ExtractorModuleTests(unittest.TestCase):
             WEAPON_ELEMENT_LABELS,
             WEAPON_SPECIALTY_LABELS,
             WEAPON_SUBTYPE_LABELS,
+            apply_item_visibility_metadata,
             enrich_armor_fields,
             enrich_weapon_fields,
             report_item_perk_values,
@@ -212,6 +213,13 @@ class ExtractorModuleTests(unittest.TestCase):
         self.assertEqual("Helmet", ARMOR_SLOT_LABELS[10])
         self.assertEqual("Arrows", ARMOR_SLOT_LABELS[15])
         self.assertEqual("Bolts", ARMOR_SLOT_LABELS[16])
+        dev_record = {"id": 99, "name": "Super Duper Test Item", "fields": {}}
+        normal_record = {"id": 100, "name": "Training Item", "fields": {}}
+        apply_item_visibility_metadata(dev_record)
+        apply_item_visibility_metadata(normal_record)
+        self.assertIs(True, dev_record["codex_hidden"])
+        self.assertEqual("dev_only_item_name", dev_record["codex_hidden_reason"])
+        self.assertNotIn("codex_hidden", normal_record)
         weapon_fields = {
             "value_low": 500,
             "value_high": 1,
@@ -299,6 +307,7 @@ class ExtractorModuleTests(unittest.TestCase):
             self.assertNotIn("corrupted_groups = {}", source)
             self.assertNotIn("resolve_corrupted_perk_label(", source)
             self.assertIn("report_item_perk_values(", source)
+            self.assertIn("apply_item_visibility_metadata(", source)
         self.assertIn("enrich_weapon_fields(fields)", weapon_source)
         self.assertIn("enrich_armor_fields(fields)", armor_source)
         self.assertIn("include_zero_perks=True", weapon_source)

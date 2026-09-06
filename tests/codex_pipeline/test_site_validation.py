@@ -323,11 +323,9 @@ class SiteValidationTests(unittest.TestCase):
 
         for expected in [
             "Project Rogue Timeline",
-            "Timeline Filter",
+            "Scroll to explore",
             "data-home-timeline",
             "data-home-timeline-item",
-            "data-era-filter=\"project-rogue\"",
-            "data-home-result-count",
             "Dransik Classic",
             "Project Rogue Begins",
             "Fresh Wipes &amp; Live Upkeep",
@@ -369,12 +367,10 @@ class SiteValidationTests(unittest.TestCase):
             self.assertNotIn(removed, script)
 
         for expected in [
-            "const HOME_TIMELINE_FILTERS",
-            "function initHomeTimelineFilters",
-            "function updateHomeTimelineFilter",
-            "data-era-filter",
-            "data-home-result-count",
-            'document.addEventListener("DOMContentLoaded"',
+            "function updateFocus",
+            "function scheduleFocus",
+            "is-timeline-focus",
+            "prefers-reduced-motion",
         ]:
             self.assertIn(expected, script)
 
@@ -408,8 +404,8 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn('itemKind: "weapons"', weapons_script)
         self.assertIn('itemKind: "armors"', armors_script)
         self.assertIn("nameLink.href = buildMonsterDetailUrl(entry.id || entry.name);", item_utils_script)
-        self.assertIn("label.href = buildWeaponDetailUrl(entry.name);", monsters_script)
-        self.assertIn("label.href = buildArmorDetailUrl(entry.name);", monsters_script)
+        self.assertIn("label.href = buildWeaponDetailUrl(entry);", monsters_script)
+        self.assertIn("label.href = buildArmorDetailUrl(entry);", monsters_script)
         self.assertIn("const stopTooltipLinkPropagation", item_utils_script)
         self.assertIn("const stopTooltipLinkPropagation", monsters_script)
         self.assertIn('nameLink.addEventListener("click", stopTooltipLinkPropagation);', item_utils_script)
@@ -436,6 +432,74 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn("selectArmor(item, { updateUrl: true });", armors_script)
         self.assertIn("clearDetails({ updateUrl: true });", armors_script)
         self.assertIn('history.pushState(state, "", targetUrl);', helper_script)
+
+    def test_item_detail_routes_prefer_stable_ids_when_available(self):
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        helper_script = (REPO_ROOT / "js" / "items-page-utils.js").read_text(encoding="utf-8")
+        utils_script = (REPO_ROOT / "js" / "utils.js").read_text(encoding="utf-8")
+        search_script = (REPO_ROOT / "js" / "site-search.js").read_text(encoding="utf-8")
+        weapons_script = (REPO_ROOT / "js" / "weapons-page.js").read_text(encoding="utf-8")
+        armors_script = (REPO_ROOT / "js" / "armors-page.js").read_text(encoding="utf-8")
+        perks_script = (REPO_ROOT / "js" / "perks-page.js").read_text(encoding="utf-8")
+
+        self.assertIn('(value === null || value === undefined ? "" : String(value))', helper_script)
+        self.assertIn("const itemId = getItemId ? getItemId(item) : \"\";", helper_script)
+        self.assertIn("const detailKey = itemId || name;", helper_script)
+        self.assertIn("encodeURIComponent(detailKey)", helper_script)
+        self.assertIn("item.id ?? item.name", weapons_script)
+        self.assertIn("item.id ?? item.name", armors_script)
+        self.assertIn("const raw = item && typeof item === \"object\" ? item.id ?? item.name : item;", utils_script)
+        self.assertIn("const routeKey = normalized.id !== null && normalized.id !== undefined ? normalized.id : slug;", search_script)
+        self.assertIn("const routeKey = item?.id ?? item?.ID ?? item?.name ?? item?.Name ?? \"\";", perks_script)
+
+    def test_allowlists_hide_dev_only_super_duper_bow(self):
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        allowlists = json.loads((REPO_ROOT / "data" / "allowlists.json").read_text(encoding="utf-8"))
+        weapons = json.loads((REPO_ROOT / "pages" / "items" / "weapons_data05.json").read_text(encoding="utf-8"))
+
+        blocked_weapons = {name.lower() for name in allowlists["weapons"]["block"]}
+        super_duper_bows = [row for row in weapons if row.get("name") == "Super Duper Bow"]
+
+        self.assertGreaterEqual(len(super_duper_bows), 1)
+        self.assertIn("super duper bow", blocked_weapons)
+
+    def test_current_site_data_marks_dev_only_super_duper_items_hidden(self):
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        weapons = json.loads((REPO_ROOT / "pages" / "items" / "weapons_data05.json").read_text(encoding="utf-8"))
+        super_duper_weapons = [
+            row for row in weapons if str(row.get("name", "")).lower().startswith("super duper")
+        ]
+
+        self.assertGreaterEqual(len(super_duper_weapons), 1)
+        for record in super_duper_weapons:
+            self.assertIs(True, record.get("codex_hidden"), record.get("name"))
+            self.assertEqual("dev_only_item_name", record.get("codex_hidden_reason"), record.get("name"))
+
+    def test_item_views_hide_export_classified_dev_only_records(self):
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        utils_script = (REPO_ROOT / "js" / "utils.js").read_text(encoding="utf-8")
+        weapons_script = (REPO_ROOT / "js" / "weapons-page.js").read_text(encoding="utf-8")
+        armors_script = (REPO_ROOT / "js" / "armors-page.js").read_text(encoding="utf-8")
+        planner_script = (REPO_ROOT / "js" / "build-planner.js").read_text(encoding="utf-8")
+        perks_script = (REPO_ROOT / "js" / "perks-page.js").read_text(encoding="utf-8")
+        monsters_script = (REPO_ROOT / "js" / "monsters-page.js").read_text(encoding="utf-8")
+        search_script = (REPO_ROOT / "js" / "site-search.js").read_text(encoding="utf-8")
+
+        self.assertIn("function isCodexHidden(record)", utils_script)
+        self.assertIn("function isRecordHidden(record, hiddenNames)", utils_script)
+        self.assertIn("isRecordHidden(weapon, hiddenWeaponNames)", weapons_script)
+        self.assertIn("isRecordHidden(row, hiddenArmorNames)", armors_script)
+        self.assertIn("isRecordHidden(weapon, hiddenWeaponNames)", planner_script)
+        self.assertIn("isRecordHidden(row, hiddenWeaponNames)", perks_script)
+        self.assertIn("isRecordHidden(row, hiddenArmorNames)", perks_script)
+        self.assertIn("isRecordHidden(w, hiddenWeaponNames)", monsters_script)
+        self.assertIn("isRecordHidden(a, hiddenArmorNames)", monsters_script)
+        self.assertIn("isRecordHidden(weapon, hiddenWeaponNames)", search_script)
+        self.assertIn("isRecordHidden(armor, hiddenArmorNames)", search_script)
 
     def test_weapons_page_uses_linked_names(self):
         from tools.codex_pipeline.config import REPO_ROOT
@@ -498,6 +562,44 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn("uniqueSet.has(normalizeMonsterId(monster.name))", script)
         self.assertIn("formatRequirement(item.skillRequirement)", script)
         self.assertIn("getWeaponSearchText(item).includes(searchTerm.toLowerCase())", script)
+
+    def test_weapons_page_displays_new_holy_and_dark_resistances(self):
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        script = (REPO_ROOT / "js" / "weapons-page.js").read_text(encoding="utf-8")
+
+        self.assertIn("holy: fields.holy_resistance", script)
+        self.assertIn("dark: fields.dark_resistance", script)
+        self.assertIn('makeResistEntry("holy", "Holy", res.holy)', script)
+        self.assertIn('makeResistEntry("dark", "Dark", res.dark)', script)
+        self.assertIn("formatNumber(res.holy ?? 0)", script)
+        self.assertIn("formatNumber(res.dark ?? 0)", script)
+
+    def test_weapons_page_shows_craftable_min_rarity_and_light_traits(self):
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        script = (REPO_ROOT / "js" / "weapons-page.js").read_text(encoding="utf-8")
+
+        self.assertIn("const hasCraftingFields", script)
+        self.assertIn("isCraftable: hasCraftingFields(fields)", script)
+        self.assertIn("emitsLight: Number(fields.emits_light) === 1", script)
+        self.assertIn("minRarity: fields.minimum_rarity", script)
+        self.assertIn('createDetailBadge("Craftable"', script)
+        self.assertIn('createDetailBadge("Emits Light"', script)
+        self.assertIn('["Min Rarity", formatRarityLabel(item.minRarity)]', script)
+        self.assertIn('["Max Rarity", formatValue(item.maxRarityLabel || item.rarity)]', script)
+
+    def test_weapons_page_uses_explicit_sale_value_override(self):
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        script = (REPO_ROOT / "js" / "weapons-page.js").read_text(encoding="utf-8")
+
+        self.assertIn("const resolveSellValue", script)
+        self.assertIn("const explicitSellValue = Number(fields.sale_value)", script)
+        self.assertIn("if (Number.isFinite(explicitSellValue) && explicitSellValue > 0)", script)
+        self.assertIn("return explicitSellValue;", script)
+        self.assertIn("return Number.isNaN(numericBuyValue) ? null : numericBuyValue / 2;", script)
+        self.assertIn("sellValue: resolveSellValue(fields, value)", script)
 
     def test_weapons_page_formats_empty_requirements_as_none(self):
         from tools.codex_pipeline.config import REPO_ROOT
@@ -660,8 +762,9 @@ class SiteValidationTests(unittest.TestCase):
 
         self.assertIn('class="slot-name slot-item-link"', html)
         self.assertIn("const getItemHref", script)
-        self.assertIn('if (item.kind === "weapon") return `pages/items/weapons.html?weapon=${encodeURIComponent(name)}`;', script)
-        self.assertIn('if (item.kind === "armor") return `pages/items/armors.html?armor=${encodeURIComponent(name)}`;', script)
+        self.assertIn("const itemKey = item.id !== null && item.id !== undefined ? item.id : name;", script)
+        self.assertIn("pages/items/weapons.html?weapon=${encodeURIComponent(itemKey)}", script)
+        self.assertIn("pages/items/armors.html?armor=${encodeURIComponent(itemKey)}", script)
         self.assertIn('const title = document.createElement("a");', script)
         self.assertIn('title.className = "suggestion-title suggestion-link";', script)
         self.assertIn("title.href = getItemHref(item);", script)
@@ -673,6 +776,18 @@ class SiteValidationTests(unittest.TestCase):
         self.assertNotIn(".slot-card .slot-extra-perk", css)
         self.assertNotIn(".slot-editor", css)
         self.assertIn(".formula-tip", css)
+
+    def test_build_planner_item_links_prefer_export_ids(self):
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        script = (REPO_ROOT / "js" / "build-planner.js").read_text(encoding="utf-8")
+        runner = (REPO_ROOT / "tools" / "codex_pipeline" / "site_smoke.mjs").read_text(encoding="utf-8")
+
+        self.assertIn("const itemKey = item.id !== null && item.id !== undefined ? item.id : name;", script)
+        self.assertIn("id: raw.id ?? raw.ID ?? null", script)
+        self.assertIn("pages/items/weapons.html?weapon=${encodeURIComponent(itemKey)}", script)
+        self.assertIn("pages/items/armors.html?armor=${encodeURIComponent(itemKey)}", script)
+        self.assertIn('const RUNE_SWORD_DETAIL_PATH = "pages/items/weapons.html?weapon=227";', runner)
 
     def test_build_planner_suggestions_include_compare_deltas(self):
         from tools.codex_pipeline.config import REPO_ROOT
@@ -806,6 +921,20 @@ class SiteValidationTests(unittest.TestCase):
         self.assertRegex(css, r"\.perk-grid \.stat-card:hover,\s*\.perk-grid \.stat-card:focus-within\s*\{[^}]*z-index:\s*30;")
         self.assertIn("@media (max-width: 640px)", css)
         self.assertIn("width: min(320px, calc(100vw - 4rem));", css)
+
+    def test_perks_page_hides_allowlisted_dev_items_from_sources(self):
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        html = (REPO_ROOT / "pages" / "systems" / "perks.html").read_text(encoding="utf-8")
+        script = (REPO_ROOT / "js" / "perks-page.js").read_text(encoding="utf-8")
+
+        self.assertIn('<script src="js/utils.js"></script>', html)
+        self.assertIn("const loadAllowlists", script)
+        self.assertIn("const hiddenWeaponNames = buildNameSet", script)
+        self.assertIn("const hiddenArmorNames = buildNameSet", script)
+        self.assertIn("const isRecordHidden", script)
+        self.assertIn("!isRecordHidden(row, hiddenWeaponNames)", script)
+        self.assertIn("!isRecordHidden(row, hiddenArmorNames)", script)
 
     def test_rarity_page_has_compact_reference_and_upgrade_roll(self):
         from tools.codex_pipeline import cli
@@ -2316,9 +2445,11 @@ class SiteValidationTests(unittest.TestCase):
         from tools.codex_pipeline.config import REPO_ROOT
 
         html_path = REPO_ROOT / "pages" / "stats" / "resistances.html"
+        data_path = REPO_ROOT / "pages" / "systems" / "resistances.json"
         css_path = REPO_ROOT / "css" / "resistances.css"
         script_path = REPO_ROOT / "js" / "resistances.js"
         html = html_path.read_text(encoding="utf-8")
+        data = json.loads(data_path.read_text(encoding="utf-8"))
         css = css_path.read_text(encoding="utf-8") if css_path.exists() else ""
         script = script_path.read_text(encoding="utf-8") if script_path.exists() else ""
 
@@ -2350,6 +2481,8 @@ class SiteValidationTests(unittest.TestCase):
             "Perks",
             "Related Pages",
             "60%",
+            "Holy",
+            "Dark",
             "Applied after armor",
             "data-resistance-value-slider",
             "data-resistance-incoming-slider",
@@ -2379,7 +2512,14 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn("function initResistanceCalculator", script)
         self.assertIn("function renderMonsterTypeResistances", script)
         self.assertIn("function updateNeutralVisibility", script)
+        self.assertIn("const RESISTANCES_SCHEMA_VERSION = 2", script)
         self.assertIn('document.addEventListener("DOMContentLoaded"', script)
+
+        self.assertEqual(2, data["schemaVersion"])
+        self.assertEqual(1.3, next(item["value"] for item in data["typeResistances"]["humanoid"] if item["element"] == "Dark"))
+        self.assertEqual(1.3, next(item["value"] for item in data["typeResistances"]["undead"] if item["element"] == "Holy"))
+        self.assertEqual(0.8, next(item["value"] for item in data["typeResistances"]["demon"] if item["element"] == "Dark"))
+        self.assertEqual(1.15, next(item["value"] for item in data["typeResistances"]["disease beast"] if item["element"] == "Holy"))
 
         perk_embed_script = (REPO_ROOT / "js" / "perks.js").read_text(encoding="utf-8")
         self.assertIn('name: "resistances"', perk_embed_script)
@@ -2488,6 +2628,48 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn("uniqueSet.has(normalizeMonsterId(monster.name))", script)
         self.assertIn("formatRequirement(item.playerLevelRequirement)", script)
         self.assertIn("getArmorSearchText(item).includes(searchTerm.toLowerCase())", script)
+
+    def test_armors_page_displays_and_filters_new_holy_and_dark_resistances(self):
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        script = (REPO_ROOT / "js" / "armors-page.js").read_text(encoding="utf-8")
+
+        self.assertIn("holy: fields.holy_resistance", script)
+        self.assertIn("dark: fields.dark_resistance", script)
+        self.assertIn('{ key: "holyResist", label: "Holy"', script)
+        self.assertIn('{ key: "darkResist", label: "Dark"', script)
+        self.assertIn('["holy", res.holy]', script)
+        self.assertIn('["dark", res.dark]', script)
+        self.assertIn('makeResistEntry("holy", "Holy", res.holy)', script)
+        self.assertIn('makeResistEntry("dark", "Dark", res.dark)', script)
+        self.assertIn("formatNumber(res.holy ?? 0)", script)
+        self.assertIn("formatNumber(res.dark ?? 0)", script)
+
+    def test_armors_page_shows_craftable_min_rarity_and_light_traits(self):
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        script = (REPO_ROOT / "js" / "armors-page.js").read_text(encoding="utf-8")
+
+        self.assertIn("const hasCraftingFields", script)
+        self.assertIn("isCraftable: hasCraftingFields(fields)", script)
+        self.assertIn("emitsLight: Number(fields.emits_light) === 1", script)
+        self.assertIn("minRarity: fields.minimum_rarity", script)
+        self.assertIn('createDetailBadge("Craftable"', script)
+        self.assertIn('createDetailBadge("Emits Light"', script)
+        self.assertIn('["Min Rarity", formatRarityLabel(item.minRarity)]', script)
+        self.assertIn('["Max Rarity", formatValue(item.maxRarity)]', script)
+
+    def test_armors_page_uses_explicit_sale_value_override(self):
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        script = (REPO_ROOT / "js" / "armors-page.js").read_text(encoding="utf-8")
+
+        self.assertIn("const resolveSellValue", script)
+        self.assertIn("const explicitSellValue = Number(fields.sale_value)", script)
+        self.assertIn("if (Number.isFinite(explicitSellValue) && explicitSellValue > 0)", script)
+        self.assertIn("return explicitSellValue;", script)
+        self.assertIn("return buyValue !== null ? buyValue / 2 : null;", script)
+        self.assertIn("sellValue: resolveSellValue(fields, valueNum)", script)
 
     def test_manifest_self_reference_is_an_error(self):
         from tools.codex_pipeline.validators.site import validate_manifest_entries

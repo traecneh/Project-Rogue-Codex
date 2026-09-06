@@ -546,14 +546,49 @@ def _format_player_field_paths(record, *, max_fields: int) -> str:
     return f"{', '.join(visible)}{suffix}"
 
 
+def _player_visible_added(diff) -> list[str]:
+    hidden = set(getattr(diff, "hidden_added", ()))
+    return [label for label in diff.added if label not in hidden]
+
+
+def _player_visible_removed(diff) -> list[str]:
+    hidden = set(getattr(diff, "hidden_removed", ()))
+    return [label for label in diff.removed if label not in hidden]
+
+
+def _player_visible_changed(diff) -> list:
+    hidden = set(getattr(diff, "hidden_changed_keys", ()))
+    return [record for record in diff.changed if record.key not in hidden]
+
+
+def _player_diff_counts(diff) -> tuple[int, int, int]:
+    return (
+        len(_player_visible_added(diff)),
+        len(_player_visible_removed(diff)),
+        len(_player_visible_changed(diff)),
+    )
+
+
+def _player_diff_has_changes(diff) -> bool:
+    return any(_player_diff_counts(diff))
+
+
 def _player_change_counts(report) -> tuple[int, int, int, int, int, int]:
     return (
-        sum(len(diff.added) for diff in report.diff_reports),
-        sum(len(diff.removed) for diff in report.diff_reports),
-        sum(len(diff.changed) for diff in report.diff_reports),
+        sum(_player_diff_counts(diff)[0] for diff in report.diff_reports),
+        sum(_player_diff_counts(diff)[1] for diff in report.diff_reports),
+        sum(_player_diff_counts(diff)[2] for diff in report.diff_reports),
         sum(len(asset.added) for asset in report.asset_reports),
         sum(len(asset.removed) for asset in report.asset_reports),
         sum(len(asset.changed) for asset in report.asset_reports),
+    )
+
+
+def _hidden_item_change_counts(report) -> tuple[int, int, int]:
+    return (
+        sum(len(hidden.added) for hidden in getattr(report, "hidden_item_reports", [])),
+        sum(len(hidden.removed) for hidden in getattr(report, "hidden_item_reports", [])),
+        sum(len(hidden.changed) for hidden in getattr(report, "hidden_item_reports", [])),
     )
 
 
@@ -571,16 +606,19 @@ def _print_player_change_summary(report, *, max_records: int = 5, max_fields: in
     )
 
     for diff in report.diff_reports:
-        if not diff.has_changes:
+        added = _player_visible_added(diff)
+        removed = _player_visible_removed(diff)
+        changed = _player_visible_changed(diff)
+        if not (added or removed or changed):
             continue
-        print(f"PLAYER DATA {diff.target.name}: +{len(diff.added)} -{len(diff.removed)} ~{len(diff.changed)}")
-        _print_player_summary_values("added", diff.added, max_records=max_records)
-        _print_player_summary_values("removed", diff.removed, max_records=max_records)
-        for record in diff.changed[:max_records]:
+        print(f"PLAYER DATA {diff.target.name}: +{len(added)} -{len(removed)} ~{len(changed)}")
+        _print_player_summary_values("added", added, max_records=max_records)
+        _print_player_summary_values("removed", removed, max_records=max_records)
+        for record in changed[:max_records]:
             fields = _format_player_field_paths(record, max_fields=max_fields)
             print(f"  changed: {record.label}: {fields}")
-        if len(diff.changed) > max_records:
-            print(f"  changed: ... {len(diff.changed) - max_records} more")
+        if len(changed) > max_records:
+            print(f"  changed: ... {len(changed) - max_records} more")
 
     for asset in report.asset_reports:
         if not asset.has_changes:
@@ -595,6 +633,7 @@ def _review_note_count(report) -> int:
     count = len(report.validation_issues) + len(report.export_errors) + len(report.skipped_sections)
     count += sum(1 for check in report.source_checks if not check.ok)
     count += sum(len(asset.issues) for asset in report.asset_reports)
+    count += sum(1 for hidden in getattr(report, "hidden_item_reports", []) if hidden.has_changes)
     if report.drop_report is not None:
         count += len(report.drop_report.validation_issues)
     return count
@@ -612,13 +651,17 @@ def _format_apply_decision(report) -> str:
 
 def _print_game_update_review_checklist(report) -> None:
     data_added, data_removed, data_changed, image_added, image_removed, image_changed = _player_change_counts(report)
+    hidden_added, hidden_removed, hidden_changed = _hidden_item_change_counts(report)
     status = "READY" if report.safe_to_sync else "BLOCKED"
     print(f"GAME UPDATE CHECKLIST: {status}")
     print(f"CHECK DATA: +{data_added} -{data_removed} ~{data_changed}")
     print(f"CHECK IMAGES: +{image_added} -{image_removed} ~{image_changed}")
+    print(f"CHECK HIDDEN ITEMS: +{hidden_added} -{hidden_removed} ~{hidden_changed}")
     print(f"CHECK REVIEW NOTES: {_review_note_count(report)}")
     print("[ ] Review player data changes")
     print("[ ] Review image changes")
+    if hidden_added or hidden_removed or hidden_changed:
+        print("[ ] Review hidden/dev-only item audit")
     print("[ ] Review warnings or skipped sections")
     print(f"[ ] Confirm --apply decision: {_format_apply_decision(report)}")
 
@@ -648,24 +691,27 @@ def build_game_update_summary_markdown(report, *, max_records: int = 12, max_fie
         "## Data Changes",
     ]
 
-    data_sections = [diff for diff in report.diff_reports if diff.has_changes]
+    data_sections = [diff for diff in report.diff_reports if _player_diff_has_changes(diff)]
     if not data_sections:
         lines.append("- No player-facing data changes.")
     for diff in data_sections:
+        added = _player_visible_added(diff)
+        removed = _player_visible_removed(diff)
+        changed = _player_visible_changed(diff)
         lines.extend(
             [
                 "",
                 f"### {_target_heading(diff.target.name)}",
-                f"- Totals: +{len(diff.added)} -{len(diff.removed)} ~{len(diff.changed)}",
+                f"- Totals: +{len(added)} -{len(removed)} ~{len(changed)}",
             ]
         )
-        _extend_markdown_values(lines, "Added", diff.added, max_records=max_records)
-        _extend_markdown_values(lines, "Removed", diff.removed, max_records=max_records)
-        for record in diff.changed[:max_records]:
+        _extend_markdown_values(lines, "Added", added, max_records=max_records)
+        _extend_markdown_values(lines, "Removed", removed, max_records=max_records)
+        for record in changed[:max_records]:
             fields = _format_player_field_paths(record, max_fields=max_fields)
             lines.append(f"- Changed: {record.label}: {fields}")
-        if len(diff.changed) > max_records:
-            lines.append(f"- Changed: ... {len(diff.changed) - max_records} more")
+        if len(changed) > max_records:
+            lines.append(f"- Changed: ... {len(changed) - max_records} more")
 
     lines.extend(["", "## Image Changes"])
     image_sections = [asset for asset in report.asset_reports if asset.has_changes]
@@ -682,6 +728,36 @@ def build_game_update_summary_markdown(report, *, max_records: int = 12, max_fie
         _extend_markdown_values(lines, "Added", asset.added, max_records=max_records)
         _extend_markdown_values(lines, "Removed", asset.removed, max_records=max_records)
         _extend_markdown_values(lines, "Changed", asset.changed, max_records=max_records)
+
+    hidden_sections = getattr(report, "hidden_item_reports", [])
+    if hidden_sections:
+        lines.extend(["", "## Hidden Item Audit"])
+        for hidden in hidden_sections:
+            lines.extend(
+                [
+                    "",
+                    f"### {_target_heading(hidden.target_name)}",
+                    f"- Generated hidden: {hidden.generated_hidden_count}",
+                ]
+            )
+            for summary in hidden.generated_reasons:
+                lines.append(f"- Reason {summary.reason}: {summary.count}")
+            for record in hidden.added[:max_records]:
+                lines.append(f"- Added hidden: {record.label} [{record.reason}]")
+            if len(hidden.added) > max_records:
+                lines.append(f"- Added hidden: ... {len(hidden.added) - max_records} more")
+            for record in hidden.removed[:max_records]:
+                lines.append(f"- Removed hidden: {record.label} [{record.reason}]")
+            if len(hidden.removed) > max_records:
+                lines.append(f"- Removed hidden: ... {len(hidden.removed) - max_records} more")
+            for change in hidden.changed[:max_records]:
+                lines.append(f"- Reason changed: {change.label}: {change.old_reason} -> {change.new_reason}")
+            if len(hidden.changed) > max_records:
+                lines.append(f"- Reason changed: ... {len(hidden.changed) - max_records} more")
+            for change in hidden.field_changed[:max_records]:
+                lines.append(f"- Field changed: {change.label}: {', '.join(change.field_paths)}")
+            if len(hidden.field_changed) > max_records:
+                lines.append(f"- Field changed: ... {len(hidden.field_changed) - max_records} more")
 
     review_notes = [
         f"{issue.severity.upper()}: {issue.message}"
@@ -1076,6 +1152,35 @@ def _print_asset_report_summaries(reports) -> None:
             print(f"ASSET ISSUE {issue.severity.upper()}: {issue.message}")
 
 
+def _print_hidden_item_reports(reports, *, max_records: int = 12) -> None:
+    for report in reports:
+        field_change_text = f", field changes={len(report.field_changed)}" if report.field_changed else ""
+        print(
+            f"HIDDEN ITEMS {report.target_name}: "
+            f"+{len(report.added)} -{len(report.removed)} ~{len(report.changed)}, "
+            f"generated hidden={report.generated_hidden_count}{field_change_text} "
+            f"({report.generated_path} -> {report.site_path})"
+        )
+        for summary in report.generated_reasons:
+            print(f"  reason {summary.reason}: {summary.count}")
+        for record in report.added[:max_records]:
+            print(f"  + {record.label} [{record.reason}]")
+        if len(report.added) > max_records:
+            print(f"  + ... {len(report.added) - max_records} more")
+        for record in report.removed[:max_records]:
+            print(f"  - {record.label} [{record.reason}]")
+        if len(report.removed) > max_records:
+            print(f"  - ... {len(report.removed) - max_records} more")
+        for change in report.changed[:max_records]:
+            print(f"  ~ {change.label}: {change.old_reason} -> {change.new_reason}")
+        if len(report.changed) > max_records:
+            print(f"  ~ ... {len(report.changed) - max_records} more")
+        for change in report.field_changed[:max_records]:
+            print(f"  data ~ {change.label}: {', '.join(change.field_paths)}")
+        if len(report.field_changed) > max_records:
+            print(f"  data ~ ... {len(report.field_changed) - max_records} more")
+
+
 def _print_asset_sync_reports(reports) -> None:
     for report in reports:
         mode = "DRY-RUN" if report.dry_run else "APPLIED"
@@ -1122,6 +1227,9 @@ def _print_game_update_report(report) -> None:
         _print_asset_report_summaries(report.asset_reports)
     if report.drop_report is not None:
         _print_drop_report_summary(report.drop_report)
+    hidden_reports = getattr(report, "hidden_item_reports", [])
+    if hidden_reports:
+        _print_hidden_item_reports(hidden_reports)
 
     for issue in report.validation_issues:
         print(f"UPDATE ISSUE {issue.severity.upper()}: {issue.message}")

@@ -392,6 +392,18 @@ const loadAllowlists = () => {
   return allowlistsPromise;
 };
 
+const isRecordHidden = (record, hiddenNames) => {
+  const utils = window.RogueCodexUtils;
+  if (utils && typeof utils.isRecordHidden === "function") {
+    return utils.isRecordHidden(record, hiddenNames);
+  }
+  const name = String(record?.name || record?.Name || "").toLowerCase();
+  return (
+    Boolean(record && (record.codex_hidden === true || record.codexHidden === true)) ||
+    Boolean(hiddenNames?.has(name))
+  );
+};
+
 const normalizeMonsterName = (monster) => normalizePerkName(monster && (monster.name || monster.Name));
 
 const isMonsterAllowed = (monster) => {
@@ -477,10 +489,21 @@ const normalizeNavWeapon = (weapon) => {
     ? fields.specialty_label || String(fields.specialty)
     : weapon.specialty || weapon.specialty_label || null;
   const perk = fields.perk ? fields.perk_label || fields.perk : weapon.perk || weapon.perk_label || null;
+  const resistances = {
+    fire: toNumberOrNull(fields.fire_resistance ?? weapon.fireResist),
+    cold: toNumberOrNull(fields.cold_resistance ?? weapon.coldResist),
+    electric: toNumberOrNull(fields.electric_resistance ?? weapon.electricResist),
+    acid: toNumberOrNull(fields.acid_resistance ?? weapon.acidResist),
+    poison: toNumberOrNull(fields.poison_resistance ?? weapon.poisonResist),
+    disease: toNumberOrNull(fields.disease_resistance ?? weapon.diseaseResist),
+    holy: toNumberOrNull(fields.holy_resistance ?? fields.unknown_88 ?? weapon.holyResist),
+    dark: toNumberOrNull(fields.dark_resistance ?? fields.unknown_89 ?? weapon.darkResist),
+  };
 
   return {
     id: weapon.id ?? weapon.ID ?? slug,
     name: name || slug,
+    codexHidden: Boolean(weapon.codex_hidden === true || weapon.codexHidden === true),
     slug,
     level,
     attackSpeed,
@@ -491,6 +514,7 @@ const normalizeNavWeapon = (weapon) => {
     element,
     specialty,
     perk,
+    resistances,
   };
 };
 
@@ -518,11 +542,14 @@ const normalizeNavArmor = (armor) => {
     acid: toNumberOrNull(fields.acid_resistance ?? armor.acidResist),
     poison: toNumberOrNull(fields.poison_resistance ?? armor.poisonResist),
     disease: toNumberOrNull(fields.disease_resistance ?? armor.diseaseResist),
+    holy: toNumberOrNull(fields.holy_resistance ?? fields.unknown_81 ?? armor.holyResist),
+    dark: toNumberOrNull(fields.dark_resistance ?? fields.unknown_85 ?? armor.darkResist),
   };
 
   return {
     id: armor.id ?? armor.ID ?? slug,
     name: name || slug,
+    codexHidden: Boolean(armor.codex_hidden === true || armor.codexHidden === true),
     slug,
     level,
     slot,
@@ -686,18 +713,28 @@ function loadMonsterSearchIndex() {
 function buildWeaponSearchEntry(weapon) {
   const normalized = weapon && weapon.slug && !weapon.fields ? weapon : normalizeNavWeapon(weapon);
   if (!normalized) return null;
-  const { slug, name, element, type, level, dps, specialty, perk } = normalized;
+  const { slug, name, element, type, level, dps, specialty, perk, resistances } = normalized;
+  const routeKey = normalized.id !== null && normalized.id !== undefined ? normalized.id : slug;
   const parts = [];
   if (Number.isFinite(level)) parts.push(`Lvl ${Math.round(level)}`);
   if (Number.isFinite(dps)) parts.push(`DPS ${dps}`);
   if (type) parts.push(titleCaseWords(String(type)));
   if (element && String(element).toLowerCase() !== "none") parts.push(`Element: ${element}`);
 
-  const keywords = [name, slug, element, type, specialty, perk].filter(Boolean);
+  const resistKeys = resistances
+    ? Object.entries(resistances)
+        .filter(([, val]) => Number.isFinite(val) && val !== 0)
+        .map(([key]) => titleCaseWords(key))
+    : [];
+  if (resistKeys.length) {
+    parts.push(`Resists: ${resistKeys.join(", ")}`);
+  }
+
+  const keywords = [name, slug, element, type, specialty, perk, ...resistKeys].filter(Boolean);
 
   return normalizeSearchEntry({
     title: name || slug,
-    url: `pages/items/weapons.html?weapon=${encodeURIComponent(slug)}`,
+    url: `pages/items/weapons.html?weapon=${encodeURIComponent(routeKey)}`,
     category: "Weapons",
     description: parts.join(" | ") || "Weapon stats, DPS, speed, and perks.",
     keywords,
@@ -720,6 +757,7 @@ function buildArmorSearchEntry(armor) {
     corruptedPerk,
     resistances,
   } = normalized;
+  const routeKey = normalized.id !== null && normalized.id !== undefined ? normalized.id : slug;
 
   const parts = [];
   if (Number.isFinite(level)) parts.push(`Lvl ${Math.round(level)}`);
@@ -740,7 +778,7 @@ function buildArmorSearchEntry(armor) {
 
   return normalizeSearchEntry({
     title: name || slug,
-    url: `pages/items/armors.html?armor=${encodeURIComponent(name || slug)}`,
+    url: `pages/items/armors.html?armor=${encodeURIComponent(routeKey)}`,
     category: "Armors",
     description: parts.join(" | ") || "Armor stats, resistances, slots, and perks.",
     keywords,
@@ -843,7 +881,7 @@ function loadArmorSearchIndex() {
     .then(([, data]) => {
       const list = Array.isArray(data) ? data : [];
       const filtered = list.filter(
-        (armor) => !hiddenArmorNames.has(String(armor.name || armor.Name || "").toLowerCase())
+        (armor) => !isRecordHidden(armor, hiddenArmorNames)
       );
       ARMOR_SEARCH_INDEX = filtered.map((armor) => buildArmorSearchEntry(armor)).filter(Boolean);
       return ARMOR_SEARCH_INDEX;
@@ -918,7 +956,7 @@ function loadWeaponData() {
     .then((data) => {
       const list = Array.isArray(data) ? data : [];
       const filtered = list.filter(
-        (weapon) => !hiddenWeaponNames.has(String(weapon.name || weapon.Name || "").toLowerCase())
+        (weapon) => !isRecordHidden(weapon, hiddenWeaponNames)
       );
       return filtered.map((weapon) => normalizeNavWeapon(weapon)).filter(Boolean);
     })

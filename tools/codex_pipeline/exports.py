@@ -20,6 +20,7 @@ from tools.codex_pipeline.config import (
     USEABLES_DATA_PATH,
     WEAPONS_DATA_PATH,
 )
+from tools.codex_pipeline.extractors.item_metadata import apply_item_visibility_metadata
 from tools.codex_pipeline.packed_json import (
     find_packed_vpack_source,
     is_packed_json_target_supported,
@@ -85,6 +86,9 @@ class DataDiffReport:
     added: list[str]
     removed: list[str]
     changed: list[RecordChange]
+    hidden_added: tuple[str, ...] = ()
+    hidden_removed: tuple[str, ...] = ()
+    hidden_changed_keys: tuple[str, ...] = ()
 
     @property
     def has_changes(self) -> bool:
@@ -277,6 +281,9 @@ def _normalize_generated_records_for_site(
         if not isinstance(fields, dict):
             continue
 
+        if target.name in {"weapons", "armors"}:
+            apply_item_visibility_metadata(record)
+
         if normalized_field_names:
             site_record = site_by_key.get(_record_key(record, index))
             site_fields = site_record.get("fields", {}) if isinstance(site_record, dict) else {}
@@ -316,6 +323,14 @@ def _normalize_generated_output_for_site(target: ExportTarget, generated_path: P
 
 def _display_records(indexed: dict[str, Any], keys: Iterable[str]) -> list[str]:
     return [_record_label(indexed[key], key) for key in keys]
+
+
+def _is_codex_hidden(record: Any) -> bool:
+    return isinstance(record, dict) and (record.get("codex_hidden") is True or record.get("codexHidden") is True)
+
+
+def _display_hidden_records(indexed: dict[str, Any], keys: Iterable[str]) -> tuple[str, ...]:
+    return tuple(_record_label(indexed[key], key) for key in keys if _is_codex_hidden(indexed[key]))
 
 
 def _sort_record_key(key: str) -> tuple[int, str]:
@@ -367,6 +382,7 @@ def build_generated_diff_report(target: ExportTarget, *, output_dir: Path = GENE
     removed_keys = sorted(site_keys - generated_keys, key=_sort_record_key)
     common_keys = sorted(generated_keys & site_keys, key=_sort_record_key)
     changed: list[RecordChange] = []
+    hidden_changed_keys: list[str] = []
     for key in common_keys:
         changes = _field_changes(site_by_key[key], generated_by_key[key])
         if changes:
@@ -377,6 +393,8 @@ def build_generated_diff_report(target: ExportTarget, *, output_dir: Path = GENE
                     field_changes=changes,
                 )
             )
+            if _is_codex_hidden(site_by_key[key]) or _is_codex_hidden(generated_by_key[key]):
+                hidden_changed_keys.append(key)
 
     return DataDiffReport(
         target=target,
@@ -385,6 +403,9 @@ def build_generated_diff_report(target: ExportTarget, *, output_dir: Path = GENE
         added=_display_records(generated_by_key, added_keys),
         removed=_display_records(site_by_key, removed_keys),
         changed=changed,
+        hidden_added=_display_hidden_records(generated_by_key, added_keys),
+        hidden_removed=_display_hidden_records(site_by_key, removed_keys),
+        hidden_changed_keys=tuple(hidden_changed_keys),
     )
 
 

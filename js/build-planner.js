@@ -73,6 +73,8 @@
           cold: "#7cc9ff",
           acid: "#b38b00",
           disease: "#ff9c42",
+          holy: "#f2d36b",
+          dark: "#a88cff",
         };
 
         const RACES = [
@@ -207,8 +209,9 @@
           if (!item) return "";
           const name = String(item.name || "").trim();
           if (!name) return "";
-          if (item.kind === "weapon") return `pages/items/weapons.html?weapon=${encodeURIComponent(name)}`;
-          if (item.kind === "armor") return `pages/items/armors.html?armor=${encodeURIComponent(name)}`;
+          const itemKey = item.id !== null && item.id !== undefined ? item.id : name;
+          if (item.kind === "weapon") return `pages/items/weapons.html?weapon=${encodeURIComponent(itemKey)}`;
+          if (item.kind === "armor") return `pages/items/armors.html?armor=${encodeURIComponent(itemKey)}`;
           return "";
         };
 
@@ -714,7 +717,9 @@
           if (isSlotZero(slotRaw)) return null;
           return {
             kind: "armor",
+            id: raw.id ?? raw.ID ?? null,
             name: raw.name || raw.Name,
+            codexHidden: Boolean(raw.codex_hidden === true || raw.codexHidden === true),
             slot: slotRaw || "",
             image: raw.image || raw.icon || raw.thumbnail || "",
             maxRarityLabel: fields.max_rarity_label || fields.max_rarity,
@@ -733,6 +738,8 @@
               acid: toNumber(fields.acid_resistance),
               poison: toNumber(fields.poison_resistance),
               disease: toNumber(fields.disease_resistance),
+              holy: toNumber(fields.holy_resistance),
+              dark: toNumber(fields.dark_resistance),
             },
             perk: fields.perk ? fields.perk_label || fields.perk : null,
             corruptedPerk: fields.corrupted_perk
@@ -755,7 +762,9 @@
           const dps = computeDps(fields.min_damage, fields.max_damage, fields.attack_speed);
           return {
             kind: "weapon",
+            id: raw.id ?? raw.ID ?? null,
             name: raw.name || raw.Name,
+            codexHidden: Boolean(raw.codex_hidden === true || raw.codexHidden === true),
             slot: "Weapon",
             image: raw.image || raw.icon || raw.thumbnail || "",
             maxRarityLabel: fields.max_rarity_label || fields.max_rarity,
@@ -774,6 +783,8 @@
               acid: toNumber(fields.acid_resistance),
               poison: toNumber(fields.poison_resistance),
               disease: toNumber(fields.disease_resistance),
+              holy: toNumber(fields.holy_resistance),
+              dark: toNumber(fields.dark_resistance),
             },
             perk: fields.perk ? fields.perk_label || fields.perk : null,
           };
@@ -789,6 +800,8 @@
             acid: "Acid",
             poison: "Poison",
             disease: "Disease",
+            holy: "Holy",
+            dark: "Dark",
           };
           Object.entries(labels).forEach(([key, label]) => {
             const value = toNumber(res ? res[key] : 0);
@@ -1083,7 +1096,7 @@
           const baseStatLimit = getBaseStatLimit(charLevel);
           const baseStatSpent = Math.max(0, baseStatTotal - BASE_STAT_START);
 
-          const resistTotals = ["fire", "cold", "electric", "acid", "poison", "disease"].reduce((acc, key) => {
+          const resistTotals = ["fire", "cold", "electric", "acid", "poison", "disease", "holy", "dark"].reduce((acc, key) => {
             acc[key] =
               selected.reduce((sum, item) => sum + toNumber(item.resistances?.[key]), 0) +
               selected.reduce((sum, item) => sum + toNumber(item.bonusResists?.[key]), 0);
@@ -1454,6 +1467,12 @@
             ));
         const loadAllowlists =
           typeof utils.loadAllowlists === "function" ? () => utils.loadAllowlists() : () => Promise.resolve(null);
+        const isRecordHidden =
+          typeof utils.isRecordHidden === "function"
+            ? (record, hiddenNames) => utils.isRecordHidden(record, hiddenNames)
+            : (record, hiddenNames) =>
+                Boolean(record && (record.codex_hidden === true || record.codexHidden === true)) ||
+                Boolean(hiddenNames?.has((record?.name || record?.Name || "").toLowerCase()));
         let hiddenWeaponNames = new Set();
         let hiddenArmorNames = new Set();
 
@@ -1480,12 +1499,12 @@
               dataset.weapons = Array.isArray(weapons)
                 ? weapons
                     .map((w) => toWeapon(w))
-                    .filter((weapon) => weapon && !hiddenWeaponNames.has((weapon.name || "").toLowerCase()))
+                    .filter((weapon) => weapon && !isRecordHidden(weapon, hiddenWeaponNames))
                 : [];
               dataset.armors = Array.isArray(armors)
                 ? armors
                     .map((a) => toArmor(a))
-                    .filter((armor) => armor && !hiddenArmorNames.has((armor.name || "").toLowerCase()))
+                    .filter((armor) => armor && !isRecordHidden(armor, hiddenArmorNames))
                 : [];
               const perks = Array.isArray(perksIndex?.perks) ? perksIndex.perks : [];
               const seen = new Set();

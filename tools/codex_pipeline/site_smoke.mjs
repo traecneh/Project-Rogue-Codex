@@ -8,9 +8,8 @@ const args = parseArgs(process.argv.slice(2));
 const root = path.resolve(args.root || path.join(path.dirname(fileURLToPath(import.meta.url)), "..", ".."));
 const timeoutMs = Number(args.timeoutMs || 20000);
 const configuredBaseUrl = args.baseUrl ? normalizeBaseUrl(args.baseUrl) : null;
-const RUNE_SWORD_DETAIL_PATH = "pages/items/weapons.html?weapon=Rune%20Sword";
+const RUNE_SWORD_DETAIL_PATH = "pages/items/weapons.html?weapon=227";
 const PERKS_RUNIC_PATH = "/pages/systems/perks.html?perk=Runic";
-const PROJECT_ROGUE_FILTER_SELECTOR = '[data-era-filter="project-rogue"]';
 
 const smokeSpecs = [
   {
@@ -42,7 +41,7 @@ const smokeSpecs = [
     detailSelector: "#item-details",
     rowSelector: "#items-body tr[data-id]",
     detailLinkSelector: "",
-    duplicateRoute: { id: "36", detailName: "Demonic Remains" },
+    duplicateRoute: { id: "36", detailName: "Plaguelight Cinder" },
     queryKey: "collectable",
   },
   {
@@ -92,7 +91,7 @@ async function main() {
     }
     try {
       await runHomeSpec(browser, baseUrl);
-      console.log("SMOKE OK home: timeline filter, related links");
+      console.log("SMOKE OK home: timeline focus, related links");
     } catch (error) {
       failures.push(`SMOKE ERROR home: ${formatError(error)}`);
     }
@@ -332,7 +331,12 @@ async function runSpec(browser, baseUrl, spec) {
       throw new Error(`row click selected "${routedName}" instead of "${clickedName}"`);
     }
 
-    await page.locator("#details-close").click();
+    if (await page.locator(`${spec.detailSelector}.inline-detail`).count()) {
+      if (await page.locator("#details-close").isVisible()) throw new Error("desktop inline details still show a close button");
+      await page.locator("tr.detail-selected-row > td").first().click();
+    } else {
+      await page.locator("#details-close").click();
+    }
     await page.waitForFunction((queryKey) => !new URL(window.location.href).searchParams.has(queryKey), spec.queryKey);
     const stillVisible = await page.locator(`${spec.detailSelector}.show`).count();
     if (stillVisible) throw new Error("close route left detail panel visible");
@@ -391,14 +395,7 @@ async function runHomeSpec(browser, baseUrl) {
       }
     }
 
-    await assertHomeTimelineFilter(page, "all", 10, ["Dransik Classic", "Fresh Wipes & Live Upkeep"], []);
-    await page.locator(PROJECT_ROGUE_FILTER_SELECTOR).waitFor({ state: "visible" });
-    await assertHomeTimelineFilter(page, "project-rogue", 2, ["Project Rogue Begins", "Fresh Wipes & Live Upkeep"], [
-      "Dransik Classic",
-    ]);
-    await assertHomeTimelineFilter(page, "origins", 3, ["Dransik Classic", "Ashen Empires Era"], [
-      "Project Rogue Begins",
-    ]);
+    await assertHomeTimelineFocus(page);
     await assertMobilePageFirstNavigation(page, baseUrl, "/index.html");
 
     if (runtimeErrors.length) {
@@ -409,36 +406,36 @@ async function runHomeSpec(browser, baseUrl) {
   }
 }
 
-async function assertHomeTimelineFilter(page, filterName, expectedCount, visibleText, hiddenText) {
-  await page.locator(`[data-era-filter="${filterName}"]`).click();
-  await page.waitForFunction(
-    ({ count }) => document.querySelectorAll("[data-home-timeline-item]:not([hidden])").length === count,
-    { count: expectedCount },
-    { timeout: timeoutMs }
-  );
-  const pressed = await page.locator(`[data-era-filter="${filterName}"]`).getAttribute("aria-pressed");
-  if (pressed !== "true") {
-    throw new Error(`Home filter "${filterName}" should be aria-pressed=true, got "${pressed}"`);
-  }
-  const countText = (await page.locator("[data-home-result-count]").textContent()).trim();
-  if (!countText.startsWith(String(expectedCount))) {
-    throw new Error(`Home filter "${filterName}" count expected ${expectedCount}, got "${countText}"`);
-  }
-  const visibleTimelineText = (await page.locator(".home-timeline").textContent()).trim();
-  for (const expected of visibleText) {
-    if (!visibleTimelineText.includes(expected)) {
-      throw new Error(`Home filter "${filterName}" hidden expected visible text "${expected}": "${visibleTimelineText}"`);
-    }
-  }
-  for (const unexpected of hiddenText) {
-    const stillVisible = await page
-      .locator(`[data-home-timeline-item]:not([hidden])`)
-      .filter({ hasText: unexpected })
-      .count();
-    if (stillVisible) {
-      throw new Error(`Home filter "${filterName}" should hide "${unexpected}"`);
-    }
-  }
+async function assertHomeTimelineFocus(page) {
+  if (await page.locator('[data-era-filter]').count()) throw new Error('Timeline filters should be removed');
+  if (await page.locator('[data-home-timeline-item]:not([hidden])').count() !== 23) throw new Error('All timeline entries should remain visible');
+  const target = page.locator('[data-home-timeline-item]').nth(5);
+  await target.evaluate(item => item.scrollIntoView({block: 'center'}));
+  await page.waitForFunction(() => document.querySelectorAll('[data-home-timeline-item]')[5].classList.contains('is-timeline-focus'));
+  const scales = await page.locator('[data-home-timeline-item]').evaluateAll(items => items.map(item => Number(item.style.getPropertyValue('--timeline-scale'))));
+  if (scales[5] !== 1 || scales[4] >= 1 || scales[3] >= scales[4]) throw new Error('Timeline focus should taper neighboring entries');
+  await page.emulateMedia({reducedMotion: 'reduce'});
+  await page.waitForFunction(() => !document.querySelector('.home-timeline').classList.contains('timeline-focus-enabled'));
+  await page.emulateMedia({reducedMotion: 'no-preference'});
+  const story = page.locator('#dransik-commercial .history-story');
+  await story.locator('summary').click();
+  await story.locator('.history-story-body').waitFor({state: 'visible'});
+  if (!(await story.textContent()).includes('March 2003 was not the Ashen Empires rebrand')) throw new Error('Missing chronology correction');
+  if (!(await story.locator('.history-sources a').count())) throw new Error('Missing history sources');
+  await page.locator('#modern-vorlia').evaluate(item => item.scrollIntoView({block: 'center'}));
+  await page.waitForFunction(() => getComputedStyle(document.querySelector('#dransik-commercial .history-story')).opacity === '1');
+  await page.locator('#modern-vorlia summary').click();
+  await page.locator('#modern-vorlia .history-permalink').click();
+  await page.reload({waitUntil: 'load'});
+  await page.locator('#modern-vorlia .history-story-body').waitFor({state: 'visible'});
+  if (!(await page.locator('#modern-vorlia').textContent()).includes('Unconfirmed relationship')) throw new Error('Missing provenance qualification');
+  await page.locator('#modern-vorlia summary').press('Escape');
+  await page.locator('#modern-vorlia .history-story-body').waitFor({state: 'hidden'});
+  await page.setViewportSize({width: 390, height: 844});
+  await page.locator('#modern-vorlia summary').click();
+  await page.locator('#modern-vorlia .history-story-body').waitFor({state: 'visible'});
+  if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)) throw new Error('History overflows mobile viewport');
+  await page.setViewportSize({width: 1280, height: 900});
 }
 
 async function runBuildPlannerSpec(browser, baseUrl) {
@@ -2342,7 +2339,7 @@ async function assertResistanceCalculator(page) {
   }
 
   const humanoidText = (await page.locator('[data-resistance-type-card="humanoid"]').textContent()).trim();
-  for (const expected of ["Humanoid", "Poison", "Disease", "Acid", "Cold"]) {
+  for (const expected of ["Humanoid", "Poison", "Disease", "Acid", "Dark", "Cold"]) {
     if (!humanoidText.includes(expected)) {
       throw new Error(`Humanoid resistance card missing "${expected}": "${humanoidText}"`);
     }
@@ -3166,7 +3163,7 @@ async function assertPerkSources(page) {
     throw new Error(`Runic perk source list missing expected item links: "${sourceText}"`);
   }
   const weaponHref = await page
-    .locator('[data-perk-name="Runic"] .perk-source-chip[href*="weapons.html?weapon=Rune%20Sword"]')
+    .locator('[data-perk-name="Runic"] .perk-source-chip[href*="weapons.html?weapon=227"]')
     .getAttribute("href");
   if (!weaponHref) {
     throw new Error("Runic perk source list missing Rune Sword detail link");

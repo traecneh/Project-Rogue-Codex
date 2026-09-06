@@ -303,6 +303,12 @@
       ));
   const loadAllowlists =
     typeof utils.loadAllowlists === "function" ? () => utils.loadAllowlists() : () => Promise.resolve(null);
+  const isRecordHidden =
+    typeof utils.isRecordHidden === "function"
+      ? (record, hiddenNames) => utils.isRecordHidden(record, hiddenNames)
+      : (record, hiddenNames) =>
+          Boolean(record && (record.codex_hidden === true || record.codexHidden === true)) ||
+          Boolean(hiddenNames?.has((record?.name || record?.Name || "").toLowerCase()));
   const loadDropSources =
     typeof utils.loadDropSources === "function" ? () => utils.loadDropSources() : () => Promise.resolve(null);
   let dropSources =
@@ -376,7 +382,7 @@
     return Array.from(new Set(candidates.filter(Boolean)));
   };
 
-  const RESISTANCES_SCHEMA_VERSION = 1;
+  const RESISTANCES_SCHEMA_VERSION = 2;
   const resistancesUrl = (() => {
     try {
       const resolved = new URL("../systems/resistances.json", window.location.href);
@@ -394,6 +400,8 @@
       { element: "Poison", value: 1.25 },
       { element: "Disease", value: 1.25 },
       { element: "Acid", value: 1.15 },
+      { element: "Dark", value: 1.3 },
+      { element: "Holy", value: 1.0 },
       { element: "Fire", value: 1.0 },
       { element: "Electric", value: 1.0 },
       { element: "Cold", value: 0.9 },
@@ -401,6 +409,8 @@
     giant: [
       { element: "Electric", value: 1.25 },
       { element: "Cold", value: 1.15 },
+      { element: "Dark", value: 1.15 },
+      { element: "Holy", value: 1.0 },
       { element: "Disease", value: 1.0 },
       { element: "Fire", value: 0.8 },
       { element: "Acid", value: 0.8 },
@@ -410,6 +420,8 @@
       { element: "Poison", value: 1.25 },
       { element: "Disease", value: 1.25 },
       { element: "Fire", value: 1.1 },
+      { element: "Dark", value: 1.15 },
+      { element: "Holy", value: 1.0 },
       { element: "Cold", value: 1.0 },
       { element: "Electric", value: 1.0 },
       { element: "Acid", value: 1.0 },
@@ -418,28 +430,36 @@
       { element: "Cold", value: 1.1 },
       { element: "Acid", value: 1.1 },
       { element: "Disease", value: 1.1 },
+      { element: "Dark", value: 1.25 },
+      { element: "Holy", value: 1.0 },
       { element: "Poison", value: 1.0 },
       { element: "Fire", value: 0.9 },
       { element: "Electric", value: 0.8 },
     ],
     undead: [
+      { element: "Holy", value: 1.3 },
       { element: "Fire", value: 1.25 },
       { element: "Electric", value: 1.15 },
       { element: "Cold", value: 1.0 },
       { element: "Disease", value: 1.0 },
+      { element: "Dark", value: 0.8 },
       { element: "Acid", value: 0.8 },
       { element: "Poison", value: 0.8 },
     ],
     demon: [
       { element: "Cold", value: 1.3 },
+      { element: "Holy", value: 1.25 },
       { element: "Electric", value: 1.15 },
       { element: "Acid", value: 1.0 },
       { element: "Poison", value: 1.0 },
       { element: "Disease", value: 1.0 },
+      { element: "Dark", value: 0.8 },
       { element: "Fire", value: 0.7 },
     ],
     "fire beast": [
       { element: "Cold", value: 1.3 },
+      { element: "Holy", value: 1.0 },
+      { element: "Dark", value: 1.0 },
       { element: "Electric", value: 1.0 },
       { element: "Acid", value: 1.0 },
       { element: "Poison", value: 1.0 },
@@ -449,6 +469,8 @@
     "ice beast": [
       { element: "Fire", value: 1.3 },
       { element: "Acid", value: 1.2 },
+      { element: "Dark", value: 1.15 },
+      { element: "Holy", value: 1.0 },
       { element: "Electric", value: 1.0 },
       { element: "Poison", value: 1.0 },
       { element: "Disease", value: 1.0 },
@@ -457,6 +479,8 @@
     "electric beast": [
       { element: "Acid", value: 1.3 },
       { element: "Cold", value: 1.15 },
+      { element: "Dark", value: 1.15 },
+      { element: "Holy", value: 1.0 },
       { element: "Fire", value: 1.0 },
       { element: "Poison", value: 1.0 },
       { element: "Disease", value: 1.0 },
@@ -465,6 +489,8 @@
     "poison beast": [
       { element: "Acid", value: 1.25 },
       { element: "Fire", value: 1.2 },
+      { element: "Holy", value: 1.1 },
+      { element: "Dark", value: 1.0 },
       { element: "Cold", value: 1.0 },
       { element: "Electric", value: 1.0 },
       { element: "Disease", value: 1.0 },
@@ -472,7 +498,9 @@
     ],
     "disease beast": [
       { element: "Fire", value: 1.25 },
+      { element: "Holy", value: 1.15 },
       { element: "Electric", value: 1.1 },
+      { element: "Dark", value: 1.0 },
       { element: "Cold", value: 1.0 },
       { element: "Acid", value: 1.0 },
       { element: "Poison", value: 1.0 },
@@ -724,7 +752,9 @@ const renderEmpty = (message) => {
     const dps = computeDps(min, max, speed);
 
     return {
+      id: raw.id ?? raw.ID ?? null,
       name: raw.name || fields.name_label || "Unknown Weapon",
+      codexHidden: Boolean(raw.codex_hidden === true || raw.codexHidden === true),
       dps,
       level: toNumber(fields.level_requirement ?? raw.level),
       elementalDamageType: fields.element_label || fields.element || raw.elementalDamageType || raw.element,
@@ -746,6 +776,7 @@ const renderEmpty = (message) => {
     return {
       id: raw.id || raw.name || "",
       name: raw.name || "Unknown Armor",
+      codexHidden: Boolean(raw.codex_hidden === true || raw.codexHidden === true),
       slot,
       slotNorm: normalizeSlot(slot),
       level: toNumber(fields.level),
@@ -781,7 +812,7 @@ const renderEmpty = (message) => {
     const label = document.createElement("a");
     label.className = "detail-tooltip-label";
     label.textContent = entry.name;
-    label.href = buildWeaponDetailUrl(entry.name);
+    label.href = buildWeaponDetailUrl(entry);
     label.addEventListener("click", stopTooltipLinkPropagation);
     label.style.color = "inherit";
     const metaSpan = document.createElement("span");
@@ -804,7 +835,7 @@ const renderEmpty = (message) => {
     const label = document.createElement("a");
     label.className = "detail-tooltip-label";
     label.textContent = entry.name;
-    label.href = buildArmorDetailUrl(entry.name);
+    label.href = buildArmorDetailUrl(entry);
     label.addEventListener("click", stopTooltipLinkPropagation);
     label.style.color = "inherit";
     const armorSpan = document.createElement("span");
@@ -1227,6 +1258,7 @@ const renderEmpty = (message) => {
         if (!Number.isFinite(wLevel)) return null;
         if (wLevel < minLevel || wLevel > maxLevel) return null;
         return {
+          id: w.id ?? null,
           name: w.name || "Unknown Weapon",
           element: w.elementalDamageType || "-",
           meta: `${formatDps(Number(w.dps) || 0)} DPS`,
@@ -1257,6 +1289,7 @@ const renderEmpty = (message) => {
           const match = weapons.find((w) => (w.name || "").toLowerCase() === name.toLowerCase());
           if (!match) {
             return {
+              id: null,
               name,
               element: "-",
               meta: "-",
@@ -1264,6 +1297,7 @@ const renderEmpty = (message) => {
             };
           }
           return {
+            id: match.id ?? null,
             name: match.name || name,
             element: match.elementalDamageType || "-",
             meta: `${formatDps(Number(match.dps) || 0)} DPS`,
@@ -1338,6 +1372,7 @@ const renderEmpty = (message) => {
         if (!Number.isFinite(aLevel)) return null;
         if (aLevel < minLevel || aLevel > maxLevel) return null;
         return {
+          id: a.id ?? null,
           name: a.name || "Unknown Armor",
           slot: a.slot || a.slotNorm || "-",
           meta: `Armor ${formatNumber(a.armor)}`,
@@ -1367,12 +1402,14 @@ const renderEmpty = (message) => {
           const match = armors.find((a) => (a.name || "").toLowerCase() === name.toLowerCase());
           if (!match) {
             return {
+              id: null,
               name,
               slot: "-",
               meta: "-",
             };
           }
           return {
+            id: match.id ?? null,
             name: match.name || name,
             slot: match.slot || match.slotNorm || "-",
             meta: `Armor ${formatNumber(match.armor)}`,
@@ -1676,6 +1713,7 @@ const renderEmpty = (message) => {
       updateMonsterDetailUrl(monster, { replace: options.replaceUrl });
     }
     setDetails(monster, { scroll: options.scroll });
+    details.dispatchEvent(new CustomEvent('codex:select-detail', { detail: { id: monster.id, scroll: options.scroll !== false } }));
   };
 
   const maybeSelectPendingMonster = (list) => {
@@ -1988,7 +2026,7 @@ const unpinTooltip = (tooltip) => {
     attachTooltipPinning();
 
     details.classList.add("show");
-    if (options.scroll !== false) {
+    if (options.scroll !== false && !details.classList.contains("refresh-detail")) {
       details.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   };
@@ -2065,12 +2103,12 @@ const unpinTooltip = (tooltip) => {
         weapons = Array.isArray(weaponData)
           ? weaponData
               .map((w) => normalizeWeapon(w))
-              .filter((w) => w && !hiddenWeaponNames.has((w.name || "").toLowerCase()))
+              .filter((w) => w && !isRecordHidden(w, hiddenWeaponNames))
           : [];
         armors = Array.isArray(armorData)
           ? armorData
               .map((a) => normalizeArmor(a))
-              .filter((a) => a && !hiddenArmorNames.has((a.name || "").toLowerCase()))
+              .filter((a) => a && !isRecordHidden(a, hiddenArmorNames))
           : [];
         if (!monsters.length) {
           renderEmpty("No monsters found in monsters_data03.json.");

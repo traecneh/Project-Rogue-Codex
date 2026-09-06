@@ -60,6 +60,76 @@ class UnknownFieldInventoryTests(unittest.TestCase):
         self.assertEqual([0, 3], unknown_10.values)
         self.assertEqual(["Fire Sword=3"], unknown_10.samples)
 
+    def test_build_unknown_field_reports_skips_confirmed_legacy_aliases(self):
+        from tools.codex_pipeline.unknowns import build_unknown_field_reports
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            site_path = root / "site" / "weapons.json"
+            site_path.parent.mkdir()
+            site_path.write_text(
+                json.dumps(
+                    [
+                        {
+                            "id": 1,
+                            "name": "Rune Sword",
+                            "fields": {
+                                "unknown_34": 1,
+                                "animated": 1,
+                                "unknown_88": 15,
+                                "holy_resistance": 15,
+                                "unknown_93": 4,
+                                "bonus_intelligence": 4,
+                                "unknown_98": 1,
+                                "emits_light": 1,
+                                "unknown_777": 4,
+                            },
+                        }
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            target = ExportTarget("weapons", root / "extract.py", root / "source.dat", "weapons.json", site_path)
+
+            reports = build_unknown_field_reports([target])
+
+        self.assertEqual(["unknown_777"], [field.name for field in reports[0].fields])
+
+    def test_build_unknown_field_reports_keeps_audited_armor_unknowns_reportable(self):
+        from tools.codex_pipeline.unknowns import build_unknown_field_reports
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            site_path = root / "site" / "armors.json"
+            site_path.parent.mkdir()
+            site_path.write_text(
+                json.dumps(
+                    [
+                        {
+                            "id": 1,
+                            "name": "Iceburst Amulet",
+                            "fields": {
+                                "unknown_27": 5,
+                                "unknown_70": 2,
+                                "minimum_rarity": 2,
+                                "unknown_89": 6,
+                                "bonus_intelligence": 6,
+                                "unknown_93": 37,
+                                "avatar": 37,
+                                "unknown_94": 1,
+                                "emits_light": 1,
+                            },
+                        }
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            target = ExportTarget("armors", root / "extract.py", root / "source.dat", "armors.json", site_path)
+
+            reports = build_unknown_field_reports([target])
+
+        self.assertEqual(["unknown_27"], [field.name for field in reports[0].fields])
+
     def test_build_unknown_field_reports_can_read_generated_output(self):
         from tools.codex_pipeline.unknowns import build_unknown_field_reports
 
