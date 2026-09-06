@@ -12,6 +12,10 @@
   };
 
   const dataUrl = new URL(page.dataFile, window.location.href);
+  const RELATIONSHIP_DATA_URL = "data/codex-overrides/item_relationships.json";
+  const RELATIONSHIP_TARGETS_URL = "data/codex-overrides/item_relationship_targets.json";
+  const relationshipDataUrl = new URL(RELATIONSHIP_DATA_URL, document.baseURI || window.location.href);
+  const relationshipTargetsUrl = new URL(RELATIONSHIP_TARGETS_URL, document.baseURI || window.location.href);
   const searchInput = document.getElementById("item-search");
   const useTypeFilter = document.getElementById("filter-use-type");
   const traitFilter = document.getElementById("filter-trait");
@@ -62,6 +66,11 @@
     });
   const setOptions = itemUtils.setOptions || (() => {});
   const enableToggleSelect = itemUtils.enableToggleSelect || (() => {});
+  const stopTooltipLinkPropagation =
+    itemUtils.stopTooltipLinkPropagation ||
+    ((event) => {
+      event.stopPropagation();
+    });
   const createCell = itemUtils.createCell;
   const addDivider = itemUtils.addDivider;
   const addRow = itemUtils.addRow;
@@ -88,6 +97,12 @@
     "crafting_requirement",
   ];
 
+  const RELATIONSHIP_GROUPS = [
+    { type: "used_in", label: "Used In" },
+    { type: "found_from", label: "Found From" },
+    { type: "related_system", label: "Related Systems" },
+  ];
+
   const COLUMNS = [
     { key: "image", label: "Image", sortable: false },
     { key: "name", label: "Name" },
@@ -102,6 +117,8 @@
   let searchTerm = "";
   let selectedUseTypes = new Set();
   let selectedTraits = new Set();
+  let relationshipDataByKey = new Map();
+  let relationshipTargetLinksByName = new Map();
 
   const urlParams = new URLSearchParams(window.location.search);
   const initialItemQuery = (urlParams.get(page.queryKey) || urlParams.get(`${page.queryKey}Name`) || "").trim();
@@ -145,6 +162,85 @@
     }
     return titleCase(value);
   };
+
+  const normalizeRelationshipName = (value) => normalizeFilterValue(value);
+
+  const relationshipKey = (kind, matchType, value) =>
+    `${normalizeFilterValue(kind)}:${matchType}:${matchType === "name" ? normalizeRelationshipName(value) : String(value ?? "").trim()}`;
+
+  const addRelationship = (map, key, relationship) => {
+    if (!key || !relationship) return;
+    if (!map.has(key)) map.set(key, []);
+    map.get(key).push(relationship);
+  };
+
+  const createRelationshipDataByKey = (rawData) => {
+    const rows = rawData && Array.isArray(rawData.relationships) ? rawData.relationships : [];
+    const map = new Map();
+
+    rows.forEach((row) => {
+      if (!row || typeof row !== "object") return;
+      const kind = normalizeFilterValue(row.kind);
+      if (kind !== "collectable" && kind !== "useable") return;
+      const name = String(row.name || "").trim();
+      const rawRelationships = Array.isArray(row.relationships) ? row.relationships : [];
+      const relationships = rawRelationships
+        .map((relationship) => ({
+          type: String(relationship?.type || "").trim(),
+          target: String(relationship?.target || "").trim(),
+          evidence: String(relationship?.evidence || "manual review").trim(),
+        }))
+        .filter((relationship) => relationship.type && relationship.target);
+      if (!relationships.length) return;
+
+      const id = row.id === null || row.id === undefined ? "" : String(row.id).trim();
+      const key = id ? relationshipKey(kind, "id", id) : relationshipKey(kind, "name", name);
+      relationships.forEach((relationship) => addRelationship(map, key, relationship));
+    });
+
+    return map;
+  };
+
+  const createRelationshipTargetLinksByName = (rawData) => {
+    const targets = rawData && Array.isArray(rawData.targets) ? rawData.targets : [];
+    const map = new Map();
+
+    targets.forEach((target) => {
+      const name = String(target?.target || "").trim();
+      const href = String(target?.href || "").trim();
+      if (name && href) {
+        map.set(name, href);
+      }
+    });
+
+    return map;
+  };
+
+  const getRelationshipsForItem = (item) => {
+    if (!item || !relationshipDataByKey.size) return [];
+    const kind = normalizeFilterValue(page.queryKey);
+    const keys = [
+      relationshipKey(kind, "id", item.id),
+      relationshipKey(kind, "name", item.name),
+    ];
+    const seen = new Set();
+    const relationships = [];
+    keys.forEach((key) => {
+      const matches = relationshipDataByKey.get(key) || [];
+      matches.forEach((relationship) => {
+        const uniqueKey = `${relationship.type}|${relationship.target}|${relationship.evidence}`;
+        if (seen.has(uniqueKey)) return;
+        seen.add(uniqueKey);
+        relationships.push(relationship);
+      });
+    });
+    return relationships;
+  };
+
+  const formatRelationshipType = (type) =>
+    RELATIONSHIP_GROUPS.find((group) => group.type === type)?.label || titleCase(type);
+
+  const getRelationshipHref = (relationship) => relationshipTargetLinksByName.get(relationship?.target) || "";
 
   const normalizeItem = (raw) => {
     if (!raw || typeof raw !== "object") return null;
@@ -238,6 +334,31 @@
     return wrapper;
   };
 
+  const createSummaryChip = (label, value, options = {}) => {
+    const chip = document.createElement("div");
+    chip.className = `detail-summary-chip${options.wide ? " is-wide" : ""}`;
+    const labelEl = document.createElement("span");
+    labelEl.className = "detail-summary-label";
+    labelEl.textContent = label;
+    const valueEl = document.createElement("div");
+    valueEl.className = "detail-summary-value";
+    if (value instanceof Node) valueEl.appendChild(value);
+    else valueEl.textContent = formatValue(value);
+    chip.appendChild(labelEl);
+    chip.appendChild(valueEl);
+    return chip;
+  };
+
+  const createDetailSummary = (item) => {
+    const summary = document.createElement("div");
+    summary.className = "misc-detail-summary";
+    summary.appendChild(createSummaryChip("ID", item.id));
+    summary.appendChild(createSummaryChip("Use Type", item.useTypeLabel));
+    summary.appendChild(createSummaryChip("Value", formatNumber(item.value)));
+    summary.appendChild(createSummaryChip("Traits", createTraitList(item.traits), { wide: true }));
+    return summary;
+  };
+
   const createImageThumb = (item) => {
     const wrapper = document.createDocumentFragment();
     const img = document.createElement("img");
@@ -263,6 +384,11 @@
       item.animated ? "Animated" : "",
       item.craftingData ? "Crafting Data" : "",
       ...item.traits.map((trait) => trait.label),
+      ...getRelationshipsForItem(item).flatMap((relationship) => [
+        formatRelationshipType(relationship.type),
+        relationship.target,
+        relationship.evidence,
+      ]),
       JSON.stringify(item.fields || {}),
     ]
       .join(" ")
@@ -345,6 +471,96 @@
       .join("; ");
   };
 
+  const createRelationshipPill = (relationship) => {
+    const href = getRelationshipHref(relationship);
+    const pill = document.createElement(href ? "a" : "span");
+    pill.className = "detail-pill relationship-pill";
+    pill.textContent = relationship.target;
+    if (href) {
+      pill.href = href;
+      pill.setAttribute("aria-label", `Open ${relationship.target}`);
+      pill.addEventListener("click", stopTooltipLinkPropagation);
+    }
+    if (relationship.evidence) {
+      pill.tabIndex = 0;
+      const tooltip = document.createElement("span");
+      tooltip.className = "detail-tooltip relationship-tooltip";
+      tooltip.role = "tooltip";
+      tooltip.textContent = relationship.evidence;
+      tooltip.addEventListener("click", stopTooltipLinkPropagation);
+      pill.appendChild(tooltip);
+    }
+    return pill;
+  };
+
+  const createRelationshipSections = (item) => {
+    const relationships = getRelationshipsForItem(item);
+    if (!relationships.length) return null;
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "relationship-sections";
+
+    RELATIONSHIP_GROUPS.forEach((group) => {
+      const matches = relationships.filter((relationship) => relationship.type === group.type);
+      if (!matches.length) return;
+
+      const section = document.createElement("div");
+      section.className = "relationship-section";
+      const label = document.createElement("span");
+      label.className = "relationship-heading";
+      label.textContent = group.label;
+      const list = document.createElement("div");
+      list.className = "relationship-pill-list";
+      matches.forEach((relationship) => list.appendChild(createRelationshipPill(relationship)));
+      section.appendChild(label);
+      section.appendChild(list);
+      wrapper.appendChild(section);
+    });
+
+    const groupedTypes = new Set(RELATIONSHIP_GROUPS.map((group) => group.type));
+    const otherRelationships = relationships.filter((relationship) => !groupedTypes.has(relationship.type));
+    if (otherRelationships.length) {
+      const section = document.createElement("div");
+      section.className = "relationship-section";
+      const label = document.createElement("span");
+      label.className = "relationship-heading";
+      label.textContent = "Related";
+      const list = document.createElement("div");
+      list.className = "relationship-pill-list";
+      otherRelationships.forEach((relationship) => list.appendChild(createRelationshipPill(relationship)));
+      section.appendChild(label);
+      section.appendChild(list);
+      wrapper.appendChild(section);
+    }
+
+    return wrapper.children.length ? wrapper : null;
+  };
+
+  const createRelationshipPanel = (item) => {
+    const relationships = getRelationshipsForItem(item);
+    if (!relationships.length) return null;
+    const relationshipSections = createRelationshipSections(item);
+    if (!relationshipSections) return null;
+
+    const panel = document.createElement("section");
+    panel.className = "relationship-panel";
+    const header = document.createElement("div");
+    header.className = "relationship-panel-header";
+    const title = document.createElement("span");
+    title.className = "relationship-panel-title";
+    title.textContent = "Item Context";
+    const count = document.createElement("span");
+    count.className = "relationship-panel-count";
+    count.textContent = `${formatNumber(relationships.length)} ${
+      relationships.length === 1 ? "relationship" : "relationships"
+    }`;
+    header.appendChild(title);
+    header.appendChild(count);
+    panel.appendChild(header);
+    panel.appendChild(relationshipSections);
+    return panel;
+  };
+
   const setDetails = (item, options = {}) => {
     if (!item) return;
     detailFields.name.textContent = item.name || "Unknown";
@@ -353,17 +569,11 @@
 
     const container = detailFields.properties;
     container.innerHTML = "";
-    appendRow(
-      container,
-      [
-        ["ID", formatValue(item.id)],
-        ["Use Type", item.useTypeLabel],
-        ["Value", formatNumber(item.value)],
-      ],
-      3
-    );
-    appendRow(container, [["Traits", createTraitList(item.traits)]], 1);
-    appendDivider(container);
+    container.appendChild(createDetailSummary(item));
+    const relationshipPanel = createRelationshipPanel(item);
+    if (relationshipPanel) {
+      container.appendChild(relationshipPanel);
+    }
     appendRow(container, [["Crafting Data", createCraftingSummary(item)]], 1);
     appendDivider(container);
     appendRow(
@@ -503,8 +713,14 @@
   });
 
   const init = () => {
-    fetchJsonCached(dataUrl.toString())
-      .then((data) => {
+    Promise.all([
+      fetchJsonCached(dataUrl.toString()),
+      fetchJsonCached(relationshipDataUrl.toString()),
+      fetchJsonCached(relationshipTargetsUrl.toString()),
+    ])
+      .then(([data, relationshipData, relationshipTargets]) => {
+        relationshipDataByKey = createRelationshipDataByKey(relationshipData);
+        relationshipTargetLinksByName = createRelationshipTargetLinksByName(relationshipTargets);
         items = (Array.isArray(data) ? data : []).map((row) => normalizeItem(row)).filter(Boolean);
         if (!items.length) {
           renderEmpty(`Add ${page.dataFile} beside this page to see ${page.countLabel}.`);
@@ -512,10 +728,6 @@
         }
         buildHead();
         populateFilters(items);
-        if (initialItemSearchTerm) {
-          searchTerm = initialItemSearchTerm;
-          if (searchInput) searchInput.value = initialItemSearchTerm;
-        }
         applyFilterAndSort();
       })
       .catch(() => {

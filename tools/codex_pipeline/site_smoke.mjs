@@ -1,5 +1,5 @@
 import { createReadStream } from "node:fs";
-import { stat } from "node:fs/promises";
+import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import http from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -8,8 +8,15 @@ const args = parseArgs(process.argv.slice(2));
 const root = path.resolve(args.root || path.join(path.dirname(fileURLToPath(import.meta.url)), "..", ".."));
 const timeoutMs = Number(args.timeoutMs || 20000);
 const configuredBaseUrl = args.baseUrl ? normalizeBaseUrl(args.baseUrl) : null;
+const configuredImpactPlanPath = args.impactPlan ? path.resolve(args.impactPlan) : null;
+const configuredResultsPath = args.resultsPath ? path.resolve(args.resultsPath) : null;
+let loadedImpactPlan = null;
+const DEFAULT_CHANGED_RECORD_PROBE_LIMIT = 5;
 const RUNE_SWORD_DETAIL_PATH = "pages/items/weapons.html?weapon=227";
 const PERKS_RUNIC_PATH = "/pages/systems/perks.html?perk=Runic";
+const QUESTS_INVESTIGATE_PATH = "/pages/General/quests.html?quest=investigate-the-undead";
+const QUESTS_MASTERY_PATH = "/pages/General/quests.html?quest=mastery-of-silvest";
+const QUESTS_GRAVE_CONSEQUENCES_PATH = "/pages/General/quests.html?quest=grave-consequences";
 
 const smokeSpecs = [
   {
@@ -22,27 +29,33 @@ const smokeSpecs = [
     rowSelector: "#items-body tr[data-id]",
     detailLinkSelector: '#details-properties a[href*="pages/enemies/monsters.html?monster="]',
     queryKey: "weapon",
+    checkIds: ["weapons-page"],
   },
   {
-    detailName: "Brown Tunic",
-    detailQuery: "Brown Tunic",
+    assertDetail: assertArmorResistanceFilters,
+    detailName: "Bottomless Bag",
+    detailQuery: "1006",
     label: "armors",
     listPath: "/pages/items/armors.html",
     detailSelector: "#item-details",
     rowSelector: "#items-body tr[data-id]",
     detailLinkSelector: '#details-properties a[href*="pages/enemies/monsters.html?monster="]',
     queryKey: "armor",
+    checkIds: ["armors-page", "resistance-matchups"],
   },
   {
-    detailName: "Soul of Flame",
-    detailQuery: "24",
+    detailName: "Ascendancy Shard",
+    detailQuery: "54",
     label: "collectables",
     listPath: "/pages/items/collectables.html",
     detailSelector: "#item-details",
     rowSelector: "#items-body tr[data-id]",
     detailLinkSelector: "",
-    duplicateRoute: { id: "36", detailName: "Plaguelight Cinder" },
+    duplicateRoute: { id: "37", detailName: "Wraithfire Shard" },
+    detailTextIncludes: ["Item Context", "Used In", "Ascend System", "Found From", "Deconstruct System"],
+    detailHrefIncludes: ["pages/systems/ascend.html", "pages/systems/deconstruct.html"],
     queryKey: "collectable",
+    checkIds: ["collectables-page"],
   },
   {
     detailName: "Carpentry Saw",
@@ -53,11 +66,15 @@ const smokeSpecs = [
     rowSelector: "#items-body tr[data-id]",
     detailLinkSelector: "",
     duplicateRoute: { id: "76", detailName: "Scroll of Imbuement" },
+    detailTextIncludes: ["Item Context", "Used In", "Carpentry"],
+    detailHrefIncludes: ["pages/stats/skills.html#carpentry"],
     queryKey: "useable",
+    checkIds: ["useables-page"],
   },
   {
-    detailName: "Bat",
-    detailQuery: "bat",
+    assertDetail: assertMonsterRecommendationEnhancements,
+    detailName: "Goblin",
+    detailQuery: "goblin",
     label: "monsters",
     listPath: "/pages/enemies/monsters.html",
     detailSelector: "#monster-details",
@@ -65,208 +82,549 @@ const smokeSpecs = [
     detailLinkSelector:
       '#monster-details a[href*="pages/items/weapons.html?weapon="], #monster-details a[href*="pages/items/armors.html?armor="]',
     queryKey: "monster",
+    checkIds: ["monsters-page", "monster-recommendations"],
   },
 ];
 
-main().catch((error) => {
-  console.error(`SMOKE ERROR site: ${formatError(error)}`);
-  process.exit(1);
+const standaloneSmokeRuns = [
+  { id: "home", checkIds: [], run: runHomeSpec, summary: "timeline focus, stories, related links" },
+  {
+    id: "build planner",
+    checkIds: ["build-planner"],
+    run: runBuildPlannerSpec,
+    summary: "search, rarity, share reload, reset",
+  },
+  { id: "play the game", checkIds: [], run: runPlayTheGameSpec, summary: "Discord setup, CTA, related links" },
+  { id: "quests", checkIds: [], run: runQuestsSpec, summary: "deep links, objectives, filters, relationships, search" },
+  { id: "perks", checkIds: ["perk-sources"], run: runPerksSpec, summary: "deep link, search, filters, source links, tooltips" },
+  { id: "rarity", checkIds: [], run: runRaritySpec, summary: "reference table, deterministic roll, upgrade preview" },
+  { id: "reforge", checkIds: [], run: runRerollSpec, summary: "decision reference, flow, related links" },
+  { id: "deconstruct", checkIds: [], run: runDeconstructSpec, summary: "shard decision reference, flow, related links" },
+  { id: "ascend", checkIds: [], run: runAscendSpec, summary: "progression reference, decision guidance, related links" },
+  { id: "craft", checkIds: [], run: runCraftSpec, summary: "ascendancy shop, imbuement crafting, related links" },
+  { id: "imbuements", checkIds: [], run: runImbuementsSpec, summary: "targeting flow, source mechanics, related links" },
+  { id: "purge", checkIds: [], run: runPurgeSpec, summary: "cleanup roles, recovery rules, related links" },
+  { id: "encounter", checkIds: [], run: runEncounterSpec, summary: "state flow, elite variants, related links" },
+  { id: "pvp", checkIds: [], run: runPvpSpec, summary: "rule reference, loot flow, related links" },
+  { id: "anti-zerg", checkIds: [], run: runAntiZergSpec, summary: "rule reference, calculator, related links" },
+  {
+    id: "monster damage reduction",
+    checkIds: [],
+    run: runMonsterDamageReductionSpec,
+    summary: "scaling reference, calculator, related links",
+  },
+  { id: "experience", checkIds: [], run: runExperienceSpec, summary: "pool reference, simulator, related links" },
+  { id: "level", checkIds: [], run: runLevelSpec, summary: "summary cards, interactive curve, simplified layout" },
+  { id: "skills", checkIds: [], run: runSkillsSpec, summary: "summary cards, interactive curve, Level 0 start" },
+  { id: "races", checkIds: [], run: runRacesSpec, summary: "race bonuses, requirement preview, related links" },
+  { id: "strength", checkIds: [], run: runStrengthSpec, summary: "formulas, calculator, benchmarks, related links" },
+  { id: "constitution", checkIds: [], run: runConstitutionSpec, summary: "health, regen, benchmarks, related links" },
+  { id: "dexterity", checkIds: [], run: runDexteritySpec, summary: "multiplier, crit, damage reduction, related links" },
+  {
+    id: "resistances",
+    checkIds: ["resistance-matchups"],
+    run: runResistancesSpec,
+    summary: "player cap preview, monster type matchups, related links",
+  },
+  { id: "guild", checkIds: [], run: runGuildSpec, summary: "management reference, party preview, related links" },
+  { id: "chat", checkIds: [], run: runChatSpec, summary: "channel reference, send preview, related links" },
+  { id: "floor cleanup", checkIds: [], run: runFloorCleanupSpec, summary: "timing reference, preview, related links" },
+  { id: "corruption", checkIds: [], run: runCorruptionSpec, summary: "corrupted innates, cleanse flow, related links" },
+  { id: "crafting", checkIds: [], run: runCraftingSpec, summary: "armor reference, set preview, materials calculator" },
+];
+
+const IMPACT_RECORD_CHECK_IDS = new Set(["site-search", "deep-links", "asset-coverage", "item-relationships"]);
+const IMPACT_TARGET_CONFIG = Object.fromEntries(
+  smokeSpecs.map((spec) => [
+    spec.label,
+    {
+      category: spec.label.slice(0, 1).toUpperCase() + spec.label.slice(1),
+      detailSelector: spec.detailSelector,
+      listPath: spec.listPath,
+      queryKey: spec.queryKey,
+      rowSelector: spec.rowSelector,
+    },
+  ])
+);
+
+async function assertArmorResistanceFilters(page) {
+  const popover = page.locator("#filter-resist + .filter-popover");
+  for (const [resistance, expectedCount] of [
+    ["holy", 14],
+    ["dark", 15],
+  ]) {
+    if (!(await popover.evaluate(el => el.open))) await popover.locator("summary").click();
+    const checkbox = popover.getByRole("checkbox", {name: new RegExp(resistance, "i")});
+    await checkbox.check();
+    await page.waitForFunction(
+      ({ count }) => document.querySelectorAll("#items-body tr[data-id]").length === count,
+      { count: expectedCount },
+      { timeout: timeoutMs }
+    );
+    const countText = (await page.locator("#item-count").textContent()).trim();
+    if (!countText.startsWith(String(expectedCount))) {
+      throw new Error(`Armor ${resistance} filter expected ${expectedCount} results, got "${countText}"`);
+    }
+    await page.getByRole("button", {name: new RegExp(`Remove Resistances: ${resistance}`, "i")}).click();
+  }
+  if (await popover.evaluate(el => el.open)) await popover.locator("summary").click();
+}
+
+main().catch(async (error) => {
+  const message = formatError(error);
+  try {
+    await writeFatalSmokeResults(message);
+  } catch (writeError) {
+    console.error(`SMOKE ERROR results: ${formatError(writeError)}`);
+  }
+  console.error(`SMOKE ERROR site: ${message}`);
+  process.exitCode = 1;
 });
 
 async function main() {
+  const startedAtMs = Date.now();
+  const startedAt = new Date(startedAtMs).toISOString();
+  const impactPlan = configuredImpactPlanPath ? await loadImpactPlan(configuredImpactPlanPath) : null;
+  loadedImpactPlan = impactPlan;
+  const routedCheckIds = new Set((impactPlan?.checks || []).map((check) => check.id));
+  if (impactPlan) validateImpactPlanCoverage(impactPlan);
+  const selectedDetailSpecs = impactPlan
+    ? smokeSpecs.filter((spec) => spec.checkIds.some((checkId) => routedCheckIds.has(checkId)))
+    : smokeSpecs;
+  const selectedStandaloneRuns = impactPlan
+    ? standaloneSmokeRuns.filter((run) => run.checkIds.some((checkId) => routedCheckIds.has(checkId)))
+    : standaloneSmokeRuns;
+  const selectedImpactRecords = impactPlan
+    ? selectImpactRecords(
+        impactPlan.affectedRecords || [],
+        impactPlan.browserProbePolicy?.changedRecordsPerTarget
+      )
+    : [];
+  const runRecordProbes =
+    Boolean(impactPlan) &&
+    selectedImpactRecords.length > 0 &&
+    Array.from(IMPACT_RECORD_CHECK_IDS).some((checkId) => routedCheckIds.has(checkId));
   const { chromium } = await importPlaywright();
   const server = configuredBaseUrl ? null : await startStaticServer(root);
   const baseUrl = configuredBaseUrl || `http://127.0.0.1:${server.port}/`;
   const browser = await launchBrowser(chromium);
   const failures = [];
+  const groupResults = [];
+  const recordResults = [];
+  let completedGroupCount = 0;
+
+  if (impactPlan) {
+    console.log(
+      `SMOKE PLAN ${routedCheckIds.size} routed check(s), ${selectedImpactRecords.length}/${impactPlan.affectedRecords?.length || 0} record probe(s)`
+    );
+  }
 
   try {
-    for (const spec of smokeSpecs) {
+    for (const spec of selectedDetailSpecs) {
+      const groupStartedAt = Date.now();
+      const groupCheckIds = impactPlan
+        ? spec.checkIds.filter((checkId) => routedCheckIds.has(checkId))
+        : spec.checkIds;
       try {
         await runSpec(browser, baseUrl, spec);
         console.log(`SMOKE OK ${spec.label}: deep link, reload, row route, close route, detail links`);
+        groupResults.push(buildGroupResult(spec.label, "page", groupCheckIds, groupStartedAt));
       } catch (error) {
-        failures.push(`SMOKE ERROR ${spec.label}: ${formatError(error)}`);
+        const failure = `SMOKE ERROR ${spec.label}: ${formatError(error)}`;
+        failures.push(failure);
+        groupResults.push(buildGroupResult(spec.label, "page", groupCheckIds, groupStartedAt, failure));
       }
+      completedGroupCount += 1;
     }
-    try {
-      await runHomeSpec(browser, baseUrl);
-      console.log("SMOKE OK home: timeline focus, related links");
-    } catch (error) {
-      failures.push(`SMOKE ERROR home: ${formatError(error)}`);
+    for (const run of selectedStandaloneRuns) {
+      const groupStartedAt = Date.now();
+      const groupCheckIds = impactPlan
+        ? run.checkIds.filter((checkId) => routedCheckIds.has(checkId))
+        : run.checkIds;
+      try {
+        await run.run(browser, baseUrl);
+        console.log(`SMOKE OK ${run.id}: ${run.summary}`);
+        groupResults.push(buildGroupResult(run.id, "page", groupCheckIds, groupStartedAt));
+      } catch (error) {
+        const failure = `SMOKE ERROR ${run.id}: ${formatError(error)}`;
+        failures.push(failure);
+        groupResults.push(buildGroupResult(run.id, "page", groupCheckIds, groupStartedAt, failure));
+      }
+      completedGroupCount += 1;
     }
-    try {
-      await runBuildPlannerSpec(browser, baseUrl);
-      console.log("SMOKE OK build planner: search, rarity, share reload, reset");
-    } catch (error) {
-      failures.push(`SMOKE ERROR build planner: ${formatError(error)}`);
-    }
-    try {
-      await runPlayTheGameSpec(browser, baseUrl);
-      console.log("SMOKE OK play the game: Discord setup, CTA, related links");
-    } catch (error) {
-      failures.push(`SMOKE ERROR play the game: ${formatError(error)}`);
-    }
-    try {
-      await runPerksSpec(browser, baseUrl);
-      console.log("SMOKE OK perks: deep link, search, filters, source links, tooltips");
-    } catch (error) {
-      failures.push(`SMOKE ERROR perks: ${formatError(error)}`);
-    }
-    try {
-      await runRaritySpec(browser, baseUrl);
-      console.log("SMOKE OK rarity: reference table, deterministic roll, upgrade preview");
-    } catch (error) {
-      failures.push(`SMOKE ERROR rarity: ${formatError(error)}`);
-    }
-    try {
-      await runRerollSpec(browser, baseUrl);
-      console.log("SMOKE OK re-roll: decision reference, flow, related links");
-    } catch (error) {
-      failures.push(`SMOKE ERROR re-roll: ${formatError(error)}`);
-    }
-    try {
-      await runDeconstructSpec(browser, baseUrl);
-      console.log("SMOKE OK deconstruct: shard decision reference, flow, related links");
-    } catch (error) {
-      failures.push(`SMOKE ERROR deconstruct: ${formatError(error)}`);
-    }
-    try {
-      await runAscendSpec(browser, baseUrl);
-      console.log("SMOKE OK ascend: progression reference, decision guidance, related links");
-    } catch (error) {
-      failures.push(`SMOKE ERROR ascend: ${formatError(error)}`);
-    }
-    try {
-      await runCraftSpec(browser, baseUrl);
-      console.log("SMOKE OK craft: ascendancy shop, imbuement crafting, related links");
-    } catch (error) {
-      failures.push(`SMOKE ERROR craft: ${formatError(error)}`);
-    }
-    try {
-      await runImbuementsSpec(browser, baseUrl);
-      console.log("SMOKE OK imbuements: targeting flow, source mechanics, related links");
-    } catch (error) {
-      failures.push(`SMOKE ERROR imbuements: ${formatError(error)}`);
-    }
-    try {
-      await runPurgeSpec(browser, baseUrl);
-      console.log("SMOKE OK purge: cleanup roles, recovery rules, related links");
-    } catch (error) {
-      failures.push(`SMOKE ERROR purge: ${formatError(error)}`);
-    }
-    try {
-      await runEncounterSpec(browser, baseUrl);
-      console.log("SMOKE OK encounter: state flow, elite variants, related links");
-    } catch (error) {
-      failures.push(`SMOKE ERROR encounter: ${formatError(error)}`);
-    }
-    try {
-      await runPvpSpec(browser, baseUrl);
-      console.log("SMOKE OK pvp: rule reference, loot flow, related links");
-    } catch (error) {
-      failures.push(`SMOKE ERROR pvp: ${formatError(error)}`);
-    }
-    try {
-      await runAntiZergSpec(browser, baseUrl);
-      console.log("SMOKE OK anti-zerg: rule reference, calculator, related links");
-    } catch (error) {
-      failures.push(`SMOKE ERROR anti-zerg: ${formatError(error)}`);
-    }
-    try {
-      await runMonsterDamageReductionSpec(browser, baseUrl);
-      console.log("SMOKE OK monster damage reduction: scaling reference, calculator, related links");
-    } catch (error) {
-      failures.push(`SMOKE ERROR monster damage reduction: ${formatError(error)}`);
-    }
-    try {
-      await runExperienceSpec(browser, baseUrl);
-      console.log("SMOKE OK experience: pool reference, simulator, related links");
-    } catch (error) {
-      failures.push(`SMOKE ERROR experience: ${formatError(error)}`);
-    }
-    try {
-      await runLevelSpec(browser, baseUrl);
-      console.log("SMOKE OK level: XP rules, calculator, milestones, related links");
-    } catch (error) {
-      failures.push(`SMOKE ERROR level: ${formatError(error)}`);
-    }
-    try {
-      await runSkillsSpec(browser, baseUrl);
-      console.log("SMOKE OK skills: melee reference, requirement preview, XP chart, related links");
-    } catch (error) {
-      failures.push(`SMOKE ERROR skills: ${formatError(error)}`);
-    }
-    try {
-      await runRacesSpec(browser, baseUrl);
-      console.log("SMOKE OK races: race bonuses, requirement preview, related links");
-    } catch (error) {
-      failures.push(`SMOKE ERROR races: ${formatError(error)}`);
-    }
-    try {
-      await runStrengthSpec(browser, baseUrl);
-      console.log("SMOKE OK strength: formulas, calculator, benchmarks, related links");
-    } catch (error) {
-      failures.push(`SMOKE ERROR strength: ${formatError(error)}`);
-    }
-    try {
-      await runConstitutionSpec(browser, baseUrl);
-      console.log("SMOKE OK constitution: health, regen, benchmarks, related links");
-    } catch (error) {
-      failures.push(`SMOKE ERROR constitution: ${formatError(error)}`);
-    }
-    try {
-      await runDexteritySpec(browser, baseUrl);
-      console.log("SMOKE OK dexterity: multiplier, crit, damage reduction, related links");
-    } catch (error) {
-      failures.push(`SMOKE ERROR dexterity: ${formatError(error)}`);
-    }
-    try {
-      await runResistancesSpec(browser, baseUrl);
-      console.log("SMOKE OK resistances: player cap preview, monster type matchups, related links");
-    } catch (error) {
-      failures.push(`SMOKE ERROR resistances: ${formatError(error)}`);
-    }
-    try {
-      await runGuildSpec(browser, baseUrl);
-      console.log("SMOKE OK guild: management reference, party preview, related links");
-    } catch (error) {
-      failures.push(`SMOKE ERROR guild: ${formatError(error)}`);
-    }
-    try {
-      await runChatSpec(browser, baseUrl);
-      console.log("SMOKE OK chat: channel reference, send preview, related links");
-    } catch (error) {
-      failures.push(`SMOKE ERROR chat: ${formatError(error)}`);
-    }
-    try {
-      await runFloorCleanupSpec(browser, baseUrl);
-      console.log("SMOKE OK floor cleanup: timing reference, preview, related links");
-    } catch (error) {
-      failures.push(`SMOKE ERROR floor cleanup: ${formatError(error)}`);
-    }
-    try {
-      await runCorruptionSpec(browser, baseUrl);
-      console.log("SMOKE OK corruption: corrupted innates, cleanse flow, related links");
-    } catch (error) {
-      failures.push(`SMOKE ERROR corruption: ${formatError(error)}`);
-    }
-    try {
-      await runCraftingSpec(browser, baseUrl);
-      console.log("SMOKE OK crafting: armor reference, set preview, materials calculator");
-    } catch (error) {
-      failures.push(`SMOKE ERROR crafting: ${formatError(error)}`);
+    if (runRecordProbes) {
+      const groupStartedAt = Date.now();
+      const groupCheckIds = Array.from(IMPACT_RECORD_CHECK_IDS).filter((checkId) => routedCheckIds.has(checkId));
+      try {
+        await runImpactRecordSpec(browser, baseUrl, selectedImpactRecords, routedCheckIds, recordResults);
+        console.log(`SMOKE OK impact records: ${selectedImpactRecords.length} changed-data route(s)`);
+        groupResults.push(
+          buildGroupResult("impact records", "records", groupCheckIds, groupStartedAt)
+        );
+      } catch (error) {
+        const failure = `SMOKE ERROR impact records: ${formatError(error)}`;
+        failures.push(failure);
+        groupResults.push(
+          buildGroupResult("impact records", "records", groupCheckIds, groupStartedAt, failure)
+        );
+      }
+      completedGroupCount += 1;
     }
   } finally {
     await browser.close();
     if (server) await server.close();
   }
 
+  const completedAtMs = Date.now();
+  const results = buildSmokeResults({
+    baseUrl,
+    completedAtMs,
+    failures,
+    groupResults,
+    impactPlan,
+    recordResults,
+    routedCheckIds,
+    selectedImpactRecords,
+    startedAt,
+    startedAtMs,
+  });
+  if (configuredResultsPath) {
+    await writeSmokeResults(configuredResultsPath, results);
+  }
   if (failures.length) {
     failures.forEach((failure) => console.error(failure));
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
-  console.log(`SMOKE OK site: ${smokeSpecs.length + 28} page(s) checked at ${baseUrl}`);
+  console.log(`SMOKE OK site: ${completedGroupCount} validation group(s) checked at ${baseUrl}`);
+}
+
+async function loadImpactPlan(planPath) {
+  let payload;
+  try {
+    payload = JSON.parse(await readFile(planPath, "utf8"));
+  } catch (error) {
+    throw new Error(`Unable to read impact validation plan ${planPath}: ${formatError(error)}`);
+  }
+  if (!payload || !Array.isArray(payload.checks) || !Array.isArray(payload.affectedRecords)) {
+    throw new Error(`Impact validation plan ${planPath} is missing checks or affectedRecords`);
+  }
+  return payload;
+}
+
+function validateImpactPlanCoverage(plan) {
+  const supported = new Set(IMPACT_RECORD_CHECK_IDS);
+  smokeSpecs.forEach((spec) => spec.checkIds.forEach((checkId) => supported.add(checkId)));
+  standaloneSmokeRuns.forEach((run) => run.checkIds.forEach((checkId) => supported.add(checkId)));
+  const unknown = plan.checks
+    .filter((check) => Array.isArray(check.automatedBy) && check.automatedBy.includes("smoke-site"))
+    .map((check) => check.id)
+    .filter((checkId) => !supported.has(checkId));
+  if (unknown.length) {
+    throw new Error(`Impact validation plan contains unsupported browser check(s): ${unknown.join(", ")}`);
+  }
+}
+
+function selectImpactRecords(records, configuredLimit) {
+  const numericLimit = Number(configuredLimit);
+  const changedRecordLimit = Number.isInteger(numericLimit) && numericLimit >= 0
+    ? numericLimit
+    : DEFAULT_CHANGED_RECORD_PROBE_LIMIT;
+  const changedByTarget = new Map();
+  return records.filter((record) => {
+    if (!record || !IMPACT_TARGET_CONFIG[record.target]) return false;
+    if (record.changeType !== "changed") return record.changeType === "added" || record.changeType === "removed";
+    const count = changedByTarget.get(record.target) || 0;
+    if (count >= changedRecordLimit) return false;
+    changedByTarget.set(record.target, count + 1);
+    return true;
+  });
+}
+
+function buildGroupResult(id, kind, checkIds, startedAtMs, error = null) {
+  return {
+    id,
+    kind,
+    checkIds: Array.from(new Set(checkIds)).sort(),
+    status: error ? "failed" : "passed",
+    durationMs: Date.now() - startedAtMs,
+    ...(error ? { error } : {}),
+  };
+}
+
+function buildSmokeResults({
+  baseUrl,
+  completedAtMs,
+  failures,
+  groupResults,
+  impactPlan,
+  recordResults,
+  routedCheckIds,
+  selectedImpactRecords,
+  startedAt,
+  startedAtMs,
+}) {
+  const failedGroups = groupResults.filter((result) => result.status === "failed").length;
+  const failedRecords = recordResults.filter((result) => result.status === "failed").length;
+  return {
+    schemaVersion: 1,
+    reportDigest: impactPlan?.reportDigest || null,
+    mode: impactPlan ? "impact-plan" : "full",
+    target: configuredBaseUrl ? "live" : "local",
+    status: failures.length ? "failed" : "passed",
+    startedAt,
+    completedAt: new Date(completedAtMs).toISOString(),
+    durationMs: completedAtMs - startedAtMs,
+    baseUrl,
+    plan: impactPlan
+      ? {
+          file: configuredImpactPlanPath ? path.basename(configuredImpactPlanPath) : null,
+          routedCheckIds: Array.from(routedCheckIds).sort(),
+          affectedRecordCount: impactPlan.affectedRecords?.length || 0,
+          selectedRecordCount: selectedImpactRecords.length,
+          browserProbePolicy: impactPlan.browserProbePolicy || null,
+        }
+      : null,
+    summary: {
+      groupCount: groupResults.length,
+      passedGroups: groupResults.length - failedGroups,
+      failedGroups,
+      recordCount: recordResults.length,
+      passedRecords: recordResults.length - failedRecords,
+      failedRecords,
+    },
+    groups: groupResults,
+    records: recordResults,
+    failures,
+  };
+}
+
+async function writeSmokeResults(resultsPath, results) {
+  await mkdir(path.dirname(resultsPath), { recursive: true });
+  await writeFile(resultsPath, `${JSON.stringify(results, null, 2)}\n`, "utf8");
+  console.log(`SMOKE RESULTS: ${resultsPath}`);
+}
+
+async function writeFatalSmokeResults(message) {
+  if (!configuredResultsPath) return;
+  const now = new Date().toISOString();
+  await writeSmokeResults(configuredResultsPath, {
+    schemaVersion: 1,
+    reportDigest: loadedImpactPlan?.reportDigest || null,
+    mode: configuredImpactPlanPath ? "impact-plan" : "full",
+    target: configuredBaseUrl ? "live" : "local",
+    status: "failed",
+    startedAt: now,
+    completedAt: now,
+    durationMs: 0,
+    baseUrl: configuredBaseUrl,
+    plan: configuredImpactPlanPath
+      ? {
+          file: path.basename(configuredImpactPlanPath),
+          routedCheckIds: (loadedImpactPlan?.checks || []).map((check) => check.id).sort(),
+          affectedRecordCount: loadedImpactPlan?.affectedRecords?.length || 0,
+          selectedRecordCount: 0,
+          browserProbePolicy: loadedImpactPlan?.browserProbePolicy || null,
+        }
+      : null,
+    summary: {
+      groupCount: 0,
+      passedGroups: 0,
+      failedGroups: 0,
+      recordCount: 0,
+      passedRecords: 0,
+      failedRecords: 0,
+    },
+    groups: [],
+    records: [],
+    failures: [`SMOKE ERROR site: ${message}`],
+  });
+}
+
+async function runImpactRecordSpec(browser, baseUrl, records, checkIds, results) {
+  const page = await browser.newPage();
+  page.setDefaultTimeout(timeoutMs);
+  const runtimeErrors = [];
+  page.on("console", (message) => {
+    const text = message.text();
+    if (message.type() === "error" && !text.startsWith("Failed to load resource")) runtimeErrors.push(text);
+  });
+  page.on("pageerror", (error) => runtimeErrors.push(formatError(error)));
+
+  try {
+    for (const record of records) {
+      const recordStartedAt = Date.now();
+      const runtimeErrorIndex = runtimeErrors.length;
+      try {
+        await assertImpactRecord(page, baseUrl, record, checkIds);
+        const recordRuntimeErrors = runtimeErrors.slice(runtimeErrorIndex);
+        if (recordRuntimeErrors.length) {
+          throw new Error(`browser errors: ${recordRuntimeErrors.join("; ")}`);
+        }
+        results.push(buildRecordResult(record, checkIds, recordStartedAt));
+        console.log(`SMOKE RECORD OK ${record.target} ${record.changeType}: ${record.label}`);
+      } catch (error) {
+        const failure = formatError(error);
+        results.push(buildRecordResult(record, checkIds, recordStartedAt, failure));
+        console.error(`SMOKE RECORD ERROR ${record.target} ${record.changeType}: ${record.label}: ${failure}`);
+      }
+    }
+  } finally {
+    await page.close();
+  }
+  const failed = results.filter((result) => result.status === "failed");
+  if (failed.length) {
+    throw new Error(`${failed.length}/${results.length} record probe(s) failed`);
+  }
+}
+
+function buildRecordResult(record, checkIds, startedAtMs, error = null) {
+  return {
+    target: record.target,
+    changeType: record.changeType,
+    label: record.label,
+    name: record.name,
+    queryValue: record.queryValue,
+    checkIds: Array.from(IMPACT_RECORD_CHECK_IDS).filter((checkId) => checkIds.has(checkId)).sort(),
+    status: error ? "failed" : "passed",
+    durationMs: Date.now() - startedAtMs,
+    ...(error ? { error } : {}),
+  };
+}
+
+async function assertImpactRecord(page, baseUrl, record, checkIds) {
+  const config = IMPACT_TARGET_CONFIG[record.target];
+  const expectedPresent = record.changeType !== "removed";
+  if (checkIds.has("site-search")) {
+    await assertImpactSearchRecord(page, baseUrl, record, config, expectedPresent);
+  }
+
+  const needsDetail =
+    checkIds.has("deep-links") || checkIds.has("asset-coverage") || checkIds.has("item-relationships");
+  if (!needsDetail) return;
+
+  await page.goto(
+    joinUrl(baseUrl, config.listPath, { [config.queryKey]: record.queryValue }),
+    { waitUntil: "load" }
+  );
+  await waitForRows(page, { ...config, label: record.target });
+
+  if (!expectedPresent) {
+    if (await page.locator(`${config.detailSelector}.show`).count()) {
+      throw new Error(`${record.label} still resolves through its removed ${record.target} route`);
+    }
+    return;
+  }
+
+  await page.locator(`${config.detailSelector}.show`).waitFor({ state: "visible" });
+  const detailName = await getDetailName(page);
+  if (detailName !== record.name) {
+    throw new Error(`${record.label} route selected "${detailName}" instead of "${record.name}"`);
+  }
+
+  if (checkIds.has("asset-coverage")) {
+    await assertImpactRecordImage(page, record);
+  }
+  if (checkIds.has("item-relationships")) {
+    await assertImpactRelationshipLinks(page, record);
+  }
+  if (checkIds.has("deep-links")) {
+    await page.reload({ waitUntil: "load" });
+    await waitForRows(page, { ...config, label: record.target });
+    await page.locator(`${config.detailSelector}.show`).waitFor({ state: "visible" });
+    const reloadedName = await getDetailName(page);
+    if (reloadedName !== record.name) {
+      throw new Error(`${record.label} reload selected "${reloadedName}" instead of "${record.name}"`);
+    }
+  }
+}
+
+async function assertImpactSearchRecord(page, baseUrl, record, config, expectedPresent) {
+  await page.goto(normalizeBaseUrl(baseUrl), { waitUntil: "load" });
+  const input = page.locator("#site-search-input");
+  await input.waitFor({ state: "attached" });
+  await input.fill(record.name);
+
+  const exactResult = () =>
+    page.evaluate(
+      ({ category, listPath, name, queryKey }) => {
+        const matches = Array.from(document.querySelectorAll("a.nav-search-result"))
+          .map((link) => ({
+            category: (link.querySelector(".nav-search-tag")?.textContent || "").trim(),
+            href: link.href || "",
+            title: (link.querySelector(".nav-search-result-title")?.textContent || "").trim(),
+          }))
+          .filter((entry) => entry.title === name && entry.category === category);
+        const match = matches.find((entry) => {
+          const url = new URL(entry.href, window.location.href);
+          return url.pathname.endsWith(listPath) && url.searchParams.has(queryKey);
+        });
+        return match || null;
+      },
+      { category: config.category, listPath: config.listPath, name: record.name, queryKey: config.queryKey }
+    );
+
+  if (expectedPresent) {
+    await page.waitForFunction(
+      ({ category, listPath, name, queryKey }) =>
+        Array.from(document.querySelectorAll("a.nav-search-result")).some((link) => {
+          const title = (link.querySelector(".nav-search-result-title")?.textContent || "").trim();
+          const tag = (link.querySelector(".nav-search-tag")?.textContent || "").trim();
+          const url = new URL(link.href || "", document.baseURI);
+          return title === name && tag === category && url.pathname.endsWith(listPath) && url.searchParams.has(queryKey);
+        }),
+      { category: config.category, listPath: config.listPath, name: record.name, queryKey: config.queryKey },
+      { timeout: timeoutMs }
+    );
+    if (!(await exactResult())) throw new Error(`${record.label} is missing from site search`);
+    return;
+  }
+
+  await page.waitForTimeout(750);
+  await input.fill("");
+  await input.fill(record.name);
+  await page.waitForTimeout(750);
+  if (await exactResult()) throw new Error(`${record.label} still appears in site search after removal`);
+}
+
+async function assertImpactRecordImage(page, record) {
+  const image = page.locator("#details-image");
+  const src = (await image.getAttribute("src")) || "";
+  if (src) {
+    await page.waitForFunction(() => {
+      const target = document.querySelector("#details-image");
+      return Boolean(target && target.complete);
+    });
+  }
+  const state = await image.evaluate((target) => {
+    const style = window.getComputedStyle(target);
+    return {
+      loaded: Boolean(target.getAttribute("src") && target.complete && target.naturalWidth > 0),
+      visible: style.display !== "none" && style.visibility !== "hidden",
+    };
+  });
+  if (state.visible && !state.loaded) {
+    throw new Error(`${record.label} renders a broken detail image`);
+  }
+  if (record.changeType === "added" && !state.loaded) {
+    throw new Error(`${record.label} was added without a rendered detail image`);
+  }
+}
+
+async function assertImpactRelationshipLinks(page, record) {
+  const hrefs = await page.locator("#details-properties a[href]").evaluateAll((links) =>
+    Array.from(new Set(links.map((link) => link.href || ""))).filter(
+      (href) => href && !href.startsWith("#") && !/^(?:mailto:|javascript:)/i.test(href)
+    )
+  );
+  for (const href of hrefs) {
+    const target = new URL(href, page.url());
+    if (target.origin !== new URL(page.url()).origin) continue;
+    const response = await page.request.get(target.toString());
+    if (!response.ok()) {
+      throw new Error(`${record.label} relationship link returned ${response.status()}: ${href}`);
+    }
+  }
 }
 
 async function importPlaywright() {
@@ -311,14 +669,19 @@ async function runSpec(browser, baseUrl, spec) {
   try {
     await openDetail(page, baseUrl, spec);
     await assertDetailState(page, spec, "deep link");
+    await assertDetailRouteDoesNotFilterList(page, spec, "deep link");
     await assertDetailLinks(page, spec);
-    if (typeof spec.assertDetail === "function") {
-      await spec.assertDetail(page);
-    }
+    await assertDetailTextIncludes(page, spec);
+    await assertDetailHrefIncludes(page, spec);
 
     await page.reload({ waitUntil: "load" });
     await waitForRows(page, spec);
     await assertDetailState(page, spec, "reload");
+    await assertDetailRouteDoesNotFilterList(page, spec, "reload");
+    if (typeof spec.assertDetail === "function") {
+      await spec.assertDetail(page);
+    }
+
 
     await page.goto(joinUrl(baseUrl, spec.listPath), { waitUntil: "load" });
     await waitForRows(page, spec);
@@ -478,8 +841,8 @@ async function runBuildPlannerSpec(browser, baseUrl) {
     await page.reload({ waitUntil: "load" });
     await assertBuildPlannerWeapon(page, "Rune Sword");
     const restoredRarity = (await page.locator('[data-slot="Weapon"] [data-rarity-label]').textContent()).trim();
-    if (restoredRarity !== "Uncommon") {
-      throw new Error(`share reload restored weapon rarity "${restoredRarity}" instead of "Uncommon"`);
+    if (restoredRarity !== "Rare") {
+      throw new Error(`share reload restored weapon rarity "${restoredRarity}" instead of "Rare"`);
     }
 
     await page.locator("#reset-build").click();
@@ -558,6 +921,1127 @@ async function runPlayTheGameSpec(browser, baseUrl) {
   }
 }
 
+async function assertMonsterRecommendationEnhancements(page) {
+  const originalUrl = page.url();
+  const targetUrl = new URL(originalUrl);
+
+  targetUrl.searchParams.set("monster", "dark-monk");
+  await page.goto(targetUrl.toString(), { waitUntil: "load" });
+  await page.evaluate(() => localStorage.removeItem("project-rogue-codex:monster-weapon-ranking-v2"));
+  await page.evaluate(() => localStorage.removeItem("project-rogue-codex:monster-armor-ranking-v3"));
+  await page.reload({ waitUntil: "load" });
+  await page.locator("#monster-details.show").waitFor({ state: "visible" });
+  const rankingToggles = page.locator("#recommended-weapons > .weapon-ranking-toggle");
+  if ((await rankingToggles.count()) !== 1) {
+    throw new Error(`Dark Monk expected one weapon-ranking toggle, found ${await rankingToggles.count()}`);
+  }
+  const toggleText = (await rankingToggles.textContent()).trim();
+  if (!toggleText.includes("View rankings") || !toggleText.includes("Item Lv <= 90")) {
+    throw new Error(`Dark Monk item-level ranking did not default to monster level + 5: "${toggleText}"`);
+  }
+  await rankingToggles.click();
+  await page.locator("#recommended-weapons .weapon-ranking-panel").waitFor({ state: "visible" });
+  const weaponPerksInput = page.locator("#recommended-weapons .weapon-ranking-perks input");
+  if ((await weaponPerksInput.count()) !== 1 || !(await weaponPerksInput.isChecked())) {
+    throw new Error("Weapon rankings did not default to confirmed innate perks enabled");
+  }
+
+  const shadowfangRow = page
+    .locator('#recommended-weapons .weapon-ranking-row[data-element="Dark"][data-multiplier="1.3"]')
+    .filter({ hasText: "Shadowfang" })
+    .first();
+  await shadowfangRow.waitFor({ state: "attached" });
+  const shadowfangText = (await shadowfangRow.textContent()).trim();
+  if (!shadowfangText.includes("Dark 1.3x")) {
+    throw new Error(`Dark Monk recommendation did not explain Shadowfang matchup: "${shadowfangText}"`);
+  }
+
+  const uniqueInput = page.locator("#recommended-weapons .weapon-ranking-unique input");
+  await uniqueInput.uncheck();
+  await page.waitForFunction(
+    () =>
+      Array.from(document.querySelectorAll("#recommended-weapons .weapon-ranking-body .weapon-ranking-row")).every(
+        (row) => Number(row.dataset.itemLevel) > 0
+      ),
+    undefined,
+    { timeout: timeoutMs }
+  );
+  await uniqueInput.check();
+
+  const rankingSearch = page.locator("#recommended-weapons .weapon-ranking-search-control input");
+  await rankingSearch.fill("Shadowfang");
+  await page.waitForFunction(
+    () => document.querySelectorAll("#recommended-weapons .weapon-ranking-body .weapon-ranking-row").length === 1,
+    undefined,
+    { timeout: timeoutMs }
+  );
+  await rankingSearch.fill("");
+
+  const maxItemLevelInput = page.locator("#recommended-weapons .weapon-ranking-item-level-input");
+  await maxItemLevelInput.fill("60");
+  await page.waitForFunction(
+    () =>
+      Array.from(document.querySelectorAll("#recommended-weapons .weapon-ranking-body .weapon-ranking-row")).every(
+        (row) => Number(row.dataset.itemLevel) === 0 || Number(row.dataset.itemLevel) <= 60
+      ),
+    undefined,
+    { timeout: timeoutMs }
+  );
+
+  const typeSelect = page.locator("#recommended-weapons .weapon-ranking-type-select");
+  const hiddenRangedOptionCount = await typeSelect.locator('option[value="Bow"], option[value="Crossbow"]').count();
+  if (hiddenRangedOptionCount) {
+    throw new Error(`Hidden ranged weapon types remained in recommendation filters: ${hiddenRangedOptionCount}`);
+  }
+  await typeSelect.selectOption("Sword");
+  const typeState = await page.evaluate(() => {
+    const rows = Array.from(document.querySelectorAll("#recommended-weapons .weapon-ranking-body .weapon-ranking-row"));
+    return { count: rows.length, allSwords: rows.every((row) => row.dataset.type === "Sword") };
+  });
+  if (!typeState.count || !typeState.allSwords) {
+    throw new Error(`Weapon-type ranking filter failed: ${JSON.stringify(typeState)}`);
+  }
+
+  await maxItemLevelInput.fill("70");
+  targetUrl.searchParams.set("monster", "dusk-mage");
+  await page.goto(targetUrl.toString(), { waitUntil: "load" });
+  await page.locator("#monster-details.show").waitFor({ state: "visible" });
+  if (
+    (await page.locator("#recommended-weapons .weapon-ranking-item-level-input").inputValue()) !== "70" ||
+    (await page.locator("#recommended-weapons .weapon-ranking-type-select").inputValue()) !== "Sword"
+  ) {
+    throw new Error("Weapon-ranking preferences did not persist across monster navigation");
+  }
+  await page.reload({ waitUntil: "load" });
+  await page.locator("#monster-details.show").waitFor({ state: "visible" });
+  if (
+    (await page.locator("#recommended-weapons .weapon-ranking-item-level-input").inputValue()) !== "70" ||
+    (await page.locator("#recommended-weapons .weapon-ranking-type-select").inputValue()) !== "Sword"
+  ) {
+    throw new Error("Weapon-ranking preferences did not persist across reload");
+  }
+
+  const duskRankingToggle = page.locator("#recommended-weapons > .weapon-ranking-toggle");
+  await duskRankingToggle.click();
+  await page.locator("#recommended-weapons .weapon-ranking-reset").click();
+  const resetState = await page.evaluate(() => ({
+    maxItemLevel:
+      document.querySelector("#recommended-weapons .weapon-ranking-item-level-input")?.value || "",
+    type: document.querySelector("#recommended-weapons .weapon-ranking-type-select")?.value || "",
+    unique: Boolean(document.querySelector("#recommended-weapons .weapon-ranking-unique input")?.checked),
+    perks: Boolean(document.querySelector("#recommended-weapons .weapon-ranking-perks input")?.checked),
+  }));
+  if (
+    resetState.maxItemLevel !== "60" ||
+    resetState.type !== "all" ||
+    !resetState.unique ||
+    !resetState.perks
+  ) {
+    throw new Error(`Weapon-ranking reset did not restore Dusk Mage defaults: ${JSON.stringify(resetState)}`);
+  }
+
+  const armorToggle = page.locator("#recommended-armors > .armor-ranking-toggle");
+  if ((await armorToggle.count()) !== 1) {
+    throw new Error(`Dusk Mage expected one armor-ranking toggle, found ${await armorToggle.count()}`);
+  }
+  const armorToggleText = (await armorToggle.textContent()).trim();
+  if (!armorToggleText.includes("View sets") || !armorToggleText.includes("Item Lv <= 60")) {
+    throw new Error(`Dusk Mage armor ranking did not default to monster level + 5: "${armorToggleText}"`);
+  }
+  await armorToggle.click();
+  await page.locator("#recommended-armors .armor-ranking-panel").waitFor({ state: "visible" });
+  const armorPerksInput = page.locator("#recommended-armors .armor-ranking-perks input");
+  if ((await armorPerksInput.count()) !== 1 || !(await armorPerksInput.isChecked())) {
+    throw new Error("Armor rankings did not default to confirmed innate perks enabled");
+  }
+  if (await page.locator("#recommended-armors [data-include-shield]").count()) {
+    throw new Error("Armor rankings still exposed a shield toggle");
+  }
+  const armorSetHeaderText = (
+    await page.locator("#recommended-armors .armor-set-header").textContent()
+  ).trim();
+  if (armorSetHeaderText.includes("Weight") || armorSetHeaderText.includes("Pieces")) {
+    throw new Error(`Armor set rankings still exposed removed columns: "${armorSetHeaderText}"`);
+  }
+
+  const firstArmorSet = page.locator("#recommended-armors .armor-set-card").first();
+  await firstArmorSet.waitFor({ state: "attached" });
+  const firstArmorSetText = (await firstArmorSet.locator(".armor-set-toggle").textContent()).trim();
+  if (!firstArmorSetText.includes("Dark")) {
+    throw new Error(`Dusk Mage armor set did not rank Dark resistance first: "${firstArmorSetText}"`);
+  }
+  const armorSetState = await firstArmorSet.evaluate((card) => ({
+    resistance: Number(card.dataset.resistance),
+    totalResistance: Number(card.dataset.totalResistance),
+    armor: Number(card.dataset.armor),
+    weight: Number(card.dataset.weight),
+  }));
+  if (
+    armorSetState.resistance < 0 ||
+    armorSetState.resistance > 60 ||
+    armorSetState.totalResistance < armorSetState.resistance ||
+    armorSetState.armor <= 0 ||
+    armorSetState.weight < 0
+  ) {
+    throw new Error(`Dusk Mage armor set totals were invalid: ${JSON.stringify(armorSetState)}`);
+  }
+
+  await firstArmorSet.locator(".armor-set-toggle").click();
+  const fivePieceRows = firstArmorSet.locator(".armor-piece-row");
+  if ((await fivePieceRows.count()) !== 5) {
+    throw new Error(`Shield armor set expected five linked pieces, found ${await fivePieceRows.count()}`);
+  }
+  const invalidArmorLinks = await fivePieceRows.locator('a[href*="armors.html?armor="]').count();
+  if (invalidArmorLinks !== 5) {
+    throw new Error(`Shield armor set expected five armor detail links, found ${invalidArmorLinks}`);
+  }
+  const armorItemLevelsValid = await fivePieceRows.evaluateAll((rows) =>
+    rows.every((row) => Number(row.dataset.itemLevel) > 0 && Number(row.dataset.itemLevel) <= 60)
+  );
+  if (!armorItemLevelsValid) {
+    throw new Error("Dusk Mage armor set included an item above the item-level limit");
+  }
+  const firstSetPieceText = (await fivePieceRows.allTextContents()).join(" ");
+  if (firstSetPieceText.includes("Scabbard of Arcus")) {
+    throw new Error("Dusk Mage armor set incorrectly included item-level 145 Scabbard of Arcus");
+  }
+
+  await page.locator("#armor-ranking-slot-tab").click();
+  await page.locator("#recommended-armors .armor-slot-select").selectOption("chest");
+  const armorSlotState = await page.evaluate(() => {
+    const rows = Array.from(document.querySelectorAll("#recommended-armors .armor-slot-row[data-slot]"));
+    return {
+      count: rows.length,
+      allChest: rows.every((row) => row.dataset.slot === "chest"),
+      withinLimit: rows.every(
+        (row) => Number(row.dataset.itemLevel) > 0 && Number(row.dataset.itemLevel) <= 60
+      ),
+    };
+  });
+  if (!armorSlotState.count || !armorSlotState.allChest || !armorSlotState.withinLimit) {
+    throw new Error(`Armor slot ranking filter failed: ${JSON.stringify(armorSlotState)}`);
+  }
+
+  const armorSearch = page.locator("#recommended-armors .armor-ranking-search-control input");
+  await armorSearch.fill("White Robe");
+  await page.waitForFunction(
+    () => document.querySelectorAll("#recommended-armors .armor-slot-row[data-slot]").length === 1,
+    undefined,
+    { timeout: timeoutMs }
+  );
+  await armorSearch.fill("");
+
+  const armorMaxItemLevelInput = page.locator("#recommended-armors .armor-ranking-level-input");
+  await armorMaxItemLevelInput.fill("65");
+  await armorSearch.fill("Black Dragon Armor");
+  await page.waitForFunction(
+    () => document.querySelectorAll("#recommended-armors .armor-slot-row[data-slot]").length === 1,
+    undefined,
+    { timeout: timeoutMs }
+  );
+  const craftedArmorState = await page
+    .locator("#recommended-armors .armor-slot-row[data-slot]")
+    .first()
+    .evaluate((row) => ({
+      name: row.textContent,
+      itemLevel: row.dataset.itemLevel,
+      rawItemLevel: row.dataset.rawItemLevel,
+      crafted: row.dataset.crafted,
+    }));
+  if (
+    !craftedArmorState.name.includes("Black Dragon Armor") ||
+    !craftedArmorState.name.includes("Crafted Lv 65") ||
+    craftedArmorState.itemLevel !== "65" ||
+    craftedArmorState.rawItemLevel !== "0" ||
+    craftedArmorState.crafted !== "true"
+  ) {
+    throw new Error(`Crafted armor recommendation level was incorrect: ${JSON.stringify(craftedArmorState)}`);
+  }
+  await armorSearch.fill("");
+
+  await page.locator("#recommended-armors .armor-slot-select").selectOption("shield");
+  const getArmorPerkOrder = () =>
+    page.evaluate(() =>
+      Array.from(document.querySelectorAll("#recommended-armors .armor-slot-row[data-slot]")).map(
+        (row) => ({
+          name: row.querySelector(".armor-ranking-name")?.textContent?.trim() || "",
+          perkCategory: row.dataset.perkCategory || "",
+          text: row.textContent || "",
+        })
+      )
+    );
+  const perksOnOrder = await getArmorPerkOrder();
+  const blackDragonPerksOn = perksOnOrder.findIndex((row) => row.name === "Black Dragon Shield");
+  const redDragonPerksOn = perksOnOrder.findIndex((row) => row.name === "Red Dragon Scale Shield");
+  const blackDragonPerkRow = perksOnOrder[blackDragonPerksOn];
+  if (
+    blackDragonPerksOn < 0 ||
+    redDragonPerksOn < 0 ||
+    blackDragonPerksOn >= redDragonPerksOn ||
+    blackDragonPerkRow?.perkCategory !== "matchup" ||
+    !blackDragonPerkRow?.text.includes("Consecration (Tier 2)")
+  ) {
+    throw new Error(`Armor perk matchup ranking was incorrect: ${JSON.stringify(perksOnOrder)}`);
+  }
+
+  await armorPerksInput.uncheck();
+  const perksOffOrder = await getArmorPerkOrder();
+  const blackDragonPerksOff = perksOffOrder.findIndex((row) => row.name === "Black Dragon Shield");
+  const redDragonPerksOff = perksOffOrder.findIndex((row) => row.name === "Red Dragon Scale Shield");
+  if (
+    blackDragonPerksOff < 0 ||
+    redDragonPerksOff < 0 ||
+    redDragonPerksOff >= blackDragonPerksOff ||
+    perksOffOrder.some((row) => row.text.includes("Consecration (Tier 2)"))
+  ) {
+    throw new Error(`Armor perk toggle did not restore base ranking: ${JSON.stringify(perksOffOrder)}`);
+  }
+  await armorPerksInput.check();
+
+  const armorUniqueInput = page.locator("#recommended-armors .armor-ranking-unique input");
+  await armorUniqueInput.check();
+  await page.waitForFunction(
+    () =>
+      Array.from(document.querySelectorAll("#recommended-armors .armor-slot-row[data-slot]")).some(
+        (row) => Number(row.dataset.itemLevel) === 0
+      ),
+    undefined,
+    { timeout: timeoutMs }
+  );
+  await armorUniqueInput.uncheck();
+  await page.waitForFunction(
+    () =>
+      Array.from(document.querySelectorAll("#recommended-armors .armor-slot-row[data-slot]")).every(
+        (row) => Number(row.dataset.itemLevel) > 0
+      ),
+    undefined,
+    { timeout: timeoutMs }
+  );
+  await armorUniqueInput.check();
+
+  await page.locator("#recommended-armors .armor-ranking-reset").click();
+  const armorResetState = await page.evaluate(() => ({
+    maxLevel: document.querySelector("#recommended-armors .armor-ranking-level-input")?.value || "",
+    unique: Boolean(document.querySelector("#recommended-armors .armor-ranking-unique input")?.checked),
+    perks: Boolean(document.querySelector("#recommended-armors .armor-ranking-perks input")?.checked),
+    setsSelected: document.querySelector("#armor-ranking-sets-tab")?.getAttribute("aria-selected"),
+  }));
+  if (
+    armorResetState.maxLevel !== "60" ||
+    armorResetState.unique ||
+    !armorResetState.perks ||
+    armorResetState.setsSelected !== "true"
+  ) {
+    throw new Error(`Armor-ranking reset did not restore Dusk Mage defaults: ${JSON.stringify(armorResetState)}`);
+  }
+
+  targetUrl.searchParams.set("monster", "dark-druid");
+  await page.goto(targetUrl.toString(), { waitUntil: "load" });
+  await page.locator("#monster-details.show").waitFor({ state: "visible" });
+  const darkDruidToggle = page.locator("#recommended-weapons > .weapon-ranking-toggle");
+  const darkDruidToggleText = (await darkDruidToggle.textContent()).trim();
+  if (!darkDruidToggleText.includes("Item Lv <= 85")) {
+    throw new Error(`Dark Druid ranking did not default to item level 85: "${darkDruidToggleText}"`);
+  }
+  await darkDruidToggle.click();
+  const darkSwordRows = page
+    .locator('#recommended-weapons .weapon-ranking-row[data-item-level="145"]')
+    .filter({ hasText: "Dark Sword" });
+  if ((await darkSwordRows.count()) !== 0) {
+    throw new Error("Dark Druid default recommendations incorrectly included item-level 145 Dark Sword");
+  }
+
+  const darkDruidMaxItemLevel = page.locator(
+    "#recommended-weapons .weapon-ranking-item-level-input"
+  );
+  await darkDruidMaxItemLevel.fill("145");
+  await darkSwordRows.waitFor({ state: "attached" });
+  const darkSwordText = (await darkSwordRows.textContent()).trim();
+  if (!darkSwordText.includes("Item Lv 145") || !darkSwordText.includes("Req 85")) {
+    throw new Error(`Dark Sword ranking context was incomplete: "${darkSwordText}"`);
+  }
+  await page.locator("#recommended-weapons .weapon-ranking-reset").click();
+
+  targetUrl.searchParams.set("monster", "ice-dragon");
+  await page.goto(targetUrl.toString(), { waitUntil: "load" });
+  await page.locator("#monster-details.show").waitFor({ state: "visible" });
+  const iceDragonToggle = page.locator("#recommended-weapons > .weapon-ranking-toggle");
+  const iceDragonToggleText = (await iceDragonToggle.textContent()).trim();
+  if (!iceDragonToggleText.includes("Item Lv <= 70")) {
+    throw new Error(`Ice Dragon ranking did not default to item level 70: "${iceDragonToggleText}"`);
+  }
+  const iceDragonArmorToggleText = (
+    await page.locator("#recommended-armors > .armor-ranking-toggle").textContent()
+  ).trim();
+  if (!iceDragonArmorToggleText.includes("Item Lv <= 70")) {
+    throw new Error(`Ice Dragon armor ranking did not default to item level 70: "${iceDragonArmorToggleText}"`);
+  }
+  await iceDragonToggle.click();
+  const darknessFallsRow = page
+    .locator(
+      '#recommended-weapons .weapon-ranking-row[data-skill-requirement="50"][data-item-level="50"]'
+    )
+    .filter({ hasText: "Darkness Falls" });
+  await darknessFallsRow.waitFor({ state: "attached" });
+  const darknessFallsText = (await darknessFallsRow.textContent()).trim();
+  if (!darknessFallsText.includes("Item Lv 50") || !darknessFallsText.includes("Req 50")) {
+    throw new Error(`Darkness Falls ranking context was incomplete: "${darknessFallsText}"`);
+  }
+  const iceDragonMaxItemLevel = page.locator(
+    "#recommended-weapons .weapon-ranking-item-level-input"
+  );
+  await iceDragonMaxItemLevel.fill("100");
+  const dragonfireSpearRow = page
+    .locator('#recommended-weapons .weapon-ranking-row[data-item-level="100"]')
+    .filter({ hasText: "Dragonfire Spear" });
+  await dragonfireSpearRow.waitFor({ state: "attached" });
+  const dragonfirePerkState = await dragonfireSpearRow.evaluate((row) => ({
+    text: row.textContent || "",
+    category: row.dataset.perkCategory || "",
+    bonus: Number(row.dataset.perkBonus),
+    effective: Number(row.dataset.effectiveDps),
+    estimated: Number(row.dataset.estimatedDps),
+  }));
+  if (
+    !dragonfirePerkState.text.includes("Iceshatter (Tier 2)") ||
+    dragonfirePerkState.category !== "matchup" ||
+    Math.abs(dragonfirePerkState.bonus - 0.13) > 0.0001 ||
+    Math.abs(
+      dragonfirePerkState.estimated -
+        dragonfirePerkState.effective * (1 + dragonfirePerkState.bonus)
+    ) > 0.0001
+  ) {
+    throw new Error(
+      `Weapon perk damage adjustment was incorrect: ${JSON.stringify(dragonfirePerkState)}`
+    );
+  }
+
+  const iceDragonPerksInput = page.locator("#recommended-weapons .weapon-ranking-perks input");
+  await iceDragonPerksInput.uncheck();
+  const dragonfireBaseState = await dragonfireSpearRow.evaluate((row) => ({
+    text: row.textContent || "",
+    bonus: Number(row.dataset.perkBonus),
+    effective: Number(row.dataset.effectiveDps),
+    estimated: Number(row.dataset.estimatedDps),
+  }));
+  if (
+    dragonfireBaseState.text.includes("Iceshatter (Tier 2)") ||
+    dragonfireBaseState.bonus !== 0 ||
+    Math.abs(dragonfireBaseState.estimated - dragonfireBaseState.effective) > 0.0001
+  ) {
+    throw new Error(
+      `Weapon perk toggle did not restore base DPS: ${JSON.stringify(dragonfireBaseState)}`
+    );
+  }
+  await iceDragonPerksInput.check();
+  await page.locator("#recommended-weapons .weapon-ranking-reset").click();
+
+  const originalViewport = page.viewportSize();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.reload({ waitUntil: "load" });
+  await page.locator("#monster-details.show").waitFor({ state: "visible" });
+  const mobileToggle = page.locator("#recommended-weapons > .weapon-ranking-toggle");
+  await mobileToggle.click();
+  const mobilePanelMetrics = await page.evaluate(() => {
+    const panel = document.querySelector("#recommended-weapons .weapon-ranking-panel");
+    const bounds = panel?.getBoundingClientRect();
+    return bounds
+      ? {
+          left: bounds.left,
+          right: bounds.right,
+          viewportWidth: window.innerWidth,
+          documentWidth: document.documentElement.scrollWidth,
+        }
+      : null;
+  });
+  if (
+    !mobilePanelMetrics ||
+    mobilePanelMetrics.left < 0 ||
+    mobilePanelMetrics.right > mobilePanelMetrics.viewportWidth ||
+    mobilePanelMetrics.documentWidth > mobilePanelMetrics.viewportWidth
+  ) {
+    throw new Error(`Monster recommendation panel overflowed mobile viewport: ${JSON.stringify(mobilePanelMetrics)}`);
+  }
+  const mobileArmorToggle = page.locator("#recommended-armors > .armor-ranking-toggle");
+  await mobileArmorToggle.click();
+  const mobileArmorPanelMetrics = await page.evaluate(() => {
+    const panel = document.querySelector("#recommended-armors .armor-ranking-panel");
+    const bounds = panel?.getBoundingClientRect();
+    return bounds
+      ? {
+          left: bounds.left,
+          right: bounds.right,
+          viewportWidth: window.innerWidth,
+          documentWidth: document.documentElement.scrollWidth,
+        }
+      : null;
+  });
+  if (
+    !mobileArmorPanelMetrics ||
+    mobileArmorPanelMetrics.left < 0 ||
+    mobileArmorPanelMetrics.right > mobileArmorPanelMetrics.viewportWidth ||
+    mobileArmorPanelMetrics.documentWidth > mobileArmorPanelMetrics.viewportWidth
+  ) {
+    throw new Error(`Armor recommendation panel overflowed mobile viewport: ${JSON.stringify(mobileArmorPanelMetrics)}`);
+  }
+  if (originalViewport) {
+    await page.setViewportSize(originalViewport);
+  }
+
+  await page.goto(originalUrl, { waitUntil: "load" });
+  await page.locator("#monster-details.show").waitFor({ state: "visible" });
+}
+
+async function runQuestsSpec(browser, baseUrl) {
+  const page = await browser.newPage();
+  page.setDefaultTimeout(timeoutMs);
+  await page.setViewportSize({ width: 1365, height: 1000 });
+  const runtimeErrors = [];
+  page.on("console", (message) => {
+    const text = message.text();
+    if (message.type() === "error" && !text.startsWith("Failed to load resource")) runtimeErrors.push(text);
+  });
+  page.on("pageerror", (error) => runtimeErrors.push(formatError(error)));
+
+  try {
+    const questDataResponse = await page.request.get(
+      joinUrl(baseUrl, "/pages/General/quests_data.json")
+    );
+    if (!questDataResponse.ok()) {
+      throw new Error(`Quest checks could not load quest data: ${questDataResponse.status()}`);
+    }
+    const questData = await questDataResponse.json();
+
+    await page.goto(joinUrl(baseUrl, QUESTS_INVESTIGATE_PATH), { waitUntil: "load" });
+    await page.locator(".quest-detail-title").waitFor({ state: "visible" });
+    const title = (await page.locator(".quest-detail-title").textContent()).trim();
+    if (title !== "Investigate the Undead") {
+      throw new Error(`Quest deep link opened "${title}" instead of "Investigate the Undead"`);
+    }
+
+    const sourceEntries = [...(questData.quests || []), ...(questData.services || [])];
+    const expectedDefaultOrder = sourceEntries
+      .map((entry, sourceIndex) => ({ id: entry.id, level: entry.min_level, sourceIndex }))
+      .sort((left, right) => left.level - right.level || left.sourceIndex - right.sourceIndex)
+      .map((entry) => entry.id);
+    const actualDefaultOrder = await page
+      .locator("#quest-list [data-entry-id]")
+      .evaluateAll((entries) => entries.map((entry) => entry.dataset.entryId));
+    if (JSON.stringify(actualDefaultOrder) !== JSON.stringify(expectedDefaultOrder)) {
+      throw new Error(
+        `Quest list is not ordered by level with stable source ties: ${actualDefaultOrder.join(", ")}`
+      );
+    }
+
+    await page.locator("#quest-search").fill("Silvest");
+    await page.waitForFunction(
+      () => document.querySelectorAll("#quest-list [data-entry-id]").length > 1
+    );
+    const filteredLevels = await page
+      .locator("#quest-list .quest-list-heading .quest-badge")
+      .allTextContents();
+    const numericFilteredLevels = filteredLevels.map((label) =>
+      Number.parseInt(label.replace(/\D+/g, ""), 10)
+    );
+    if (numericFilteredLevels.length < 2) {
+      throw new Error(`Filtered quest list did not expose level badges: ${filteredLevels.join(", ")}`);
+    }
+    if (
+      numericFilteredLevels.some(
+        (level, index) => index > 0 && level < numericFilteredLevels[index - 1]
+      )
+    ) {
+      throw new Error(`Filtered quest list is not ordered by level: ${filteredLevels.join(", ")}`);
+    }
+    await page.locator("#quest-search").fill("");
+    await page.waitForFunction(
+      (expectedCount) =>
+        document.querySelectorAll("#quest-list [data-entry-id]").length === expectedCount,
+      expectedDefaultOrder.length
+    );
+
+    const detailText = (await page.locator("#quest-detail").textContent()).trim();
+    for (const expected of [
+      "Deadly Kobold Spears",
+      "Kill Dark Mages",
+      "3 required",
+      "Kill Skeleton Wolf",
+      "1 required",
+      "1,750 Experience",
+    ]) {
+      if (!detailText.includes(expected)) {
+        throw new Error(`Investigate the Undead detail missing "${expected}": "${detailText}"`);
+      }
+    }
+
+    for (const href of [
+      "pages/enemies/monsters.html?monster=94",
+      "pages/enemies/monsters.html?monster=58",
+      "pages/enemies/monsters.html?monster=67",
+    ]) {
+      const count = await page.locator(`#quest-detail a[href="${href}"]`).count();
+      if (count !== 1) {
+        throw new Error(`Quest entity link expected one "${href}", found ${count}`);
+      }
+    }
+    await page.locator('#quest-detail img[src*="Zombie-94.gif"]').waitFor({ state: "visible" });
+
+    const zombiePage = await browser.newPage();
+    try {
+      zombiePage.setDefaultTimeout(timeoutMs);
+      await zombiePage.goto(joinUrl(baseUrl, "/pages/enemies/monsters.html?monster=94"), {
+        waitUntil: "load",
+      });
+      await zombiePage.locator("#monster-details.show").waitFor({ state: "visible" });
+      const zombieName = (await zombiePage.locator("#details-name").textContent()).trim();
+      const zombieLevel = (await zombiePage.locator("#details-level").textContent()).trim();
+      if (zombieName !== "Zombie" || zombieLevel !== "10") {
+        throw new Error(`Zombie ID 94 opened name="${zombieName}" level="${zombieLevel}"`);
+      }
+      await zombiePage.locator('#details-image[src*="Zombie-94.gif"]').waitFor({ state: "visible" });
+      await zombiePage.locator("#monster-search").fill("Zombie");
+      await zombiePage.waitForFunction(() => {
+        const rows = Array.from(document.querySelectorAll("#monsters-body tr[data-id]"));
+        return rows.length === 1 && rows[0].getAttribute("data-id") === "94";
+      });
+      await zombiePage
+        .locator('#monsters-body tr[data-id="94"] img[src*="Zombie-94.gif"]')
+        .waitFor({ state: "visible" });
+    } finally {
+      await zombiePage.close();
+    }
+
+    const masteryPage = await browser.newPage();
+    try {
+      masteryPage.setDefaultTimeout(timeoutMs);
+      await masteryPage.goto(joinUrl(baseUrl, QUESTS_MASTERY_PATH), { waitUntil: "load" });
+      const bottomlessBagLink = masteryPage.locator(
+        '#quest-detail a[href="pages/items/armors.html?armor=1006"]'
+      );
+      await bottomlessBagLink.waitFor({ state: "visible" });
+      await bottomlessBagLink.click();
+      await masteryPage.waitForURL((url) => url.searchParams.get("armor") === "1006", {
+        timeout: timeoutMs,
+      });
+      await masteryPage.locator("#item-details.show").waitFor({ state: "visible" });
+      const armorName = (await masteryPage.locator("#details-name").textContent()).trim();
+      const armorSearch = await masteryPage.locator("#item-search").inputValue();
+      if (armorName !== "Bottomless Bag" || armorSearch) {
+        throw new Error(
+          `Bottomless Bag quest link opened name="${armorName}" with search="${armorSearch}"`
+        );
+      }
+    } finally {
+      await masteryPage.close();
+    }
+
+    await page.reload({ waitUntil: "load" });
+    await page.locator(".quest-detail-title").waitFor({ state: "visible" });
+    if ((await page.locator(".quest-detail-title").textContent()).trim() !== "Investigate the Undead") {
+      throw new Error("Quest deep link did not survive reload");
+    }
+
+    await page.locator('[data-quest-id="deadly-kobold-spears"]').click();
+    await page.waitForFunction(
+      () => new URL(window.location.href).searchParams.get("quest") === "deadly-kobold-spears"
+    );
+    if ((await page.locator(".quest-detail-title").textContent()).trim() !== "Deadly Kobold Spears") {
+      throw new Error("Quest prerequisite link did not open Deadly Kobold Spears");
+    }
+
+    await page.goBack({ waitUntil: "load" });
+    await page.locator(".quest-detail-title").waitFor({ state: "visible" });
+    if ((await page.locator(".quest-detail-title").textContent()).trim() !== "Investigate the Undead") {
+      throw new Error("Quest browser back did not restore Investigate the Undead");
+    }
+
+    await page.locator("#site-search-input").waitFor({ state: "visible" });
+    await page.locator("#site-search-input").fill("Tomard");
+    await page
+      .locator('.nav-search-result[href*="pages/General/quests.html?quest=investigate-the-undead"]')
+      .waitFor({ state: "visible" });
+    await page.locator("#site-search-input").fill("");
+
+    await page.locator("#quest-search").fill("Guild Master");
+    await page.waitForFunction(() => {
+      const rows = document.querySelectorAll("[data-entry-id]");
+      return rows.length === 1 && rows[0].getAttribute("data-entry-id") === "create-a-guild";
+    });
+    await page.locator('[data-entry-id="create-a-guild"]').click();
+    await page.waitForFunction(
+      () => new URL(window.location.href).searchParams.get("quest") === "create-a-guild"
+    );
+    const serviceText = (await page.locator("#quest-detail").textContent()).trim();
+    for (const expected of ["Create a Guild", "Guild Master", "Gold", "x50", "Guild System"]) {
+      if (!serviceText.includes(expected)) {
+        throw new Error(`Guild service detail missing "${expected}": "${serviceText}"`);
+      }
+    }
+    const goldLinkCount = await page.locator(
+      '#quest-detail a[href="pages/items/collectables.html?collectable=0"]'
+    ).count();
+    if (goldLinkCount !== 1) {
+      throw new Error(`Guild service expected one Gold collectable link, found ${goldLinkCount}`);
+    }
+    await page.locator('#quest-detail img[src*="Gold.png"]').waitFor({ state: "visible" });
+    const guildMapLink = page.locator(
+      '#quest-detail a.quest-map-link[href="https://traecneh.github.io/Project-Rogue-Map/?x=3404&y=3720&label=Guild+Master"]'
+    );
+    if ((await guildMapLink.count()) !== 1) {
+      throw new Error("Guild service is missing its labeled Project Rogue Map coordinate link");
+    }
+    if ((await page.locator("#quest-detail a.quest-map-preview").count()) !== 0) {
+      throw new Error("Guild service should retain its coordinate link instead of a quest map preview");
+    }
+    if (
+      (await guildMapLink.getAttribute("target")) !== "_blank" ||
+      !(await guildMapLink.getAttribute("rel"))?.includes("noopener")
+    ) {
+      throw new Error("Quest map links must open safely in a new tab");
+    }
+
+    await page.goto(joinUrl(baseUrl, QUESTS_GRAVE_CONSEQUENCES_PATH), { waitUntil: "load" });
+    await page.locator(".quest-detail-title").waitFor({ state: "visible" });
+    const graveTitle = (await page.locator(".quest-detail-title").textContent()).trim();
+    if (graveTitle !== "Grave Consequences") {
+      throw new Error(`Quest deep link opened "${graveTitle}" instead of "Grave Consequences"`);
+    }
+    const graveText = (await page.locator("#quest-detail").textContent()).trim();
+    for (const expected of [
+      "Jeel",
+      "Mayor of Jeel",
+      "Kill Skeletons",
+      "25 required",
+      "Kill Skeleton Warriors",
+      "15 required",
+      "Kill Undead Warriors",
+      "10 required",
+      "4,250 Experience",
+    ]) {
+      if (!graveText.includes(expected)) {
+        throw new Error(`Grave Consequences detail missing "${expected}": "${graveText}"`);
+      }
+    }
+    for (const href of [
+      "pages/enemies/monsters.html?monster=46",
+      "pages/enemies/monsters.html?monster=120",
+      "pages/enemies/monsters.html?monster=96",
+    ]) {
+      const count = await page.locator(`#quest-detail a[href="${href}"]`).count();
+      if (count !== 1) {
+        throw new Error(`Grave Consequences expected one "${href}", found ${count}`);
+      }
+    }
+    const mayorMapPreviews = page.locator(
+      '#quest-detail a.quest-map-preview[href="https://traecneh.github.io/Project-Rogue-Map/?x=3766&y=3232&label=Mayor+of+Jeel"]'
+    );
+    if ((await mayorMapPreviews.count()) !== 2) {
+      throw new Error("Grave Consequences should preview both giver and turn-in coordinates");
+    }
+
+    const regionalQuests = [
+      {
+        path: "/pages/General/quests.html?quest=the-backroom",
+        title: "The Backroom",
+        expected: [
+          "Hothbra",
+          "Lyrael",
+          "Scared Thief",
+          "Kill Zombies",
+          "5 required",
+          "Kill Hell Hounds",
+          "20 required",
+          "Guard Captain of Hothbra",
+          "15,000 Experience",
+        ],
+      },
+      {
+        path: "/pages/General/quests.html?quest=the-highwaymans-due",
+        title: "The Highwayman's Due",
+        expected: ["Town Crier", "Kill Thieves", "15 required", "Kill Fighters", "3,250 Experience"],
+      },
+      {
+        path: "/pages/General/quests.html?quest=scurvy-dogs",
+        title: "Scurvy Dogs",
+        expected: [
+          "Jack Sparrow",
+          "Kill Pirates",
+          "Kill Swashbucklers",
+          "Kill Pirate Captains",
+          "17,500 Experience",
+        ],
+      },
+      {
+        path: "/pages/General/quests.html?quest=lotors-ettin-slayer",
+        title: "Lotor's Ettin Slayer",
+        expected: [
+          "King Lotor",
+          "Kill Ettins",
+          "50 required",
+          "Uncooked Ribs",
+          "10 required",
+          "27,500 Experience",
+        ],
+      },
+      {
+        path: "/pages/General/quests.html?quest=wailing-souls",
+        title: "Wailing Souls",
+        expected: ["New Korelth", "Guard Captain", "Kill Ghosts", "Kill Wraiths", "10,000 Experience"],
+      },
+      {
+        path: "/pages/General/quests.html?quest=the-scared-guard",
+        title: "The Scared Guard",
+        expected: [
+          "Scared Guard",
+          "Kill Undead Warriors",
+          "29 required",
+          "Kill Zombies",
+          "15 required",
+          "3,250 Experience",
+        ],
+      },
+      {
+        path: "/pages/General/quests.html?quest=the-approaching-orcs",
+        title: "The Approaching Orcs",
+        expected: ["Vrethpool", "Maribell", "Kill Orcs", "Kill Goblins", "1,750 Experience"],
+      },
+      {
+        path: "/pages/General/quests.html?quest=where-theres-smoke",
+        title: "Where There's Smoke",
+        expected: [
+          "Mayor of Vrethpool",
+          "Kill Hell Hounds",
+          "30 required",
+          "Kill Imps",
+          "17,500 Experience",
+        ],
+      },
+      {
+        path: "/pages/General/quests.html?quest=a-headless-problem",
+        title: "A Headless Problem",
+        expected: ["Lazy Guard", "Kill Headless", "Kill Lizardmen", "1,250 Experience"],
+      },
+      {
+        path: "/pages/General/quests.html?quest=banished-no-more",
+        title: "Banished No More",
+        expected: [
+          "Garnea",
+          "Jimothy",
+          "Kill Banished Spirits",
+          "Kill Banished Soldiers",
+          "75,000 Experience",
+        ],
+      },
+      {
+        path: "/pages/General/quests.html?quest=the-fallen-order",
+        title: "The Fallen Order",
+        expected: [
+          "Banished No More",
+          "Kill Banished Knights",
+          "Kill Blue Wisps",
+          "55,000 Experience",
+        ],
+      },
+      {
+        path: "/pages/General/quests.html?quest=feathers-and-fury",
+        title: "Feathers and Fury",
+        expected: [
+          "Parian",
+          "Preston the Archer",
+          "Kill Harpies",
+          "Kill Minotaurs",
+          "Kill Evil Eyes",
+          "12,500 Experience",
+        ],
+      },
+    ];
+    for (const quest of regionalQuests) {
+      await page.goto(joinUrl(baseUrl, quest.path), { waitUntil: "load" });
+      await page.locator(".quest-detail-title").waitFor({ state: "visible" });
+      const regionalTitle = (await page.locator(".quest-detail-title").textContent()).trim();
+      if (regionalTitle !== quest.title) {
+        throw new Error(`Quest deep link opened "${regionalTitle}" instead of "${quest.title}"`);
+      }
+      const regionalText = (await page.locator("#quest-detail").textContent()).trim();
+      for (const expected of quest.expected) {
+        if (!regionalText.includes(expected)) {
+          throw new Error(`${quest.title} detail missing "${expected}": "${regionalText}"`);
+        }
+      }
+    }
+
+    for (const quest of questData.quests || []) {
+      const coordinateOccurrences = [];
+      const addCoordinates = (coordinates) => {
+        if (Array.isArray(coordinates) && coordinates.length === 2) {
+          coordinateOccurrences.push(coordinates);
+        }
+      };
+      addCoordinates(quest.giver?.coordinates);
+      for (const stage of quest.stages || []) {
+        for (const objective of stage.objectives || []) {
+          addCoordinates(objective.target?.coordinates);
+          addCoordinates(objective.target?.destination_coordinates);
+        }
+      }
+      addCoordinates(quest.turn_in?.coordinates);
+
+      await page.goto(
+        joinUrl(
+          baseUrl,
+          `/pages/General/quests.html?quest=${encodeURIComponent(quest.id)}`
+        ),
+        { waitUntil: "load" }
+      );
+      await page.locator(".quest-detail-title").waitFor({ state: "visible" });
+      const previewCount = await page.locator("#quest-detail a.quest-map-preview").count();
+      if (previewCount !== coordinateOccurrences.length) {
+        throw new Error(
+          `${quest.name} expected ${coordinateOccurrences.length} contextual map previews, found ${previewCount}`
+        );
+      }
+      if ((await page.locator("#quest-detail a.quest-map-link").count()) !== 0) {
+        throw new Error(`${quest.name} still renders numeric coordinate links`);
+      }
+      if ((await page.locator("#quest-detail .quest-map-preview-section").count()) !== 0) {
+        throw new Error(`${quest.name} still renders a standalone Locations section`);
+      }
+
+      const expectedCoordinateCounts = new Map();
+      coordinateOccurrences.forEach(([x, y]) => {
+        const key = `${x},${y}`;
+        expectedCoordinateCounts.set(key, (expectedCoordinateCounts.get(key) || 0) + 1);
+      });
+      for (const [coordinate, expectedCount] of expectedCoordinateCounts) {
+        const actualCount = await page
+          .locator(`#quest-detail a.quest-map-preview[data-map-coordinate="${coordinate}"]`)
+          .count();
+        if (actualCount !== expectedCount) {
+          throw new Error(
+            `${quest.name} expected ${expectedCount} preview(s) for ${coordinate}, found ${actualCount}`
+          );
+        }
+      }
+
+      const previewState = await page.locator("#quest-detail a.quest-map-preview").evaluateAll(
+        (previews) =>
+          previews.map((preview) => {
+            const url = new URL(preview.href);
+            const [x, y] = preview.dataset.mapCoordinate.split(",");
+            return {
+              contextual: Boolean(
+                preview.closest(".quest-fact-value, .quest-target-line, .quest-turn-in")
+              ),
+              safeTarget:
+                preview.target === "_blank" && preview.rel.split(/\s+/).includes("noopener"),
+              coordinatesMatch:
+                url.searchParams.get("x") === x && url.searchParams.get("y") === y,
+            };
+          })
+      );
+      if (
+        previewState.some(
+          (preview) =>
+            !preview.contextual || !preview.safeTarget || !preview.coordinatesMatch
+        )
+      ) {
+        throw new Error(`${quest.name} has an invalid contextual Project Rogue Map link`);
+      }
+
+      if (coordinateOccurrences.length) {
+        await page.waitForFunction((expectedCount) => {
+          const images = Array.from(document.querySelectorAll(".quest-map-preview-image"));
+          return (
+            images.length === expectedCount &&
+            images.every((image) => image.complete && image.naturalWidth === 4096)
+          );
+        }, coordinateOccurrences.length);
+      }
+      const floorLabels = await page.locator(".quest-map-preview-floor").allTextContents();
+      const expectedUnderground = coordinateOccurrences.filter(([x]) => x >= 4096).length;
+      if (
+        floorLabels.filter((label) => label === "UG").length !== expectedUnderground ||
+        floorLabels.filter((label) => label === "OW").length !==
+          coordinateOccurrences.length - expectedUnderground
+      ) {
+        throw new Error(`${quest.name} has incorrect overworld/underground map badges`);
+      }
+    }
+
+    await page.goto(joinUrl(baseUrl, "/pages/General/quests.html?quest=the-backroom"), {
+      waitUntil: "load",
+    });
+    for (const coordinate of ["3576,3031", "7695,3018", "7687,2961"]) {
+      const count = await page
+        .locator(`#quest-detail a.quest-map-preview[data-map-coordinate="${coordinate}"]`)
+        .count();
+      if (count !== 1) {
+        throw new Error(`The Backroom expected one map preview for ${coordinate}, found ${count}`);
+      }
+    }
+    const guardCoordinateCount = await page
+      .locator('#quest-detail a.quest-map-preview[data-map-coordinate="3576,3015"]')
+      .count();
+    if (guardCoordinateCount !== 2) {
+      throw new Error(`The Backroom expected contextual Guard Captain previews, found ${guardCoordinateCount}`);
+    }
+    const backroomPreviewCount = await page.locator("#quest-detail a.quest-map-preview").count();
+    if (backroomPreviewCount !== 6) {
+      throw new Error(`The Backroom expected six contextual map previews, found ${backroomPreviewCount}`);
+    }
+    if ((await page.locator("#quest-detail a.quest-map-link").count()) !== 0) {
+      throw new Error("The Backroom should replace visible coordinate links with map previews");
+    }
+    if ((await page.locator("#quest-detail .quest-map-preview-section").count()) !== 0) {
+      throw new Error("The Backroom should not collect map previews in a Locations section");
+    }
+    const backroomPreviewsAreContextual = await page
+      .locator("#quest-detail a.quest-map-preview")
+      .evaluateAll((previews) =>
+        previews.every((preview) =>
+          Boolean(preview.closest(".quest-fact-value, .quest-target-line, .quest-turn-in"))
+        )
+      );
+    if (!backroomPreviewsAreContextual) {
+      throw new Error("The Backroom map previews are not attached to their quest context");
+    }
+    const backroomDetailText = (await page.locator("#quest-detail").textContent()).trim();
+    if (backroomDetailText.includes("3,576, 3,031")) {
+      throw new Error("The Backroom still exposes numeric coordinates in visible detail text");
+    }
+    await page.waitForFunction(() => {
+      const previews = Array.from(document.querySelectorAll(".quest-map-preview-image"));
+      return (
+        previews.length === 6 &&
+        previews.every((image) => image.complete && image.naturalWidth === 4096)
+      );
+    });
+    const floorLabels = await page.locator(".quest-map-preview-floor").allTextContents();
+    if (floorLabels.filter((label) => label === "OW").length !== 4 ||
+        floorLabels.filter((label) => label === "UG").length !== 2) {
+      throw new Error(`The Backroom floor badges are incorrect: ${floorLabels.join(", ")}`);
+    }
+    for (const href of [
+      "pages/enemies/monsters.html?monster=94",
+      "pages/enemies/monsters.html?monster=96",
+      "pages/enemies/monsters.html?monster=99",
+      "pages/enemies/monsters.html?monster=103",
+    ]) {
+      const count = await page.locator(`#quest-detail a[href="${href}"]`).count();
+      if (count !== 1) {
+        throw new Error(`The Backroom expected one "${href}", found ${count}`);
+      }
+    }
+
+    await page.goto(joinUrl(baseUrl, "/pages/General/quests.html?quest=welcome-to-silvest"), {
+      waitUntil: "load",
+    });
+    const welcomePreviewCount = await page.locator("#quest-detail a.quest-map-preview").count();
+    if (welcomePreviewCount !== 8) {
+      throw new Error(`Welcome to Silvest expected eight contextual map previews, found ${welcomePreviewCount}`);
+    }
+    if ((await page.locator("#quest-detail a.quest-map-link").count()) !== 0) {
+      throw new Error("Welcome to Silvest should replace visible coordinate links with map previews");
+    }
+    const townGuidePreviewCount = await page
+      .locator('#quest-detail a.quest-map-preview[data-map-coordinate="3415,3722"]')
+      .count();
+    if (townGuidePreviewCount !== 3) {
+      throw new Error(`Welcome to Silvest expected contextual Town Guide previews, found ${townGuidePreviewCount}`);
+    }
+    const welcomeFloorLabels = await page.locator(".quest-map-preview-floor").allTextContents();
+    if (welcomeFloorLabels.length !== 8 || welcomeFloorLabels.some((label) => label !== "OW")) {
+      throw new Error(`Welcome to Silvest floor badges are incorrect: ${welcomeFloorLabels.join(", ")}`);
+    }
+
+    await page.goto(joinUrl(baseUrl, "/pages/General/quests.html?quest=lotors-ettin-slayer"), {
+      waitUntil: "load",
+    });
+    const ribsLinkCount = await page
+      .locator('#quest-detail a[href="pages/items/collectables.html?collectable=96"]')
+      .count();
+    if (ribsLinkCount !== 1) {
+      throw new Error(`Lotor's Ettin Slayer expected one Uncooked Ribs link, found ${ribsLinkCount}`);
+    }
+    const summaryText = (await page.locator("#quest-page-summary").textContent()).trim();
+    if (summaryText !== "22 quests / 1 service / 9 regions") {
+      throw new Error(`Quest summary has unexpected multi-region text: "${summaryText}"`);
+    }
+    const factLayoutIsContained = await page.locator(".quest-facts").evaluate((facts) =>
+      Array.from(facts.querySelectorAll(".quest-fact")).every((fact) => {
+        const preview = fact.querySelector(".quest-map-preview");
+        return !preview || preview.getBoundingClientRect().right <= fact.getBoundingClientRect().right + 1;
+      })
+    );
+    if (!factLayoutIsContained) {
+      throw new Error("Quest map preview overflows its fact cell");
+    }
+    await page.locator("#site-search-input").fill("Jimothy");
+    await page
+      .locator('.nav-search-result[href*="pages/General/quests.html?quest=the-fallen-order"]')
+      .waitFor({ state: "visible" });
+    await page.locator("#site-search-input").fill("");
+
+    const fallbackPage = await browser.newPage();
+    try {
+      fallbackPage.setDefaultTimeout(timeoutMs);
+      await fallbackPage.route("**/Map_Combined-preview.webp", (route) => route.abort());
+      await fallbackPage.goto(joinUrl(baseUrl, "/pages/General/quests.html?quest=the-backroom"), {
+        waitUntil: "load",
+      });
+      await fallbackPage
+        .locator(".quest-map-preview.is-unavailable")
+        .first()
+        .waitFor({ state: "visible" });
+      const unavailableCount = await fallbackPage.locator(".quest-map-preview.is-unavailable").count();
+      if (unavailableCount !== 6) {
+        throw new Error(`Map preview fallback expected six unavailable tiles, found ${unavailableCount}`);
+      }
+      await fallbackPage
+        .locator(".quest-map-preview-fallback")
+        .first()
+        .waitFor({ state: "visible" });
+    } finally {
+      await fallbackPage.close();
+    }
+
+    const mobileQuestPage = await browser.newPage();
+    try {
+      mobileQuestPage.setDefaultTimeout(timeoutMs);
+      await mobileQuestPage.setViewportSize({ width: 390, height: 844 });
+      await mobileQuestPage.goto(joinUrl(baseUrl, "/pages/General/quests.html?quest=the-backroom"), {
+        waitUntil: "load",
+      });
+      await mobileQuestPage.locator(".quest-map-preview").first().waitFor({ state: "visible" });
+      const mobileLayout = await mobileQuestPage.evaluate(() => {
+        const cards = Array.from(document.querySelectorAll(".quest-map-preview"));
+        return {
+          cardCount: cards.length,
+          minCardWidth: Math.min(...cards.map((card) => card.getBoundingClientRect().width)),
+          overflow: document.documentElement.scrollWidth > window.innerWidth + 1,
+        };
+      });
+      if (mobileLayout.cardCount !== 6 || mobileLayout.minCardWidth < 120 || mobileLayout.overflow) {
+        throw new Error(`Quest map previews do not fit mobile: ${JSON.stringify(mobileLayout)}`);
+      }
+    } finally {
+      await mobileQuestPage.close();
+    }
+
+    await page.locator("[data-close-detail]").click();
+    await page.waitForFunction(() => !new URL(window.location.href).searchParams.has("quest"));
+    await page.locator(".quest-detail-empty").waitFor({ state: "visible" });
+
+    await assertMobilePageFirstNavigation(page, baseUrl, "/pages/General/quests.html");
+
+    if (runtimeErrors.length) {
+      throw new Error(`browser errors: ${runtimeErrors.join("; ")}`);
+    }
+  } finally {
+    await page.close();
+  }
+}
+
 async function runPerksSpec(browser, baseUrl) {
   const page = await browser.newPage();
   page.setDefaultTimeout(timeoutMs);
@@ -575,7 +2059,9 @@ async function runPerksSpec(browser, baseUrl) {
     await page.locator("#perk-speed-context").waitFor({ state: "visible" });
     await page.locator('[data-perk-name="Runic"].perk-selected').waitFor({ state: "visible" });
     await assertPerkSources(page);
+    await assertPerkTatterSources(page);
     await assertPerkMathTooltip(page);
+    await assertMobilePerkTatterLayout(browser, baseUrl);
 
     await page.locator("#perk-search").fill("lifesteal");
     await page.waitForFunction(() => {
@@ -668,9 +2154,9 @@ async function runRaritySpec(browser, baseUrl) {
     }
 
     await upgradeButton.click();
-    await page.waitForFunction(() => document.querySelector("[data-rarity-result]")?.textContent?.includes("Uncommon"));
+    await page.waitForFunction(() => document.querySelector("[data-rarity-result]")?.textContent?.includes("Rare"));
     const upgradedText = (await page.locator("[data-rarity-result]").textContent()).trim();
-    for (const expected of ["Rarity", "Uncommon", "Max Rarity", "Ascendant", "Item Power", "x2"]) {
+    for (const expected of ["Rarity", "Rare", "Max Rarity", "Ascendant", "Item Power", "x4"]) {
       if (!upgradedText.includes(expected)) {
         throw new Error(`Rarity upgrade result missing "${expected}": "${upgradedText}"`);
       }
@@ -701,16 +2187,16 @@ async function runRerollSpec(browser, baseUrl) {
     for (const expected of [
       "What Changes",
       "What Does Not Change",
-      "Re-Roll Flow",
-      "Before You Roll",
-      "When Re-Roll Helps",
-      "Reroll Shards",
-      "Reroll Stone",
+      "Reforge Flow",
+      "Before You Reforge",
+      "When Reforge Helps",
+      "Rarity Shards",
+      "Tinker Tools",
       "Current Rarity",
       "Max Rarity",
     ]) {
       if (!pageText.includes(expected)) {
-        throw new Error(`Re-Roll page missing "${expected}": "${pageText}"`);
+        throw new Error(`Reforge page missing "${expected}": "${pageText}"`);
       }
     }
 
@@ -723,7 +2209,7 @@ async function runRerollSpec(browser, baseUrl) {
     ]) {
       const count = await page.locator(`.reroll-link-grid a[href="${href}"]`).count();
       if (count !== 1) {
-        throw new Error(`Re-Roll related link expected one "${href}", found ${count}`);
+        throw new Error(`Reforge related link expected one "${href}", found ${count}`);
       }
     }
 
@@ -1471,14 +2957,10 @@ async function runLevelSpec(browser, baseUrl) {
 
   try {
     await page.goto(joinUrl(baseUrl, "/pages/stats/level.html"), { waitUntil: "load" });
-    await page.locator(".level-xp-widget").waitFor({ state: "visible" });
+    await page.locator(".level-chart-card").waitFor({ state: "visible" });
     const pageText = (await page.locator(".main-content").textContent()).trim();
     for (const expected of [
-      "Level at a Glance",
-      "Damage to XP Preview",
-      "Milestone Reference",
-      "Level XP Requirements",
-      "Related Pages",
+      "Level XP Curve",
       "Level 105",
       "1:1 Damage",
       "Experience Pool",
@@ -1490,21 +2972,17 @@ async function runLevelSpec(browser, baseUrl) {
       }
     }
 
-    for (const href of [
-      "pages/systems/experience.html",
-      "pages/General/build-planner.html",
-      "pages/systems/monster-damage-reduction.html",
-      "pages/items/weapons.html",
-      "pages/items/armors.html",
-      "pages/enemies/monsters.html",
-    ]) {
-      const count = await page.locator(`.level-link-grid a[href="${href}"]`).count();
-      if (count !== 1) {
-        throw new Error(`Level related link expected one "${href}", found ${count}`);
+    for (const removed of ["Level at a Glance", "Related Pages"]) {
+      if (pageText.includes(removed)) {
+        throw new Error(`Level page should not include removed section "${removed}".`);
       }
     }
+    const linkGridCount = await page.locator(".level-link-grid").count();
+    if (linkGridCount !== 0) {
+      throw new Error(`Level page expected no related link grid, found ${linkGridCount}.`);
+    }
 
-    await assertLevelXpWidget(page);
+    await assertLevelCurve(page);
     await assertMobilePageFirstNavigation(page, baseUrl, "/pages/stats/level.html");
 
     if (runtimeErrors.length) {
@@ -1515,85 +2993,113 @@ async function runLevelSpec(browser, baseUrl) {
   }
 }
 
-async function assertLevelXpWidget(page) {
-  await page.locator(".level-milestone-card").first().waitFor({ state: "visible" });
+async function assertLevelCurve(page) {
   const milestoneCount = await page.locator(".level-milestone-card").count();
-  if (milestoneCount !== 7) {
-    throw new Error(`Level page expected 7 milestone cards, found ${milestoneCount}`);
+  if (milestoneCount !== 0) {
+    throw new Error(`Level page expected no milestone cards, found ${milestoneCount}`);
   }
 
   const rowCount = await page.locator("#level-xp-chart .weight-row").count();
-  if (rowCount !== 105) {
-    throw new Error(`Level XP chart expected 105 rows, found ${rowCount}`);
+  if (rowCount !== 0) {
+    throw new Error(`Level XP page expected no long-form rows, found ${rowCount}`);
   }
 
-  let state = await readLevelXpState(page);
+  await page.locator("#level-xp-curve").waitFor({ state: "visible" });
+  let curveState = await readLevelCurveState(page);
   for (const [key, expected] of Object.entries({
-    damage: "100",
-    base: "100",
-    boosts: "0",
-    multiplier: "1x",
-    total: "100",
+    level: "Level 100",
+    total: "242,900,000",
+    nextTotal: "250,000,000",
+    delta: "(+7,100,000)",
+    deltaLabel: "Next Level At",
+    ariaLevel: "100",
   })) {
-    if (state[key] !== expected) {
-      throw new Error(`Level XP widget expected ${key}="${expected}", got "${state[key]}"`);
+    if (curveState[key] !== expected) {
+      throw new Error(`Level curve expected ${key}="${expected}", got "${curveState[key]}"`);
     }
   }
 
-  await setLevelDamage(page, 250);
+  await page.locator("#level-xp-curve").focus();
+  await page.locator("#level-xp-curve").press("End");
   await page.waitForFunction(
-    () => document.querySelector("[data-level-total-xp]")?.textContent?.trim() === "250",
+    () => document.querySelector("[data-level-curve-level]")?.textContent?.trim() === "Level 105",
     undefined,
     { timeout: timeoutMs }
   );
-
-  await page.locator('[data-level-boost="pool"]').click();
-  await page.waitForFunction(
-    () => document.querySelector("[data-level-total-xp]")?.textContent?.trim() === "500",
-    undefined,
-    { timeout: timeoutMs }
-  );
-  state = await readLevelXpState(page);
-  if (state.multiplier !== "2x" || state.boosts !== "1") {
-    throw new Error(`Level XP widget expected one active boost after pool click: ${JSON.stringify(state)}`);
+  curveState = await readLevelCurveState(page);
+  if (
+    curveState.total !== "2,500,000,000" ||
+    curveState.nextTotal !== "5,000,000,000" ||
+    curveState.delta !== "(+2,500,000,000)" ||
+    curveState.deltaLabel !== "Maximum XP"
+  ) {
+    throw new Error(`Level 105 curve values are incorrect: ${JSON.stringify(curveState)}`);
   }
 
-  await page.locator('[data-level-boost="catchup"]').click();
+  await page.locator("#level-xp-curve").press("Home");
   await page.waitForFunction(
-    () => document.querySelector("[data-level-total-xp]")?.textContent?.trim() === "750",
+    () => document.querySelector("[data-level-curve-level]")?.textContent?.trim() === "Level 1",
     undefined,
     { timeout: timeoutMs }
   );
+  curveState = await readLevelCurveState(page);
+  if (
+    curveState.total !== "0" ||
+    curveState.nextTotal !== "2,000" ||
+    curveState.delta !== "(+2,000)" ||
+    curveState.deltaLabel !== "Next Level At"
+  ) {
+    throw new Error(`Level 1 curve values are incorrect: ${JSON.stringify(curveState)}`);
+  }
 
-  await page.locator('[data-level-boost="pool"]').click();
+  for (let step = 0; step < 4; step += 1) {
+    await page.locator("#level-xp-curve").press("ArrowRight");
+  }
+  curveState = await readLevelCurveState(page);
+  if (
+    curveState.level !== "Level 5" ||
+    curveState.total !== "8,000" ||
+    curveState.nextTotal !== "10,000" ||
+    curveState.delta !== "(+2,000)"
+  ) {
+    throw new Error(`Level 5 cumulative next-level preview is incorrect: ${JSON.stringify(curveState)}`);
+  }
+
+  await page.locator("#level-xp-curve").evaluate((canvas) => {
+    const rect = canvas.getBoundingClientRect();
+    const internalX = 58 + ((canvas.width - 58 - 14) * (75 - 1)) / (105 - 1);
+    const clientX = rect.left + (internalX / canvas.width) * rect.width;
+    canvas.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, clientX, clientY: rect.top + rect.height / 2 }));
+  });
   await page.waitForFunction(
-    () => document.querySelector("[data-level-total-xp]")?.textContent?.trim() === "500",
+    () => document.querySelector("[data-level-curve-level]")?.textContent?.trim() === "Level 75",
     undefined,
     { timeout: timeoutMs }
   );
-  state = await readLevelXpState(page);
-  if (state.poolPressed !== "false" || state.catchupPressed !== "true" || state.multiplier !== "2x") {
-    throw new Error(`Level XP widget did not preserve toggle state correctly: ${JSON.stringify(state)}`);
+  curveState = await readLevelCurveState(page);
+  if (
+    curveState.total !== "95,510,000" ||
+    curveState.nextTotal !== "99,810,000" ||
+    curveState.delta !== "(+4,300,000)" ||
+    !curveState.tooltipVisible
+  ) {
+    throw new Error(`Level 75 pointer inspection failed: ${JSON.stringify(curveState)}`);
   }
 }
 
-async function setLevelDamage(page, value) {
-  await page.locator("[data-level-damage-slider]").evaluate((input, nextValue) => {
-    input.value = String(nextValue);
-    input.dispatchEvent(new Event("input", { bubbles: true }));
-  }, value);
-}
-
-async function readLevelXpState(page) {
-  return await page.evaluate(() => ({
-    base: document.querySelector("[data-level-base-xp]")?.textContent?.trim() || "",
-    boosts: document.querySelector("[data-level-boost-count]")?.textContent?.trim() || "",
-    catchupPressed: document.querySelector('[data-level-boost="catchup"]')?.getAttribute("aria-pressed") || "",
-    damage: document.querySelector("[data-level-damage-value]")?.textContent?.trim() || "",
-    multiplier: document.querySelector("[data-level-multiplier]")?.textContent?.trim() || "",
-    poolPressed: document.querySelector('[data-level-boost="pool"]')?.getAttribute("aria-pressed") || "",
-    total: document.querySelector("[data-level-total-xp]")?.textContent?.trim() || "",
-  }));
+async function readLevelCurveState(page) {
+  return await page.evaluate(() => {
+    const tooltip = document.querySelector("[data-level-curve-tooltip]");
+    return {
+      ariaLevel: document.querySelector("#level-xp-curve")?.getAttribute("aria-valuenow") || "",
+      delta: document.querySelector("[data-level-curve-delta]")?.textContent?.trim() || "",
+      deltaLabel: document.querySelector("[data-level-curve-delta-label]")?.textContent?.trim() || "",
+      level: document.querySelector("[data-level-curve-level]")?.textContent?.trim() || "",
+      nextTotal: document.querySelector("[data-level-curve-next-total]")?.textContent?.trim() || "",
+      tooltipVisible: Boolean(tooltip && !tooltip.hidden),
+      total: document.querySelector("[data-level-curve-total]")?.textContent?.trim() || "",
+    };
+  });
 }
 
 async function runSkillsSpec(browser, baseUrl) {
@@ -1608,19 +3114,13 @@ async function runSkillsSpec(browser, baseUrl) {
 
   try {
     await page.goto(joinUrl(baseUrl, "/pages/stats/skills.html"), { waitUntil: "load" });
-    await page.locator(".skills-requirement-widget").waitFor({ state: "visible" });
+    await page.locator(".skills-chart-card").waitFor({ state: "visible" });
     const pageText = (await page.locator(".main-content").textContent()).trim();
     for (const expected of [
-      "Skills at a Glance",
-      "Melee Skill Set",
-      "Requirement Preview",
-      "Skill XP Requirements",
-      "Related Pages",
-      "Large Blades",
-      "Axes",
-      "Blunts",
-      "Polearms",
-      "Small Blades",
+      "Skill XP Curve",
+      "Five Melee Skills",
+      "Base Max",
+      "+10 Above Cap",
       "Race bonuses do not count toward equipment requirements",
     ]) {
       if (!pageText.includes(expected)) {
@@ -1628,21 +3128,18 @@ async function runSkillsSpec(browser, baseUrl) {
       }
     }
 
-    for (const href of [
-      "pages/stats/races.html",
-      "pages/General/build-planner.html",
-      "pages/items/weapons.html",
-      "pages/items/armors.html",
-      "pages/stats/level.html",
-      "pages/systems/experience.html",
-    ]) {
-      const count = await page.locator(`.skills-link-grid a[href="${href}"]`).count();
-      if (count !== 1) {
-        throw new Error(`Skills related link expected one "${href}", found ${count}`);
+    for (const removed of ["Skills at a Glance", "Melee Skill Set", "Requirement Preview", "Related Pages"]) {
+      if (pageText.includes(removed)) {
+        throw new Error(`Skills page should not include removed section "${removed}".`);
       }
     }
 
-    await assertSkillsRequirementWidget(page);
+    const oldRowCount = await page.locator("#skill-xp-chart .weight-row").count();
+    if (oldRowCount !== 0) {
+      throw new Error(`Skills page expected no long-form XP rows, found ${oldRowCount}.`);
+    }
+
+    await assertSkillCurve(page);
     await assertMobilePageFirstNavigation(page, baseUrl, "/pages/stats/skills.html");
 
     if (runtimeErrors.length) {
@@ -1653,70 +3150,82 @@ async function runSkillsSpec(browser, baseUrl) {
   }
 }
 
-async function assertSkillsRequirementWidget(page) {
-  const rowCount = await page.locator("#skill-xp-chart .weight-row").count();
-  if (rowCount !== 111) {
-    throw new Error(`Skills XP chart expected 111 rows, found ${rowCount}`);
-  }
-
-  let state = await readSkillsRequirementState(page);
+async function assertSkillCurve(page) {
+  await page.locator("#skill-xp-curve").waitFor({ state: "visible" });
+  let state = await readSkillCurveState(page);
   for (const [key, expected] of Object.entries({
-    base: "80",
-    effective: "80",
-    requirement: "90",
-    status: "Requirement unmet",
+    level: "Level 100",
+    total: "25,000,000",
+    nextTotal: "26,500,000",
+    nextIncrement: "(+1,500,000)",
+    nextLabel: "Next Level At",
+    ariaLevel: "100",
   })) {
     if (state[key] !== expected) {
-      throw new Error(`Skills requirement widget expected ${key}="${expected}", got "${state[key]}"`);
+      throw new Error(`Skill curve expected ${key}="${expected}", got "${state[key]}"`);
     }
   }
 
-  await page.locator("[data-skill-race-toggle]").click();
+  await page.locator("#skill-xp-curve").focus();
+  await page.locator("#skill-xp-curve").press("Home");
   await page.waitForFunction(
-    () => document.querySelector("[data-skill-effective]")?.textContent?.trim() === "90",
+    () => document.querySelector("[data-skill-curve-level]")?.textContent?.trim() === "Level 0",
     undefined,
     { timeout: timeoutMs }
   );
-  state = await readSkillsRequirementState(page);
-  if (state.status !== "Requirement unmet" || state.note !== "Race bonus is visible, but base skill is still short.") {
-    throw new Error(`Skills race bonus should not satisfy equipment requirements: ${JSON.stringify(state)}`);
+  state = await readSkillCurveState(page);
+  if (
+    state.total !== "0" ||
+    state.nextTotal !== "75" ||
+    state.nextIncrement !== "(+75)" ||
+    state.nextLabel !== "Next Level At"
+  ) {
+    throw new Error(`Skill Level 0 curve values are incorrect: ${JSON.stringify(state)}`);
   }
 
-  await setSkillsRange(page, "[data-skill-base-slider]", 90);
-  await page.waitForFunction(
-    () => document.querySelector("[data-skill-status]")?.textContent?.trim() === "Meets requirement",
-    undefined,
-    { timeout: timeoutMs }
-  );
-  state = await readSkillsRequirementState(page);
-  if (state.base !== "90" || state.effective !== "100" || state.status !== "Meets requirement") {
-    throw new Error(`Skills base requirement check did not update correctly: ${JSON.stringify(state)}`);
+  for (let step = 0; step < 5; step += 1) {
+    await page.locator("#skill-xp-curve").press("ArrowRight");
+  }
+  state = await readSkillCurveState(page);
+  if (
+    state.level !== "Level 5" ||
+    state.total !== "375" ||
+    state.nextTotal !== "500" ||
+    state.nextIncrement !== "(+125)"
+  ) {
+    throw new Error(`Skill Level 5 curve values are incorrect: ${JSON.stringify(state)}`);
   }
 
-  await setSkillsRange(page, "[data-skill-requirement-slider]", 105);
+  await page.locator("#skill-xp-curve").press("End");
   await page.waitForFunction(
-    () => document.querySelector("[data-skill-status]")?.textContent?.trim() === "Requirement unmet",
+    () => document.querySelector("[data-skill-curve-level]")?.textContent?.trim() === "Level 110",
     undefined,
     { timeout: timeoutMs }
   );
+  state = await readSkillCurveState(page);
+  if (
+    state.total !== "75,000,000" ||
+    state.nextTotal !== "75,000,000" ||
+    state.nextIncrement !== "" ||
+    state.nextLabel !== "Maximum XP"
+  ) {
+    throw new Error(`Skill Level 110 curve values are incorrect: ${JSON.stringify(state)}`);
+  }
 }
 
-async function setSkillsRange(page, selector, value) {
-  await page.locator(selector).evaluate((input, nextValue) => {
-    input.value = String(nextValue);
-    input.dispatchEvent(new Event("input", { bubbles: true }));
-  }, value);
-}
-
-async function readSkillsRequirementState(page) {
-  return await page.evaluate(() => ({
-    base: document.querySelector("[data-skill-base]")?.textContent?.trim() || "",
-    effective: document.querySelector("[data-skill-effective]")?.textContent?.trim() || "",
-    note: document.querySelector("[data-skill-note]")?.textContent?.trim() || "",
-    requirement: document.querySelector("[data-skill-requirement]")?.textContent?.trim() || "",
-    status: document.querySelector("[data-skill-status]")?.textContent?.trim() || "",
-    racePressed: document.querySelector("[data-skill-race-toggle]")?.getAttribute("aria-pressed") || "",
-  }));
+async function readSkillCurveState(page) {
+  return await page.evaluate(() => {
+    const tooltip = document.querySelector("[data-skill-curve-tooltip]");
+    return {
+      ariaLevel: document.querySelector("#skill-xp-curve")?.getAttribute("aria-valuenow") || "",
+      level: document.querySelector("[data-skill-curve-level]")?.textContent?.trim() || "",
+      nextIncrement: document.querySelector("[data-skill-curve-next-increment]")?.textContent?.trim() || "",
+      nextLabel: document.querySelector("[data-skill-curve-next-label]")?.textContent?.trim() || "",
+      nextTotal: document.querySelector("[data-skill-curve-next-total]")?.textContent?.trim() || "",
+      tooltipVisible: Boolean(tooltip && !tooltip.hidden),
+      total: document.querySelector("[data-skill-curve-total]")?.textContent?.trim() || "",
+    };
+  });
 }
 
 async function runRacesSpec(browser, baseUrl) {
@@ -2342,6 +3851,24 @@ async function assertResistanceCalculator(page) {
   for (const expected of ["Humanoid", "Poison", "Disease", "Acid", "Dark", "Cold"]) {
     if (!humanoidText.includes(expected)) {
       throw new Error(`Humanoid resistance card missing "${expected}": "${humanoidText}"`);
+    }
+  }
+  const resistanceGroupElements = async (type, group) =>
+    page
+      .locator(`[data-resistance-type-card="${type}"] [data-resistance-group="${group}"] .resistance-element`)
+      .evaluateAll((elements) => elements.map((element) => element.textContent.trim()));
+  const expectedGroupOrders = [
+    ["humanoid", "weakness", ["Dark", "Poison", "Disease", "Acid"]],
+    ["undead", "weakness", ["Holy", "Fire", "Electric"]],
+    ["demon", "weakness", ["Cold", "Holy", "Electric"]],
+    ["demon", "resistance", ["Fire", "Dark"]],
+  ];
+  for (const [type, group, expectedOrder] of expectedGroupOrders) {
+    const actualOrder = await resistanceGroupElements(type, group);
+    if (JSON.stringify(actualOrder) !== JSON.stringify(expectedOrder)) {
+      throw new Error(
+        `Expected ${type} ${group} order ${expectedOrder.join(", ")}, got ${actualOrder.join(", ")}`
+      );
     }
   }
 
@@ -3163,7 +4690,7 @@ async function assertPerkSources(page) {
     throw new Error(`Runic perk source list missing expected item links: "${sourceText}"`);
   }
   const weaponHref = await page
-    .locator('[data-perk-name="Runic"] .perk-source-chip[href*="weapons.html?weapon=227"]')
+    .locator('[data-perk-name="Runic"] .perk-source-chip[href*="weapons.html?weapon=Rune%20Sword"]')
     .getAttribute("href");
   if (!weaponHref) {
     throw new Error("Runic perk source list missing Rune Sword detail link");
@@ -3271,7 +4798,7 @@ async function assertTooltipCoversOverlappingTriggers(page, activeCard) {
           rect.bottom > tooltipRect.top
       );
 
-    if (!overlappingTriggers.length) return { error: "No overlapping stacking trigger found for regression check" };
+    if (!overlappingTriggers.length) return { leaks: [], overlapCount: 0 };
 
     const leaks = overlappingTriggers
       .map(({ trigger, rect }) => {
@@ -3325,6 +4852,7 @@ async function assertWeaponDetailEnhancements(page) {
     .first();
   await runicLink.waitFor({ state: "attached" });
   await assertWeaponTableScanMetrics(page);
+  await assertSuperDuperBowHidden(page);
 
   const detailText = (await page.locator("#details-properties").textContent()).trim();
   if (!detailText.includes("Weapon Speed") || (!detailText.includes("1,000") && !detailText.includes("1000"))) {
@@ -3348,13 +4876,105 @@ async function assertWeaponDetailEnhancements(page) {
   });
 }
 
+async function assertPerkTatterSources(page) {
+  const parry = page.locator('[data-perk-name="Parry"]');
+  const chips = parry.locator(".perk-tatter-chip");
+  if ((await chips.count()) !== 5) {
+    throw new Error(`Parry expected five visible tatter sources, found ${await chips.count()}`);
+  }
+  const uncommonNames = await parry
+    .locator('.perk-tatter-chip[data-tatter-type="uncommon"] .perk-tatter-monster')
+    .allTextContents();
+  const rareNames = await parry
+    .locator('.perk-tatter-chip[data-tatter-type="rare"] .perk-tatter-monster')
+    .allTextContents();
+  if (uncommonNames.join(",") !== "Balron,Anubis") {
+    throw new Error(`Parry uncommon tatter sources are out of order: ${uncommonNames.join(", ")}`);
+  }
+  if (rareNames.join(",") !== "Werewolf,Juggernaut,Orcus") {
+    throw new Error(`Parry rare tatter sources are out of order: ${rareNames.join(", ")}`);
+  }
+  const balronHref = await parry
+    .locator('.perk-tatter-chip[data-tatter-type="uncommon"][href*="monsters.html?monster=93"]')
+    .getAttribute("href");
+  if (!balronHref) {
+    throw new Error("Parry tatter sources missing Balron monster detail link");
+  }
+  const balronTitle = (await parry
+    .locator('.perk-tatter-chip[href*="monsters.html?monster=93"]')
+    .getAttribute("title")) || "";
+  if (!balronTitle.includes("Level 95") || !balronTitle.includes("roughly 1 in 10")) {
+    throw new Error(`Balron tatter tooltip missing level/drop context: "${balronTitle}"`);
+  }
+  if ((await page.locator('[data-perk-name="Runic"] .perk-tatter-list').count()) !== 0) {
+    throw new Error("Unique Runic perk should not display an empty tatter source section");
+  }
+
+  await page.locator("#perk-search").fill("balron");
+  await page.waitForFunction(() => {
+    const parry = document.querySelector('[data-perk-name="Parry"]');
+    const runic = document.querySelector('[data-perk-name="Runic"]');
+    return parry && !parry.classList.contains("perk-card-hidden") && runic?.classList.contains("perk-card-hidden");
+  });
+  await page.locator("#perk-search").fill("");
+  await page.waitForFunction(
+    () => !document.querySelector('[data-perk-name="Runic"]')?.classList.contains("perk-card-hidden")
+  );
+}
+
+async function assertMobilePerkTatterLayout(browser, baseUrl) {
+  const mobilePage = await browser.newPage();
+  try {
+    mobilePage.setDefaultTimeout(timeoutMs);
+    await mobilePage.setViewportSize({ width: 390, height: 844 });
+    await mobilePage.goto(joinUrl(baseUrl, "/pages/systems/perks.html?perk=Parry"), { waitUntil: "load" });
+    await mobilePage.locator('[data-perk-name="Parry"] .perk-tatter-chip').first().waitFor({ state: "visible" });
+    const layout = await mobilePage.evaluate(() => ({
+      chipCount: document.querySelectorAll('[data-perk-name="Parry"] .perk-tatter-chip').length,
+      overflow: document.documentElement.scrollWidth > window.innerWidth + 1,
+    }));
+    if (layout.chipCount < 1 || layout.chipCount > 8 || layout.overflow) {
+      throw new Error(`Perk tatter sources do not fit mobile: ${JSON.stringify(layout)}`);
+    }
+  } finally {
+    await mobilePage.close();
+  }
+}
+
+async function assertSuperDuperBowHidden(page) {
+  const originalUrl = page.url();
+  const url = new URL(originalUrl);
+  url.searchParams.set("weapon", "1037");
+  await page.goto(url.toString(), { waitUntil: "load" });
+  await page.locator("#items-body tr[data-id]").first().waitFor({ state: "attached" });
+  const tableText = (await page.locator("#items-body").textContent()).trim();
+  if (tableText.includes("Super Duper Bow")) {
+    throw new Error("Super Duper Bow should be hidden from the weapons table");
+  }
+  if (await page.locator("#item-details.show").count()) {
+    throw new Error("Super Duper Bow direct route should not open a detail panel");
+  }
+  url.searchParams.set("weapon", "1000");
+  await page.goto(url.toString(), { waitUntil: "load" });
+  await page.locator("#items-body tr[data-id]").first().waitFor({ state: "attached" });
+  if ((await page.locator("#items-body").textContent()).includes("Wooden Bow")) {
+    throw new Error("Wooden Bow should be hidden from the weapons table");
+  }
+  if (await page.locator("#item-details.show").count()) {
+    throw new Error("Wooden Bow direct route should not open a detail panel");
+  }
+  await page.goto(originalUrl, { waitUntil: "load" });
+  await page.locator("#item-details.show").waitFor({ state: "visible" });
+}
+
 async function assertWeaponTableScanMetrics(page) {
   const tableText = (await page.locator("#items-body").textContent()).trim();
   if (!tableText.includes("Rune Sword") || !tableText.includes("1,000 ms")) {
     throw new Error(`Rune Sword table row missing compact speed column: "${tableText}"`);
   }
 
-  const dpsTooltip = (await page.locator("#items-body .dps-breakdown-tooltip").textContent()).trim();
+  const runeSwordRow = page.locator("#items-body tr").filter({ hasText: "Rune Sword" }).first();
+  const dpsTooltip = (await runeSwordRow.locator(".dps-breakdown-tooltip").textContent()).trim();
   const expected = ["DPS Breakdown", "80 - 150", "1,000 ms", "1.00 attacks/sec"];
   expected.forEach((value) => {
     if (!dpsTooltip.includes(value)) {
@@ -3384,7 +5004,13 @@ function normalizeBaseUrl(baseUrl) {
 }
 
 async function waitForRows(page, spec) {
-  await page.locator(spec.rowSelector).first().waitFor({ state: "attached" });
+  try {
+    await page.locator(spec.rowSelector).first().waitFor({ state: "attached" });
+  } catch (error) {
+    throw new Error(
+      `${spec.label} rows unavailable at ${page.url()}: ${formatError(error)}`
+    );
+  }
 }
 
 async function assertDetailState(page, spec, action) {
@@ -3394,6 +5020,19 @@ async function assertDetailState(page, spec, action) {
     throw new Error(`${action} selected "${detailName}" instead of "${spec.detailName}"`);
   }
   await assertUrlHasQuery(page, spec.queryKey);
+}
+
+async function assertDetailRouteDoesNotFilterList(page, spec, action) {
+  const searchInput = page.locator("#item-search");
+  if (!(await searchInput.count())) return;
+  const searchValue = await searchInput.inputValue();
+  if (searchValue) {
+    throw new Error(`${spec.label} ${action} copied detail route "${searchValue}" into table search`);
+  }
+  const visibleRows = await page.locator(spec.rowSelector).count();
+  if (!visibleRows) {
+    throw new Error(`${spec.label} ${action} hid the item table while opening a detail route`);
+  }
 }
 
 async function assertDetailVisible(page, spec) {
@@ -3417,6 +5056,28 @@ async function assertDetailLinks(page, spec) {
   await page.locator(spec.detailLinkSelector).first().waitFor({ state: "attached" });
   const linkCount = await page.locator(spec.detailLinkSelector).count();
   if (!linkCount) throw new Error("detail panel did not render expected cross-page links");
+}
+
+async function assertDetailTextIncludes(page, spec) {
+  if (!Array.isArray(spec.detailTextIncludes) || !spec.detailTextIncludes.length) return;
+  const detailText = (await page.locator("#details-properties").textContent()).trim();
+  for (const expected of spec.detailTextIncludes) {
+    if (!detailText.includes(expected)) {
+      throw new Error(`${spec.label} detail missing "${expected}": "${detailText}"`);
+    }
+  }
+}
+
+async function assertDetailHrefIncludes(page, spec) {
+  if (!Array.isArray(spec.detailHrefIncludes) || !spec.detailHrefIncludes.length) return;
+  const hrefs = await page.locator("#details-properties a.relationship-pill").evaluateAll((links) =>
+    links.map((link) => link.getAttribute("href") || "")
+  );
+  for (const expected of spec.detailHrefIncludes) {
+    if (!hrefs.some((href) => href.includes(expected))) {
+      throw new Error(`${spec.label} detail missing relationship href "${expected}": ${hrefs.join(", ")}`);
+    }
+  }
 }
 
 async function assertDuplicateRouteStability(page, baseUrl, spec) {
@@ -3498,6 +5159,12 @@ function parseArgs(rawArgs) {
       index += 1;
     } else if (arg === "--base-url") {
       parsed.baseUrl = rawArgs[index + 1];
+      index += 1;
+    } else if (arg === "--impact-plan") {
+      parsed.impactPlan = rawArgs[index + 1];
+      index += 1;
+    } else if (arg === "--results-path") {
+      parsed.resultsPath = rawArgs[index + 1];
       index += 1;
     }
   }

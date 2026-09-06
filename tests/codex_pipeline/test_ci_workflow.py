@@ -1,8 +1,15 @@
+import ast
 import unittest
 from pathlib import Path
 
 
 class GitHubActionsWorkflowTests(unittest.TestCase):
+    def test_pipeline_sources_support_ci_python_version(self):
+        for source_path in Path("tools/codex_pipeline").rglob("*.py"):
+            with self.subTest(source_path=source_path):
+                source = source_path.read_text(encoding="utf-8-sig")
+                ast.parse(source, filename=str(source_path), feature_version=(3, 11))
+
     def test_codex_data_checks_workflow_runs_tests_and_validation(self):
         workflow_path = Path(".github/workflows/codex-data-checks.yml")
 
@@ -18,10 +25,12 @@ class GitHubActionsWorkflowTests(unittest.TestCase):
         self.assertIn("python -m pip install cryptography", workflow)
         self.assertIn("pillow", workflow)
         self.assertIn("npm ci", workflow)
+        self.assertIn('output_file="$RUNNER_TEMP/unittest-output.txt"', workflow)
         self.assertIn("python -m unittest discover -s tests -v", workflow)
-        self.assertIn("unittest-output.txt", workflow)
+        self.assertIn("$output_file", workflow)
         self.assertIn("::error title=Unit tests failed::", workflow)
-        self.assertIn("python -m tools.codex_pipeline validate", workflow)
+        self.assertIn("python -m tools.codex_pipeline release-check", workflow)
+        self.assertNotIn("run: python -m tools.codex_pipeline validate", workflow)
         self.assertIn(
             "python -m tools.codex_pipeline smoke-site --smoke-timeout-ms 60000",
             workflow,

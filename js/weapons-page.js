@@ -79,10 +79,8 @@
 
   const RARITY_MULTIPLIERS = [
     { key: "normal", label: "Normal", multiplier: 1 },
-    { key: "uncommon", label: "Uncommon", multiplier: 2 },
     { key: "rare", label: "Rare", multiplier: 4 },
     { key: "epic", label: "Epic", multiplier: 6 },
-    { key: "legendary", label: "Legendary", multiplier: 8 },
     { key: "mythical", label: "Mythical", multiplier: 10 },
     { key: "ascendant", label: "Ascendant", multiplier: 12 },
   ];
@@ -143,7 +141,7 @@
     return Number.isNaN(numericBuyValue) ? null : numericBuyValue / 2;
   };
 
-  const RESISTANCES_SCHEMA_VERSION = 2;
+  const RESISTANCES_SCHEMA_VERSION = 3;
   const MONSTER_TYPE_ORDER = [
     "humanoid",
     "giant",
@@ -225,7 +223,9 @@
             : "pages/enemies/monsters.html";
         };
   let hiddenWeaponNames = new Set();
+  let hiddenWeaponIds = new Set();
   let allowedMonsterNames = new Set();
+  let blockedMonsterIds = new Set();
   let dropSources =
     typeof utils.createEmptyDropSources === "function"
       ? utils.createEmptyDropSources()
@@ -233,10 +233,21 @@
 
   const applyAllowlists = (allowlists) => {
     hiddenWeaponNames = buildNameSet(allowlists?.weapons?.block);
+    hiddenWeaponIds = new Set(
+      (Array.isArray(allowlists?.weapons?.blockIds) ? allowlists.weapons.blockIds : []).map((id) =>
+        String(id).trim()
+      )
+    );
     allowedMonsterNames = buildNameSet(allowlists?.monsters?.allow);
+    blockedMonsterIds = new Set(
+      (Array.isArray(allowlists?.monsters?.blockIds) ? allowlists.monsters.blockIds : []).map((id) =>
+        String(id).trim()
+      )
+    );
   };
 
   const isMonsterAllowed = (monster) => {
+    if (blockedMonsterIds.has(String(monster?.id ?? "").trim())) return false;
     if (!allowedMonsterNames.size) return true;
     return allowedMonsterNames.has((monster.name || "").toLowerCase());
   };
@@ -285,7 +296,16 @@
   const formatNumber = itemUtils.formatNumber;
   const formatRange = itemUtils.formatRange;
 
-  const ELEMENT_KEYS_WITH_MULTIPLIERS = new Set(["fire", "cold", "electric", "poison", "disease", "acid"]);
+  const ELEMENT_KEYS_WITH_MULTIPLIERS = new Set([
+    "fire",
+    "cold",
+    "electric",
+    "poison",
+    "disease",
+    "acid",
+    "holy",
+    "dark",
+  ]);
 
   const formatMonsterTypeLabel = (value) => {
     if (!value) return "-";
@@ -861,8 +881,8 @@
         acid: fields.acid_resistance,
         poison: fields.poison_resistance,
         disease: fields.disease_resistance,
-        holy: fields.holy_resistance ?? fields.unknown_88,
-        dark: fields.dark_resistance ?? fields.unknown_89,
+        holy: fields.holy_resistance,
+        dark: fields.dark_resistance,
       },
       stats: {
         strength: fields.strength,
@@ -1368,7 +1388,7 @@
             const nameLower = (weapon.name || "").toLowerCase();
             const levelNum = Number(weapon.level);
             if (nameLower === "flaming sword" && levelNum === 0) return false;
-            return !isRecordHidden(weapon, hiddenWeaponNames);
+            return !hiddenWeaponNames.has(nameLower) && !hiddenWeaponIds.has(String(weapon.id).trim());
           });
         if (!items.length) {
           renderEmpty("Add weapons_data05.json beside this page to see weapons.");
@@ -1381,10 +1401,6 @@
         selectedAttackSpeeds = new Set();
         buildHead();
         populateFilters(items);
-        if (initialWeaponSearchTerm) {
-          searchTerm = initialWeaponSearchTerm;
-          if (searchInput) searchInput.value = initialWeaponSearchTerm;
-        }
         applyFilterAndSort();
       })
       .catch(() => {

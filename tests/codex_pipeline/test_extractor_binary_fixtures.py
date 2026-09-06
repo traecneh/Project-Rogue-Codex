@@ -103,7 +103,7 @@ class ExtractorBinaryFixtureTests(unittest.TestCase):
         self.assertEqual("Sword", fields["subtype_label"])
         self.assertEqual("Strength", fields["specialty_label"])
         self.assertEqual("Cold", fields["element_label"])
-        self.assertEqual("Epic", fields["max_rarity_label"])
+        self.assertEqual("Mythical", fields["max_rarity_label"])
         self.assertEqual("Frozen Heart (Tier 1)", fields["perk_label"])
         self.assertEqual("Frozen Heart (Tier 2)", fields["corrupted_perk_label"])
 
@@ -138,7 +138,7 @@ class ExtractorBinaryFixtureTests(unittest.TestCase):
         self.assertEqual(12, fields["armor"])
         self.assertEqual(300, fields["value"])
         self.assertEqual("Helmet", fields["slot_label"])
-        self.assertEqual("Rare", fields["max_rarity_label"])
+        self.assertEqual("Epic", fields["max_rarity_label"])
         self.assertEqual("Frozen Heart (Tier 1)", fields["perk_label"])
         self.assertEqual("Frozen Heart (Tier 2)", fields["corrupted_perk_label"])
         self.assertEqual(9, fields["cold_resistance"])

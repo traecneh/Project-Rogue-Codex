@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from tools.codex_pipeline.drops import DROP_KINDS, normalize_key
+from tools.codex_pipeline.perks import UNKNOWN_PERK_LABEL
 
 
 @dataclass(frozen=True)
@@ -86,39 +87,52 @@ def validate_corrupted_perk_labels(
 
             name = item.get("name") or f"id {item.get('id')}"
             label = fields.get("corrupted_perk_label")
-            expected = corrupted_perk_overrides.get(code)
-            if not label:
-                if code not in corrupted_perk_overrides:
+            if code not in corrupted_perk_overrides:
+                if not label or label == UNKNOWN_PERK_LABEL:
                     issues.append(
                         ValidationIssue(
                             "error",
                             f"{kind} {name} has unmapped corrupted perk code {code}",
                         )
                     )
-                elif expected is not None:
-                    issues.append(
-                        ValidationIssue(
-                            "error",
-                            f"{kind} {name} missing expected corrupted perk {code} label {expected!r}",
-                        )
-                    )
                 continue
 
-            if code in corrupted_perk_overrides:
-                if expected is None:
-                    issues.append(
-                        ValidationIssue(
-                            "error",
-                            f"{kind} {name} corrupted perk {code} is configured as unknown but has label {label!r}",
-                        )
+            expected = corrupted_perk_overrides[code]
+            expected_label = expected or UNKNOWN_PERK_LABEL
+            if label != expected_label:
+                issues.append(
+                    ValidationIssue(
+                        "error",
+                        f"{kind} {name} expected corrupted perk {code} label {expected_label!r}, found {label!r}",
                     )
-                elif label != expected:
-                    issues.append(
-                        ValidationIssue(
-                            "error",
-                            f"{kind} {name} expected corrupted perk {code} label {expected!r}, found {label!r}",
-                        )
-                    )
+                )
+    return issues
+
+
+def validate_unique_record_ids(
+    record_data_by_kind: dict[str, Iterable[Any]],
+) -> list[ValidationIssue]:
+    issues: list[ValidationIssue] = []
+    for kind, records in record_data_by_kind.items():
+        records_by_id: dict[int, list[str]] = {}
+        for record in records:
+            if not isinstance(record, dict):
+                continue
+            record_id = _int_or_none(record.get("id"))
+            if record_id is None:
+                continue
+            name = str(record.get("name") or f"unnamed record {record_id}")
+            records_by_id.setdefault(record_id, []).append(name)
+
+        for record_id, names in sorted(records_by_id.items()):
+            if len(names) < 2:
+                continue
+            issues.append(
+                ValidationIssue(
+                    "error",
+                    f"{kind} duplicate record ID {record_id}: {', '.join(names)}",
+                )
+            )
     return issues
 
 
@@ -139,6 +153,7 @@ def validate_javascript_source(label: str, code: str) -> list[ValidationIssue]:
         completed = subprocess.run(
             ["node", "--check", "-"],
             input=code,
+            encoding="utf-8",
             text=True,
             capture_output=True,
         )

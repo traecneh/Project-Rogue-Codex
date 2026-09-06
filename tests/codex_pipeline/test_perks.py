@@ -4,6 +4,7 @@ import unittest
 from pathlib import Path
 
 from tools.codex_pipeline.config import PERK_LABEL_OVERRIDES_PATH, REPO_ROOT
+from tools.codex_pipeline.perk_catalog import PERK_NAMES_BY_BASE_CODE
 
 
 def write_temp_json(data):
@@ -13,7 +14,7 @@ def write_temp_json(data):
 
 
 class PerkLabelOverrideTests(unittest.TestCase):
-    def test_previously_unresolved_perks_are_decoded_without_overrides(self):
+    def test_perk_label_override_file_is_ready_for_future_exceptions(self):
         self.assertEqual(
             PERK_LABEL_OVERRIDES_PATH,
             REPO_ROOT / "data" / "codex-overrides" / "perk_labels.json",
@@ -22,15 +23,7 @@ class PerkLabelOverrideTests(unittest.TestCase):
 
         from tools.codex_pipeline.perks import load_perk_label_overrides
 
-        overrides = load_perk_label_overrides(PERK_LABEL_OVERRIDES_PATH)
-        from tools.codex_pipeline.extractors.item_metadata import resolve_corrupted_perk_label
-
-        for code, label in {2: "Bloodthirster (Tier 1)", 24: "Tourniquet (Tier 1)",
-                            41: "Demonsbane (Tier 1)", 544: "Tenacity (Tier 3)",
-                            553: "Demonsbane (Tier 3)"}.items():
-            self.assertNotIn(code, overrides)
-            self.assertEqual(label, resolve_corrupted_perk_label(code, 518))
-        self.assertIsNone(resolve_corrupted_perk_label(9999, 518))
+        self.assertEqual({}, load_perk_label_overrides(PERK_LABEL_OVERRIDES_PATH))
 
     def test_load_perk_label_overrides_accepts_strings_and_known_unknowns(self):
         from tools.codex_pipeline.perks import load_perk_label_overrides
@@ -67,6 +60,41 @@ class PerkLabelOverrideTests(unittest.TestCase):
                     load_perk_label_overrides(temp_path)
             finally:
                 temp_path.unlink()
+
+
+class PerkCatalogTests(unittest.TestCase):
+    def test_perks_page_matches_confirmed_client_catalog(self):
+        data = json.loads(
+            (REPO_ROOT / "pages" / "systems" / "perks.json").read_text(encoding="utf-8")
+        )
+        perks = data["perks"]
+        names = [perk["name"] for perk in perks]
+        slugs = [perk["slug"] for perk in perks]
+
+        self.assertEqual(set(PERK_NAMES_BY_BASE_CODE.values()), set(names))
+        self.assertEqual(len(names), len(set(names)))
+        self.assertEqual(len(slugs), len(set(slugs)))
+
+    def test_confirmed_monster_tatter_labels_have_perk_cards(self):
+        perk_data = json.loads(
+            (REPO_ROOT / "pages" / "systems" / "perks.json").read_text(encoding="utf-8")
+        )
+        monster_data = json.loads(
+            (REPO_ROOT / "pages" / "enemies" / "monsters_data03.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        perk_names = {perk["name"] for perk in perk_data["perks"]}
+        tatter_labels = {
+            fields[field_name]
+            for monster in monster_data
+            for fields in [monster.get("fields", {})]
+            for field_name in ("uncommon_tatter_label", "rare_tatter_label")
+            if fields.get(field_name) not in (None, "None")
+        }
+
+        self.assertTrue(tatter_labels)
+        self.assertTrue(tatter_labels.issubset(perk_names))
 
 
 if __name__ == "__main__":

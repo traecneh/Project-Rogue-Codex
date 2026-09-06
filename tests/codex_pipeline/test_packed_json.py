@@ -124,10 +124,12 @@ class PackedJsonMapperTests(unittest.TestCase):
                                 "level": 0,
                                 "elemental_damage_type": 0,
                                 "elemental_damage_max": 0,
-                                "maximum_rarity": 6,
+                                "maximum_rarity": 4,
                                 "shards_deconstruction": 0,
                                 "shards_promotion": 0,
                                 "innate_special_effect": 612,
+                                "corruption": 307,
+                                "item_class": 2,
                                 "resistance_fire": 0,
                                 "resistance_cold": 0,
                                 "resistance_electric": 0,
@@ -160,6 +162,7 @@ class PackedJsonMapperTests(unittest.TestCase):
                     "specialty": 1,
                     "specialty_amount": 2,
                     "unknown_78": 9,
+                    "corrupted_perk": 553,
                     "perk_label": "stale label",
                 },
             }
@@ -183,18 +186,22 @@ class PackedJsonMapperTests(unittest.TestCase):
         self.assertEqual("Sword", fields["subtype_label"])
         self.assertEqual("Ascendant", fields["max_rarity_label"])
         self.assertEqual("Runic (Tier 3)", fields["perk_label"])
+        self.assertEqual(307, fields["corrupted_perk"])
+        self.assertEqual("Critical Aegis (Tier 2)", fields["corrupted_perk_label"])
+        self.assertEqual(2, fields["item_class"])
+        self.assertEqual(1, fields["emits_light"])
         self.assertEqual(6, fields["weight"])
         self.assertEqual("Strength", fields["specialty_label"])
         self.assertEqual(9, fields["unknown_78"])
         self.assertEqual(1, fields["unknown_34"])
         self.assertEqual(2, fields["unknown_35"])
-        self.assertEqual(2, fields["unknown_88"])
-        self.assertEqual(3, fields["unknown_89"])
+        self.assertEqual(2, fields["holy_resistance"])
+        self.assertEqual(3, fields["dark_resistance"])
         self.assertEqual(10, fields["frame_1_x"])
         self.assertEqual(16, fields["frame_1_width"])
         self.assertEqual(0, fields["frame_2_width"])
 
-    def test_maps_armor_json_and_keeps_corrupted_perk_from_existing_site_data(self):
+    def test_maps_armor_json_with_official_corruption_and_item_class(self):
         from tools.codex_pipeline.packed_json import map_packed_json_target
 
         packed_files = {
@@ -217,6 +224,8 @@ class PackedJsonMapperTests(unittest.TestCase):
                                 "shards_deconstruction": 20,
                                 "shards_promotion": 100,
                                 "innate_special_effect": 17,
+                                "corruption": 553,
+                                "item_class": 1,
                                 "resistance_fire": 0,
                                 "resistance_cold": 5,
                                 "resistance_electric": 0,
@@ -243,7 +252,7 @@ class PackedJsonMapperTests(unittest.TestCase):
             {
                 "id": 1000,
                 "name": "Iceburst Amulet",
-                "fields": {"weight": 1, "corrupted_perk": 553, "unknown_26": 0},
+                "fields": {"weight": 1, "corrupted_perk": 278, "unknown_26": 0},
             }
         ]
 
@@ -255,11 +264,14 @@ class PackedJsonMapperTests(unittest.TestCase):
         self.assertEqual("Cosmetic", fields["slot_label"])
         self.assertEqual("Iceburst (Tier 1)", fields["perk_label"])
         self.assertEqual(553, fields["corrupted_perk"])
+        self.assertEqual("Demonsbane (Tier 3)", fields["corrupted_perk_label"])
+        self.assertEqual(1, fields["item_class"])
+        self.assertNotIn("emits_light", fields)
         self.assertEqual(1, fields["weight"])
         self.assertEqual(0, fields["unknown_30"])
         self.assertEqual(1, fields["unknown_31"])
-        self.assertEqual(1, fields["unknown_81"])
-        self.assertEqual(2, fields["unknown_85"])
+        self.assertEqual(1, fields["holy_resistance"])
+        self.assertEqual(2, fields["dark_resistance"])
 
     def test_maps_monster_json_preserving_site_ids_by_name_level_and_type(self):
         from tools.codex_pipeline.packed_json import map_packed_json_target
@@ -281,6 +293,8 @@ class PackedJsonMapperTests(unittest.TestCase):
                         "monster_level": 85,
                         "flags": 229888,
                         "element": 8,
+                        "chaos_mode_special_effect_uncommon": 60,
+                        "chaos_mode_special_effect_rare": 56,
                         "animated": 1,
                         "animation_frame_count": 4,
                         "animation_type": 2,
@@ -307,10 +321,40 @@ class PackedJsonMapperTests(unittest.TestCase):
         self.assertEqual("Disease Beast", fields["type_label"])
         self.assertEqual("Disease", fields["elemental_attack_label"])
         self.assertEqual("Disease", fields["status_effect_label"])
-        self.assertEqual("Critical Aegis", fields["uncommon_tatter_label"])
-        self.assertEqual("Epidemic", fields["rare_tatter_label"])
+        self.assertEqual(60, fields["uncommon_tatter"])
+        self.assertEqual(56, fields["rare_tatter"])
+        self.assertEqual("Rampage", fields["uncommon_tatter_label"])
+        self.assertEqual("Shadowstrike", fields["rare_tatter_label"])
         self.assertTrue(fields["is_target_when_hit_ranged_trapped"])
         self.assertTrue(fields["is_flying"])
+
+    def test_new_monsters_do_not_reuse_reserved_site_ids(self):
+        from tools.codex_pipeline.packed_json import map_packed_json_target
+
+        packed_files = {
+            "monsters.json": {
+                "monsters": [
+                    {"id": 100, "name": "Obsidian Ravager", "used": True, "monster_level": 85, "mon_type": 5},
+                    {"id": 101, "name": "Cinderbone Harrower", "used": True, "monster_level": 80, "mon_type": 5},
+                    {"id": 217, "name": "Ice Devil", "used": True, "monster_level": 40, "mon_type": 9},
+                    {"id": 181, "name": "Wraith", "used": True, "monster_level": 30, "mon_type": 8},
+                ]
+            }
+        }
+        site_records = [
+            {"id": 100, "name": "Ice Devil", "fields": {"level": 40, "type": 9}},
+            {"id": 101, "name": "Wraith", "fields": {"level": 30, "type": 8}},
+            {"id": 255, "name": "Reserved Historic Monster", "fields": {"level": 1, "type": 1}},
+        ]
+
+        records = map_packed_json_target("monsters", packed_files, site_records=site_records)
+        ids_by_name = {record["name"]: record["id"] for record in records}
+
+        self.assertEqual(100, ids_by_name["Ice Devil"])
+        self.assertEqual(101, ids_by_name["Wraith"])
+        self.assertEqual(256, ids_by_name["Obsidian Ravager"])
+        self.assertEqual(257, ids_by_name["Cinderbone Harrower"])
+        self.assertEqual(len(records), len(set(ids_by_name.values())))
 
     def test_read_packed_json_files_reads_json_members_from_vpack(self):
         from tools.codex_pipeline.packed_json import read_packed_json_files

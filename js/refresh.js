@@ -48,7 +48,7 @@
     });
     reset.onclick = () => { bar.querySelectorAll('details').forEach(p => p.open = false); selects.forEach(select => { [...select.options].forEach(option => option.selected = false); select.dispatchEvent(new Event('change', {bubbles:true})); }); };
     bar.append(reset, chips); sync();
-    document.addEventListener('click', event => { if (!bar.contains(event.target)) bar.querySelectorAll('details').forEach(p => p.open = false); });
+    document.addEventListener('click', event => { if (!event.composedPath().includes(bar)) bar.querySelectorAll('details').forEach(p => p.open = false); });
     bar.addEventListener('keydown', event => { if(event.key === 'Escape') bar.querySelectorAll('details[open]').forEach(p => { p.open = false; p.querySelector('summary').focus(); }); });
   });
   const panel = document.querySelector('#item-details, #monster-details');

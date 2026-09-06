@@ -1,163 +1,247 @@
 (function () {
-  const LEVEL_XP_TOTALS = Object.freeze([
-    0,
-    2000, 4000, 6000, 8000, 10000, 15000, 20000, 25000, 30000, 40000, 50000, 60000, 80000, 100000, 120000, 140000,
-    160000, 200000, 300000, 400000, 500000, 600000, 750000, 1000000, 1250000, 1500000, 1750000, 2000000, 2250000,
-    2500000, 2750000, 3000000, 3500000, 4000000, 4500000, 5000000, 5500000, 6000000, 7000000, 8000000, 9000000,
-    10000000, 11000000, 12000000, 13000000, 14000000, 15000000, 16000000, 17000000, 18000000, 19000000, 20000000,
-    21000000, 22000000, 23000000, 24000000, 26000000, 28000000, 30000000, 32000000, 34000000, 36000000, 38000000,
-    40000000, 42000000, 44000000, 46000000, 48000000, 51000000, 54000000, 57000000, 60000000, 63000000, 66000000,
-    69000000, 72000000, 75000000, 78000000, 81000000, 84000000, 87000000, 90000000, 93000000, 96000000, 100000000,
-    104000000, 108000000, 113000000, 118000000, 123000000, 128000000, 133000000, 138000000, 143000000, 148000000,
-    153000000, 160000000, 168000000, 178000000, 350000000, 700000000, 1050000000, 1400000000, 1750000000,
-  ]);
-  const MILESTONE_LEVELS = Object.freeze([1, 10, 25, 50, 75, 100, 105]);
+  const PLAYER_TABLES_URL = "data/player_tables.json";
+  const MIN_LEVEL = 1;
+  const MAX_LEVEL = 105;
+  const DEFAULT_CURVE_LEVEL = 100;
+  const CURVE_PADDING = Object.freeze({ top: 14, right: 14, bottom: 28, left: 58 });
+  let LEVEL_XP_THRESHOLDS = Object.freeze([]);
+
+  function validatePlayerXp(data) {
+    const totals = data?.player_tables?.[0]?.player_exp;
+    if (!Array.isArray(totals) || totals.length !== MAX_LEVEL + 1 || totals[0] !== 0) {
+      throw new Error("Player XP data must contain the Level 1 zero plus 105 cumulative thresholds.");
+    }
+    if (totals.some((total, index) => !Number.isFinite(total) || (index > 0 && total <= totals[index - 1]))) {
+      throw new Error("Player XP thresholds must be finite and strictly increasing after the initial zero.");
+    }
+    return Object.freeze(totals.slice());
+  }
+
+  async function loadPlayerXp() {
+    const response = await fetch(PLAYER_TABLES_URL, { cache: "no-store" });
+    if (!response.ok) throw new Error(`Player XP data request failed (${response.status}).`);
+    return validatePlayerXp(await response.json());
+  }
 
   function formatNumber(value) {
     return Math.round(value).toLocaleString();
   }
 
   function getLevelTotal(level) {
-    return LEVEL_XP_TOTALS[level - 1] || 0;
+    return LEVEL_XP_THRESHOLDS[level - 1] || 0;
   }
 
-  function getLevelDelta(level) {
-    if (level <= 1) return 0;
-    return getLevelTotal(level) - getLevelTotal(level - 1);
+  function getNextLevelTotal(level) {
+    return LEVEL_XP_THRESHOLDS[level] || getMaxTotal();
   }
 
-  function renderLevelChart(root = document) {
-    const chart = root.getElementById("level-xp-chart");
-    if (!chart || !LEVEL_XP_TOTALS.length) return;
-    chart.textContent = "";
-    const max = LEVEL_XP_TOTALS[LEVEL_XP_TOTALS.length - 1];
-
-    LEVEL_XP_TOTALS.forEach((total, index) => {
-      const level = index + 1;
-      if (level > 105) return;
-      const delta = getLevelDelta(level);
-
-      const row = document.createElement("div");
-      row.className = "weight-row";
-
-      const label = document.createElement("div");
-      label.className = "weight-label";
-      label.textContent = `Lvl ${level}`;
-
-      const bar = document.createElement("div");
-      bar.className = "weight-bar";
-      bar.style.setProperty("--fill", `${(total / max) * 100}%`);
-
-      const value = document.createElement("div");
-      value.className = "weight-value";
-      value.append(document.createTextNode(formatNumber(total)));
-      if (level > 1) {
-        value.append(document.createElement("br"));
-        const deltaLabel = document.createElement("span");
-        deltaLabel.textContent = `(${formatNumber(delta)})`;
-        value.append(deltaLabel);
-      }
-
-      row.append(label, bar, value);
-      chart.append(row);
-    });
+  function getNextLevelXp(level) {
+    const current = getLevelTotal(level);
+    return getNextLevelTotal(level) - current;
   }
 
-  function renderLevelCurve(root = document) {
-    const curve = root.getElementById("level-xp-curve");
-    if (!curve || !curve.getContext || !LEVEL_XP_TOTALS.length) return;
+  function getMaxTotal() {
+    return LEVEL_XP_THRESHOLDS[LEVEL_XP_THRESHOLDS.length - 1] || 0;
+  }
 
+  function clampLevel(level) {
+    return Math.min(MAX_LEVEL, Math.max(MIN_LEVEL, Math.round(level)));
+  }
+
+  function getCurvePoint(curve, level) {
+    const width = curve.width - CURVE_PADDING.left - CURVE_PADDING.right;
+    const height = curve.height - CURVE_PADDING.top - CURVE_PADDING.bottom;
+    const max = getMaxTotal();
+    return {
+      x: CURVE_PADDING.left + (width * (level - MIN_LEVEL)) / (MAX_LEVEL - MIN_LEVEL),
+      y: CURVE_PADDING.top + height - (getLevelTotal(level) / max) * height,
+    };
+  }
+
+  function drawLevelCurve(curve, selectedLevel) {
     const ctx = curve.getContext("2d");
-    const padding = 8;
-    const width = curve.width - padding * 2;
-    const height = curve.height - padding * 2;
-    const max = LEVEL_XP_TOTALS[LEVEL_XP_TOTALS.length - 1];
+    if (!ctx) return;
+    const chartLeft = CURVE_PADDING.left;
+    const chartRight = curve.width - CURVE_PADDING.right;
+    const chartTop = CURVE_PADDING.top;
+    const chartBottom = curve.height - CURVE_PADDING.bottom;
 
     ctx.clearRect(0, 0, curve.width, curve.height);
+    ctx.strokeStyle = "rgba(160, 165, 176, 0.16)";
+    ctx.lineWidth = 1;
+    [0, 0.25, 0.5, 0.75, 1].forEach((ratio) => {
+      const y = chartBottom - (chartBottom - chartTop) * ratio;
+      ctx.beginPath();
+      ctx.moveTo(chartLeft, y);
+      ctx.lineTo(chartRight, y);
+      ctx.stroke();
+    });
+
     ctx.strokeStyle = "#5ab0ff";
     ctx.lineWidth = 2;
     ctx.beginPath();
-    LEVEL_XP_TOTALS.forEach((total, index) => {
-      const x = padding + (width * index) / (LEVEL_XP_TOTALS.length - 1);
-      const y = padding + height - (total / max) * height;
-      if (index === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    });
+    for (let level = MIN_LEVEL; level <= MAX_LEVEL; level += 1) {
+      const point = getCurvePoint(curve, level);
+      if (level === MIN_LEVEL) ctx.moveTo(point.x, point.y);
+      else ctx.lineTo(point.x, point.y);
+    }
+    ctx.lineTo(chartRight, chartTop);
+    ctx.stroke();
+
+    const selectedPoint = getCurvePoint(curve, selectedLevel);
+    ctx.strokeStyle = "rgba(75, 255, 75, 0.65)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(selectedPoint.x, chartTop);
+    ctx.lineTo(selectedPoint.x, chartBottom);
+    ctx.stroke();
+
+    ctx.fillStyle = "#4bff4b";
+    ctx.beginPath();
+    ctx.arc(selectedPoint.x, selectedPoint.y, 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#0c1118";
+    ctx.lineWidth = 2;
     ctx.stroke();
 
     ctx.fillStyle = "#a0a5b0";
-    ctx.font = "10px Tahoma, Verdana, sans-serif";
+    ctx.font = "11px Tahoma, Verdana, sans-serif";
     ctx.textBaseline = "top";
-    const clampY = (value) => Math.max(padding + 2, Math.min(padding + height - 12, value));
-    ctx.fillText("Lvl 1", padding, clampY(padding + height - 4));
-    ctx.fillText("Lvl 105", padding + width - 40, clampY(padding - 4));
+    ctx.textAlign = "left";
+    ctx.fillText(`${formatNumber(getMaxTotal() / 1000000000)}B XP`, 8, chartTop);
+    ctx.textBaseline = "bottom";
+    ctx.fillText("0 XP", 8, chartBottom);
+    ctx.textBaseline = "top";
+    ctx.fillText("Lvl 1", chartLeft, chartBottom + 8);
+    ctx.textAlign = "right";
+    ctx.fillText("Lvl 105 cap", chartRight, chartBottom + 8);
   }
 
-  function renderLevelMilestones(root = document) {
-    const container = root.querySelector("[data-level-milestones]");
-    if (!container) return;
-    container.textContent = "";
+  async function initLevelCurve(root = document) {
+    const curve = root.getElementById("level-xp-curve");
+    const tooltip = root.querySelector("[data-level-curve-tooltip]");
+    const levelValue = root.querySelector("[data-level-curve-level]");
+    const totalValue = root.querySelector("[data-level-curve-total]");
+    const nextTotalValue = root.querySelector("[data-level-curve-next-total]");
+    const deltaValue = root.querySelector("[data-level-curve-delta]");
+    const tooltipLevel = root.querySelector("[data-level-curve-tooltip-level]");
+    const tooltipTotal = root.querySelector("[data-level-curve-tooltip-total]");
+    const tooltipDelta = root.querySelector("[data-level-curve-tooltip-delta]");
+    const deltaLabel = root.querySelector("[data-level-curve-delta-label]");
+    if (
+      !curve ||
+      !curve.getContext ||
+      !tooltip ||
+      !levelValue ||
+      !totalValue ||
+      !nextTotalValue ||
+      !deltaValue ||
+      !deltaLabel
+    ) {
+      return;
+    }
 
-    MILESTONE_LEVELS.forEach((level) => {
-      const total = getLevelTotal(level);
-      const delta = getLevelDelta(level);
-      const card = document.createElement("section");
-      card.className = "level-milestone-card";
+    try {
+      LEVEL_XP_THRESHOLDS = await loadPlayerXp();
+    } catch (error) {
+      console.error("Unable to load Player XP data.", error);
+      return;
+    }
 
-      const label = document.createElement("p");
-      label.className = "stat-label";
-      label.textContent = level === 1 ? "Starting Level" : "Milestone";
+    let selectedLevel = DEFAULT_CURVE_LEVEL;
 
-      const heading = document.createElement("h3");
-      heading.textContent = `Level ${level}`;
-
-      const copy = document.createElement("p");
-      copy.textContent =
-        level === 1
-          ? "0 total XP."
-          : `${formatNumber(total)} total XP, +${formatNumber(delta)} from the previous level.`;
-
-      card.append(label, heading, copy);
-      container.append(card);
-    });
-  }
-
-  function initLevelXpWidget(root = document) {
-    const damageSlider = root.querySelector("[data-level-damage-slider]");
-    const damageValue = root.querySelector("[data-level-damage-value]");
-    const baseValue = root.querySelector("[data-level-base-xp]");
-    const boostCountValue = root.querySelector("[data-level-boost-count]");
-    const multiplierValue = root.querySelector("[data-level-multiplier]");
-    const totalXpValue = root.querySelector("[data-level-total-xp]");
-    const boostButtons = Array.from(root.querySelectorAll("[data-level-boost]"));
-    if (!damageSlider || !damageValue || !baseValue || !boostCountValue || !multiplierValue || !totalXpValue) return;
-
-    const update = () => {
-      const damage = Number(damageSlider.value) || 0;
-      const activeBoosts = boostButtons.filter((button) => button.getAttribute("aria-pressed") === "true").length;
-      const multiplier = 1 + activeBoosts;
-      damageValue.textContent = formatNumber(damage);
-      baseValue.textContent = formatNumber(damage);
-      boostCountValue.textContent = String(activeBoosts);
-      multiplierValue.textContent = `${multiplier}x`;
-      totalXpValue.textContent = formatNumber(damage * multiplier);
+    const positionTooltip = (level) => {
+      const curveRect = curve.getBoundingClientRect();
+      if (!curveRect.width || !curveRect.height) return;
+      const point = getCurvePoint(curve, level);
+      const pointX = (point.x / curve.width) * curveRect.width;
+      const pointY = (point.y / curve.height) * curveRect.height;
+      tooltip.hidden = false;
+      const halfWidth = tooltip.offsetWidth / 2;
+      const left = Math.min(curveRect.width - halfWidth - 6, Math.max(halfWidth + 6, pointX));
+      tooltip.style.left = `${left}px`;
+      tooltip.style.top = `${pointY}px`;
+      tooltip.classList.toggle("is-below", pointY < tooltip.offsetHeight + 18);
     };
 
-    boostButtons.forEach((button) => {
-      button.addEventListener("click", () => {
-        const isActive = button.getAttribute("aria-pressed") === "true";
-        button.setAttribute("aria-pressed", isActive ? "false" : "true");
-        update();
-      });
+    const selectLevel = (level, showTooltip = false) => {
+      selectedLevel = clampLevel(level);
+      const total = getLevelTotal(selectedLevel);
+      const nextTotal = getNextLevelTotal(selectedLevel);
+      const nextXp = getNextLevelXp(selectedLevel);
+      const nextDescription =
+        selectedLevel === MAX_LEVEL
+          ? `Maximum XP is ${formatNumber(nextTotal)}, requiring ${formatNumber(nextXp)} additional XP`
+          : `Level ${selectedLevel + 1} starts at ${formatNumber(nextTotal)} XP, requiring ${formatNumber(nextXp)} additional XP`;
+      levelValue.textContent = `Level ${selectedLevel}`;
+      totalValue.textContent = formatNumber(total);
+      nextTotalValue.textContent = formatNumber(nextTotal);
+      deltaValue.textContent = `(+${formatNumber(nextXp)})`;
+      deltaLabel.textContent = selectedLevel === MAX_LEVEL ? "Maximum XP" : "Next Level At";
+      if (tooltipLevel) tooltipLevel.textContent = `Level ${selectedLevel}`;
+      if (tooltipTotal) tooltipTotal.textContent = `${formatNumber(total)} XP to reach`;
+      if (tooltipDelta) {
+        tooltipDelta.textContent =
+          selectedLevel === MAX_LEVEL
+            ? `Maximum XP: ${formatNumber(nextTotal)} (+${formatNumber(nextXp)})`
+            : `Level ${selectedLevel + 1} at ${formatNumber(nextTotal)} XP (+${formatNumber(nextXp)})`;
+      }
+      curve.setAttribute("aria-valuenow", String(selectedLevel));
+      curve.setAttribute(
+        "aria-valuetext",
+        `Level ${selectedLevel}, ${formatNumber(total)} XP to reach, ${nextDescription}`
+      );
+      drawLevelCurve(curve, selectedLevel);
+      if (showTooltip) positionTooltip(selectedLevel);
+    };
+
+    const levelFromPointer = (event) => {
+      const rect = curve.getBoundingClientRect();
+      const internalX = ((event.clientX - rect.left) / rect.width) * curve.width;
+      const chartWidth = curve.width - CURVE_PADDING.left - CURVE_PADDING.right;
+      const ratio = (internalX - CURVE_PADDING.left) / chartWidth;
+      return MIN_LEVEL + ratio * (MAX_LEVEL - MIN_LEVEL);
+    };
+
+    curve.addEventListener("pointermove", (event) => selectLevel(levelFromPointer(event), true));
+    curve.addEventListener("pointerdown", (event) => {
+      curve.focus({ preventScroll: true });
+      selectLevel(levelFromPointer(event), true);
     });
-    damageSlider.addEventListener("input", update);
-    update();
+    curve.addEventListener("pointerleave", () => {
+      tooltip.hidden = true;
+    });
+    curve.addEventListener("pointercancel", () => {
+      tooltip.hidden = true;
+    });
+    curve.addEventListener("focus", () => positionTooltip(selectedLevel));
+    curve.addEventListener("blur", () => {
+      tooltip.hidden = true;
+    });
+    curve.addEventListener("keydown", (event) => {
+      const steps = {
+        ArrowLeft: -1,
+        ArrowRight: 1,
+        PageDown: -5,
+        PageUp: 5,
+      };
+      let nextLevel = selectedLevel;
+      if (event.key === "Home") nextLevel = MIN_LEVEL;
+      else if (event.key === "End") nextLevel = MAX_LEVEL;
+      else if (Object.prototype.hasOwnProperty.call(steps, event.key)) nextLevel += steps[event.key];
+      else return;
+      event.preventDefault();
+      selectLevel(nextLevel, true);
+    });
+    window.addEventListener("resize", () => {
+      tooltip.hidden = true;
+      drawLevelCurve(curve, selectedLevel);
+    });
+
+    selectLevel(selectedLevel);
   }
 
   document.addEventListener("DOMContentLoaded", () => {
-    renderLevelMilestones();
-    renderLevelCurve();
-    renderLevelChart();
-    initLevelXpWidget();
+    void initLevelCurve();
   });
 })();

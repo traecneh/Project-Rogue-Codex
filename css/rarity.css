@@ -94,20 +94,12 @@
   color: #f0f0f0;
 }
 
-[data-rarity="uncommon"] {
-  color: #ffd966;
-}
-
 [data-rarity="rare"] {
   color: #6f8fff;
 }
 
 [data-rarity="epic"] {
   color: #d56ca8;
-}
-
-[data-rarity="legendary"] {
-  color: #ffb347;
 }
 
 [data-rarity="mythical"] {

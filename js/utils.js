@@ -1,7 +1,8 @@
 (() => {
   const DEFAULT_JSON_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
-  const PERKS_INDEX_SCHEMA_VERSION = 3;
-  const ALLOWLISTS_SCHEMA_VERSION = 2;
+  const PROJECT_ROGUE_MAP_URL = "https://traecneh.github.io/Project-Rogue-Map/";
+  const PERKS_INDEX_SCHEMA_VERSION = 4;
+  const ALLOWLISTS_SCHEMA_VERSION = 5;
   const FORCE_JSON_REFRESH = true;
   const jsonMemoryCache = new Map();
   let perkIndexPromise = null;
@@ -20,6 +21,21 @@
     } catch (error) {
       return String(url);
     }
+  }
+
+  function buildProjectRogueMapUrl(coordinates, label = "") {
+    if (
+      !Array.isArray(coordinates) ||
+      coordinates.length !== 2 ||
+      coordinates.some((coordinate) => !Number.isFinite(Number(coordinate)))
+    ) {
+      return "";
+    }
+    const url = new URL(PROJECT_ROGUE_MAP_URL);
+    url.searchParams.set("x", String(coordinates[0]));
+    url.searchParams.set("y", String(coordinates[1]));
+    if (label) url.searchParams.set("label", String(label).trim());
+    return url.toString();
   }
 
   function getPerksIndexUrl() {
@@ -199,9 +215,11 @@
           monsters: {
             allow: normalizeNameList(safe.monsters?.allow),
             block: normalizeNameList(safe.monsters?.block),
+            blockIds: normalizeNameList(safe.monsters?.block_ids),
           },
           weapons: {
             block: normalizeNameList(safe.weapons?.block),
+            blockIds: normalizeNameList(safe.weapons?.block_ids),
           },
           armors: {
             block: normalizeNameList(safe.armors?.block),
@@ -211,8 +229,8 @@
       })
       .catch(() => {
         allowlistsCache = {
-          monsters: { allow: [], block: [] },
-          weapons: { block: [] },
+          monsters: { allow: [], block: [], blockIds: [] },
+          weapons: { block: [], blockIds: [] },
           armors: { block: [] },
         };
         return allowlistsCache;
@@ -489,6 +507,7 @@
     DROP_SOURCES_SCHEMA_VERSION,
     FORCE_JSON_REFRESH,
     getAbsoluteUrl,
+    buildProjectRogueMapUrl,
     fetchJsonCached,
     ELEMENT_COLORS,
     RESIST_COLORS,

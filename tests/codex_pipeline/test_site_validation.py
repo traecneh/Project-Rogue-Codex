@@ -6,6 +6,10 @@ from pathlib import Path
 from unittest.mock import patch
 
 from tools.codex_pipeline.config import DROP_SOURCES_PATH
+from tools.codex_pipeline.static_assets import load_static_asset_version
+
+
+STATIC_ASSET_VERSION = load_static_asset_version()
 
 
 class SiteValidationTests(unittest.TestCase):
@@ -40,6 +44,51 @@ class SiteValidationTests(unittest.TestCase):
 
         self.assertEqual([], messages)
 
+    def test_validated_pages_version_local_styles_and_scripts(self):
+        from tools.codex_pipeline import cli
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        local_asset_re = re.compile(
+            r"<(?:link|script)\b[^>]*(?:href|src)=\"(?P<url>(?:css|js)/[^\"]+)\"",
+            flags=re.IGNORECASE,
+        )
+        unversioned = []
+        mismatched = []
+
+        for path in cli.VALIDATED_HTML_PATHS:
+            label = str(path.relative_to(REPO_ROOT))
+            html = path.read_text(encoding="utf-8")
+            for match in local_asset_re.finditer(html):
+                url = match.group("url")
+                expected_suffix = f"?v={STATIC_ASSET_VERSION}"
+                if "?v=" not in url:
+                    unversioned.append(f"{label}: {url}")
+                elif not url.endswith(expected_suffix):
+                    mismatched.append(f"{label}: {url}")
+
+        self.assertEqual([], unversioned)
+        self.assertEqual([], mismatched)
+
+    def test_validated_pages_mark_html_as_no_cache(self):
+        from tools.codex_pipeline import cli
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        missing = []
+        expected = [
+            '<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />',
+            '<meta http-equiv="Pragma" content="no-cache" />',
+            '<meta http-equiv="Expires" content="0" />',
+        ]
+
+        for path in cli.VALIDATED_HTML_PATHS:
+            label = str(path.relative_to(REPO_ROOT))
+            html = path.read_text(encoding="utf-8")
+            for tag in expected:
+                if tag not in html:
+                    missing.append(f"{label}: {tag}")
+
+        self.assertEqual([], missing)
+
     def test_css_file_parser_reports_unmatched_closing_brace(self):
         from tools.codex_pipeline.validators.site import validate_css_file
 
@@ -67,6 +116,28 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn("overflow: auto;", wrapper_body)
         self.assertIn("max-height: 70vh;", wrapper_body)
 
+    def test_item_catalog_tables_contain_horizontal_overflow(self):
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        shared_css = (REPO_ROOT / "css" / "styles.css").read_text(encoding="utf-8")
+        main_match = re.search(r"\.main-content\s*\{(?P<body>[^}]*)\}", shared_css)
+        self.assertIsNotNone(main_match)
+        main_body = main_match.group("body") if main_match else ""
+        self.assertIn("min-width: 0;", main_body)
+
+        for css_name in ("weapons.css", "armors.css", "misc-items.css"):
+            with self.subTest(css=css_name):
+                css = (REPO_ROOT / "css" / css_name).read_text(encoding="utf-8")
+                wrapper_match = re.search(r"\.items-table-wrapper\s*\{(?P<body>[^}]*)\}", css)
+                self.assertIsNotNone(wrapper_match)
+                wrapper_body = wrapper_match.group("body") if wrapper_match else ""
+                self.assertIn("overflow-x: auto;", wrapper_body)
+                if css_name != "misc-items.css":
+                    self.assertIn(
+                        "grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));",
+                        css,
+                    )
+
     def test_monsters_page_uses_external_page_stylesheet(self):
         from tools.codex_pipeline import cli
         from tools.codex_pipeline.config import REPO_ROOT
@@ -84,7 +155,7 @@ class SiteValidationTests(unittest.TestCase):
             if style.strip()
         ]
 
-        self.assertIn('<link rel="stylesheet" href="css/monsters.css" />', html)
+        self.assertIn(f'<link rel="stylesheet" href="css/monsters.css?v={STATIC_ASSET_VERSION}" />', html)
         self.assertTrue(css_path.is_file())
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
         self.assertEqual([], inline_styles)
@@ -106,7 +177,7 @@ class SiteValidationTests(unittest.TestCase):
             if script.strip()
         ]
 
-        self.assertIn('<script src="js/monsters-page.js" defer></script>', html)
+        self.assertIn(f'<script src="js/monsters-page.js?v={STATIC_ASSET_VERSION}" defer></script>', html)
         self.assertTrue(script_path.is_file())
         self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
         self.assertEqual([], inline_scripts)
@@ -130,7 +201,7 @@ class SiteValidationTests(unittest.TestCase):
                     if style.strip()
                 ]
 
-                self.assertIn(f'<link rel="stylesheet" href="css/{page_name}.css" />', html)
+                self.assertIn(f'<link rel="stylesheet" href="css/{page_name}.css?v={STATIC_ASSET_VERSION}" />', html)
                 self.assertTrue(css_path.is_file())
                 self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
                 self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
@@ -156,7 +227,7 @@ class SiteValidationTests(unittest.TestCase):
                     if script.strip()
                 ]
 
-                self.assertIn(f'<script src="js/{page_name}-page.js" defer></script>', html)
+                self.assertIn(f'<script src="js/{page_name}-page.js?v={STATIC_ASSET_VERSION}" defer></script>', html)
                 self.assertTrue(script_path.is_file())
                 self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
                 self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
@@ -186,7 +257,7 @@ class SiteValidationTests(unittest.TestCase):
                 html = html_path.read_text(encoding="utf-8")
                 script = script_path.read_text(encoding="utf-8")
 
-                self.assertIn('<script src="js/items-page-utils.js"></script>', html)
+                self.assertIn(f'<script src="js/items-page-utils.js?v={STATIC_ASSET_VERSION}"></script>', html)
                 self.assertIn("const itemUtils = window.RogueCodexItemPageUtils || {};", script)
                 self.assertIn("itemUtils.createRouteHelpers", script)
                 self.assertIn("itemUtils.createTooltipPinningController", script)
@@ -210,6 +281,11 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
         self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
 
+        for html_path in [collectables_html, useables_html]:
+            html = html_path.read_text(encoding="utf-8")
+            self.assertIn(f'<link rel="stylesheet" href="css/misc-items.css?v={STATIC_ASSET_VERSION}" />', html)
+            self.assertIn(f'<script src="js/misc-items-page.js?v={STATIC_ASSET_VERSION}" defer></script>', html)
+
     def test_misc_items_page_supports_id_deep_links_and_trait_filters(self):
         from tools.codex_pipeline.config import REPO_ROOT
 
@@ -225,6 +301,135 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn("Animated", script)
         self.assertIn("Crafting Data", script)
         self.assertIn("getItemSearchText(item).includes(searchTerm.toLowerCase())", script)
+
+    def test_misc_items_page_renders_relationship_sections(self):
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        script = (REPO_ROOT / "js" / "misc-items-page.js").read_text(encoding="utf-8")
+        css = (REPO_ROOT / "css" / "misc-items.css").read_text(encoding="utf-8")
+
+        for expected in [
+            "RELATIONSHIP_DATA_URL",
+            "data/codex-overrides/item_relationships.json",
+            "createRelationshipSections",
+            "getRelationshipsForItem",
+            "Used In",
+            "Found From",
+            "Related Systems",
+            "relationship-section",
+            "relationship-pill",
+        ]:
+            self.assertIn(expected, script)
+
+        for expected in [
+            ".relationship-sections",
+            ".relationship-section",
+            ".relationship-pill",
+            ".detail-pill .detail-tooltip",
+        ]:
+            self.assertIn(expected, css)
+
+    def test_misc_items_page_renders_compact_detail_summary(self):
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        script = (REPO_ROOT / "js" / "misc-items-page.js").read_text(encoding="utf-8")
+        css = (REPO_ROOT / "css" / "misc-items.css").read_text(encoding="utf-8")
+
+        for expected in [
+            "createDetailSummary",
+            "createSummaryChip",
+            "misc-detail-summary",
+            "detail-summary-chip",
+            "createRelationshipPanel",
+            "relationship-panel",
+            "Item Context",
+        ]:
+            self.assertIn(expected, script)
+
+        for expected in [
+            ".misc-detail-summary",
+            ".detail-summary-chip",
+            ".detail-summary-label",
+            ".detail-summary-value",
+            ".relationship-panel",
+            ".relationship-panel-header",
+            ".relationship-panel-title",
+            ".relationship-panel-count",
+        ]:
+            self.assertIn(expected, css)
+
+    def test_misc_items_page_links_obvious_relationship_targets(self):
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        script = (REPO_ROOT / "js" / "misc-items-page.js").read_text(encoding="utf-8")
+        css = (REPO_ROOT / "css" / "misc-items.css").read_text(encoding="utf-8")
+        target_policy = json.loads(
+            (REPO_ROOT / "data" / "codex-overrides" / "item_relationship_targets.json").read_text(encoding="utf-8")
+        )
+
+        for expected in [
+            "RELATIONSHIP_TARGETS_URL",
+            "data/codex-overrides/item_relationship_targets.json",
+            "createRelationshipTargetLinksByName",
+            "relationshipTargetLinksByName",
+            "getRelationshipHref",
+            'document.createElement("a")',
+            "itemUtils.stopTooltipLinkPropagation",
+        ]:
+            self.assertIn(expected, script)
+
+        target_links = {
+            row["target"]: row.get("href")
+            for row in target_policy["targets"]
+            if isinstance(row, dict) and row.get("href")
+        }
+        self.assertEqual("pages/systems/ascend.html", target_links["Ascend System"])
+        self.assertEqual("pages/systems/deconstruct.html", target_links["Deconstruct System"])
+        self.assertEqual("pages/systems/re-roll.html", target_links["Reforge System"])
+        self.assertEqual("pages/systems/imbuements.html", target_links["Imbuements System"])
+        self.assertEqual("pages/stats/skills.html#blacksmithing", target_links["Blacksmithing"])
+        self.assertEqual("pages/stats/skills.html#carpentry", target_links["Carpentry"])
+        self.assertEqual("pages/stats/skills.html#farming", target_links["Farming"])
+        self.assertEqual("pages/stats/skills.html#fishing", target_links["Fishing"])
+        self.assertEqual("pages/stats/skills.html#milling", target_links["Milling"])
+        self.assertEqual("pages/stats/skills.html#mining", target_links["Mining"])
+        self.assertEqual("pages/stats/skills.html#tinkering", target_links["Tinkering"])
+        self.assertEqual("pages/stats/skills.html#woodcutting", target_links["Woodcutting"])
+        self.assertEqual("pages/enemies/monsters.html?monster=balron", target_links["Balron"])
+        self.assertEqual("pages/enemies/monsters.html?monster=beholder", target_links["Beholder"])
+        self.assertEqual("pages/enemies/monsters.html?monster=demon", target_links["Demon"])
+        self.assertEqual("pages/systems/seasonal-events.html", target_links["Seasonal Events"])
+        self.assertIn(".relationship-pill:hover", css)
+        self.assertIn(".relationship-pill:focus-visible", css)
+
+    def test_cli_reports_item_relationship_target_coverage_issues(self):
+        from tools.codex_pipeline import cli
+        from tools.codex_pipeline.item_relationships import ItemRelationshipReport, ItemRelationshipTargetCoverage
+
+        report = ItemRelationshipReport(
+            records=[],
+            target_coverage=[
+                ItemRelationshipTargetCoverage(
+                    target="Travel",
+                    status="unclassified",
+                    relationship_count=1,
+                    issue="not listed in item_relationship_targets.json",
+                ),
+                ItemRelationshipTargetCoverage(
+                    target="Missing Page",
+                    status="broken_link",
+                    relationship_count=1,
+                    href="pages/systems/missing.html",
+                    issue="target link does not exist: pages/systems/missing.html",
+                ),
+            ],
+        )
+
+        issues = cli._item_relationship_target_coverage_issues(report)
+
+        messages = "\n".join(issue.message for issue in issues)
+        self.assertIn("unclassified item relationship target: Travel", messages)
+        self.assertIn("broken item relationship target link: Missing Page -> pages/systems/missing.html", messages)
 
     def test_nav_and_site_search_include_collectables_and_useables(self):
         from tools.codex_pipeline.config import REPO_ROOT
@@ -259,7 +464,63 @@ class SiteValidationTests(unittest.TestCase):
         ]:
             self.assertIn(expected, script)
 
-    def test_home_page_has_timeline_filters_without_countdown(self):
+    def test_quests_page_is_registered_for_navigation_search_and_validation(self):
+        from tools.codex_pipeline import cli
+        from tools.codex_pipeline.config import QUESTS_DATA_PATH, REPO_ROOT
+
+        html_path = REPO_ROOT / "pages" / "General" / "quests.html"
+        css_path = REPO_ROOT / "css" / "quests.css"
+        script_path = REPO_ROOT / "js" / "quests-page.js"
+        nav = (REPO_ROOT / "nav.html").read_text(encoding="utf-8")
+        search = (REPO_ROOT / "js" / "site-search.js").read_text(encoding="utf-8")
+        html = html_path.read_text(encoding="utf-8")
+        page_script = script_path.read_text(encoding="utf-8")
+        utils_script = (REPO_ROOT / "js" / "utils.js").read_text(encoding="utf-8")
+
+        self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
+        self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
+        self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
+        self.assertTrue(QUESTS_DATA_PATH.is_file())
+        self.assertIn('href="pages/General/quests.html">Quests</a>', nav)
+        self.assertIn('title: "Quests"', search)
+        self.assertIn('url: "pages/General/quests.html"', search)
+        self.assertIn("loadQuestSearchIndex", search)
+        self.assertIn("QUEST_SEARCH_INDEX", search)
+        self.assertIn('<h1 class="content-title">Quests</h1>', html)
+        self.assertIn('id="quest-detail"', html)
+        self.assertIn('id="quest-repeatable-filter"', html)
+        self.assertIn('new URLSearchParams(window.location.search)', page_script)
+        self.assertIn('url.searchParams.set("quest", entryId)', page_script)
+        self.assertIn('window.addEventListener("popstate"', page_script)
+        self.assertIn("objective.quantity", page_script)
+        self.assertIn("createEntityLink", page_script)
+        self.assertIn('const PROJECT_ROGUE_MAP_URL = "https://traecneh.github.io/Project-Rogue-Map/"', utils_script)
+        self.assertIn("function buildProjectRogueMapUrl", utils_script)
+        self.assertIn("buildProjectRogueMapUrl,", utils_script)
+        self.assertIn("createMapCoordinateLink", page_script)
+        self.assertIn("buildProjectRogueMapUrl?.(coordinates, label)", page_script)
+        self.assertIn('link.target = "_blank"', page_script)
+        self.assertIn('link.rel = "noopener noreferrer"', page_script)
+
+    def test_seasonal_events_page_is_registered_for_navigation_search_and_validation(self):
+        from tools.codex_pipeline import cli
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        html_path = REPO_ROOT / "pages" / "systems" / "seasonal-events.html"
+        nav = (REPO_ROOT / "nav.html").read_text(encoding="utf-8")
+        script = (REPO_ROOT / "js" / "site-search.js").read_text(encoding="utf-8")
+        html = html_path.read_text(encoding="utf-8") if html_path.exists() else ""
+
+        self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
+        self.assertIn('href="pages/systems/seasonal-events.html">Seasonal Events</a>', nav)
+        self.assertIn('title: "Seasonal Events"', script)
+        self.assertIn('url: "pages/systems/seasonal-events.html"', script)
+        self.assertIn('"holiday gift"', script)
+        self.assertIn("<h1 class=\"content-title\">Seasonal Events</h1>", html)
+        self.assertIn("Holiday Gift", html)
+        self.assertIn("pages/items/collectables.html?collectable=Holiday%20Gift", html)
+
+    def test_home_page_has_expandable_timeline_without_countdown(self):
         from tools.codex_pipeline import cli
         from tools.codex_pipeline.config import REPO_ROOT
 
@@ -273,9 +534,9 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
         self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
-        self.assertIn('<link rel="stylesheet" href="css/home.css" />', html)
-        self.assertIn('<script src="js/home.js" defer></script>', html)
-        self.assertNotIn('<script src="js/release-countdown.js" defer></script>', html)
+        self.assertIn(f'<link rel="stylesheet" href="css/home.css?v={STATIC_ASSET_VERSION}" />', html)
+        self.assertIn(f'<script src="js/home.js?v={STATIC_ASSET_VERSION}" defer></script>', html)
+        self.assertNotIn(f'<script src="js/release-countdown.js?v={STATIC_ASSET_VERSION}" defer></script>', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -323,9 +584,11 @@ class SiteValidationTests(unittest.TestCase):
 
         for expected in [
             "Project Rogue Timeline",
-            "Scroll to explore",
+            "history-story",
             "data-home-timeline",
             "data-home-timeline-item",
+            "history-permalink",
+            "data-home-timeline",
             "Dransik Classic",
             "Project Rogue Begins",
             "Fresh Wipes &amp; Live Upkeep",
@@ -367,10 +630,10 @@ class SiteValidationTests(unittest.TestCase):
             self.assertNotIn(removed, script)
 
         for expected in [
-            "function updateFocus",
-            "function scheduleFocus",
-            "is-timeline-focus",
+            "function updateFocus()",
+            "function revealLinkedStory()",
             "prefers-reduced-motion",
+            "hashchange",
         ]:
             self.assertIn(expected, script)
 
@@ -386,6 +649,109 @@ class SiteValidationTests(unittest.TestCase):
         self.assertRegex(script, r"history\.pushState\([^)]*monsterId")
         self.assertIn("nameLink.href = buildMonsterDetailUrl(monster);", script)
         self.assertIn("selectMonster(monster, { updateUrl: true", script)
+
+    def test_monster_recommendations_use_current_element_inputs(self):
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        html = (REPO_ROOT / "pages" / "enemies" / "monsters.html").read_text(encoding="utf-8")
+        css = (REPO_ROOT / "css" / "monsters.css").read_text(encoding="utf-8")
+        script = (REPO_ROOT / "js" / "monsters-page.js").read_text(encoding="utf-8")
+
+        self.assertIn('"electric", "holy", "dark"', script)
+        self.assertIn("const elementKey = normalizeElementKey(monster.elementalAttack);", script)
+        self.assertIn("normalizeElementKey(entry.element) === target", script)
+        self.assertIn('if (nameLower === "flaming sword" && Number(w.level) === 0) return false;', script)
+        self.assertIn('id="recommended-weapons" class="weapon-ranking-host"', html)
+        self.assertIn('id="recommended-armors" class="armor-ranking-host"', html)
+        self.assertGreaterEqual(
+            script.count("const defaultMaxItemLevel = Math.max(1, Math.round(level + 5));"),
+            2,
+        )
+        self.assertIn("skillRequirement: toNumber(fields.skill_requirement", script)
+        self.assertIn("playerLevelRequirement: toNumber(fields.player_level_requirement", script)
+        self.assertIn('createControl("Max Item Level", maxItemLevelInput)', script)
+        self.assertIn("entry.itemLevel > maxItemLevel", script)
+        self.assertIn("Item Lv ${formatNumber(entry.itemLevel)}", script)
+        self.assertIn("entry.skillRequirement", script)
+        self.assertNotIn("Max Skill Req.", script)
+        self.assertNotIn("weaponRankingPreferences.maxLevel", script)
+        self.assertIn("return armor.itemLevel <= maxItemLevel;", script)
+        self.assertIn("Item Lv ${formatNumber(armor.itemLevel)}", script)
+        self.assertIn("row.dataset.itemLevel = String(entry.itemLevel);", script)
+        self.assertIn("WEAPON_RANKING_STORAGE_KEY", script)
+        self.assertIn("ARMOR_RANKING_STORAGE_KEY", script)
+        self.assertIn("weapon-ranking-toggle", script)
+        self.assertIn("armor-ranking-toggle", script)
+        self.assertNotIn("armor-ranking-segmented", script)
+        self.assertNotIn("includeShield", script)
+        self.assertIn("CRAFTED_ARMOR_RECOMMENDATION_LEVELS", script)
+        self.assertIn("COMBAT_PERK_GROUPS", script)
+        self.assertIn("SLAYER_PERK_MATCHUPS", script)
+        self.assertIn("RESISTANCE_PERK_MATCHUPS", script)
+        self.assertIn("WEAPON_DIRECT_DAMAGE_BONUSES", script)
+        self.assertIn("getCombatPerkProfile", script)
+        self.assertIn("getWeaponPerkProfile", script)
+        self.assertIn("weaponRankingPreferences.includePerks", script)
+        self.assertIn("weapon-ranking-perks", script)
+        self.assertIn("armorRankingPreferences.includePerks", script)
+        self.assertIn("armor-ranking-perks", script)
+        self.assertNotIn("weapon.corruptedPerk", script)
+        self.assertNotIn("armor.corruptedPerk", script)
+        self.assertIn('["#", "Defense", "Armor", ""]', script)
+        self.assertNotIn('["#", "Defense", "Armor", "Weight", "Pieces", ""]', script)
+        self.assertIn('"Black Dragon Armor"', script)
+        self.assertIn('"Frost Platemail"', script)
+        self.assertIn('"Dragon Scale Platemail"', script)
+        self.assertIn('"Red Dragon Scale Plate"', script)
+        self.assertIn("Crafted Lv ${formatNumber(armor.itemLevel)}", script)
+        self.assertIn("getBestSets", script)
+        self.assertIn("ARMOR_RESISTANCE_CAP", script)
+        self.assertIn("weapon-ranking-item-level-input", script)
+        self.assertIn("weapon-ranking-type-select", script)
+        self.assertIn("weapon-ranking-search-control", script)
+        self.assertIn("weaponRankingPreferences.includeUnleveled", script)
+        self.assertIn(".weapon-ranking-panel", css)
+        self.assertIn(".weapon-ranking-results", css)
+        self.assertIn(".armor-ranking-panel", css)
+        self.assertIn(".armor-set-pieces", css)
+
+        weapons = json.loads((REPO_ROOT / "pages" / "items" / "weapons_data05.json").read_text(encoding="utf-8"))
+        darkness_falls = next(record for record in weapons if record.get("name") == "Darkness Falls")
+        self.assertEqual(50, darkness_falls["fields"]["level_requirement"])
+        self.assertEqual(50, darkness_falls["fields"]["skill_requirement"])
+        dark_sword = next(record for record in weapons if record.get("name") == "Dark Sword")
+        self.assertEqual(145, dark_sword["fields"]["level_requirement"])
+        self.assertEqual(85, dark_sword["fields"]["skill_requirement"])
+
+        armors = json.loads((REPO_ROOT / "pages" / "items" / "armors_data06.json").read_text(encoding="utf-8"))
+        scabbard = next(record for record in armors if record.get("name") == "Scabbard of Arcus")
+        self.assertEqual(145, scabbard["fields"]["level"])
+        self.assertEqual(50, scabbard["fields"]["player_level_requirement"])
+        crafted_names = {
+            "Frost Platemail",
+            "Frost Helmet",
+            "Frost Gauntlets",
+            "Frost Leggings",
+            "Frost Shield",
+            "Dragon Scale Platemail",
+            "Dragon Scale Helmet",
+            "Dragon Scale Gauntlets",
+            "Dragon Scale Leggings",
+            "Dragon Scale Shield",
+            "Red Dragon Scale Plate",
+            "Red Dragon Scale Helm",
+            "Red Dragon Scale Gloves",
+            "Red Dragon Scale Boots",
+            "Red Dragon Scale Shield",
+            "Black Dragon Armor",
+            "Black Dragon Helmet",
+            "Black Dragon Gauntlets",
+            "Black Dragon Leggings",
+            "Black Dragon Shield",
+        }
+        raw_crafted_names = {record["name"] for record in armors if record["name"] in crafted_names}
+        self.assertEqual(crafted_names, raw_crafted_names)
+        self.assertTrue(all(record["fields"]["level"] == 0 for record in armors if record["name"] in crafted_names))
 
     def test_drop_source_views_use_shared_detail_links(self):
         from tools.codex_pipeline.config import REPO_ROOT
@@ -433,74 +799,6 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn("clearDetails({ updateUrl: true });", armors_script)
         self.assertIn('history.pushState(state, "", targetUrl);', helper_script)
 
-    def test_item_detail_routes_prefer_stable_ids_when_available(self):
-        from tools.codex_pipeline.config import REPO_ROOT
-
-        helper_script = (REPO_ROOT / "js" / "items-page-utils.js").read_text(encoding="utf-8")
-        utils_script = (REPO_ROOT / "js" / "utils.js").read_text(encoding="utf-8")
-        search_script = (REPO_ROOT / "js" / "site-search.js").read_text(encoding="utf-8")
-        weapons_script = (REPO_ROOT / "js" / "weapons-page.js").read_text(encoding="utf-8")
-        armors_script = (REPO_ROOT / "js" / "armors-page.js").read_text(encoding="utf-8")
-        perks_script = (REPO_ROOT / "js" / "perks-page.js").read_text(encoding="utf-8")
-
-        self.assertIn('(value === null || value === undefined ? "" : String(value))', helper_script)
-        self.assertIn("const itemId = getItemId ? getItemId(item) : \"\";", helper_script)
-        self.assertIn("const detailKey = itemId || name;", helper_script)
-        self.assertIn("encodeURIComponent(detailKey)", helper_script)
-        self.assertIn("item.id ?? item.name", weapons_script)
-        self.assertIn("item.id ?? item.name", armors_script)
-        self.assertIn("const raw = item && typeof item === \"object\" ? item.id ?? item.name : item;", utils_script)
-        self.assertIn("const routeKey = normalized.id !== null && normalized.id !== undefined ? normalized.id : slug;", search_script)
-        self.assertIn("const routeKey = item?.id ?? item?.ID ?? item?.name ?? item?.Name ?? \"\";", perks_script)
-
-    def test_allowlists_hide_dev_only_super_duper_bow(self):
-        from tools.codex_pipeline.config import REPO_ROOT
-
-        allowlists = json.loads((REPO_ROOT / "data" / "allowlists.json").read_text(encoding="utf-8"))
-        weapons = json.loads((REPO_ROOT / "pages" / "items" / "weapons_data05.json").read_text(encoding="utf-8"))
-
-        blocked_weapons = {name.lower() for name in allowlists["weapons"]["block"]}
-        super_duper_bows = [row for row in weapons if row.get("name") == "Super Duper Bow"]
-
-        self.assertGreaterEqual(len(super_duper_bows), 1)
-        self.assertIn("super duper bow", blocked_weapons)
-
-    def test_current_site_data_marks_dev_only_super_duper_items_hidden(self):
-        from tools.codex_pipeline.config import REPO_ROOT
-
-        weapons = json.loads((REPO_ROOT / "pages" / "items" / "weapons_data05.json").read_text(encoding="utf-8"))
-        super_duper_weapons = [
-            row for row in weapons if str(row.get("name", "")).lower().startswith("super duper")
-        ]
-
-        self.assertGreaterEqual(len(super_duper_weapons), 1)
-        for record in super_duper_weapons:
-            self.assertIs(True, record.get("codex_hidden"), record.get("name"))
-            self.assertEqual("dev_only_item_name", record.get("codex_hidden_reason"), record.get("name"))
-
-    def test_item_views_hide_export_classified_dev_only_records(self):
-        from tools.codex_pipeline.config import REPO_ROOT
-
-        utils_script = (REPO_ROOT / "js" / "utils.js").read_text(encoding="utf-8")
-        weapons_script = (REPO_ROOT / "js" / "weapons-page.js").read_text(encoding="utf-8")
-        armors_script = (REPO_ROOT / "js" / "armors-page.js").read_text(encoding="utf-8")
-        planner_script = (REPO_ROOT / "js" / "build-planner.js").read_text(encoding="utf-8")
-        perks_script = (REPO_ROOT / "js" / "perks-page.js").read_text(encoding="utf-8")
-        monsters_script = (REPO_ROOT / "js" / "monsters-page.js").read_text(encoding="utf-8")
-        search_script = (REPO_ROOT / "js" / "site-search.js").read_text(encoding="utf-8")
-
-        self.assertIn("function isCodexHidden(record)", utils_script)
-        self.assertIn("function isRecordHidden(record, hiddenNames)", utils_script)
-        self.assertIn("isRecordHidden(weapon, hiddenWeaponNames)", weapons_script)
-        self.assertIn("isRecordHidden(row, hiddenArmorNames)", armors_script)
-        self.assertIn("isRecordHidden(weapon, hiddenWeaponNames)", planner_script)
-        self.assertIn("isRecordHidden(row, hiddenWeaponNames)", perks_script)
-        self.assertIn("isRecordHidden(row, hiddenArmorNames)", perks_script)
-        self.assertIn("isRecordHidden(w, hiddenWeaponNames)", monsters_script)
-        self.assertIn("isRecordHidden(a, hiddenArmorNames)", monsters_script)
-        self.assertIn("isRecordHidden(weapon, hiddenWeaponNames)", search_script)
-        self.assertIn("isRecordHidden(armor, hiddenArmorNames)", search_script)
-
     def test_weapons_page_uses_linked_names(self):
         from tools.codex_pipeline.config import REPO_ROOT
 
@@ -542,6 +840,8 @@ class SiteValidationTests(unittest.TestCase):
 
         self.assertIn('{ key: "attackSpeed", label: "Speed"', script)
         self.assertIn('render: (_, item) => createDpsBreakdownPill(item)', script)
+        self.assertIn('{ key: "corruptedPerk", label: "Corrupted"', script)
+        self.assertIn('render: (value) => createPerkLinkBadge(value)', script)
         self.assertIn("const createDpsBreakdownPill", script)
         self.assertIn("const createTableSpeedPill", script)
         self.assertIn('"DPS Breakdown"', script)
@@ -550,6 +850,7 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(".table-metric-pill", css)
         self.assertIn(".dps-breakdown-tooltip", css)
         self.assertIn(".speed-column", css)
+        self.assertRegex(css, r"\.items-table th,\s*\.items-table td\s*\{[^}]*padding:\s*0\.55rem 0\.45rem;")
         self.assertRegex(css, r"\.detail-tooltip\.dps-breakdown-tooltip\s*\{[^}]*bottom:\s*110%;")
 
     def test_weapons_page_search_includes_detail_and_drop_source_text(self):
@@ -562,44 +863,6 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn("uniqueSet.has(normalizeMonsterId(monster.name))", script)
         self.assertIn("formatRequirement(item.skillRequirement)", script)
         self.assertIn("getWeaponSearchText(item).includes(searchTerm.toLowerCase())", script)
-
-    def test_weapons_page_displays_new_holy_and_dark_resistances(self):
-        from tools.codex_pipeline.config import REPO_ROOT
-
-        script = (REPO_ROOT / "js" / "weapons-page.js").read_text(encoding="utf-8")
-
-        self.assertIn("holy: fields.holy_resistance", script)
-        self.assertIn("dark: fields.dark_resistance", script)
-        self.assertIn('makeResistEntry("holy", "Holy", res.holy)', script)
-        self.assertIn('makeResistEntry("dark", "Dark", res.dark)', script)
-        self.assertIn("formatNumber(res.holy ?? 0)", script)
-        self.assertIn("formatNumber(res.dark ?? 0)", script)
-
-    def test_weapons_page_shows_craftable_min_rarity_and_light_traits(self):
-        from tools.codex_pipeline.config import REPO_ROOT
-
-        script = (REPO_ROOT / "js" / "weapons-page.js").read_text(encoding="utf-8")
-
-        self.assertIn("const hasCraftingFields", script)
-        self.assertIn("isCraftable: hasCraftingFields(fields)", script)
-        self.assertIn("emitsLight: Number(fields.emits_light) === 1", script)
-        self.assertIn("minRarity: fields.minimum_rarity", script)
-        self.assertIn('createDetailBadge("Craftable"', script)
-        self.assertIn('createDetailBadge("Emits Light"', script)
-        self.assertIn('["Min Rarity", formatRarityLabel(item.minRarity)]', script)
-        self.assertIn('["Max Rarity", formatValue(item.maxRarityLabel || item.rarity)]', script)
-
-    def test_weapons_page_uses_explicit_sale_value_override(self):
-        from tools.codex_pipeline.config import REPO_ROOT
-
-        script = (REPO_ROOT / "js" / "weapons-page.js").read_text(encoding="utf-8")
-
-        self.assertIn("const resolveSellValue", script)
-        self.assertIn("const explicitSellValue = Number(fields.sale_value)", script)
-        self.assertIn("if (Number.isFinite(explicitSellValue) && explicitSellValue > 0)", script)
-        self.assertIn("return explicitSellValue;", script)
-        self.assertIn("return Number.isNaN(numericBuyValue) ? null : numericBuyValue / 2;", script)
-        self.assertIn("sellValue: resolveSellValue(fields, value)", script)
 
     def test_weapons_page_formats_empty_requirements_as_none(self):
         from tools.codex_pipeline.config import REPO_ROOT
@@ -648,8 +911,8 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
         self.assertTrue(css_path.exists())
         self.assertTrue(script_path.exists())
-        self.assertIn('<link rel="stylesheet" href="css/build-planner.css" />', html)
-        self.assertIn('<script src="js/build-planner.js" defer></script>', html)
+        self.assertIn(f'<link rel="stylesheet" href="css/build-planner.css?v={STATIC_ASSET_VERSION}" />', html)
+        self.assertIn(f'<script src="js/build-planner.js?v={STATIC_ASSET_VERSION}" defer></script>', html)
         self.assertNotIn("<style>", html)
         self.assertNotIn("const RARITY_TIERS = [", html)
         self.assertNotIn("var LZString=function()", html)
@@ -667,6 +930,11 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn("decompressFromEncodedURIComponent", script)
         self.assertIn("getBuildParamFromSearch", script)
         self.assertIn("applySavedState", script)
+        self.assertIn("const BUILD_STATE_VERSION = 2;", script)
+        self.assertIn("const LEGACY_RARITY_INDEX_MAP = [0, 1, 1, 2, 2, 3, 4];", script)
+        self.assertIn("migrateRarityIndex(entry[3], packed.v)", script)
+        self.assertNotIn('{ label: "Uncommon"', script)
+        self.assertNotIn('{ label: "Legendary"', script)
 
     def test_build_planner_compact_ui_contracts(self):
         from tools.codex_pipeline.config import REPO_ROOT
@@ -724,6 +992,14 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn('setQuickSummary("dr"', script)
         self.assertIn(".quick-summary-card[title]", css)
 
+    def test_build_planner_imports_corrupted_perks_for_weapons_and_armors(self):
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        script = (REPO_ROOT / "js" / "build-planner.js").read_text(encoding="utf-8")
+
+        self.assertEqual(2, script.count("corruptedPerk: fields.corrupted_perk"))
+        self.assertIn("perkSet.add(String(i.corruptedPerk).trim());", script)
+
     def test_build_planner_has_compact_issue_indicators(self):
         from tools.codex_pipeline.config import REPO_ROOT
 
@@ -762,9 +1038,8 @@ class SiteValidationTests(unittest.TestCase):
 
         self.assertIn('class="slot-name slot-item-link"', html)
         self.assertIn("const getItemHref", script)
-        self.assertIn("const itemKey = item.id !== null && item.id !== undefined ? item.id : name;", script)
-        self.assertIn("pages/items/weapons.html?weapon=${encodeURIComponent(itemKey)}", script)
-        self.assertIn("pages/items/armors.html?armor=${encodeURIComponent(itemKey)}", script)
+        self.assertIn('if (item.kind === "weapon") return `pages/items/weapons.html?weapon=${encodeURIComponent(itemKey)}`;', script)
+        self.assertIn('if (item.kind === "armor") return `pages/items/armors.html?armor=${encodeURIComponent(itemKey)}`;', script)
         self.assertIn('const title = document.createElement("a");', script)
         self.assertIn('title.className = "suggestion-title suggestion-link";', script)
         self.assertIn("title.href = getItemHref(item);", script)
@@ -776,18 +1051,6 @@ class SiteValidationTests(unittest.TestCase):
         self.assertNotIn(".slot-card .slot-extra-perk", css)
         self.assertNotIn(".slot-editor", css)
         self.assertIn(".formula-tip", css)
-
-    def test_build_planner_item_links_prefer_export_ids(self):
-        from tools.codex_pipeline.config import REPO_ROOT
-
-        script = (REPO_ROOT / "js" / "build-planner.js").read_text(encoding="utf-8")
-        runner = (REPO_ROOT / "tools" / "codex_pipeline" / "site_smoke.mjs").read_text(encoding="utf-8")
-
-        self.assertIn("const itemKey = item.id !== null && item.id !== undefined ? item.id : name;", script)
-        self.assertIn("id: raw.id ?? raw.ID ?? null", script)
-        self.assertIn("pages/items/weapons.html?weapon=${encodeURIComponent(itemKey)}", script)
-        self.assertIn("pages/items/armors.html?armor=${encodeURIComponent(itemKey)}", script)
-        self.assertIn('const RUNE_SWORD_DETAIL_PATH = "pages/items/weapons.html?weapon=227";', runner)
 
     def test_build_planner_suggestions_include_compare_deltas(self):
         from tools.codex_pipeline.config import REPO_ROOT
@@ -824,9 +1087,10 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
         self.assertIn(calc_script_path, cli.VALIDATED_SCRIPT_PATHS)
         self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
-        self.assertIn('<link rel="stylesheet" href="css/perks.css" />', html)
-        self.assertIn('<script src="js/perk-calculations.js" defer></script>', html)
-        self.assertIn('<script src="js/perks-page.js" defer></script>', html)
+        self.assertIn(f'<link rel="stylesheet" href="css/perks.css?v={STATIC_ASSET_VERSION}" />', html)
+        self.assertIn(f'<script src="js/utils.js?v={STATIC_ASSET_VERSION}"></script>', html)
+        self.assertIn(f'<script src="js/perk-calculations.js?v={STATIC_ASSET_VERSION}" defer></script>', html)
+        self.assertIn(f'<script src="js/perks-page.js?v={STATIC_ASSET_VERSION}" defer></script>', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -856,7 +1120,9 @@ class SiteValidationTests(unittest.TestCase):
         for expected in [
             'const PERK_ROUTE_PARAM = "perk";',
             "const buildPerkSourceIndex",
+            "const buildTatterSourceIndex",
             "const renderPerkSources",
+            "const renderTatterSources",
             "const renderPerkMath",
             "const updatePerkMath",
             "const applyPerkFilters",
@@ -865,6 +1131,8 @@ class SiteValidationTests(unittest.TestCase):
             "url.searchParams.delete(PERK_ROUTE_PARAM)",
             "pages/items/weapons_data05.json",
             "pages/items/armors_data06.json",
+            "pages/enemies/monsters_data03.json",
+            "data/allowlists.json",
             "pages/items/weapons.html?weapon=",
             "pages/items/armors.html?armor=",
             "pages/stats/races.html",
@@ -911,6 +1179,10 @@ class SiteValidationTests(unittest.TestCase):
             ".perk-math-scenario",
             ".perk-math-example-title",
             ".perk-source-chip",
+            ".perk-tatter-list",
+            ".perk-tatter-chip",
+            '[data-tatter-type="uncommon"]',
+            '[data-tatter-type="rare"]',
             ".perk-card-hidden",
             ".stat-card.perk-selected",
             ".perk-empty-state",
@@ -921,20 +1193,6 @@ class SiteValidationTests(unittest.TestCase):
         self.assertRegex(css, r"\.perk-grid \.stat-card:hover,\s*\.perk-grid \.stat-card:focus-within\s*\{[^}]*z-index:\s*30;")
         self.assertIn("@media (max-width: 640px)", css)
         self.assertIn("width: min(320px, calc(100vw - 4rem));", css)
-
-    def test_perks_page_hides_allowlisted_dev_items_from_sources(self):
-        from tools.codex_pipeline.config import REPO_ROOT
-
-        html = (REPO_ROOT / "pages" / "systems" / "perks.html").read_text(encoding="utf-8")
-        script = (REPO_ROOT / "js" / "perks-page.js").read_text(encoding="utf-8")
-
-        self.assertIn('<script src="js/utils.js"></script>', html)
-        self.assertIn("const loadAllowlists", script)
-        self.assertIn("const hiddenWeaponNames = buildNameSet", script)
-        self.assertIn("const hiddenArmorNames = buildNameSet", script)
-        self.assertIn("const isRecordHidden", script)
-        self.assertIn("!isRecordHidden(row, hiddenWeaponNames)", script)
-        self.assertIn("!isRecordHidden(row, hiddenArmorNames)", script)
 
     def test_rarity_page_has_compact_reference_and_upgrade_roll(self):
         from tools.codex_pipeline import cli
@@ -950,7 +1208,7 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
         self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
-        self.assertIn('<link rel="stylesheet" href="css/rarity.css" />', html)
+        self.assertIn(f'<link rel="stylesheet" href="css/rarity.css?v={STATIC_ASSET_VERSION}" />', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -985,8 +1243,12 @@ class SiteValidationTests(unittest.TestCase):
 
         self.assertIn("Common", html)
         self.assertNotIn(">Normal<", html)
+        self.assertNotIn("Uncommon", html)
+        self.assertNotIn("Legendary", html)
         self.assertIn('{ name: "Common"', script)
         self.assertNotIn('{ name: "Normal"', script)
+        self.assertNotIn('{ name: "Uncommon"', script)
+        self.assertNotIn('{ name: "Legendary"', script)
         self.assertIn("Upgrade +1", html)
         self.assertIn("currentMaxIndex", script)
         self.assertIn(".rarity-reference-table", css)
@@ -1004,7 +1266,7 @@ class SiteValidationTests(unittest.TestCase):
 
         self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
-        self.assertIn('<link rel="stylesheet" href="css/reroll.css" />', html)
+        self.assertIn(f'<link rel="stylesheet" href="css/reroll.css?v={STATIC_ASSET_VERSION}" />', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -1022,16 +1284,16 @@ class SiteValidationTests(unittest.TestCase):
         for expected in [
             "What Changes",
             "What Does Not Change",
-            "Re-Roll Flow",
-            "Before You Roll",
-            "When Re-Roll Helps",
+            "Reforge Flow",
+            "Before You Reforge",
+            "When Reforge Helps",
             "Related Item Pages",
             "Stat Spread",
             "Current Rarity",
             "Item Identity",
             "Max Rarity",
-            "Reroll Shards",
-            "Reroll Stone",
+            "Rarity Shards",
+            "Tinker Tools",
             "pages/systems/rarity.html",
             "pages/items/weapons.html",
             "pages/items/armors.html",
@@ -1056,7 +1318,7 @@ class SiteValidationTests(unittest.TestCase):
 
         self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
-        self.assertIn('<link rel="stylesheet" href="css/deconstruct.css" />', html)
+        self.assertIn(f'<link rel="stylesheet" href="css/deconstruct.css?v={STATIC_ASSET_VERSION}" />', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -1109,7 +1371,7 @@ class SiteValidationTests(unittest.TestCase):
 
         self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
-        self.assertIn('<link rel="stylesheet" href="css/ascend.css" />', html)
+        self.assertIn(f'<link rel="stylesheet" href="css/ascend.css?v={STATIC_ASSET_VERSION}" />', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -1161,7 +1423,7 @@ class SiteValidationTests(unittest.TestCase):
 
         self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
-        self.assertIn('<link rel="stylesheet" href="css/craft.css" />', html)
+        self.assertIn(f'<link rel="stylesheet" href="css/craft.css?v={STATIC_ASSET_VERSION}" />', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -1215,7 +1477,7 @@ class SiteValidationTests(unittest.TestCase):
 
         self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
-        self.assertIn('<link rel="stylesheet" href="css/imbuements.css" />', html)
+        self.assertIn(f'<link rel="stylesheet" href="css/imbuements.css?v={STATIC_ASSET_VERSION}" />', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -1274,7 +1536,7 @@ class SiteValidationTests(unittest.TestCase):
 
         self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
-        self.assertIn('<link rel="stylesheet" href="css/purge.css" />', html)
+        self.assertIn(f'<link rel="stylesheet" href="css/purge.css?v={STATIC_ASSET_VERSION}" />', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -1327,7 +1589,7 @@ class SiteValidationTests(unittest.TestCase):
 
         self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
-        self.assertIn('<link rel="stylesheet" href="css/corruption.css" />', html)
+        self.assertIn(f'<link rel="stylesheet" href="css/corruption.css?v={STATIC_ASSET_VERSION}" />', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -1377,7 +1639,7 @@ class SiteValidationTests(unittest.TestCase):
 
         self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
-        self.assertIn('<link rel="stylesheet" href="css/encounter.css" />', html)
+        self.assertIn(f'<link rel="stylesheet" href="css/encounter.css?v={STATIC_ASSET_VERSION}" />', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -1435,7 +1697,7 @@ class SiteValidationTests(unittest.TestCase):
 
         self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
-        self.assertIn('<link rel="stylesheet" href="css/pvp.css" />', html)
+        self.assertIn(f'<link rel="stylesheet" href="css/pvp.css?v={STATIC_ASSET_VERSION}" />', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -1500,8 +1762,8 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
         self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
-        self.assertIn('<link rel="stylesheet" href="css/anti-zerg.css" />', html)
-        self.assertIn('<script src="js/anti-zerg.js" defer></script>', html)
+        self.assertIn(f'<link rel="stylesheet" href="css/anti-zerg.css?v={STATIC_ASSET_VERSION}" />', html)
+        self.assertIn(f'<script src="js/anti-zerg.js?v={STATIC_ASSET_VERSION}" defer></script>', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -1571,8 +1833,8 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
         self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
-        self.assertIn('<link rel="stylesheet" href="css/monster-damage-reduction.css" />', html)
-        self.assertIn('<script src="js/monster-damage-reduction.js" defer></script>', html)
+        self.assertIn(f'<link rel="stylesheet" href="css/monster-damage-reduction.css?v={STATIC_ASSET_VERSION}" />', html)
+        self.assertIn(f'<script src="js/monster-damage-reduction.js?v={STATIC_ASSET_VERSION}" defer></script>', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -1644,8 +1906,8 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
         self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
-        self.assertIn('<link rel="stylesheet" href="css/experience.css" />', html)
-        self.assertIn('<script src="js/experience.js" defer></script>', html)
+        self.assertIn(f'<link rel="stylesheet" href="css/experience.css?v={STATIC_ASSET_VERSION}" />', html)
+        self.assertIn(f'<script src="js/experience.js?v={STATIC_ASSET_VERSION}" defer></script>', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -1719,8 +1981,8 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
         self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
-        self.assertIn('<link rel="stylesheet" href="css/guild.css" />', html)
-        self.assertIn('<script src="js/guild.js" defer></script>', html)
+        self.assertIn(f'<link rel="stylesheet" href="css/guild.css?v={STATIC_ASSET_VERSION}" />', html)
+        self.assertIn(f'<script src="js/guild.js?v={STATIC_ASSET_VERSION}" defer></script>', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -1794,8 +2056,8 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
         self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
-        self.assertIn('<link rel="stylesheet" href="css/chat.css" />', html)
-        self.assertIn('<script src="js/chat.js" defer></script>', html)
+        self.assertIn(f'<link rel="stylesheet" href="css/chat.css?v={STATIC_ASSET_VERSION}" />', html)
+        self.assertIn(f'<script src="js/chat.js?v={STATIC_ASSET_VERSION}" defer></script>', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -1867,8 +2129,8 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
         self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
-        self.assertIn('<link rel="stylesheet" href="css/floor-cleanup.css" />', html)
-        self.assertIn('<script src="js/floor-cleanup.js" defer></script>', html)
+        self.assertIn(f'<link rel="stylesheet" href="css/floor-cleanup.css?v={STATIC_ASSET_VERSION}" />', html)
+        self.assertIn(f'<script src="js/floor-cleanup.js?v={STATIC_ASSET_VERSION}" defer></script>', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -1939,8 +2201,8 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
         self.assertFalse(endless_page_path.exists())
         self.assertFalse(endless_script_path.exists())
-        self.assertIn('<link rel="stylesheet" href="css/play-the-game.css" />', html)
-        self.assertIn('<script src="js/play-the-game.js" defer></script>', html)
+        self.assertIn(f'<link rel="stylesheet" href="css/play-the-game.css?v={STATIC_ASSET_VERSION}" />', html)
+        self.assertIn(f'<script src="js/play-the-game.js?v={STATIC_ASSET_VERSION}" defer></script>', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -2000,8 +2262,8 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
         self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
-        self.assertIn('<link rel="stylesheet" href="css/level.css" />', html)
-        self.assertIn('<script src="js/level.js" defer></script>', html)
+        self.assertIn(f'<link rel="stylesheet" href="css/level.css?v={STATIC_ASSET_VERSION}" />', html)
+        self.assertIn(f'<script src="js/level.js?v={STATIC_ASSET_VERSION}" defer></script>', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -2018,41 +2280,92 @@ class SiteValidationTests(unittest.TestCase):
         self.assertNotRegex(html, r"\sstyle\s*=")
 
         for expected in [
-            "Level at a Glance",
-            "Damage to XP Preview",
-            "Milestone Reference",
-            "Level XP Requirements",
-            "Related Pages",
+            "Level XP Curve",
             "Level 105",
             "1:1 Damage",
             "Experience Pool",
             "Catch-Up",
             "Weekend / Event",
-            "data-level-damage-slider",
-            "data-level-total-xp",
-            "data-level-multiplier",
-            "pages/systems/experience.html",
-            "pages/General/build-planner.html",
-            "pages/systems/monster-damage-reduction.html",
-            "pages/items/weapons.html",
-            "pages/items/armors.html",
-            "pages/enemies/monsters.html",
+            "data-level-curve-tooltip",
+            "data-level-curve-level",
+            "data-level-curve-total",
+            "data-level-curve-next-total",
+            "data-level-curve-delta",
+            "data-level-curve-delta-label",
+            'role="slider"',
         ]:
             self.assertIn(expected, html)
 
-        self.assertIn(".level-summary-grid", css)
-        self.assertIn(".level-xp-widget", css)
-        self.assertIn(".level-milestone-grid", css)
-        self.assertIn(".level-chart-card", css)
-        self.assertIn(".level-link-grid", css)
+        self.assertNotIn("Reroll Stone", html)
 
-        self.assertIn("const LEVEL_XP_TOTALS", script)
-        self.assertIn("function initLevelXpWidget", script)
-        self.assertIn("function renderLevelChart", script)
-        self.assertIn("function renderLevelMilestones", script)
+        self.assertNotIn("Level at a Glance", html)
+        self.assertNotIn("Related Pages", html)
+        self.assertNotIn("level-link-grid", html)
+        self.assertNotIn("Milestone Reference", html)
+        self.assertNotIn("level-xp-chart", html)
+        self.assertNotIn("Damage to XP Preview", html)
+        self.assertNotIn("data-level-damage-slider", html)
+
+        self.assertIn(".level-summary-grid", css)
+        self.assertIn(".level-summary-grid .stat-card:hover", css)
+        self.assertIn("transform: none", css)
+        self.assertIn(".level-chart-card", css)
+        self.assertIn(".level-curve-stage", css)
+        self.assertIn(".level-curve-tooltip", css)
+        self.assertIn(".level-curve-readout", css)
+        self.assertIn(".level-curve-metric", css)
+        self.assertNotIn(".level-link-grid", css)
+
+        self.assertIn('const PLAYER_TABLES_URL = "data/player_tables.json"', script)
+        self.assertIn("let LEVEL_XP_THRESHOLDS", script)
+        self.assertIn("function validatePlayerXp", script)
+        self.assertIn("function loadPlayerXp", script)
+        self.assertIn("function getNextLevelXp", script)
+        self.assertIn("function getNextLevelTotal", script)
+        self.assertIn("function drawLevelCurve", script)
+        self.assertIn("function initLevelCurve", script)
+        self.assertNotIn("function initLevelXpWidget", script)
+        self.assertNotIn("function renderLevelChart", script)
+        self.assertNotIn("function renderLevelMilestones", script)
         self.assertIn('document.addEventListener("DOMContentLoaded"', script)
 
-    def test_skills_page_has_compact_melee_reference(self):
+    def test_player_tables_match_direct_game_export_boundaries(self):
+        from tools.codex_pipeline.config import PLAYER_TABLES_DATA_PATH
+
+        payload = json.loads(PLAYER_TABLES_DATA_PATH.read_text(encoding="utf-8"))
+        self.assertEqual(1, payload["schema_version"])
+        table = payload["player_tables"][0]
+        player_exp = table["player_exp"]
+        skill_exp = table["skill_exp"]
+
+        self.assertEqual(106, len(player_exp))
+        self.assertEqual(111, len(skill_exp))
+        self.assertEqual(0, player_exp[0])
+        self.assertEqual(0, skill_exp[0])
+        self.assertTrue(all(current > previous for previous, current in zip(player_exp, player_exp[1:])))
+        self.assertTrue(all(current > previous for previous, current in zip(skill_exp, skill_exp[1:])))
+
+        # Player array index N is the cumulative boundary after the Nth level cost.
+        for index, expected in {
+            0: 0,
+            1: 2_000,
+            5: 10_000,
+            90: 181_560_000,
+            94: 207_760_000,
+            95: 214_500_000,
+            100: 250_000_000,
+            104: 2_500_000_000,
+            105: 5_000_000_000,
+        }.items():
+            self.assertEqual(expected, player_exp[index])
+
+        self.assertEqual(6_550_000, player_exp[94] - player_exp[93])
+        self.assertEqual(6_740_000, player_exp[95] - player_exp[94])
+        self.assertEqual(765_000, skill_exp[94] - skill_exp[93])
+        self.assertEqual(877_500, skill_exp[95] - skill_exp[94])
+        self.assertEqual(75_000_000, skill_exp[110])
+
+    def test_skills_page_has_compact_xp_reference(self):
         from tools.codex_pipeline import cli
         from tools.codex_pipeline.config import REPO_ROOT
 
@@ -2066,8 +2379,8 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
         self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
-        self.assertIn('<link rel="stylesheet" href="css/skills.css" />', html)
-        self.assertIn('<script src="js/skills.js" defer></script>', html)
+        self.assertIn(f'<link rel="stylesheet" href="css/skills.css?v={STATIC_ASSET_VERSION}" />', html)
+        self.assertIn(f'<script src="js/skills.js?v={STATIC_ASSET_VERSION}" defer></script>', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -2084,46 +2397,57 @@ class SiteValidationTests(unittest.TestCase):
         self.assertNotRegex(html, r"\sstyle\s*=")
 
         for expected in [
-            "Skills at a Glance",
-            "Melee Skill Set",
-            "Requirement Preview",
-            "Skill XP Requirements",
-            "Related Pages",
-            "Large Blades",
-            "Axes",
-            "Blunts",
-            "Polearms",
-            "Small Blades",
+            "Skill XP Curve",
+            "Five Melee Skills",
             "Base Max",
             "110",
             "Race Bonus",
             "+10 Above Cap",
             "Equipment Requirements",
             "Race bonuses do not count toward equipment requirements",
-            "data-skill-base-slider",
-            "data-skill-race-toggle",
-            "data-skill-effective",
-            "data-skill-requirement",
-            "data-skill-status",
-            "pages/stats/races.html",
-            "pages/General/build-planner.html",
-            "pages/items/weapons.html",
-            "pages/items/armors.html",
-            "pages/stats/level.html",
-            "pages/systems/experience.html",
+            "data-skill-curve-tooltip",
+            "data-skill-curve-level",
+            "data-skill-curve-total",
+            "data-skill-curve-next-label",
+            "data-skill-curve-next-total",
+            "data-skill-curve-next-increment",
+            'role="slider"',
         ]:
             self.assertIn(expected, html)
 
-        self.assertIn(".skills-summary-grid", css)
-        self.assertIn(".skills-list-grid", css)
-        self.assertIn(".skills-requirement-widget", css)
-        self.assertIn(".skills-chart-card", css)
-        self.assertIn(".skills-link-grid", css)
+        for removed in [
+            "Skills at a Glance",
+            "Melee Skill Set",
+            "Trade &amp; Gathering Skills",
+            "Requirement Preview",
+            "Skill XP Requirements",
+            "Related Pages",
+            "data-skill-base-slider",
+            "data-skill-race-toggle",
+            "skill-xp-chart",
+            "skills-link-grid",
+        ]:
+            self.assertNotIn(removed, html)
 
-        self.assertIn("const SKILL_XP_TOTALS", script)
-        self.assertIn("function initSkillRequirementWidget", script)
-        self.assertIn("function renderSkillChart", script)
-        self.assertIn("function renderSkillCurve", script)
+        self.assertIn(".skills-summary-grid", css)
+        self.assertIn(".skills-summary-grid .stat-card:hover", css)
+        self.assertIn(".skills-chart-card", css)
+        self.assertIn(".skills-curve-stage", css)
+        self.assertIn(".skills-curve-tooltip", css)
+        self.assertIn(".skills-curve-readout", css)
+        self.assertIn(".skills-curve-metric", css)
+        self.assertIn(".skills-curve-next-value", css)
+
+        self.assertIn('const PLAYER_TABLES_URL = "data/player_tables.json"', script)
+        self.assertIn("let SKILL_XP_TOTALS", script)
+        self.assertIn("function validateSkillXp", script)
+        self.assertIn("function loadSkillXp", script)
+        self.assertIn("function getNextSkillTotal", script)
+        self.assertIn("function getNextSkillXp", script)
+        self.assertIn("function drawSkillCurve", script)
+        self.assertIn("function initSkillCurve", script)
+        self.assertNotIn("function initSkillRequirementWidget", script)
+        self.assertNotIn("function renderSkillChart", script)
         self.assertIn('document.addEventListener("DOMContentLoaded"', script)
 
     def test_races_page_has_compact_bonus_reference(self):
@@ -2140,8 +2464,8 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
         self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
-        self.assertIn('<link rel="stylesheet" href="css/races.css" />', html)
-        self.assertIn('<script src="js/races.js" defer></script>', html)
+        self.assertIn(f'<link rel="stylesheet" href="css/races.css?v={STATIC_ASSET_VERSION}" />', html)
+        self.assertIn(f'<script src="js/races.js?v={STATIC_ASSET_VERSION}" defer></script>', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -2216,8 +2540,8 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
         self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
-        self.assertIn('<link rel="stylesheet" href="css/strength.css" />', html)
-        self.assertIn('<script src="js/strength.js" defer></script>', html)
+        self.assertIn(f'<link rel="stylesheet" href="css/strength.css?v={STATIC_ASSET_VERSION}" />', html)
+        self.assertIn(f'<script src="js/strength.js?v={STATIC_ASSET_VERSION}" defer></script>', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -2297,8 +2621,8 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
         self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
-        self.assertIn('<link rel="stylesheet" href="css/constitution.css" />', html)
-        self.assertIn('<script src="js/constitution.js" defer></script>', html)
+        self.assertIn(f'<link rel="stylesheet" href="css/constitution.css?v={STATIC_ASSET_VERSION}" />', html)
+        self.assertIn(f'<script src="js/constitution.js?v={STATIC_ASSET_VERSION}" defer></script>', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -2373,8 +2697,8 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
         self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
-        self.assertIn('<link rel="stylesheet" href="css/dexterity.css" />', html)
-        self.assertIn('<script src="js/dexterity.js" defer></script>', html)
+        self.assertIn(f'<link rel="stylesheet" href="css/dexterity.css?v={STATIC_ASSET_VERSION}" />', html)
+        self.assertIn(f'<script src="js/dexterity.js?v={STATIC_ASSET_VERSION}" defer></script>', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -2445,19 +2769,19 @@ class SiteValidationTests(unittest.TestCase):
         from tools.codex_pipeline.config import REPO_ROOT
 
         html_path = REPO_ROOT / "pages" / "stats" / "resistances.html"
-        data_path = REPO_ROOT / "pages" / "systems" / "resistances.json"
         css_path = REPO_ROOT / "css" / "resistances.css"
         script_path = REPO_ROOT / "js" / "resistances.js"
+        data_path = REPO_ROOT / "pages" / "systems" / "resistances.json"
         html = html_path.read_text(encoding="utf-8")
-        data = json.loads(data_path.read_text(encoding="utf-8"))
         css = css_path.read_text(encoding="utf-8") if css_path.exists() else ""
         script = script_path.read_text(encoding="utf-8") if script_path.exists() else ""
+        data = json.loads(data_path.read_text(encoding="utf-8"))
 
         self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
         self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
-        self.assertIn('<link rel="stylesheet" href="css/resistances.css" />', html)
-        self.assertIn('<script src="js/resistances.js" defer></script>', html)
+        self.assertIn(f'<link rel="stylesheet" href="css/resistances.css?v={STATIC_ASSET_VERSION}" />', html)
+        self.assertIn(f'<script src="js/resistances.js?v={STATIC_ASSET_VERSION}" defer></script>', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -2481,8 +2805,6 @@ class SiteValidationTests(unittest.TestCase):
             "Perks",
             "Related Pages",
             "60%",
-            "Holy",
-            "Dark",
             "Applied after armor",
             "data-resistance-value-slider",
             "data-resistance-incoming-slider",
@@ -2492,6 +2814,8 @@ class SiteValidationTests(unittest.TestCase):
             "data-resistance-type-grid",
             "data-neutral-toggle",
             "data-perk-stats=\"resistances\"",
+            "Holy",
+            "Dark",
             "pages/items/armors.html",
             "pages/General/build-planner.html",
             "pages/enemies/monsters.html",
@@ -2509,17 +2833,60 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(".resistance-link-grid", css)
 
         self.assertIn("const RESISTANCE_CAP", script)
+        self.assertIn("const RESISTANCES_SCHEMA_VERSION = 3", script)
         self.assertIn("function initResistanceCalculator", script)
         self.assertIn("function renderMonsterTypeResistances", script)
         self.assertIn("function updateNeutralVisibility", script)
-        self.assertIn("const RESISTANCES_SCHEMA_VERSION = 2", script)
         self.assertIn('document.addEventListener("DOMContentLoaded"', script)
+        self.assertEqual(3, data["schemaVersion"])
 
-        self.assertEqual(2, data["schemaVersion"])
-        self.assertEqual(1.3, next(item["value"] for item in data["typeResistances"]["humanoid"] if item["element"] == "Dark"))
-        self.assertEqual(1.3, next(item["value"] for item in data["typeResistances"]["undead"] if item["element"] == "Holy"))
-        self.assertEqual(0.8, next(item["value"] for item in data["typeResistances"]["demon"] if item["element"] == "Dark"))
-        self.assertEqual(1.15, next(item["value"] for item in data["typeResistances"]["disease beast"] if item["element"] == "Holy"))
+        element_order = ("Fire", "Electric", "Holy", "Cold", "Dark", "Acid", "Poison", "Disease")
+        expected_rows = {
+            "humanoid": (1.0, 1.0, 1.0, 0.9, 1.3, 1.15, 1.25, 1.25),
+            "giant": (0.8, 1.3, 1.0, 1.15, 1.15, 0.8, 0.8, 1.0),
+            "animal": (1.1, 1.0, 1.0, 1.0, 1.15, 1.0, 1.25, 1.1),
+            "beast": (0.9, 0.8, 1.0, 1.1, 1.25, 1.1, 1.0, 1.25),
+            "undead": (1.25, 1.15, 1.3, 1.0, 0.8, 0.8, 0.8, 1.0),
+            "demon": (0.7, 1.15, 1.25, 1.3, 0.8, 1.0, 1.0, 1.0),
+            "fire beast": (0.7, 1.0, 1.0, 1.3, 1.0, 1.0, 1.0, 1.0),
+            "ice beast": (1.3, 1.0, 1.0, 0.7, 1.15, 1.2, 1.15, 1.0),
+            "electric beast": (1.0, 0.7, 1.0, 1.15, 1.15, 1.3, 1.0, 1.15),
+            "poison beast": (1.2, 1.0, 1.1, 1.0, 1.0, 1.25, 0.8, 1.15),
+            "disease beast": (1.25, 1.2, 1.15, 1.0, 1.0, 1.0, 1.15, 0.8),
+        }
+        expected_type_resistances = {
+            type_name: dict(zip(element_order, values)) for type_name, values in expected_rows.items()
+        }
+        actual_type_resistances = {
+            type_name: {entry["element"]: entry["value"] for entry in entries}
+            for type_name, entries in data["typeResistances"].items()
+        }
+        self.assertEqual(expected_type_resistances, actual_type_resistances)
+
+        for consumer_path in [
+            REPO_ROOT / "js" / "resistances.js",
+            REPO_ROOT / "js" / "weapons-page.js",
+            REPO_ROOT / "js" / "monsters-page.js",
+        ]:
+            self.assertIn("const RESISTANCES_SCHEMA_VERSION = 3", consumer_path.read_text(encoding="utf-8"))
+
+        monsters_script = (REPO_ROOT / "js" / "monsters-page.js").read_text(encoding="utf-8")
+        fallback_match = re.search(r"let TYPE_RESISTANCES = \{([\s\S]*?)\n  \};", monsters_script)
+        self.assertIsNotNone(fallback_match)
+        fallback_type_resistances = {}
+        for row_match in re.finditer(
+            r'^    (?:"([^"]+)"|([a-z]+)):\s*\[([\s\S]*?)^    \],',
+            fallback_match.group(1),
+            flags=re.MULTILINE,
+        ):
+            type_name = row_match.group(1) or row_match.group(2)
+            fallback_type_resistances[type_name] = {
+                element: float(value)
+                for element, value in re.findall(
+                    r'\{ element: "([^"]+)", value: ([0-9.]+) \}', row_match.group(3)
+                )
+            }
+        self.assertEqual(expected_type_resistances, fallback_type_resistances)
 
         perk_embed_script = (REPO_ROOT / "js" / "perks.js").read_text(encoding="utf-8")
         self.assertIn('name: "resistances"', perk_embed_script)
@@ -2539,8 +2906,8 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
         self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
-        self.assertIn('<link rel="stylesheet" href="css/crafting.css" />', html)
-        self.assertIn('<script src="js/crafting-page.js" defer></script>', html)
+        self.assertIn(f'<link rel="stylesheet" href="css/crafting.css?v={STATIC_ASSET_VERSION}" />', html)
+        self.assertIn(f'<script src="js/crafting-page.js?v={STATIC_ASSET_VERSION}" defer></script>', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -2609,6 +2976,18 @@ class SiteValidationTests(unittest.TestCase):
 
         self.assertIn('String(a[1] ?? "").localeCompare(String(b[1] ?? ""))', script)
 
+    def test_armors_page_filters_holy_and_dark_resistances(self):
+        from tools.codex_pipeline.config import REPO_ROOT
+
+        script = (REPO_ROOT / "js" / "armors-page.js").read_text(encoding="utf-8")
+        css = (REPO_ROOT / "css" / "armors.css").read_text(encoding="utf-8")
+
+        self.assertIn("holy: res.holy", script)
+        self.assertIn("dark: res.dark", script)
+        self.assertIn('{ key: "holyResist", label: "Holy"', script)
+        self.assertIn('{ key: "darkResist", label: "Dark"', script)
+        self.assertRegex(css, r"\.items-table th,\s*\.items-table td\s*\{[^}]*padding:\s*0\.55rem 0\.3rem;")
+
     def test_armors_page_detail_hides_empty_corrupted_perks_and_empty_requirements(self):
         from tools.codex_pipeline.config import REPO_ROOT
 
@@ -2628,48 +3007,6 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn("uniqueSet.has(normalizeMonsterId(monster.name))", script)
         self.assertIn("formatRequirement(item.playerLevelRequirement)", script)
         self.assertIn("getArmorSearchText(item).includes(searchTerm.toLowerCase())", script)
-
-    def test_armors_page_displays_and_filters_new_holy_and_dark_resistances(self):
-        from tools.codex_pipeline.config import REPO_ROOT
-
-        script = (REPO_ROOT / "js" / "armors-page.js").read_text(encoding="utf-8")
-
-        self.assertIn("holy: fields.holy_resistance", script)
-        self.assertIn("dark: fields.dark_resistance", script)
-        self.assertIn('{ key: "holyResist", label: "Holy"', script)
-        self.assertIn('{ key: "darkResist", label: "Dark"', script)
-        self.assertIn('["holy", res.holy]', script)
-        self.assertIn('["dark", res.dark]', script)
-        self.assertIn('makeResistEntry("holy", "Holy", res.holy)', script)
-        self.assertIn('makeResistEntry("dark", "Dark", res.dark)', script)
-        self.assertIn("formatNumber(res.holy ?? 0)", script)
-        self.assertIn("formatNumber(res.dark ?? 0)", script)
-
-    def test_armors_page_shows_craftable_min_rarity_and_light_traits(self):
-        from tools.codex_pipeline.config import REPO_ROOT
-
-        script = (REPO_ROOT / "js" / "armors-page.js").read_text(encoding="utf-8")
-
-        self.assertIn("const hasCraftingFields", script)
-        self.assertIn("isCraftable: hasCraftingFields(fields)", script)
-        self.assertIn("emitsLight: Number(fields.emits_light) === 1", script)
-        self.assertIn("minRarity: fields.minimum_rarity", script)
-        self.assertIn('createDetailBadge("Craftable"', script)
-        self.assertIn('createDetailBadge("Emits Light"', script)
-        self.assertIn('["Min Rarity", formatRarityLabel(item.minRarity)]', script)
-        self.assertIn('["Max Rarity", formatValue(item.maxRarity)]', script)
-
-    def test_armors_page_uses_explicit_sale_value_override(self):
-        from tools.codex_pipeline.config import REPO_ROOT
-
-        script = (REPO_ROOT / "js" / "armors-page.js").read_text(encoding="utf-8")
-
-        self.assertIn("const resolveSellValue", script)
-        self.assertIn("const explicitSellValue = Number(fields.sale_value)", script)
-        self.assertIn("if (Number.isFinite(explicitSellValue) && explicitSellValue > 0)", script)
-        self.assertIn("return explicitSellValue;", script)
-        self.assertIn("return buyValue !== null ? buyValue / 2 : null;", script)
-        self.assertIn("sellValue: resolveSellValue(fields, valueNum)", script)
 
     def test_manifest_self_reference_is_an_error(self):
         from tools.codex_pipeline.validators.site import validate_manifest_entries
@@ -2746,7 +3083,7 @@ class SiteValidationTests(unittest.TestCase):
                 {
                     "id": 1,
                     "name": "Grips of Winter",
-                    "fields": {"corrupted_perk": 41},
+                    "fields": {"corrupted_perk": 41, "corrupted_perk_label": "Unknown"},
                 }
             ],
             "armors": [],
@@ -2773,7 +3110,7 @@ class SiteValidationTests(unittest.TestCase):
                 {
                     "id": 2,
                     "name": "Known Unknown",
-                    "fields": {"corrupted_perk": 24, "corrupted_perk_label": "Should Not Exist"},
+                    "fields": {"corrupted_perk": 24, "corrupted_perk_label": "Wrong Label"},
                 },
             ],
             "armors": [],
@@ -2786,7 +3123,27 @@ class SiteValidationTests(unittest.TestCase):
 
         messages = "\n".join(issue.message for issue in issues)
         self.assertIn("expected corrupted perk 41 label", messages)
-        self.assertIn("configured as unknown but has label", messages)
+        self.assertIn("expected corrupted perk 24 label 'Unknown'", messages)
+
+    def test_record_id_validation_reports_duplicates_by_data_kind(self):
+        from tools.codex_pipeline.validators.site import validate_unique_record_ids
+
+        issues = validate_unique_record_ids(
+            {
+                "weapons": [{"id": 1, "name": "Sword"}],
+                "monsters": [
+                    {"id": 100, "name": "Ice Devil"},
+                    {"id": "100", "name": "Obsidian Ravager"},
+                ],
+            }
+        )
+
+        self.assertEqual(1, len(issues))
+        self.assertEqual("error", issues[0].severity)
+        self.assertIn(
+            "monsters duplicate record ID 100: Ice Devil, Obsidian Ravager",
+            issues[0].message,
+        )
 
     def test_inline_script_parser_reports_syntax_errors(self):
         from tools.codex_pipeline.validators.site import validate_inline_scripts

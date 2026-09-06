@@ -50,10 +50,8 @@
 
   const RARITY_MULTIPLIERS = [
     { key: "normal", label: "Normal", multiplier: 1 },
-    { key: "uncommon", label: "Uncommon", multiplier: 2 },
     { key: "rare", label: "Rare", multiplier: 4 },
     { key: "epic", label: "Epic", multiplier: 6 },
-    { key: "legendary", label: "Legendary", multiplier: 8 },
     { key: "mythical", label: "Mythical", multiplier: 10 },
     { key: "ascendant", label: "Ascendant", multiplier: 12 },
   ];
@@ -196,13 +194,20 @@
       : { armors: {}, weapons: {}, reverse: { armors: {}, weapons: {} } };
   let hiddenArmorNames = new Set();
   let allowedMonsterNames = new Set();
+  let blockedMonsterIds = new Set();
 
   const applyAllowlists = (allowlists) => {
     hiddenArmorNames = buildNameSet(allowlists?.armors?.block);
     allowedMonsterNames = buildNameSet(allowlists?.monsters?.allow);
+    blockedMonsterIds = new Set(
+      (Array.isArray(allowlists?.monsters?.blockIds) ? allowlists.monsters.blockIds : []).map((id) =>
+        String(id).trim()
+      )
+    );
   };
 
   const isMonsterAllowed = (monster) => {
+    if (blockedMonsterIds.has(String(monster?.id ?? "").trim())) return false;
     if (!allowedMonsterNames.size) return true;
     return allowedMonsterNames.has((monster.name || "").toLowerCase());
   };
@@ -313,8 +318,8 @@
         acid: fields.acid_resistance,
         poison: fields.poison_resistance,
         disease: fields.disease_resistance,
-        holy: fields.holy_resistance ?? fields.unknown_81,
-        dark: fields.dark_resistance ?? fields.unknown_85,
+        holy: fields.holy_resistance,
+        dark: fields.dark_resistance,
       },
       fireResist: fields.fire_resistance,
       poisonResist: fields.poison_resistance,
@@ -322,8 +327,8 @@
       diseaseResist: fields.disease_resistance,
       acidResist: fields.acid_resistance,
       electricResist: fields.lightning_resistance,
-      holyResist: fields.holy_resistance ?? fields.unknown_81,
-      darkResist: fields.dark_resistance ?? fields.unknown_85,
+      holyResist: fields.holy_resistance,
+      darkResist: fields.dark_resistance,
       stats: {
         strength: fields.strength,
         constitution: fields.constitution,
@@ -1002,10 +1007,6 @@
         sortDir = "desc";
         buildHead();
         populateFilters(items);
-        if (initialArmorSearchTerm) {
-          searchTerm = initialArmorSearchTerm;
-          if (searchInput) searchInput.value = initialArmorSearchTerm;
-        }
         applyFilterAndSort();
       })
       .catch(() => {

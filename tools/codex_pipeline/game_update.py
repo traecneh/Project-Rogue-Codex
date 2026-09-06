@@ -2,9 +2,7 @@ from __future__ import annotations
 
 import json
 import sys
-from collections import Counter
 from dataclasses import dataclass
-from dataclasses import field as dataclass_field
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -27,70 +25,25 @@ from tools.codex_pipeline.assets import (
     build_asset_change_reports,
     validate_asset_data_parity,
 )
+from tools.codex_pipeline.asset_review import asset_report_has_priority_image_changes
 from tools.codex_pipeline.drop_audit import DropSourceAuditReport, build_drop_source_audit_report
 from tools.codex_pipeline.exports import (
     DataDiffReport,
     ExportError,
     ExportResult,
     ExportTarget,
-    _field_changes,
-    _record_key,
-    _record_label,
-    _sort_record_key,
     build_generated_diff_reports,
     export_client_data,
 )
+from tools.codex_pipeline.hidden_items import HiddenItemRules, load_hidden_item_rules
 from tools.codex_pipeline.perks import load_perk_label_overrides
 from tools.codex_pipeline.sources import SourceCheckResult, validate_export_sources
 from tools.codex_pipeline.unknowns import UnknownFieldTargetReport, build_unknown_field_reports
-from tools.codex_pipeline.validators.site import ValidationIssue, validate_corrupted_perk_labels
-
-
-@dataclass(frozen=True)
-class HiddenItemRecord:
-    label: str
-    reason: str
-
-
-@dataclass(frozen=True)
-class HiddenItemReasonChange:
-    key: str
-    label: str
-    old_reason: str
-    new_reason: str
-
-
-@dataclass(frozen=True)
-class HiddenItemFieldChange:
-    key: str
-    label: str
-    field_paths: list[str]
-
-
-@dataclass(frozen=True)
-class HiddenItemReasonSummary:
-    reason: str
-    count: int
-
-
-@dataclass(frozen=True)
-class HiddenItemAuditReport:
-    target_name: str
-    generated_path: Path
-    site_path: Path
-    added: list[HiddenItemRecord]
-    removed: list[HiddenItemRecord]
-    changed: list[HiddenItemReasonChange]
-    generated_reasons: list[HiddenItemReasonSummary]
-    field_changed: list[HiddenItemFieldChange] = dataclass_field(default_factory=list)
-
-    @property
-    def has_changes(self) -> bool:
-        return bool(self.added or self.removed or self.changed or self.field_changed)
-
-    @property
-    def generated_hidden_count(self) -> int:
-        return sum(summary.count for summary in self.generated_reasons)
+from tools.codex_pipeline.validators.site import (
+    ValidationIssue,
+    validate_corrupted_perk_labels,
+    validate_unique_record_ids,
+)
 
 
 @dataclass(frozen=True)
@@ -105,7 +58,6 @@ class GameUpdateReport:
     validation_issues: list[ValidationIssue]
     export_errors: list[str]
     skipped_sections: list[str]
-    hidden_item_reports: list[HiddenItemAuditReport] = dataclass_field(default_factory=list)
 
     @property
     def has_changes(self) -> bool:
@@ -133,7 +85,10 @@ class GameUpdateReport:
 
     @property
     def safe_to_sync(self) -> bool:
-        return not self.has_errors and not any(report.has_changes for report in self.asset_reports)
+        return not self.has_errors and not any(
+            asset_report_has_priority_image_changes(report)
+            for report in self.asset_reports
+        )
 
 
 def _target_by_name(targets: Iterable[ExportTarget]) -> dict[str, ExportTarget]:
@@ -148,112 +103,6 @@ def _read_json_list(path: Path, label: str) -> list[Any]:
     if not isinstance(data, list):
         raise ExportError(f"{label} generated data must be a JSON list: {path}")
     return data
-
-
-def _is_hidden_item(record: Any) -> bool:
-    return isinstance(record, dict) and record.get("codex_hidden") is True
-
-
-def _hidden_reason(record: dict[str, Any]) -> str:
-    reason = str(record.get("codex_hidden_reason") or "").strip()
-    return reason or "unspecified"
-
-
-def _hidden_records_by_key(records: list[Any]) -> dict[str, dict[str, Any]]:
-    indexed: dict[str, dict[str, Any]] = {}
-    for index, record in enumerate(records):
-        if not _is_hidden_item(record):
-            continue
-        key = _record_key(record, index)
-        if key not in indexed:
-            indexed[key] = record
-    return indexed
-
-
-def _hidden_item_record(record: dict[str, Any], key: str) -> HiddenItemRecord:
-    return HiddenItemRecord(_record_label(record, key), _hidden_reason(record))
-
-
-VISIBILITY_FIELD_PATHS = {"codex_hidden", "codex_hidden_reason", "codexHidden", "codexHiddenReason"}
-
-
-def _hidden_item_field_change(
-    key: str,
-    site_record: dict[str, Any],
-    generated_record: dict[str, Any],
-) -> HiddenItemFieldChange | None:
-    field_paths = [
-        change.path
-        for change in _field_changes(site_record, generated_record)
-        if change.path not in VISIBILITY_FIELD_PATHS
-    ]
-    if not field_paths:
-        return None
-    return HiddenItemFieldChange(key, _record_label(generated_record, key), field_paths)
-
-
-def _build_hidden_item_audit_report(
-    target: ExportTarget,
-    *,
-    output_dir: Path,
-) -> HiddenItemAuditReport | None:
-    if target.name not in {"weapons", "armors"}:
-        return None
-
-    generated_path = target.generated_path(output_dir)
-    generated_records = _read_json_list(generated_path, f"{target.name} generated")
-    site_records = _read_json_list(target.site_path, f"{target.name} site")
-    generated_hidden = _hidden_records_by_key(generated_records)
-    site_hidden = _hidden_records_by_key(site_records)
-
-    added_keys = sorted(set(generated_hidden) - set(site_hidden), key=_sort_record_key)
-    removed_keys = sorted(set(site_hidden) - set(generated_hidden), key=_sort_record_key)
-    common_keys = sorted(set(generated_hidden) & set(site_hidden), key=_sort_record_key)
-    changed = [
-        HiddenItemReasonChange(
-            key,
-            _record_label(generated_hidden[key], key),
-            _hidden_reason(site_hidden[key]),
-            _hidden_reason(generated_hidden[key]),
-        )
-        for key in common_keys
-        if _hidden_reason(site_hidden[key]) != _hidden_reason(generated_hidden[key])
-    ]
-    field_changed = [
-        field_change
-        for key in common_keys
-        if (field_change := _hidden_item_field_change(key, site_hidden[key], generated_hidden[key])) is not None
-    ]
-    reason_counts = Counter(_hidden_reason(record) for record in generated_hidden.values())
-    generated_reasons = [
-        HiddenItemReasonSummary(reason, count)
-        for reason, count in sorted(reason_counts.items(), key=lambda item: (-item[1], item[0]))
-    ]
-    report = HiddenItemAuditReport(
-        target_name=target.name,
-        generated_path=generated_path,
-        site_path=target.site_path,
-        added=[_hidden_item_record(generated_hidden[key], key) for key in added_keys],
-        removed=[_hidden_item_record(site_hidden[key], key) for key in removed_keys],
-        changed=changed,
-        field_changed=field_changed,
-        generated_reasons=generated_reasons,
-    )
-    return report if report.has_changes or report.generated_reasons else None
-
-
-def build_hidden_item_audit_reports(
-    targets: Iterable[ExportTarget],
-    *,
-    output_dir: Path,
-) -> list[HiddenItemAuditReport]:
-    output_dir = output_dir.expanduser().resolve()
-    reports: list[HiddenItemAuditReport] = []
-    for target in targets:
-        report = _build_hidden_item_audit_report(target, output_dir=output_dir)
-        if report is not None:
-            reports.append(report)
-    return reports
 
 
 def _build_generated_drop_report(
@@ -300,6 +149,140 @@ def _validate_generated_corrupted_perks(
         for name, target in item_targets.items()
     }
     return validate_corrupted_perk_labels(item_data, corrupted_perk_overrides=overrides)
+
+
+def _validate_generated_record_ids(
+    targets: list[ExportTarget],
+    *,
+    output_dir: Path,
+) -> list[ValidationIssue]:
+    record_data = {
+        target.name: _read_json_list(target.generated_path(output_dir), target.name)
+        for target in targets
+    }
+    return validate_unique_record_ids(record_data)
+
+
+def _record_fields(record: object) -> dict[str, Any]:
+    if not isinstance(record, dict):
+        return {}
+    fields = record.get("fields")
+    return fields if isinstance(fields, dict) else {}
+
+
+def _numeric_field(fields: dict[str, Any], name: str) -> float:
+    try:
+        return float(fields.get(name, 0) or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
+def _looks_like_incomplete_weapon(record: object) -> bool:
+    fields = _record_fields(record)
+    if not fields or _numeric_field(fields, "unknown_35") <= 0:
+        return False
+    gameplay_fields = (
+        "min_damage",
+        "max_damage",
+        "skill_requirement",
+        "level_requirement",
+        "max_rarity",
+        "perk",
+        "shard_decomposition_amount",
+        "shard_promotion_amount",
+        "value_low",
+        "value_high",
+    )
+    return all(_numeric_field(fields, name) == 0 for name in gameplay_fields)
+
+
+def _validate_generated_weapon_data(
+    targets: list[ExportTarget],
+    *,
+    output_dir: Path,
+    skipped_sections: list[str],
+    hidden_item_rules: HiddenItemRules | None = None,
+) -> list[ValidationIssue]:
+    weapon_target = _target_by_name(targets).get("weapons")
+    if weapon_target is None:
+        skipped_sections.append("weapon data-quality validation requires generated weapons")
+        return []
+
+    generated = _read_json_list(weapon_target.generated_path(output_dir), "weapons")
+    rules = hidden_item_rules or load_hidden_item_rules()
+    issues: list[ValidationIssue] = []
+
+    incomplete = [record for record in generated if _looks_like_incomplete_weapon(record)]
+    exposed = [record for record in incomplete if not rules.is_hidden_record("weapons", record)]
+    quarantined = [record for record in incomplete if rules.is_hidden_record("weapons", record)]
+    if exposed:
+        labels = ", ".join(str(record.get("name") or record.get("id")) for record in exposed[:8])
+        issues.append(
+            ValidationIssue(
+                "error",
+                f"generated weapons contain {len(exposed)} visible incomplete definitions with zero gameplay values: {labels}",
+            )
+        )
+    if quarantined:
+        labels = ", ".join(str(record.get("name") or record.get("id")) for record in quarantined[:8])
+        issues.append(
+            ValidationIssue(
+                "warning",
+                f"quarantined {len(quarantined)} incomplete weapon definitions through data/allowlists.json: {labels}",
+            )
+        )
+
+    try:
+        current = _read_json_list(weapon_target.site_path, "current weapons")
+    except ExportError as exc:
+        issues.append(ValidationIssue("error", str(exc)))
+        return issues
+
+    current_by_id = {
+        str(record.get("id")): record
+        for record in current
+        if isinstance(record, dict) and record.get("id") is not None
+    }
+    level_resets: list[object] = []
+    for record in generated:
+        if not isinstance(record, dict) or record.get("id") is None:
+            continue
+        previous = current_by_id.get(str(record.get("id")))
+        if previous is None:
+            continue
+        old_level = _numeric_field(_record_fields(previous), "level_requirement")
+        new_level = _numeric_field(_record_fields(record), "level_requirement")
+        if old_level > 0 and new_level <= 0:
+            level_resets.append(record)
+
+    visible_level_resets = [
+        record for record in level_resets if not rules.is_hidden_record("weapons", record)
+    ]
+    hidden_level_resets = [
+        record for record in level_resets if rules.is_hidden_record("weapons", record)
+    ]
+    if len(visible_level_resets) >= 10:
+        labels = ", ".join(
+            str(record.get("name") or record.get("id")) for record in visible_level_resets[:8]
+        )
+        issues.append(
+            ValidationIssue(
+                "error",
+                f"mass weapon item-level reset detected: {len(visible_level_resets)} visible records changed from a positive level to 0; "
+                f"confirm the client data before sync ({labels})",
+            )
+        )
+    if hidden_level_resets:
+        labels = ", ".join(
+            str(record.get("name") or record.get("id")) for record in hidden_level_resets[:8]
+        )
+        issues.append(
+            ValidationIssue(
+                "warning",
+                f"ignored item-level resets for {len(hidden_level_resets)} hidden weapon records: {labels}",
+            )
+        )
+    return issues
 
 
 def _validate_generated_asset_data_parity(
@@ -426,7 +409,6 @@ def build_game_update_report(
             python_executable=python_executable,
         )
         diff_reports = build_generated_diff_reports(target_list, output_dir=output_dir)
-        hidden_item_reports = build_hidden_item_audit_reports(target_list, output_dir=output_dir)
         unknown_reports = build_unknown_field_reports(target_list, source="generated", output_dir=output_dir)
         report_asset_targets, atlas_issues = _resolve_game_update_asset_targets(
             target_list,
@@ -448,6 +430,19 @@ def build_game_update_report(
             output_dir=output_dir,
             perk_label_overrides_path=perk_label_overrides_path,
             skipped_sections=skipped_sections,
+        )
+        validation_issues.extend(
+            _validate_generated_record_ids(
+                target_list,
+                output_dir=output_dir,
+            )
+        )
+        validation_issues.extend(
+            _validate_generated_weapon_data(
+                target_list,
+                output_dir=output_dir,
+                skipped_sections=skipped_sections,
+            )
         )
         validation_issues.extend(atlas_issues)
         validation_issues.extend(
@@ -478,7 +473,6 @@ def build_game_update_report(
         source_checks=source_checks,
         export_results=export_results,
         diff_reports=diff_reports,
-        hidden_item_reports=hidden_item_reports,
         unknown_reports=unknown_reports,
         asset_reports=asset_reports,
         drop_report=drop_report,

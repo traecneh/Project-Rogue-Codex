@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 1,
+  "targets": [
+    {
+      "target": "Ascend System",
+      "href": "pages/systems/ascend.html"
+    },
+    {
+      "target": "Balron",
+      "href": "pages/enemies/monsters.html?monster=balron"
+    },
+    {
+      "target": "Beholder",
+      "href": "pages/enemies/monsters.html?monster=beholder"
+    },
+    {
+      "target": "Blacksmithing",
+      "href": "pages/stats/skills.html#blacksmithing"
+    },
+    {
+      "target": "Carpentry",
+      "href": "pages/stats/skills.html#carpentry"
+    },
+    {
+      "target": "Craft System",
+      "href": "pages/systems/craft.html"
+    },
+    {
+      "target": "Crafting System",
+      "href": "pages/systems/crafting.html"
+    },
+    {
+      "target": "Deconstruct System",
+      "href": "pages/systems/deconstruct.html"
+    },
+    {
+      "target": "Demon",
+      "href": "pages/enemies/monsters.html?monster=demon"
+    },
+    {
+      "target": "Farming",
+      "href": "pages/stats/skills.html#farming"
+    },
+    {
+      "target": "Fishing",
+      "href": "pages/stats/skills.html#fishing"
+    },
+    {
+      "target": "Imbuements System",
+      "href": "pages/systems/imbuements.html"
+    },
+    {
+      "target": "Milling",
+      "href": "pages/stats/skills.html#milling"
+    },
+    {
+      "target": "Mining",
+      "href": "pages/stats/skills.html#mining"
+    },
+    {
+      "target": "Monster loot",
+      "textOnly": true,
+      "reason": "Ambiguous monster-source drops remain text-only until source evidence is confirmed",
+      "reviewNextStep": "Keep remaining drops text-only until a client drop table or confirmed monster source is available.",
+      "reviewEvidence": "Reviewed current rogue_data.vpack JSON: Feather and Human Bones only appear in collectables.json; monsters.json exposes no drop/loot table."
+    },
+    {
+      "target": "Purge System",
+      "href": "pages/systems/purge.html"
+    },
+    {
+      "target": "Reforge System",
+      "href": "pages/systems/re-roll.html"
+    },
+    {
+      "target": "Seasonal Events",
+      "href": "pages/systems/seasonal-events.html"
+    },
+    {
+      "target": "Tinkering",
+      "href": "pages/stats/skills.html#tinkering"
+    },
+    {
+      "target": "Woodcutting",
+      "href": "pages/stats/skills.html#woodcutting"
+    }
+  ]
+}

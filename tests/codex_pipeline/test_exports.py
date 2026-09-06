@@ -212,49 +212,6 @@ class ExportCommandTests(unittest.TestCase):
             self.assertEqual("Gold", exported[0]["name"])
             self.assertEqual(1, exported[0]["fields"]["value"])
 
-    def test_export_client_data_marks_dev_only_items_hidden_from_legacy_extractors(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            script = root / "extract_weapons.py"
-            source = root / "source.dat"
-            site_path = root / "site" / "weapons.json"
-            output_dir = root / "generated"
-            source.write_bytes(b"fake source")
-            script.write_text(
-                textwrap.dedent(
-                    """
-                    import json
-                    import sys
-                    from pathlib import Path
-
-                    output = Path(sys.argv[2])
-                    output.write_text(json.dumps([
-                        {"id": 1, "name": "Super Duper Test Bow", "fields": {"level_requirement": 0}},
-                        {"id": 2, "name": "Training Bow", "fields": {"level_requirement": 1}}
-                    ]), encoding="utf-8")
-                    """
-                ).strip()
-                + "\n",
-                encoding="utf-8",
-            )
-            target = ExportTarget(
-                name="weapons",
-                extractor_script=script,
-                source_data=source,
-                output_filename="weapons.json",
-                site_path=site_path,
-            )
-
-            export_client_data([target], output_dir=output_dir, python_executable=sys.executable)
-
-            exported = json.loads((output_dir / "weapons.json").read_text(encoding="utf-8"))
-            hidden = next(record for record in exported if record["name"] == "Super Duper Test Bow")
-            visible = next(record for record in exported if record["name"] == "Training Bow")
-            self.assertIs(True, hidden["codex_hidden"])
-            self.assertEqual("dev_only_item_name", hidden["codex_hidden_reason"])
-            self.assertNotIn("codex_hidden", visible)
-            self.assertNotIn("codex_hidden_reason", visible)
-
     def test_sync_generated_outputs_copies_generated_json_to_site_path(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -611,6 +568,66 @@ class ExportCommandTests(unittest.TestCase):
             exported = json.loads((output_dir / "weapons.json").read_text(encoding="utf-8"))
             self.assertEqual("Mapped Frost Effect", exported[0]["fields"]["corrupted_perk_label"])
 
+    def test_export_client_data_applies_item_field_overrides(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            script = root / "extract_weapons.py"
+            source = root / "source.dat"
+            site_path = root / "site" / "weapons.json"
+            output_dir = root / "generated"
+            override_path = root / "item_field_overrides.json"
+            source.write_bytes(b"fake source")
+            override_path.write_text(
+                json.dumps(
+                    {
+                        "schemaVersion": 1,
+                        "targets": {
+                            "weapons": {
+                                "289": {
+                                    "name": "Blade of Divinity",
+                                    "fields": {"subtype": 1, "subtype_label": "Sword"},
+                                }
+                            }
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            script.write_text(
+                textwrap.dedent(
+                    """
+                    import json
+                    import sys
+                    from pathlib import Path
+
+                    output = Path(sys.argv[2])
+                    output.write_text(json.dumps([
+                        {
+                            "id": 289,
+                            "name": "Blade of Divinity",
+                            "fields": {"subtype": 0}
+                        }
+                    ]), encoding="utf-8")
+                    """
+                ).strip()
+                + "\n",
+                encoding="utf-8",
+            )
+            target = ExportTarget(
+                name="weapons",
+                extractor_script=script,
+                source_data=source,
+                output_filename="weapons.json",
+                site_path=site_path,
+            )
+
+            with patch("tools.codex_pipeline.exports.ITEM_FIELD_OVERRIDES_PATH", override_path):
+                export_client_data([target], output_dir=output_dir, python_executable=sys.executable)
+
+            exported = json.loads((output_dir / "weapons.json").read_text(encoding="utf-8"))
+            self.assertEqual(1, exported[0]["fields"]["subtype"])
+            self.assertEqual("Sword", exported[0]["fields"]["subtype_label"])
+
     def test_build_generated_diff_report_normalizes_untrusted_corrupted_perk_labels(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -706,7 +723,10 @@ class ExportCommandTests(unittest.TestCase):
             self.assertEqual(10, report.changed[0].field_changes[0].old_value)
             self.assertEqual(11, report.changed[0].field_changes[0].new_value)
 
-    def test_build_generated_diff_report_tracks_hidden_records_for_player_summaries(self):
+    def test_build_generated_diff_report_ignores_hidden_records(self):
+        from tools.codex_pipeline.hidden_items import HiddenItemRules
+
+        rules = HiddenItemRules.from_allowlists({"weapons": {"block": ["Super Duper"]}})
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             output_dir = root / "generated"
@@ -718,21 +738,8 @@ class ExportCommandTests(unittest.TestCase):
                 json.dumps(
                     [
                         {"id": 1, "name": "Rune Sword", "fields": {"damage": 10}},
-                        {"id": 2, "name": "Old Sword", "fields": {"damage": 20}},
-                        {
-                            "id": 11,
-                            "name": "Retired Dev Sword",
-                            "codex_hidden": True,
-                            "codex_hidden_reason": "legacy_hidden",
-                            "fields": {"damage": 99},
-                        },
-                        {
-                            "id": 12,
-                            "name": "Super Duper Changed",
-                            "codex_hidden": True,
-                            "codex_hidden_reason": "dev_only_item_name",
-                            "fields": {"damage": 99},
-                        },
+                        {"id": 2, "name": "Super Duper Bow", "fields": {"damage": 999}},
+                        {"id": 3, "name": "Super Duper Axe", "fields": {"damage": 999}},
                     ]
                 ),
                 encoding="utf-8",
@@ -741,9 +748,8 @@ class ExportCommandTests(unittest.TestCase):
                 json.dumps(
                     [
                         {"id": 1, "name": "Rune Sword", "fields": {"damage": 11}},
-                        {"id": 3, "name": "New Sword", "fields": {"damage": 30}},
-                        {"id": 10, "name": "Super Duper Bow", "fields": {"damage": 900}},
-                        {"id": 12, "name": "Super Duper Changed", "fields": {"damage": 100}},
+                        {"id": 2, "name": "Super Duper Bow", "fields": {"damage": 1000}},
+                        {"id": 4, "name": "Super Duper Blunt", "fields": {"damage": 1000}},
                     ]
                 ),
                 encoding="utf-8",
@@ -756,11 +762,17 @@ class ExportCommandTests(unittest.TestCase):
                 site_path=site_path,
             )
 
-            report = build_generated_diff_report(target, output_dir=output_dir)
+            report = build_generated_diff_report(
+                target,
+                output_dir=output_dir,
+                hidden_item_rules=rules,
+            )
 
-            self.assertEqual(["New Sword (3)", "Super Duper Bow (10)"], report.added)
-            self.assertEqual(["Old Sword (2)", "Retired Dev Sword (11)"], report.removed)
-            self.assertEqual(["Rune Sword (1)", "Super Duper Changed (12)"], [row.label for row in report.changed])
-            self.assertEqual(("Super Duper Bow (10)",), report.hidden_added)
-            self.assertEqual(("Retired Dev Sword (11)",), report.hidden_removed)
-            self.assertEqual(("id:12",), report.hidden_changed_keys)
+        self.assertEqual([], report.added)
+        self.assertEqual([], report.removed)
+        self.assertEqual(1, len(report.changed))
+        self.assertEqual("Rune Sword (1)", report.changed[0].label)
+        self.assertEqual(["Super Duper Blunt (4)"], report.hidden_added)
+        self.assertEqual(["Super Duper Axe (3)"], report.hidden_removed)
+        self.assertEqual(1, len(report.hidden_changed))
+        self.assertEqual("Super Duper Bow (2)", report.hidden_changed[0].label)

@@ -6,6 +6,7 @@ from typing import Any
 
 
 CorruptedPerkOverrides = dict[int, str | None]
+UNKNOWN_PERK_LABEL = "Unknown"
 
 
 def load_perk_label_overrides(path: Path) -> CorruptedPerkOverrides:

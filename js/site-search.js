@@ -30,6 +30,14 @@ const SITE_SEARCH_INDEX = [
     keywords: ["planner", "builds", "stats", "theorycraft"],
   },
   {
+    title: "Quests",
+    url: "pages/General/quests.html",
+    category: "General",
+    description: "Quest requirements, staged objectives, NPCs, and rewards.",
+    keywords: ["quests", "silvest", "objectives", "rewards", "npc"],
+    featured: true,
+  },
+  {
     title: "Weapons",
     url: "pages/items/weapons.html",
     category: "Items",
@@ -200,6 +208,13 @@ const SITE_SEARCH_INDEX = [
     keywords: ["experience", "xp", "pool", "progression"],
   },
   {
+    title: "Seasonal Events",
+    url: "pages/systems/seasonal-events.html",
+    category: "Systems",
+    description: "Seasonal item reference and current Holiday Gift relationship.",
+    keywords: ["seasonal", "events", "holiday gift", "holiday", "gift"],
+  },
+  {
     title: "Deconstruct",
     url: "pages/systems/deconstruct.html",
     category: "Ascendancy",
@@ -221,11 +236,11 @@ const SITE_SEARCH_INDEX = [
     keywords: ["imbuements", "enchant", "upgrade"],
   },
   {
-    title: "Re-Roll",
+    title: "Reforge",
     url: "pages/systems/re-roll.html",
     category: "Ascendancy",
-    description: "Re-rolling stats and perks workflow.",
-    keywords: ["reroll", "stats", "perks"],
+    description: "Reforge Epic-or-higher equipment using rarity shards.",
+    keywords: ["reforge", "reroll", "rarity shards", "stats", "perks"],
   },
   {
     title: "Craft (Ascendancy)",
@@ -248,6 +263,8 @@ const WEAPONS_SCHEMA_VERSION = 5;
 const PERKS_PAGE_URL = "pages/systems/perks.html";
 const PERKS_INDEX_URL = "pages/systems/perks.json";
 const MONSTERS_PAGE_URL = "pages/enemies/monsters.html";
+const QUESTS_PAGE_URL = "pages/General/quests.html";
+const QUESTS_INDEX_URL = "pages/General/quests_data.json?v=codex-2026-07-27-six-new-quests";
 const MAX_PERK_RESULTS = 4;
 const MIN_PERK_TERM_LENGTH = 2;
 const MAX_TATTER_MONSTER_RESULTS = 4;
@@ -274,6 +291,8 @@ let WEAPON_INDEX_PROMISE = null;
 let WEAPON_DATA_PROMISE = null;
 let ARMOR_SEARCH_INDEX = [];
 let ARMOR_INDEX_PROMISE = null;
+let QUEST_SEARCH_INDEX = [];
+let QUEST_INDEX_PROMISE = null;
 const COLLECTABLE_SEARCH_CONFIG = {
   dataFile: "pages/items/collectables_data.json",
   url: "pages/items/collectables.html",
@@ -348,8 +367,8 @@ function getPerkSlug(name) {
 }
 
 const EMPTY_ALLOWLISTS = {
-  monsters: { allow: [], block: [] },
-  weapons: { block: [] },
+  monsters: { allow: [], block: [], blockIds: [] },
+  weapons: { block: [], blockIds: [] },
   armors: { block: [] },
 };
 const buildNameSet = (list) => {
@@ -366,14 +385,22 @@ const buildNameSet = (list) => {
 let allowlistsPromise = null;
 let allowedMonsterNames = new Set();
 let blockedMonsterNames = new Set();
+let blockedMonsterIds = new Set();
 let hiddenWeaponNames = new Set();
+let hiddenWeaponIds = new Set();
 let hiddenArmorNames = new Set();
 
 const applyAllowlists = (allowlists) => {
   const safe = allowlists && typeof allowlists === "object" ? allowlists : EMPTY_ALLOWLISTS;
   allowedMonsterNames = buildNameSet(safe.monsters?.allow);
   blockedMonsterNames = buildNameSet(safe.monsters?.block);
+  blockedMonsterIds = new Set(
+    (Array.isArray(safe.monsters?.blockIds) ? safe.monsters.blockIds : []).map((id) => String(id).trim())
+  );
   hiddenWeaponNames = buildNameSet(safe.weapons?.block);
+  hiddenWeaponIds = new Set(
+    (Array.isArray(safe.weapons?.blockIds) ? safe.weapons.blockIds : []).map((id) => String(id).trim())
+  );
   hiddenArmorNames = buildNameSet(safe.armors?.block);
 };
 
@@ -407,6 +434,8 @@ const isRecordHidden = (record, hiddenNames) => {
 const normalizeMonsterName = (monster) => normalizePerkName(monster && (monster.name || monster.Name));
 
 const isMonsterAllowed = (monster) => {
+  const id = monster?.id ?? monster?.Id;
+  if (id !== null && id !== undefined && blockedMonsterIds.has(String(id).trim())) return false;
   const name = normalizeMonsterName(monster);
   if (!name) return false;
   if (allowedMonsterNames.size) {
@@ -542,8 +571,8 @@ const normalizeNavArmor = (armor) => {
     acid: toNumberOrNull(fields.acid_resistance ?? armor.acidResist),
     poison: toNumberOrNull(fields.poison_resistance ?? armor.poisonResist),
     disease: toNumberOrNull(fields.disease_resistance ?? armor.diseaseResist),
-    holy: toNumberOrNull(fields.holy_resistance ?? fields.unknown_81 ?? armor.holyResist),
-    dark: toNumberOrNull(fields.dark_resistance ?? fields.unknown_85 ?? armor.darkResist),
+    holy: toNumberOrNull(fields.holy_resistance ?? armor.holyResist),
+    dark: toNumberOrNull(fields.dark_resistance ?? armor.darkResist),
   };
 
   return {
@@ -871,6 +900,67 @@ function loadMiscItemSearchIndex(config) {
   return config.promise;
 }
 
+function buildQuestSearchEntry(entry, kind) {
+  if (!entry || !entry.id || !entry.name) return null;
+  const provider = kind === "service" ? entry.provider : entry.giver;
+  const objectives =
+    kind === "quest"
+      ? (entry.stages || []).flatMap((stage) =>
+          (stage.objectives || []).flatMap((objective) => [
+            objective.text,
+            objective.target?.label,
+            objective.target?.entity?.name,
+          ])
+        )
+      : [];
+  const rewards =
+    kind === "quest"
+      ? [...(entry.rewards?.guaranteed || []), ...(entry.rewards?.choose_one || [])].map(
+          (reward) => reward.label
+        )
+      : (entry.costs || []).map((cost) => cost.label);
+  const typeLabel = kind === "service" ? "Service" : entry.repeatable ? "Repeatable quest" : "Quest";
+  return normalizeSearchEntry({
+    title: entry.name,
+    url: `${QUESTS_PAGE_URL}?quest=${encodeURIComponent(entry.id)}`,
+    category: kind === "service" ? "Services" : "Quests",
+    description: `Level ${entry.min_level} | ${provider?.name || "Unknown"} | ${entry.area}`,
+    keywords: [
+      entry.name,
+      typeLabel,
+      entry.category,
+      entry.region,
+      entry.area,
+      provider?.name,
+      ...objectives,
+      ...rewards,
+    ].filter(Boolean),
+    isQuest: kind === "quest",
+    questId: entry.id,
+  });
+}
+
+function loadQuestSearchIndex() {
+  if (QUEST_INDEX_PROMISE) return QUEST_INDEX_PROMISE;
+  const absoluteUrl = getAbsoluteUrl(QUESTS_INDEX_URL);
+  QUEST_INDEX_PROMISE = fetchJsonMaybeCached(absoluteUrl, `Failed to fetch ${QUESTS_INDEX_URL}`)
+    .then((data) => {
+      const quests = Array.isArray(data?.quests)
+        ? data.quests.map((entry) => buildQuestSearchEntry(entry, "quest"))
+        : [];
+      const services = Array.isArray(data?.services)
+        ? data.services.map((entry) => buildQuestSearchEntry(entry, "service"))
+        : [];
+      QUEST_SEARCH_INDEX = quests.concat(services).filter(Boolean);
+      return QUEST_SEARCH_INDEX;
+    })
+    .catch(() => {
+      QUEST_SEARCH_INDEX = [];
+      return QUEST_SEARCH_INDEX;
+    });
+  return QUEST_INDEX_PROMISE;
+}
+
 function loadArmorSearchIndex() {
   if (ARMOR_INDEX_PROMISE) return ARMOR_INDEX_PROMISE;
   const absoluteUrl = getAbsoluteUrl("pages/items/armors_data06.json");
@@ -956,7 +1046,9 @@ function loadWeaponData() {
     .then((data) => {
       const list = Array.isArray(data) ? data : [];
       const filtered = list.filter(
-        (weapon) => !isRecordHidden(weapon, hiddenWeaponNames)
+        (weapon) =>
+          !hiddenWeaponNames.has(String(weapon.name || weapon.Name || "").toLowerCase()) &&
+          !hiddenWeaponIds.has(String(weapon.id ?? weapon.ID ?? "").trim())
       );
       return filtered.map((weapon) => normalizeNavWeapon(weapon)).filter(Boolean);
     })
@@ -1121,6 +1213,7 @@ function runSiteSearch(query) {
   loadMonsterSearchIndex();
   loadWeaponSearchIndex();
   loadArmorSearchIndex();
+  loadQuestSearchIndex();
   loadMiscItemSearchIndex(COLLECTABLE_SEARCH_CONFIG);
   loadMiscItemSearchIndex(USEABLE_SEARCH_CONFIG);
   if (!terms.length) {
@@ -1135,6 +1228,7 @@ function runSiteSearch(query) {
     MONSTER_SEARCH_INDEX,
     WEAPON_SEARCH_INDEX,
     ARMOR_SEARCH_INDEX,
+    QUEST_SEARCH_INDEX,
     COLLECTABLE_SEARCH_CONFIG.index,
     USEABLE_SEARCH_CONFIG.index
   );
@@ -1290,6 +1384,9 @@ function initializeSiteSearch() {
     }
     if (ARMOR_INDEX_PROMISE) {
       pendingFetches.push(ARMOR_INDEX_PROMISE);
+    }
+    if (QUEST_INDEX_PROMISE) {
+      pendingFetches.push(QUEST_INDEX_PROMISE);
     }
     if (COLLECTABLE_SEARCH_CONFIG.promise) {
       pendingFetches.push(COLLECTABLE_SEARCH_CONFIG.promise);

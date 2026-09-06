@@ -13,36 +13,6 @@ from tools.codex_pipeline.exports import ExportError, ExportTarget
 
 UNKNOWN_FIELD_RE = re.compile(r"^unknown_(\d+)$")
 
-CONFIRMED_LEGACY_UNKNOWN_FIELDS_BY_TARGET = {
-    "weapons": {
-        "unknown_21",
-        "unknown_34",
-        "unknown_35",
-        "unknown_37",
-        "unknown_88",
-        "unknown_89",
-        "unknown_93",
-        "unknown_98",
-    },
-    "armors": {
-        "unknown_18",
-        "unknown_30",
-        "unknown_31",
-        "unknown_33",
-        "unknown_70",
-        "unknown_81",
-        "unknown_85",
-        "unknown_89",
-        "unknown_93",
-        "unknown_94",
-    },
-    "monsters": {
-        "unknown_27",
-        "unknown_166",
-        "unknown_168",
-    },
-}
-
 
 @dataclass(frozen=True)
 class UnknownFieldReport:
@@ -107,13 +77,6 @@ def _source_path(
     return output_dir / target.output_filename
 
 
-def _is_reportable_unknown_field(target_name: str, name: str) -> bool:
-    if UNKNOWN_FIELD_RE.match(name) is None:
-        return False
-    confirmed_aliases = CONFIRMED_LEGACY_UNKNOWN_FIELDS_BY_TARGET.get(target_name, set())
-    return name not in confirmed_aliases
-
-
 def build_unknown_field_reports(
     targets: Iterable[ExportTarget],
     *,
@@ -138,7 +101,7 @@ def build_unknown_field_reports(
                 continue
             label = _record_label(record, index)
             for name, value in fields.items():
-                if not isinstance(name, str) or not _is_reportable_unknown_field(target.name, name):
+                if not isinstance(name, str) or UNKNOWN_FIELD_RE.match(name) is None:
                     continue
                 stats = field_stats[name]
                 stats["record_count"] += 1

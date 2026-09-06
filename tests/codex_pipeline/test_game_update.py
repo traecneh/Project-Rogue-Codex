@@ -11,13 +11,6 @@ from unittest.mock import patch
 from tools.codex_pipeline.exports import DataDiffReport, ExportTarget, FieldChange, RecordChange
 from tools.codex_pipeline.assets import AssetChangeReport, AssetTarget
 from tools.codex_pipeline.drop_audit import DropSourceAuditReport, DropSourceItemReport
-from tools.codex_pipeline.game_update import (
-    HiddenItemAuditReport,
-    HiddenItemFieldChange,
-    HiddenItemReasonChange,
-    HiddenItemReasonSummary,
-    HiddenItemRecord,
-)
 from tools.codex_pipeline.sources import SourceCheckResult
 from tools.codex_pipeline.unknowns import UnknownFieldReport, UnknownFieldTargetReport
 from tools.codex_pipeline.validators.site import ValidationIssue
@@ -57,6 +50,117 @@ def write_gf_json_png(path: Path, image: Image.Image) -> None:
 
 
 class GameUpdateReportTests(unittest.TestCase):
+    def test_weapon_data_quality_guard_blocks_mass_item_level_resets(self):
+        from tools.codex_pipeline.game_update import _validate_generated_weapon_data
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            output_dir = root / "generated"
+            site_path = root / "site" / "weapons.json"
+            generated_path = output_dir / "weapons.json"
+            current = [
+                {"id": item_id, "name": f"Bow {item_id}", "fields": {"level_requirement": 25}}
+                for item_id in range(1, 11)
+            ]
+            generated = [
+                {
+                    "id": item_id,
+                    "name": f"Bow {item_id}",
+                    "fields": {"level_requirement": 0, "min_damage": 5, "max_damage": 10},
+                }
+                for item_id in range(1, 11)
+            ]
+            write_json(site_path, current)
+            write_json(generated_path, generated)
+            target = ExportTarget("weapons", root / "extract.py", root / "source", "weapons.json", site_path)
+
+            issues = _validate_generated_weapon_data(
+                [target],
+                output_dir=output_dir,
+                skipped_sections=[],
+            )
+
+        self.assertTrue(any(issue.severity == "error" and "mass weapon item-level reset" in issue.message for issue in issues))
+
+    def test_weapon_data_quality_guard_allows_hidden_item_level_resets(self):
+        from tools.codex_pipeline.game_update import _validate_generated_weapon_data
+        from tools.codex_pipeline.hidden_items import HiddenItemRules
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            output_dir = root / "generated"
+            site_path = root / "site" / "weapons.json"
+            generated_path = output_dir / "weapons.json"
+            current = [
+                {"id": item_id, "name": f"Bow {item_id}", "fields": {"level_requirement": 25}}
+                for item_id in range(1, 11)
+            ]
+            generated = [
+                {
+                    "id": item_id,
+                    "name": f"Bow {item_id}",
+                    "fields": {"level_requirement": 0, "min_damage": 5, "max_damage": 10},
+                }
+                for item_id in range(1, 11)
+            ]
+            write_json(site_path, current)
+            write_json(generated_path, generated)
+            target = ExportTarget("weapons", root / "extract.py", root / "source", "weapons.json", site_path)
+            rules = HiddenItemRules.from_allowlists({"weapons": {"block": ["Bow"]}})
+
+            issues = _validate_generated_weapon_data(
+                [target],
+                output_dir=output_dir,
+                skipped_sections=[],
+                hidden_item_rules=rules,
+            )
+
+        self.assertFalse(any(issue.severity == "error" for issue in issues))
+        self.assertTrue(any("10 hidden weapon records" in issue.message for issue in issues))
+
+    def test_weapon_data_quality_guard_requires_incomplete_definitions_to_be_hidden(self):
+        from tools.codex_pipeline.game_update import _validate_generated_weapon_data
+        from tools.codex_pipeline.hidden_items import HiddenItemRules
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            output_dir = root / "generated"
+            site_path = root / "site" / "weapons.json"
+            generated_path = output_dir / "weapons.json"
+            zero_fields = {
+                "unknown_35": 4,
+                "min_damage": 0,
+                "max_damage": 0,
+                "skill_requirement": 0,
+                "level_requirement": 0,
+                "max_rarity": 0,
+                "perk": 0,
+                "shard_decomposition_amount": 0,
+                "shard_promotion_amount": 0,
+                "value_low": 0,
+                "value_high": 0,
+            }
+            write_json(site_path, [])
+            write_json(
+                generated_path,
+                [
+                    {"id": 1, "name": "Sword of Rage", "fields": zero_fields},
+                    {"id": 2, "name": "Visible Placeholder", "fields": zero_fields},
+                ],
+            )
+            target = ExportTarget("weapons", root / "extract.py", root / "source", "weapons.json", site_path)
+            rules = HiddenItemRules.from_allowlists({"weapons": {"block": ["Sword of Rage"]}})
+
+            issues = _validate_generated_weapon_data(
+                [target],
+                output_dir=output_dir,
+                skipped_sections=[],
+                hidden_item_rules=rules,
+            )
+
+        self.assertTrue(any(issue.severity == "error" and "Visible Placeholder" in issue.message for issue in issues))
+        self.assertTrue(any(issue.severity == "warning" and "Sword of Rage" in issue.message for issue in issues))
+
     def test_build_game_update_report_exports_and_summarizes_review_changes(self):
         from tools.codex_pipeline.game_update import build_game_update_report
 
@@ -323,78 +427,6 @@ class GameUpdateReportTests(unittest.TestCase):
         self.assertEqual([], report.export_results)
         self.assertIn("source data not found", "\n".join(check.message for check in report.source_checks if not check.ok))
 
-    def test_build_game_update_report_audits_hidden_item_changes(self):
-        from tools.codex_pipeline.game_update import build_game_update_report
-
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            output_dir = root / "generated"
-            extractor = root / "extract_json.py"
-            write_json_copy_extractor(extractor)
-            weapon_source = root / "sources" / "weapons.dat"
-            weapon_site = root / "site" / "weapons.json"
-            perk_labels = root / "perk_labels.json"
-            write_json(
-                weapon_source,
-                [
-                    {"id": 1, "name": "Super Duper Bow", "fields": {}},
-                    {"id": 4, "name": "Super Duper Changed", "fields": {}},
-                    {"id": 6, "name": "Super Duper Field Changed", "fields": {"damage": 20, "speed": 1250}},
-                    {"id": 5, "name": "Training Bow", "fields": {}},
-                ],
-            )
-            write_json(
-                weapon_site,
-                [
-                    {
-                        "id": 2,
-                        "name": "Retired Dev Sword",
-                        "codex_hidden": True,
-                        "codex_hidden_reason": "legacy_hidden",
-                        "fields": {},
-                    },
-                    {
-                        "id": 4,
-                        "name": "Super Duper Changed",
-                        "codex_hidden": True,
-                        "codex_hidden_reason": "manual_review",
-                        "fields": {},
-                    },
-                    {
-                        "id": 6,
-                        "name": "Super Duper Field Changed",
-                        "codex_hidden": True,
-                        "codex_hidden_reason": "dev_only_item_name",
-                        "fields": {"damage": 10, "speed": 1250},
-                    },
-                    {"id": 5, "name": "Training Bow", "fields": {}},
-                ],
-            )
-            write_json(perk_labels, {"schemaVersion": 1, "corruptedPerkLabels": {}})
-            target = ExportTarget("weapons", extractor, weapon_source, "weapons.json", weapon_site)
-
-            report = build_game_update_report(
-                [target],
-                output_dir=output_dir,
-                python_executable=sys.executable,
-                perk_label_overrides_path=perk_labels,
-                asset_targets=[],
-            )
-
-        self.assertEqual(1, len(report.hidden_item_reports))
-        hidden_report = report.hidden_item_reports[0]
-        self.assertEqual("weapons", hidden_report.target_name)
-        self.assertEqual(["Super Duper Bow (1)"], [record.label for record in hidden_report.added])
-        self.assertEqual("dev_only_item_name", hidden_report.added[0].reason)
-        self.assertEqual(["Retired Dev Sword (2)"], [record.label for record in hidden_report.removed])
-        self.assertEqual("legacy_hidden", hidden_report.removed[0].reason)
-        self.assertEqual(["Super Duper Changed (4)"], [record.label for record in hidden_report.changed])
-        self.assertEqual("manual_review", hidden_report.changed[0].old_reason)
-        self.assertEqual("dev_only_item_name", hidden_report.changed[0].new_reason)
-        self.assertEqual(["Super Duper Field Changed (6)"], [record.label for record in hidden_report.field_changed])
-        self.assertEqual(["fields.damage"], hidden_report.field_changed[0].field_paths)
-        self.assertEqual([("dev_only_item_name", 3)], [(row.reason, row.count) for row in hidden_report.generated_reasons])
-
     def test_cli_prints_game_update_report_summary(self):
         from tools.codex_pipeline import cli
         from tools.codex_pipeline.game_update import GameUpdateReport
@@ -440,27 +472,6 @@ class GameUpdateReportTests(unittest.TestCase):
             validation_issues=[ValidationIssue("warning", "sample warning")],
             export_errors=[],
             skipped_sections=["drop report requires generated weapons, armors, and monsters"],
-            hidden_item_reports=[
-                HiddenItemAuditReport(
-                    target_name="weapons",
-                    generated_path=Path("generated/weapons.json"),
-                    site_path=Path("site/weapons.json"),
-                    added=[HiddenItemRecord("Super Duper Bow (1)", "dev_only_item_name")],
-                    removed=[HiddenItemRecord("Retired Dev Sword (2)", "legacy_hidden")],
-                    changed=[
-                        HiddenItemReasonChange(
-                            "id:4",
-                            "Super Duper Changed (4)",
-                            "manual_review",
-                            "dev_only_item_name",
-                        )
-                    ],
-                    field_changed=[
-                        HiddenItemFieldChange("id:6", "Super Duper Field Changed (6)", ["fields.damage"])
-                    ],
-                    generated_reasons=[HiddenItemReasonSummary("dev_only_item_name", 2)],
-                )
-            ],
         )
         output = io.StringIO()
         with (
@@ -477,13 +488,6 @@ class GameUpdateReportTests(unittest.TestCase):
         self.assertIn("UNKNOWN SUMMARY weapons: 2 field(s), 1 with nonzero values", printed)
         self.assertIn("ASSET SUMMARY weapons: +0 -0 ~1, manifest entries=2, issues=0", printed)
         self.assertIn("DROP SUMMARY: 1 item override(s), 0 monster loot view(s), 0 issue(s)", printed)
-        self.assertIn("HIDDEN ITEMS weapons: +1 -1 ~1, generated hidden=2", printed)
-        self.assertIn("field changes=1", printed)
-        self.assertIn("  reason dev_only_item_name: 2", printed)
-        self.assertIn("  + Super Duper Bow (1) [dev_only_item_name]", printed)
-        self.assertIn("  - Retired Dev Sword (2) [legacy_hidden]", printed)
-        self.assertIn("  ~ Super Duper Changed (4): manual_review -> dev_only_item_name", printed)
-        self.assertIn("  data ~ Super Duper Field Changed (6): fields.damage", printed)
         self.assertIn("UPDATE ISSUE WARNING: sample warning", printed)
         self.assertIn("SKIPPED: drop report requires generated weapons, armors, and monsters", printed)
         self.assertIn("SYNC READINESS: BLOCKED", printed)
@@ -515,8 +519,8 @@ class GameUpdateReportTests(unittest.TestCase):
                     target=weapon_target,
                     generated_path=Path("generated/weapons.json"),
                     site_path=Path("site/weapons.json"),
-                    added=["New Sword (3)", "Super Duper Bow (9)"],
-                    removed=["Old Sword (2)", "Retired Dev Sword (8)"],
+                    added=["New Sword (3)"],
+                    removed=["Old Sword (2)"],
                     changed=[
                         RecordChange(
                             key="id:1",
@@ -525,16 +529,8 @@ class GameUpdateReportTests(unittest.TestCase):
                                 FieldChange("fields.damage", 10, 11),
                                 FieldChange("fields.speed", 1250, 1000),
                             ],
-                        ),
-                        RecordChange(
-                            key="id:10",
-                            label="Super Duper Changed (10)",
-                            field_changes=[FieldChange("fields.damage", 999, 1000)],
-                        ),
+                        )
                     ],
-                    hidden_added=("Super Duper Bow (9)",),
-                    hidden_removed=("Retired Dev Sword (8)",),
-                    hidden_changed_keys=("id:10",),
                 ),
                 DataDiffReport(
                     target=armor_target,
@@ -584,15 +580,8 @@ class GameUpdateReportTests(unittest.TestCase):
         self.assertIn("PLAYER CHANGE SUMMARY: data +1 -1 ~2, images +1 -1 ~1", printed)
         self.assertIn("PLAYER DATA weapons: +1 -1 ~1", printed)
         self.assertIn("  added: New Sword (3)", printed)
-        self.assertNotIn("  added: Super Duper Bow (9)", printed)
         self.assertIn("  removed: Old Sword (2)", printed)
-        self.assertNotIn("  removed: Retired Dev Sword (8)", printed)
         self.assertIn("  changed: Rune Sword (1): fields.damage, fields.speed", printed)
-        self.assertNotIn("  changed: Super Duper Changed (10)", printed)
-        self.assertIn("DIFF weapons: +2 -2 ~2", printed)
-        self.assertIn("  + Super Duper Bow (9)", printed)
-        self.assertIn("  - Retired Dev Sword (8)", printed)
-        self.assertIn("  ~ Super Duper Changed (10): 1 field change(s)", printed)
         self.assertIn("PLAYER DATA armors: +0 -0 ~1", printed)
         self.assertIn("  changed: Iceburst Amulet (7): fields.armor", printed)
         self.assertIn("PLAYER IMAGES weapons: +1 -1 ~1", printed)
@@ -622,7 +611,7 @@ class GameUpdateReportTests(unittest.TestCase):
                         target=weapon_target,
                         generated_path=output_dir / "weapons.json",
                         site_path=Path("site/weapons.json"),
-                        added=["New Sword (3)", "Super Duper Bow (9)"],
+                        added=["New Sword (3)"],
                         removed=[],
                         changed=[
                             RecordChange(
@@ -631,7 +620,6 @@ class GameUpdateReportTests(unittest.TestCase):
                                 field_changes=[FieldChange("fields.damage", 10, 11)],
                             )
                         ],
-                        hidden_added=("Super Duper Bow (9)",),
                     )
                 ],
                 unknown_reports=[],
@@ -653,24 +641,6 @@ class GameUpdateReportTests(unittest.TestCase):
                 validation_issues=[ValidationIssue("warning", "sample warning")],
                 export_errors=[],
                 skipped_sections=[],
-                hidden_item_reports=[
-                    HiddenItemAuditReport(
-                        target_name="weapons",
-                        generated_path=output_dir / "weapons.json",
-                        site_path=Path("site/weapons.json"),
-                        added=[HiddenItemRecord("Super Duper Bow (9)", "dev_only_item_name")],
-                        removed=[],
-                        changed=[],
-                        field_changed=[
-                            HiddenItemFieldChange(
-                                "id:10",
-                                "Super Duper Field Changed (10)",
-                                ["fields.damage", "fields.speed"],
-                            )
-                        ],
-                        generated_reasons=[HiddenItemReasonSummary("dev_only_item_name", 1)],
-                    )
-                ],
             )
             output = io.StringIO()
             with (
@@ -681,10 +651,19 @@ class GameUpdateReportTests(unittest.TestCase):
                 exit_code = cli.main(["game-update-report", "--write-summary", "--output-dir", str(output_dir)])
 
             summary_path = output_dir / "game_update_summary.md"
+            gameplay_impact_path = output_dir / "gameplay_impact_report.md"
+            gameplay_impact_json_path = output_dir / "gameplay_impact_report.json"
+            impact_validation_plan_path = output_dir / "impact_validation_plan.json"
             self.assertEqual(0, exit_code)
             self.assertTrue(summary_path.is_file())
+            self.assertTrue(gameplay_impact_path.is_file())
+            self.assertTrue(gameplay_impact_json_path.is_file())
+            self.assertTrue(impact_validation_plan_path.is_file())
             printed = output.getvalue()
             self.assertIn(f"WROTE SUMMARY: {summary_path}", printed)
+            self.assertIn(f"WROTE GAMEPLAY IMPACT: {gameplay_impact_path}", printed)
+            self.assertIn(f"WROTE GAMEPLAY IMPACT JSON: {gameplay_impact_json_path}", printed)
+            self.assertIn(f"WROTE IMPACT VALIDATION PLAN: {impact_validation_plan_path}", printed)
             markdown = summary_path.read_text(encoding="utf-8")
             self.assertIn("# Project Rogue Codex Game Update Summary", markdown)
             self.assertIn("- Data: +1 -0 ~1", markdown)
@@ -692,21 +671,22 @@ class GameUpdateReportTests(unittest.TestCase):
             self.assertIn("## Data Changes", markdown)
             self.assertIn("### Weapons", markdown)
             self.assertIn("- Added: New Sword (3)", markdown)
-            self.assertNotIn("- Added: Super Duper Bow (9)", markdown)
             self.assertIn("- Changed: Rune Sword (1): fields.damage", markdown)
             self.assertIn("## Image Changes", markdown)
             self.assertIn("- Changed: Rune Sword.gif", markdown)
-            self.assertIn("## Hidden Item Audit", markdown)
-            self.assertIn("### Weapons", markdown)
-            self.assertIn("- Generated hidden: 1", markdown)
-            self.assertIn("- Reason dev_only_item_name: 1", markdown)
-            self.assertIn("- Added hidden: Super Duper Bow (9) [dev_only_item_name]", markdown)
-            self.assertIn(
-                "- Field changed: Super Duper Field Changed (10): fields.damage, fields.speed",
-                markdown,
-            )
             self.assertIn("## Review Notes", markdown)
             self.assertIn("- WARNING: sample warning", markdown)
+            impact_markdown = gameplay_impact_path.read_text(encoding="utf-8")
+            self.assertIn("# Project Rogue Codex Gameplay Impact", impact_markdown)
+            self.assertIn("- Added: New Sword (3)", impact_markdown)
+            impact_payload = json.loads(gameplay_impact_json_path.read_text(encoding="utf-8"))
+            self.assertEqual(1, impact_payload["schemaVersion"])
+            self.assertRegex(impact_payload["reportDigest"], r"^sha256:[0-9a-f]{64}$")
+            self.assertIn(f"GAMEPLAY IMPACT DIGEST: {impact_payload['reportDigest']}", printed)
+            self.assertEqual(1, impact_payload["summary"]["publicRecords"]["added"])
+            validation_plan = json.loads(impact_validation_plan_path.read_text(encoding="utf-8"))
+            self.assertEqual(impact_payload["reportDigest"], validation_plan["reportDigest"])
+            self.assertIn("site-search", [check["id"] for check in validation_plan["checks"]])
 
     def test_cli_can_write_game_update_image_review_artifact(self):
         from tools.codex_pipeline import cli
@@ -841,4 +821,4 @@ class GameUpdateReportTests(unittest.TestCase):
         self.assertIn("[ ] Review player data changes", printed)
         self.assertIn("[ ] Review image changes", printed)
         self.assertIn("[ ] Review warnings or skipped sections", printed)
-        self.assertIn("[ ] Confirm --apply decision: blocked - review image changes before applying", printed)
+        self.assertIn("[ ] Confirm --apply decision: blocked - review priority image changes before applying", printed)

@@ -47,6 +47,46 @@ class AssetReportTests(unittest.TestCase):
         self.assertTrue(report.has_changes)
         self.assertEqual([], report.issues)
 
+    def test_build_asset_change_report_ignores_hidden_image_variants(self):
+        from tools.codex_pipeline.assets import AssetTarget, build_asset_change_report
+        from tools.codex_pipeline.hidden_items import HiddenItemRules
+
+        rules = HiddenItemRules.from_allowlists({"weapons": {"block": ["Super Duper"]}})
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            client_dir = root / "client" / "Weapons"
+            site_dir = root / "site" / "images" / "weapons"
+            client_dir.mkdir(parents=True)
+            site_dir.mkdir(parents=True)
+            (client_dir / "Rune Sword.png").write_bytes(b"same")
+            (site_dir / "Rune Sword.png").write_bytes(b"same")
+            (client_dir / "Super Duper Bow-1037.png").write_bytes(b"new hidden")
+            (client_dir / "Super Duper Bow-1038.png").write_bytes(b"new hidden")
+            (site_dir / "Super Duper Bow.png").write_bytes(b"old hidden")
+            (site_dir / "manifest.json").write_text(
+                json.dumps(
+                    [
+                        "images/weapons/Rune Sword.png",
+                        "images/weapons/Super Duper Bow.png",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            report = build_asset_change_report(
+                AssetTarget("weapons", client_dir, site_dir),
+                hidden_item_rules=rules,
+            )
+
+        self.assertEqual([], report.added)
+        self.assertEqual([], report.removed)
+        self.assertEqual([], report.changed)
+        self.assertEqual(["Super Duper Bow-1037.png", "Super Duper Bow-1038.png"], report.hidden_added)
+        self.assertEqual(["Super Duper Bow.png"], report.hidden_removed)
+        self.assertEqual([], report.hidden_changed)
+        self.assertEqual([], report.issues)
+        self.assertFalse(report.has_changes)
+
     def test_build_asset_change_report_reports_manifest_problems(self):
         from tools.codex_pipeline.assets import AssetTarget, build_asset_change_report
 
@@ -226,6 +266,53 @@ class AssetReportTests(unittest.TestCase):
             )
             self.assertFalse(post_report.has_changes)
             self.assertEqual([], post_report.issues)
+
+    def test_sync_asset_changes_preserves_hidden_site_images_and_manifest_entries(self):
+        from tools.codex_pipeline.assets import AssetTarget, sync_asset_changes
+        from tools.codex_pipeline.hidden_items import HiddenItemRules
+
+        rules = HiddenItemRules.from_allowlists({"weapons": {"block": ["Super Duper"]}})
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            client_dir = root / "client" / "Weapons"
+            site_dir = root / "site" / "images" / "weapons"
+            client_dir.mkdir(parents=True)
+            site_dir.mkdir(parents=True)
+            (client_dir / "Rune Sword.png").write_bytes(b"same")
+            (site_dir / "Rune Sword.png").write_bytes(b"same")
+            (client_dir / "New Sword.png").write_bytes(b"new")
+            (client_dir / "Super Duper Bow-1037.png").write_bytes(b"new hidden")
+            (site_dir / "Super Duper Bow.png").write_bytes(b"old hidden")
+            manifest_path = site_dir / "manifest.json"
+            manifest_path.write_text(
+                json.dumps(
+                    [
+                        "images/weapons/Rune Sword.png",
+                        "images/weapons/Super Duper Bow.png",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            report = sync_asset_changes(
+                AssetTarget("weapons", client_dir, site_dir),
+                dry_run=False,
+                hidden_item_rules=rules,
+            )
+            manifest_entries = json.loads(manifest_path.read_text(encoding="utf-8"))
+
+            self.assertEqual(["New Sword.png"], report.copied)
+            self.assertEqual([], report.removed)
+            self.assertFalse((site_dir / "Super Duper Bow-1037.png").exists())
+            self.assertEqual(b"old hidden", (site_dir / "Super Duper Bow.png").read_bytes())
+            self.assertEqual(
+                [
+                    "images/weapons/New Sword.png",
+                    "images/weapons/Rune Sword.png",
+                    "images/weapons/Super Duper Bow.png",
+                ],
+                manifest_entries,
+            )
 
     def test_sync_asset_changes_leaves_clean_manifest_unchanged(self):
         from tools.codex_pipeline.assets import AssetTarget, sync_asset_changes

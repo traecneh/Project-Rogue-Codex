@@ -1,9 +1,7 @@
 const rarityDefinitions = [
   { name: "Common", color: "#ffffff", min: 0, max: 0, perkChance: 0, ac: 0, multiplier: 1 },
-  { name: "Uncommon", color: "#ffd966", min: 2, max: 5, perkChance: 0, ac: 0, multiplier: 2 },
   { name: "Rare", color: "#6f8fff", min: 6, max: 10, perkChance: 0, ac: 0, multiplier: 4 },
   { name: "Epic", color: "#d56ca8", min: 11, max: 15, perkChance: 0.4, ac: 2, multiplier: 6 },
-  { name: "Legendary", color: "#ffb347", min: 16, max: 20, perkChance: 0.6, ac: 3, multiplier: 8 },
   { name: "Mythical", color: "#84c96c", min: 21, max: 25, perkChance: 0.8, ac: 4, multiplier: 10 },
   { name: "Ascendant", color: "#ff6666", min: 26, max: 30, perkChance: 1, ac: 5, multiplier: 12 },
 ];

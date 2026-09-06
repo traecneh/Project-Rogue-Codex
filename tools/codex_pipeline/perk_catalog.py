@@ -1,0 +1,88 @@
+from __future__ import annotations
+
+
+PERK_NAMES_BY_BASE_CODE = {
+    1: "Lifesteal",
+    2: "Bloodthirster",
+    3: "Rejuvenation",
+    4: "Antitoxin",
+    5: "Immunization",
+    6: "Vitality",
+    7: "Bolstered Strength",
+    8: "Windwalker",
+    9: "Magic Shield",
+    10: "Juggernaut",
+    11: "Parry",
+    12: "Alchemist",
+    13: "Knowledge",
+    14: "Moneybags",
+    15: "Flame Strike",
+    16: "Lightning Javelin",
+    17: "Iceburst",
+    18: "Sulfuric",
+    19: "Plague",
+    20: "Toxicity",
+    21: "Demon Blood",
+    22: "Frozen Heart",
+    23: "Lightning Field",
+    24: "Tourniquet",
+    25: "Hazmat",
+    26: "Antacid",
+    27: "Spartan",
+    28: "Whirlwind",
+    29: "Vampirism",
+    30: "Garrote",
+    31: "Brutality",
+    32: "Tenacity",
+    33: "Swiftness",
+    34: "Augmentation",
+    35: "Epidemic",
+    36: "Lethal Toxins",
+    37: "Destruction",
+    38: "Impenetrable",
+    39: "Hawkeye",
+    40: "Overpower",
+    41: "Demonsbane",
+    42: "Beastslayer",
+    43: "Executioner",
+    44: "Consecration",
+    45: "Venomshock",
+    46: "Iceshatter",
+    47: "Desperation",
+    48: "Bloodlust",
+    49: "Slayer",
+    50: "Second Wind",
+    51: "Critical Aegis",
+    52: "Toxic Shell",
+    53: "Radiance",
+    54: "Sanctified Guard",
+    55: "Nether Shield",
+    56: "Shadowstrike",
+    57: "Retribution",
+    58: "Finisher",
+    59: "Berserker",
+    60: "Rampage",
+    100: "Runic",
+    101: "Vengeance",
+    102: "Envenomation",
+    103: "Lycan",
+    104: "Flame Buffet",
+    105: "Crimson Feast",
+    106: "Plague Eater",
+    107: "Blood Siphon",
+    108: "Elementalist",
+}
+
+PERK_TIER_OFFSETS = {
+    1: 0,
+    2: 256,
+    3: 512,
+}
+
+PERK_LABELS = {
+    base_code + offset: f"{name} (Tier {tier})"
+    for base_code, name in PERK_NAMES_BY_BASE_CODE.items()
+    for tier, offset in PERK_TIER_OFFSETS.items()
+}
+
+TATTER_LABELS = {0: "None", **PERK_NAMES_BY_BASE_CODE}

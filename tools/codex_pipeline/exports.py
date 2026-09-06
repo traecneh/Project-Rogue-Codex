@@ -5,7 +5,7 @@ import shutil
 import subprocess
 import sys
 from copy import deepcopy
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Iterable, Sequence
 
@@ -15,19 +15,20 @@ from tools.codex_pipeline.config import (
     COLLECTABLES_DATA_PATH,
     EXTRACTORS_DIR,
     GENERATED_OUTPUT_DIR,
+    ITEM_FIELD_OVERRIDES_PATH,
     MONSTERS_DATA_PATH,
     PERK_LABEL_OVERRIDES_PATH,
     USEABLES_DATA_PATH,
     WEAPONS_DATA_PATH,
 )
-from tools.codex_pipeline.extractors.item_metadata import apply_item_visibility_metadata
+from tools.codex_pipeline.hidden_items import HiddenItemRules, load_hidden_item_rules
 from tools.codex_pipeline.packed_json import (
     find_packed_vpack_source,
     is_packed_json_target_supported,
     map_packed_json_target,
     read_packed_json_files,
 )
-from tools.codex_pipeline.perks import CorruptedPerkOverrides, load_perk_label_overrides
+from tools.codex_pipeline.perks import CorruptedPerkOverrides, UNKNOWN_PERK_LABEL, load_perk_label_overrides
 from tools.codex_pipeline.vpack import VpackError
 
 
@@ -86,9 +87,9 @@ class DataDiffReport:
     added: list[str]
     removed: list[str]
     changed: list[RecordChange]
-    hidden_added: tuple[str, ...] = ()
-    hidden_removed: tuple[str, ...] = ()
-    hidden_changed_keys: tuple[str, ...] = ()
+    hidden_added: list[str] = field(default_factory=list)
+    hidden_removed: list[str] = field(default_factory=list)
+    hidden_changed: list[RecordChange] = field(default_factory=list)
 
     @property
     def has_changes(self) -> bool:
@@ -225,6 +226,30 @@ def _index_records(records: list[Any]) -> dict[str, Any]:
     return indexed
 
 
+def _visible_indexed_records(
+    target: ExportTarget,
+    indexed: dict[str, Any],
+    hidden_item_rules: HiddenItemRules,
+) -> dict[str, Any]:
+    return {
+        key: record
+        for key, record in indexed.items()
+        if not hidden_item_rules.is_hidden_record(target.name, record)
+    }
+
+
+def _hidden_indexed_records(
+    target: ExportTarget,
+    indexed: dict[str, Any],
+    hidden_item_rules: HiddenItemRules,
+) -> dict[str, Any]:
+    return {
+        key: record
+        for key, record in indexed.items()
+        if hidden_item_rules.is_hidden_record(target.name, record)
+    }
+
+
 def _int_or_none(value: Any) -> int | None:
     if isinstance(value, bool):
         return None
@@ -259,10 +284,49 @@ def _apply_corrupted_perk_override(fields: dict[str, Any], overrides: CorruptedP
 
     label = overrides[corrupted_perk]
     if label is None:
-        fields.pop("corrupted_perk_label", None)
+        fields["corrupted_perk_label"] = UNKNOWN_PERK_LABEL
     else:
         fields["corrupted_perk_label"] = label
     return True
+
+
+def _load_item_field_overrides(path: Path) -> dict[str, dict[str, dict[str, Any]]]:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict) or payload.get("schemaVersion") != 1:
+        raise ValueError("item field overrides must use schemaVersion 1")
+    targets = payload.get("targets", {})
+    if not isinstance(targets, dict):
+        raise ValueError("item field overrides targets must be an object")
+
+    normalized: dict[str, dict[str, dict[str, Any]]] = {}
+    for target_name, records in targets.items():
+        if not isinstance(records, dict):
+            raise ValueError(f"item field overrides target {target_name} must be an object")
+        normalized_records: dict[str, dict[str, Any]] = {}
+        for record_id, entry in records.items():
+            if not isinstance(entry, dict) or not isinstance(entry.get("fields"), dict):
+                raise ValueError(f"item field override {target_name}/{record_id} must contain fields")
+            normalized_records[str(record_id)] = entry
+        normalized[str(target_name)] = normalized_records
+    return normalized
+
+
+def _apply_item_field_override(
+    target: ExportTarget,
+    record: dict[str, Any],
+    fields: dict[str, Any],
+    overrides: dict[str, dict[str, dict[str, Any]]],
+) -> None:
+    entry = overrides.get(target.name, {}).get(str(record.get("id")))
+    if entry is None:
+        return
+    expected_name = str(entry.get("name") or "").strip()
+    actual_name = str(record.get("name") or "").strip()
+    if expected_name and expected_name != actual_name:
+        raise ValueError(
+            f"item field override {target.name}/{record.get('id')} expects {expected_name!r}, found {actual_name!r}"
+        )
+    fields.update(deepcopy(entry["fields"]))
 
 
 def _normalize_generated_records_for_site(
@@ -270,6 +334,7 @@ def _normalize_generated_records_for_site(
     generated_records: list[Any],
     site_records: list[Any],
     corrupted_perk_overrides: CorruptedPerkOverrides,
+    item_field_overrides: dict[str, dict[str, dict[str, Any]]],
 ) -> list[Any]:
     normalized_field_names = SITE_NORMALIZED_FIELD_NAMES_BY_TARGET.get(target.name, set())
     normalized_records = deepcopy(generated_records)
@@ -281,8 +346,7 @@ def _normalize_generated_records_for_site(
         if not isinstance(fields, dict):
             continue
 
-        if target.name in {"weapons", "armors"}:
-            apply_item_visibility_metadata(record)
+        _apply_item_field_override(target, record, fields, item_field_overrides)
 
         if normalized_field_names:
             site_record = site_by_key.get(_record_key(record, index))
@@ -312,25 +376,27 @@ def _normalize_generated_output_for_site(target: ExportTarget, generated_path: P
         corrupted_perk_overrides = load_perk_label_overrides(PERK_LABEL_OVERRIDES_PATH)
     except (OSError, json.JSONDecodeError, ValueError) as exc:
         raise ExportError(f"{PERK_LABEL_OVERRIDES_PATH} failed to read perk label overrides: {exc}") from exc
-    normalized_records = _normalize_generated_records_for_site(
-        target,
-        generated_records,
-        site_records,
-        corrupted_perk_overrides,
-    )
+    try:
+        item_field_overrides = _load_item_field_overrides(ITEM_FIELD_OVERRIDES_PATH)
+    except (OSError, json.JSONDecodeError, ValueError) as exc:
+        raise ExportError(f"{ITEM_FIELD_OVERRIDES_PATH} failed to read item field overrides: {exc}") from exc
+    try:
+        normalized_records = _normalize_generated_records_for_site(
+            target,
+            generated_records,
+            site_records,
+            corrupted_perk_overrides,
+            item_field_overrides,
+        )
+    except ValueError as exc:
+        raise ExportError(
+            f"{ITEM_FIELD_OVERRIDES_PATH} failed to apply item field overrides: {exc}"
+        ) from exc
     _write_json_list(generated_path, normalized_records)
 
 
 def _display_records(indexed: dict[str, Any], keys: Iterable[str]) -> list[str]:
     return [_record_label(indexed[key], key) for key in keys]
-
-
-def _is_codex_hidden(record: Any) -> bool:
-    return isinstance(record, dict) and (record.get("codex_hidden") is True or record.get("codexHidden") is True)
-
-
-def _display_hidden_records(indexed: dict[str, Any], keys: Iterable[str]) -> tuple[str, ...]:
-    return tuple(_record_label(indexed[key], key) for key in keys if _is_codex_hidden(indexed[key]))
 
 
 def _sort_record_key(key: str) -> tuple[int, str]:
@@ -362,7 +428,32 @@ def _field_changes(old_value: Any, new_value: Any, path: str = "") -> list[Field
     return []
 
 
-def build_generated_diff_report(target: ExportTarget, *, output_dir: Path = GENERATED_OUTPUT_DIR) -> DataDiffReport:
+def _record_changes_for_common_keys(
+    keys: Iterable[str],
+    site_by_key: dict[str, Any],
+    generated_by_key: dict[str, Any],
+) -> list[RecordChange]:
+    changed: list[RecordChange] = []
+    for key in keys:
+        changes = _field_changes(site_by_key[key], generated_by_key[key])
+        if changes:
+            changed.append(
+                RecordChange(
+                    key=key,
+                    label=_record_label(generated_by_key[key], key),
+                    field_changes=changes,
+                )
+            )
+    return changed
+
+
+def build_generated_diff_report(
+    target: ExportTarget,
+    *,
+    output_dir: Path = GENERATED_OUTPUT_DIR,
+    hidden_item_rules: HiddenItemRules | None = None,
+) -> DataDiffReport:
+    hidden_item_rules = hidden_item_rules or load_hidden_item_rules()
     output_dir = _resolve_output_dir(output_dir)
     generated_path = target.generated_path(output_dir)
     if not generated_path.is_file():
@@ -373,28 +464,24 @@ def build_generated_diff_report(target: ExportTarget, *, output_dir: Path = GENE
     _normalize_generated_output_for_site(target, generated_path)
     generated_records = _read_json_list(generated_path, target, "generated output")
     site_records = _read_json_list(target.site_path, target, "site output")
-    generated_by_key = _index_records(generated_records)
-    site_by_key = _index_records(site_records)
+    raw_generated_by_key = _index_records(generated_records)
+    raw_site_by_key = _index_records(site_records)
+    generated_by_key = _visible_indexed_records(target, raw_generated_by_key, hidden_item_rules)
+    site_by_key = _visible_indexed_records(target, raw_site_by_key, hidden_item_rules)
+    hidden_generated_by_key = _hidden_indexed_records(target, raw_generated_by_key, hidden_item_rules)
+    hidden_site_by_key = _hidden_indexed_records(target, raw_site_by_key, hidden_item_rules)
 
     generated_keys = set(generated_by_key)
     site_keys = set(site_by_key)
     added_keys = sorted(generated_keys - site_keys, key=_sort_record_key)
     removed_keys = sorted(site_keys - generated_keys, key=_sort_record_key)
     common_keys = sorted(generated_keys & site_keys, key=_sort_record_key)
-    changed: list[RecordChange] = []
-    hidden_changed_keys: list[str] = []
-    for key in common_keys:
-        changes = _field_changes(site_by_key[key], generated_by_key[key])
-        if changes:
-            changed.append(
-                RecordChange(
-                    key=key,
-                    label=_record_label(generated_by_key[key], key),
-                    field_changes=changes,
-                )
-            )
-            if _is_codex_hidden(site_by_key[key]) or _is_codex_hidden(generated_by_key[key]):
-                hidden_changed_keys.append(key)
+    changed = _record_changes_for_common_keys(common_keys, site_by_key, generated_by_key)
+    hidden_generated_keys = set(hidden_generated_by_key)
+    hidden_site_keys = set(hidden_site_by_key)
+    hidden_added_keys = sorted(hidden_generated_keys - hidden_site_keys, key=_sort_record_key)
+    hidden_removed_keys = sorted(hidden_site_keys - hidden_generated_keys, key=_sort_record_key)
+    hidden_common_keys = sorted(hidden_generated_keys & hidden_site_keys, key=_sort_record_key)
 
     return DataDiffReport(
         target=target,
@@ -403,9 +490,13 @@ def build_generated_diff_report(target: ExportTarget, *, output_dir: Path = GENE
         added=_display_records(generated_by_key, added_keys),
         removed=_display_records(site_by_key, removed_keys),
         changed=changed,
-        hidden_added=_display_hidden_records(generated_by_key, added_keys),
-        hidden_removed=_display_hidden_records(site_by_key, removed_keys),
-        hidden_changed_keys=tuple(hidden_changed_keys),
+        hidden_added=_display_records(hidden_generated_by_key, hidden_added_keys),
+        hidden_removed=_display_records(hidden_site_by_key, hidden_removed_keys),
+        hidden_changed=_record_changes_for_common_keys(
+            hidden_common_keys,
+            hidden_site_by_key,
+            hidden_generated_by_key,
+        ),
     )
 
 
@@ -413,8 +504,13 @@ def build_generated_diff_reports(
     targets: Iterable[ExportTarget],
     *,
     output_dir: Path = GENERATED_OUTPUT_DIR,
+    hidden_item_rules: HiddenItemRules | None = None,
 ) -> list[DataDiffReport]:
-    return [build_generated_diff_report(target, output_dir=output_dir) for target in targets]
+    hidden_item_rules = hidden_item_rules or load_hidden_item_rules()
+    return [
+        build_generated_diff_report(target, output_dir=output_dir, hidden_item_rules=hidden_item_rules)
+        for target in targets
+    ]
 
 
 def export_client_data(

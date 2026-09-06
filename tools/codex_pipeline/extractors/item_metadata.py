@@ -1,40 +1,10 @@
 from __future__ import annotations
 
-import re
 from collections.abc import Mapping, MutableMapping, Sequence
 from typing import Any
 
-try:
-    from tools.codex_pipeline.extractors.monster_metadata import TATTER_LABELS
-except ModuleNotFoundError:
-    from monster_metadata import TATTER_LABELS
-
-
-# Item perks encode the perk ID in the low byte and tier minus one in
-# the high byte. Reuse tatter identities rather than maintaining separate
-# and potentially conflicting labels for each ordinary perk tier.
-_PERK_NAMES = {
-    **{code: name for code, name in TATTER_LABELS.items() if code},
-    15: "Flame Strike",
-    16: "Lightning Javelin",
-    17: "Iceburst",
-    18: "Sulfuric",
-    19: "Plague",
-    20: "Toxicity",
-    100: "Runic",
-    101: "Vengeance",
-    102: "Envenomation",
-    103: "Lycan",
-    104: "Flame Buffet",
-    105: "Crimson Feast",
-    106: "Plague Eater",
-    107: "Blood Siphon",
-}
-PERK_LABELS = {
-    code + (tier - 1) * 256: f"{name} (Tier {tier})"
-    for code, name in _PERK_NAMES.items()
-    for tier in (1, 2, 3)
-}
+from tools.codex_pipeline.perk_catalog import PERK_LABELS
+from tools.codex_pipeline.perks import UNKNOWN_PERK_LABEL
 
 WEAPON_SUBTYPE_LABELS = {
     1: "Sword",
@@ -55,21 +25,20 @@ WEAPON_SPECIALTY_LABELS = {
 WEAPON_ELEMENT_LABELS = {
     1: "Fire",
     2: "Electric",
+    3: "Holy",
     4: "Cold",
+    5: "Dark",
     6: "Acid",
     7: "Poison",
     8: "Disease",
-    5: "Magic",
 }
 
 RARITY_LABELS = {
     0: "Common",
-    1: "Uncommon",
-    2: "Rare",
-    3: "Epic",
-    4: "Legendary",
-    5: "Mythical",
-    6: "Ascendant",
+    1: "Rare",
+    2: "Epic",
+    3: "Mythical",
+    4: "Ascendant",
 }
 
 WEAPON_RARITY_LABELS = {
@@ -87,34 +56,6 @@ ARMOR_SLOT_LABELS = {
     18: "Cosmetic",
 }
 
-WEAPON_CONFIRMED_ALIASES = {
-    "unknown_21": "use_requirement_type",
-    "unknown_34": "animated",
-    "unknown_35": "animation_frame_count",
-    "unknown_37": "animation_type",
-    "unknown_88": "holy_resistance",
-    "unknown_89": "dark_resistance",
-    "unknown_93": "bonus_intelligence",
-    "unknown_98": "emits_light",
-}
-
-DEV_ONLY_ITEM_NAME_REASON = "dev_only_item_name"
-DEV_ONLY_ITEM_NAME_PATTERN = re.compile(r"^\s*super\s+duper\b", re.IGNORECASE)
-
-ARMOR_CONFIRMED_ALIASES = {
-    "unknown_18": "use_requirement_type",
-    "unknown_30": "animated",
-    "unknown_31": "animation_frame_count",
-    "unknown_33": "animation_type",
-    "unknown_70": "minimum_rarity",
-    "unknown_81": "holy_resistance",
-    "unknown_85": "dark_resistance",
-    "unknown_89": "bonus_intelligence",
-    "unknown_93": "avatar",
-    "unknown_94": "emits_light",
-}
-
-
 def resolve_corrupted_perk_label(corrupted_val: int, base_val: int | None = None) -> str | None:
     return PERK_LABELS.get(corrupted_val)
 
@@ -130,14 +71,6 @@ def add_field_label(
         fields[label_field] = labels[value]
 
 
-def add_confirmed_aliases(fields: MutableMapping[str, object], aliases: Mapping[str, str]) -> None:
-    for legacy_name, friendly_name in aliases.items():
-        if friendly_name in fields:
-            fields.setdefault(legacy_name, fields[friendly_name])
-        elif legacy_name in fields:
-            fields[friendly_name] = fields[legacy_name]
-
-
 def add_derived_value(fields: MutableMapping[str, object]) -> None:
     if "value_low" in fields and "value_high" in fields:
         fields["value"] = fields["value_low"] + (fields["value_high"] << 16)
@@ -145,18 +78,16 @@ def add_derived_value(fields: MutableMapping[str, object]) -> None:
 
 def add_perk_labels(fields: MutableMapping[str, object]) -> None:
     perk_val = fields.get("perk")
-    if perk_val in PERK_LABELS:
-        fields["perk_label"] = PERK_LABELS[perk_val]
+    if perk_val:
+        fields["perk_label"] = PERK_LABELS.get(perk_val, UNKNOWN_PERK_LABEL)
 
     corrupted_val = fields.get("corrupted_perk")
     if corrupted_val:
         resolved = resolve_corrupted_perk_label(corrupted_val, perk_val)
-        if resolved:
-            fields["corrupted_perk_label"] = resolved
+        fields["corrupted_perk_label"] = resolved or UNKNOWN_PERK_LABEL
 
 
 def enrich_weapon_fields(fields: MutableMapping[str, object]) -> None:
-    add_confirmed_aliases(fields, WEAPON_CONFIRMED_ALIASES)
     add_derived_value(fields)
     add_field_label(fields, "subtype", "subtype_label", WEAPON_SUBTYPE_LABELS)
     add_field_label(fields, "specialty", "specialty_label", WEAPON_SPECIALTY_LABELS)
@@ -166,24 +97,10 @@ def enrich_weapon_fields(fields: MutableMapping[str, object]) -> None:
 
 
 def enrich_armor_fields(fields: MutableMapping[str, object]) -> None:
-    add_confirmed_aliases(fields, ARMOR_CONFIRMED_ALIASES)
     add_derived_value(fields)
     add_field_label(fields, "slot", "slot_label", ARMOR_SLOT_LABELS)
     add_field_label(fields, "max_rarity", "max_rarity_label", RARITY_LABELS)
     add_perk_labels(fields)
-
-
-def classify_item_visibility(name: object) -> str | None:
-    if DEV_ONLY_ITEM_NAME_PATTERN.search(str(name or "")):
-        return DEV_ONLY_ITEM_NAME_REASON
-    return None
-
-
-def apply_item_visibility_metadata(record: MutableMapping[str, object]) -> None:
-    reason = classify_item_visibility(record.get("name"))
-    if reason:
-        record["codex_hidden"] = True
-        record["codex_hidden_reason"] = reason
 
 
 def _record_fields(record: Mapping[str, Any]) -> Mapping[str, Any]:

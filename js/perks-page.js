@@ -1,6 +1,7 @@
 (() => {
   const PERK_ROUTE_PARAM = "perk";
   const SOURCE_LIMIT = 8;
+  const TATTER_SOURCE_LIMIT = 8;
   const PERK_GROUP_ORDER = [
     "Slayer & Bane",
     "Ailment Offense",
@@ -41,6 +42,7 @@
     records: [],
     selectedCard: null,
     sourcesByPerk: new Map(),
+    tatterSourcesByPerk: new Map(),
   };
 
   const getPerkApi = () => window.RogueCodexPerks || {};
@@ -107,42 +109,28 @@
     return fetchJson(new URL("pages/systems/perks.json", document.baseURI).toString());
   };
 
-  const buildNameSet =
-    window.RogueCodexUtils?.buildNameSet ||
-    ((list) =>
-      new Set(
-        (Array.isArray(list) ? list : [])
-          .map((value) => (value === null || value === undefined ? "" : String(value)).trim().toLowerCase())
-          .filter(Boolean)
-      ));
-  const loadAllowlists =
-    typeof window.RogueCodexUtils?.loadAllowlists === "function"
-      ? () => window.RogueCodexUtils.loadAllowlists()
-      : () => Promise.resolve(null);
-  const isRecordHidden =
-    typeof window.RogueCodexUtils?.isRecordHidden === "function"
-      ? (record, hiddenNames) => window.RogueCodexUtils.isRecordHidden(record, hiddenNames)
-      : (record, hiddenNames) =>
-          Boolean(record && (record.codex_hidden === true || record.codexHidden === true)) ||
-          Boolean(hiddenNames?.has(String(record?.name || record?.Name || "").toLowerCase()));
+  const fetchAllowlists = async () => {
+    const api = window.RogueCodexUtils || {};
+    if (typeof api.loadAllowlists === "function") {
+      return api.loadAllowlists();
+    }
+    return fetchJson(new URL("data/allowlists.json", document.baseURI).toString());
+  };
 
   const loadReferenceData = async () => {
-    const [index, weapons, armors, allowlists] = await Promise.all([
+    const [index, weapons, armors, monsters, allowlists] = await Promise.all([
       fetchPerksIndex(),
       fetchJson(new URL("pages/items/weapons_data05.json", document.baseURI).toString()).catch(() => []),
       fetchJson(new URL("pages/items/armors_data06.json", document.baseURI).toString()).catch(() => []),
-      loadAllowlists(),
+      fetchJson(new URL("pages/enemies/monsters_data03.json", document.baseURI).toString()).catch(() => []),
+      fetchAllowlists().catch(() => null),
     ]);
-    const hiddenWeaponNames = buildNameSet(allowlists?.weapons?.block);
-    const hiddenArmorNames = buildNameSet(allowlists?.armors?.block);
     return {
       perks: Array.isArray(index?.perks) ? index.perks : [],
-      weapons: Array.isArray(weapons)
-        ? weapons.filter((row) => !isRecordHidden(row, hiddenWeaponNames))
-        : [],
-      armors: Array.isArray(armors)
-        ? armors.filter((row) => !isRecordHidden(row, hiddenArmorNames))
-        : [],
+      weapons: Array.isArray(weapons) ? weapons : [],
+      armors: Array.isArray(armors) ? armors : [],
+      monsters: Array.isArray(monsters) ? monsters : [],
+      allowlists,
     };
   };
 
@@ -162,28 +150,38 @@
       .map((value) => (value === null || value === undefined ? "" : String(value).trim()))
       .filter(Boolean);
 
-  const itemHref = (kind, item) => {
-    const routeKey = item?.id ?? item?.ID ?? item?.name ?? item?.Name ?? "";
-    const encoded = encodeURIComponent(routeKey);
+  const itemHref = (kind, name) => {
+    const encoded = encodeURIComponent(name || "");
     if (kind === "weapon") return `pages/items/weapons.html?weapon=${encoded}`;
     if (kind === "armor") return `pages/items/armors.html?armor=${encoded}`;
     return "";
   };
 
-  const buildPerkSourceIndex = ({ weapons, armors }) => {
+  const buildPerkSourceIndex = ({ weapons, armors, allowlists }) => {
     const map = new Map();
+    const hiddenWeaponNames = buildNameSet(allowlists?.weapons?.block);
+    const hiddenWeaponIds = new Set(
+      (
+        Array.isArray(allowlists?.weapons?.blockIds)
+          ? allowlists.weapons.blockIds
+          : Array.isArray(allowlists?.weapons?.block_ids)
+            ? allowlists.weapons.block_ids
+            : []
+      ).map((id) => String(id).trim())
+    );
     weapons.forEach((row) => {
       const name = String(row?.name || row?.Name || "").trim();
-      if (!name) return;
+      const id = String(row?.id ?? row?.ID ?? "").trim();
+      if (!name || hiddenWeaponNames.has(name.toLowerCase()) || hiddenWeaponIds.has(id)) return;
       itemPerkLabels(row?.fields || {}).forEach((perkName) => {
-        addSource(map, perkName, { kind: "weapon", label: "Weapon", name, href: itemHref("weapon", row) });
+        addSource(map, perkName, { kind: "weapon", label: "Weapon", name, href: itemHref("weapon", name) });
       });
     });
     armors.forEach((row) => {
       const name = String(row?.name || row?.Name || "").trim();
       if (!name) return;
       itemPerkLabels(row?.fields || {}).forEach((perkName) => {
-        addSource(map, perkName, { kind: "armor", label: "Armor", name, href: itemHref("armor", row) });
+        addSource(map, perkName, { kind: "armor", label: "Armor", name, href: itemHref("armor", name) });
       });
     });
     RACE_PERK_SOURCES.forEach((source) => {
@@ -195,6 +193,72 @@
         const leftKind = kindOrder[left.kind] ?? 99;
         const rightKind = kindOrder[right.kind] ?? 99;
         if (leftKind !== rightKind) return leftKind - rightKind;
+        return left.name.localeCompare(right.name);
+      });
+    });
+    return map;
+  };
+
+  const buildNameSet = (values) =>
+    new Set(
+      (Array.isArray(values) ? values : [])
+        .map((value) => String(value || "").trim().toLowerCase())
+        .filter(Boolean)
+    );
+
+  const buildTatterSourceIndex = ({ monsters, allowlists }) => {
+    const map = new Map();
+    const allowedNames = buildNameSet(allowlists?.monsters?.allow);
+    const blockedNames = buildNameSet(allowlists?.monsters?.block);
+    const blockedIds = new Set(
+      (Array.isArray(allowlists?.monsters?.blockIds)
+        ? allowlists.monsters.blockIds
+        : Array.isArray(allowlists?.monsters?.block_ids)
+          ? allowlists.monsters.block_ids
+          : []
+      ).map((value) => String(value).trim())
+    );
+    const typeOrder = { uncommon: 0, rare: 1 };
+
+    const isVisibleMonster = (monster) => {
+      const id = monster?.id ?? monster?.Id;
+      if (id !== null && id !== undefined && blockedIds.has(String(id).trim())) return false;
+      const name = String(monster?.name || monster?.Name || "").trim().toLowerCase();
+      if (!name) return false;
+      if (allowedNames.size) return allowedNames.has(name);
+      return !blockedNames.has(name);
+    };
+
+    const addTatterSource = (monster, perkName, type) => {
+      const key = normalizePerkName(perkName);
+      if (!key || key === "none") return;
+      const name = String(monster?.name || monster?.Name || "").trim();
+      if (!name) return;
+      const id = monster?.id ?? monster?.Id ?? null;
+      const levelValue = monster?.fields?.level ?? monster?.level ?? null;
+      const level =
+        levelValue !== null && levelValue !== "" && Number.isFinite(Number(levelValue)) ? Number(levelValue) : null;
+      const list = map.get(key) || [];
+      const sourceKey = `${type}:${id ?? name.toLowerCase()}`;
+      if (!list.some((entry) => entry.sourceKey === sourceKey)) {
+        list.push({ id, level, name, sourceKey, type });
+        map.set(key, list);
+      }
+    };
+
+    monsters.filter(isVisibleMonster).forEach((monster) => {
+      const fields = monster?.fields || {};
+      addTatterSource(monster, fields.uncommon_tatter_label, "uncommon");
+      addTatterSource(monster, fields.rare_tatter_label, "rare");
+    });
+
+    map.forEach((sources) => {
+      sources.sort((left, right) => {
+        const typeDifference = (typeOrder[left.type] ?? 99) - (typeOrder[right.type] ?? 99);
+        if (typeDifference) return typeDifference;
+        const leftLevel = Number.isFinite(left.level) ? left.level : Number.MAX_SAFE_INTEGER;
+        const rightLevel = Number.isFinite(right.level) ? right.level : Number.MAX_SAFE_INTEGER;
+        if (leftLevel !== rightLevel) return leftLevel - rightLevel;
         return left.name.localeCompare(right.name);
       });
     });
@@ -291,6 +355,75 @@
     card.appendChild(wrapper);
   };
 
+  const monsterHref = (source) => {
+    const target = source?.id !== null && source?.id !== undefined ? source.id : source?.name;
+    return `pages/enemies/monsters.html?monster=${encodeURIComponent(String(target ?? ""))}`;
+  };
+
+  const tatterSourceTitle = (source) => {
+    const type = source.type === "rare" ? "Rare" : "Uncommon";
+    const trigger = source.type === "rare" ? "roughly 1 in 20" : "roughly 1 in 10";
+    const level = Number.isFinite(source.level) ? ` - Level ${source.level}` : "";
+    return `${source.name}${level} - ${type} Tatter source (${trigger} trigger when eligible).`;
+  };
+
+  const renderTatterSources = (card, entry) => {
+    const name = getPerkName(entry);
+    const sources = state.tatterSourcesByPerk.get(normalizePerkName(name)) || [];
+    if (!sources.length) return;
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "perk-tatter-list";
+    const label = document.createElement("span");
+    label.className = "perk-tatter-label";
+    label.textContent = "Tatter Sources";
+    wrapper.appendChild(label);
+
+    sources.slice(0, TATTER_SOURCE_LIMIT).forEach((source) => {
+      const chip = document.createElement("a");
+      chip.className = "perk-tatter-chip";
+      chip.dataset.tatterType = source.type;
+      chip.href = monsterHref(source);
+      chip.title = tatterSourceTitle(source);
+      chip.setAttribute(
+        "aria-label",
+        `${source.name}, ${source.type === "rare" ? "Rare" : "Uncommon"} Tatter source${
+          Number.isFinite(source.level) ? `, level ${source.level}` : ""
+        }`
+      );
+
+      const type = document.createElement("span");
+      type.className = "perk-tatter-type";
+      type.textContent = source.type === "rare" ? "Rare" : "Uncommon";
+      chip.appendChild(type);
+
+      const monster = document.createElement("span");
+      monster.className = "perk-tatter-monster";
+      monster.textContent = source.name;
+      chip.appendChild(monster);
+
+      if (Number.isFinite(source.level)) {
+        const level = document.createElement("span");
+        level.className = "perk-tatter-level";
+        level.textContent = `Lv ${source.level}`;
+        chip.appendChild(level);
+      }
+      wrapper.appendChild(chip);
+    });
+
+    if (sources.length > TATTER_SOURCE_LIMIT) {
+      const more = document.createElement("span");
+      more.className = "perk-source-chip perk-source-more";
+      more.textContent = `+${sources.length - TATTER_SOURCE_LIMIT} more`;
+      more.title = sources
+        .slice(TATTER_SOURCE_LIMIT)
+        .map((source) => tatterSourceTitle(source))
+        .join("\n");
+      wrapper.appendChild(more);
+    }
+    card.appendChild(wrapper);
+  };
+
   const selectedSpeedContext = () => speedContext?.value || getCalculationApi().DEFAULT_SPEED || "1000";
 
   const insertPerkMath = (card, mathNode) => {
@@ -344,12 +477,14 @@
     addPerkAbbreviation(card, entry);
     renderPerkMath(card, entry);
     renderPerkSources(card, entry);
+    renderTatterSources(card, entry);
     return card;
   };
 
   const serializeSearchText = (entry) => {
     const name = getPerkName(entry);
     const sources = state.sourcesByPerk.get(normalizePerkName(name)) || [];
+    const tatterSources = state.tatterSourcesByPerk.get(normalizePerkName(name)) || [];
     return [
       name,
       entry?.abbreviation,
@@ -357,6 +492,7 @@
       entry?.isUnique === true ? "unique" : "standard",
       ...(Array.isArray(entry?.details) ? entry.details : []),
       ...sources.map((source) => `${source.label} ${source.name}`),
+      ...tatterSources.map((source) => `${source.type} tatter ${source.name} level ${source.level ?? ""}`),
     ]
       .filter(Boolean)
       .join(" ")
@@ -621,10 +757,11 @@
   const initializePerksPage = async () => {
     const data = await loadReferenceData().catch((error) => {
       console.warn(error.message || error);
-      return { perks: [], weapons: [], armors: [] };
+      return { perks: [], weapons: [], armors: [], monsters: [], allowlists: null };
     });
     state.perks = data.perks;
     state.sourcesByPerk = buildPerkSourceIndex(data);
+    state.tatterSourcesByPerk = buildTatterSourceIndex(data);
     populateSpeedContext();
     renderPerkCards(state.perks);
     populatePerkJump();

@@ -80,7 +80,7 @@
 }
 
 .items-table-wrapper {
-  overflow: visible;
+  overflow-x: auto;
   border: 1px solid var(--border-soft);
   border-radius: 8px;
   background: var(--bg-panel);
@@ -104,7 +104,7 @@
 
 .items-table th,
 .items-table td {
-  padding: 0.55rem 0.75rem;
+  padding: 0.55rem 0.45rem;
   text-align: left;
   border-bottom: 1px solid #2f333b;
   font-size: 0.92rem;
@@ -561,5 +561,12 @@
 @media (max-width: 640px) {
   .item-details-grid {
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  }
+
+  .detail-row-cols-2,
+  .detail-row-cols-3,
+  .detail-row-cols-4,
+  .detail-row-cols-5 {
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
   }
 }
