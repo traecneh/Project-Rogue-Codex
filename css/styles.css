@@ -121,28 +121,36 @@ body {
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
-  scrollbar-width: thin;
-  scrollbar-color: var(--scrollbar-thumb-end) var(--scrollbar-track);
   transition: width 0.2s ease;
 }
 
-.sidebar::-webkit-scrollbar {
+.sidebar,
+.quest-list {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb-end) var(--scrollbar-track);
+}
+
+.sidebar::-webkit-scrollbar,
+.quest-list::-webkit-scrollbar {
   width: 10px;
 }
 
-.sidebar::-webkit-scrollbar-track {
+.sidebar::-webkit-scrollbar-track,
+.quest-list::-webkit-scrollbar-track {
   background: var(--scrollbar-track);
   border-radius: var(--radius-lg);
 }
 
-.sidebar::-webkit-scrollbar-thumb {
+.sidebar::-webkit-scrollbar-thumb,
+.quest-list::-webkit-scrollbar-thumb {
   background: linear-gradient(180deg, var(--scrollbar-thumb-start), var(--scrollbar-thumb-end));
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-lg);
   box-shadow: inset 0 0 0 1px var(--shadow-edge);
 }
 
-.sidebar::-webkit-scrollbar-thumb:hover {
+.sidebar::-webkit-scrollbar-thumb:hover,
+.quest-list::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(180deg, var(--scrollbar-thumb-hover-start), var(--scrollbar-thumb-hover-end));
 }
 

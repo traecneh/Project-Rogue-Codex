@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Imbuements System &mdash; Project Rogue Codex</title>
+    <title>Imbuements &mdash; Project Rogue Codex</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
@@ -13,185 +13,98 @@
     <link rel="icon" type="image/png" sizes="64x64" href="images/project-rogue-favicon-64.png" />
     <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
-    <link rel="stylesheet" href="css/styles.css?v=codex-2026-09-06-nav-tints" />
-    <link rel="stylesheet" href="css/imbuements.css?v=codex-2026-09-06-nav-tints" />
-    <script src="js/site-search.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/weapon-specialty.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/stat-widgets.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/keyword-links.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/cursor-toggle.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/perks.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/rarity-roller.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/nav-core.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <link rel="stylesheet" href="css/refresh.css?v=codex-2026-09-06-nav-tints" />
-    <script src="js/refresh.js?v=codex-2026-09-06-nav-tints" defer></script>
+    <link rel="stylesheet" href="css/styles.css?v=codex-2026-09-08-lean-ui" />
+    <link rel="stylesheet" href="css/imbuements.css?v=codex-2026-09-08-lean-ui" />
+    <script src="js/site-search.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/weapon-specialty.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/stat-widgets.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/keyword-links.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/cursor-toggle.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/perks.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/rarity-roller.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/nav-core.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <link rel="stylesheet" href="css/refresh.css?v=codex-2026-09-08-lean-ui" />
+    <link rel="stylesheet" href="css/systems.css?v=codex-2026-09-08-lean-ui" />
+    <script src="js/systems.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/refresh.js?v=codex-2026-09-08-lean-ui" defer></script>
   </head>
-  <body>
+  <body class="systems-page ascendancy-page">
     <div class="layout">
       <div id="sidebar-root"></div>
       <main class="main-content">
         <header class="content-header">
-          <h1 class="content-title">Imbuements System</h1>
-          <p class="content-tagline">
-            Target a specific perk by farming matching Tattered Imbuements, crafting a scroll, and applying it to
-            Epic+ gear.
-          </p>
+          <h1 class="content-title">Imbuements</h1>
         </header>
 
         <article class="content-section" id="imbuement-basics">
-          <h2>Targeted Perk Path</h2>
           <div class="imbuement-summary-grid" role="list">
             <section class="imbuement-summary-card" role="listitem">
               <p class="stat-label">Material</p>
               <h3>Tattered Imbuement</h3>
               <p>Each tatter is tied to one perk name. Matching tatters are the material used to craft that perk scroll.</p>
             </section>
-
             <section class="imbuement-summary-card" role="listitem">
               <p class="stat-label">Craft</p>
               <h3>250 Matching Tatters</h3>
               <p>Spend <strong>250 Matching Tatters</strong> in the Craft menu to create one Scroll of Imbuement.</p>
             </section>
-
             <section class="imbuement-summary-card" role="listitem">
               <p class="stat-label">Apply</p>
               <h3>Epic+ Item</h3>
               <p>Use the imbuement tool to apply a crafted Scroll of Imbuement to an Epic+ weapon or armor piece.</p>
             </section>
-
             <section class="imbuement-summary-card" role="listitem">
               <p class="stat-label">Recover</p>
               <h3>25 Tattered Imbuements</h3>
               <p>Purging or converting a T1 imbuement returns <strong>25 Tattered Imbuements</strong> of that perk type.</p>
             </section>
           </div>
-
           <section class="imbuement-flow-section">
-            <h2>Imbuement Flow</h2>
-            <ol class="imbuement-flow">
-              <li>
-                <span>1</span>
-                <div>
-                  <h3>Pick a Perk</h3>
-                  <p>Use the Perks page to compare values, stacking rules, and item sources before committing a farm.</p>
-                </div>
-              </li>
-              <li>
-                <span>2</span>
-                <div>
-                  <h3>Find Monster Sources</h3>
-                  <p>Monsters with an Uncommon Tatter or Rare Tatter label can drop that perk's tattered material.</p>
-                </div>
-              </li>
-              <li>
-                <span>3</span>
-                <div>
-                  <h3>Craft the Scroll</h3>
-                  <p>Use the Craft menu once you have 250 matching tatters for the same perk.</p>
-                </div>
-              </li>
-              <li>
-                <span>4</span>
-                <div>
-                  <h3>Apply or Purge</h3>
-                  <p>Apply the Scroll of Imbuement to an Epic+ item, or Purge later if you need to recover materials.</p>
-                </div>
-              </li>
-            </ol>
+            <h2>Imbue</h2>
+            <p class="imbuement-flow ascendancy-inline-flow">Collect matching tatters &rarr; Craft a Scroll of Imbuement &rarr; Apply with the Imbue tool.</p>
+            <p class="system-note" data-system-help="A perk counts at most three times. Race bonuses count toward that cap; check your existing equipment before adding another copy.">Three-copy perk cap, including race bonuses.</p>
           </section>
-
           <section class="imbuement-source-section">
-            <h2>Source Mechanics</h2>
+            <h2>Tatter Drops</h2>
             <div class="imbuement-source-grid">
               <section class="imbuement-panel imbuement-panel-primary">
                 <h3>Uncommon Tatter</h3>
-                <p>Uncommon tatter sources are the faster path, with roughly a 1 in 10 drop trigger when eligible.</p>
+                <p>Roughly <strong>1 in 10</strong> eligible triggers.</p>
               </section>
               <section class="imbuement-panel imbuement-panel-secondary">
                 <h3>Rare Tatter</h3>
-                <p>Rare tatter sources are slower, with roughly a 1 in 20 drop trigger when eligible.</p>
+                <p>Roughly <strong>1 in 20</strong> eligible triggers.</p>
               </section>
               <section class="imbuement-panel imbuement-panel-neutral">
-                <h3>Level Scaling</h3>
-                <p>On a trigger, quantity scales from 2 up to the higher of 3 or the monster's level divided by 10.</p>
+                <h3 data-system-help="On a successful drop trigger, the maximum bundle is the higher of 3 or the monster&#x27;s level divided by 10.">Level Scaling</h3>
+                <p>Quantity: <strong>2 to max(3, level / 10)</strong>.</p>
               </section>
             </div>
           </section>
-
           <section class="imbuement-odds-section">
             <h2>Tier Roll Odds</h2>
-            <p>Crafting targets the perk, not the tier. The Scroll of Imbuement still rolls a tier when applied.</p>
-            <div class="imbuement-odds-grid" role="list">
-              <section class="imbuement-odds-card" role="listitem">
-                <p class="stat-label">Common Result</p>
+            <p>The perk is fixed; the tier rolls when applied.</p>
+            <div class="imbuement-odds-grid">
+              <section class="imbuement-odds-card">
                 <h3>80% T1</h3>
-                <p>Most crafted scrolls land as T1, so the system gives reliable perk targeting but not guaranteed high tier.</p>
+                <p>
+                </p>
               </section>
-              <section class="imbuement-odds-card" role="listitem">
-                <p class="stat-label">Strong Result</p>
+              <section class="imbuement-odds-card">
                 <h3>15% T2</h3>
-                <p>T2 is the realistic upgrade outcome when crafting several scrolls for an important perk.</p>
+                <p>
+                </p>
               </section>
-              <section class="imbuement-odds-card" role="listitem">
-                <p class="stat-label">Best Result</p>
+              <section class="imbuement-odds-card">
                 <h3>5% T3</h3>
-                <p>T3 is rare enough that saving the best item base for repeated attempts can matter.</p>
+                <p>
+                </p>
               </section>
             </div>
           </section>
-
-          <section class="imbuement-targeting">
-            <h2>Targeting Decisions</h2>
-            <div class="imbuement-decision-grid">
-              <section class="imbuement-panel imbuement-panel-primary">
-                <h3>Start with Perks</h3>
-                <ul>
-                  <li>Choose the perk effect first, then check whether your gear already supplies it.</li>
-                  <li>Remember the three-copy perk cap; race bonuses count toward the cap.</li>
-                  <li>Use the Build Planner when deciding whether a crafted imbuement is worth a slot.</li>
-                </ul>
-              </section>
-              <section class="imbuement-panel imbuement-panel-warning">
-                <h3>Check the Farm</h3>
-                <ul>
-                  <li>Prefer monsters that match your desired perk and have practical kill speed.</li>
-                  <li>Higher-level monsters drop larger tatter bundles when a source triggers.</li>
-                  <li>Rare Tatter sources may be correct for a build, but they usually need more farming time.</li>
-                </ul>
-              </section>
-            </div>
-          </section>
-
           <section class="imbuement-examples">
-            <h2>Example Source Links</h2>
-            <div class="imbuement-example-grid">
-              <a class="imbuement-example-card" href="pages/enemies/monsters.html?monster=hell-spawn">
-                <span class="stat-label">Hell Spawn</span>
-                <strong>Bloodthirster / Bloodlust</strong>
-                <span>Level 90 source with strong tatter bundle scaling.</span>
-              </a>
-              <a class="imbuement-example-card" href="pages/enemies/monsters.html?monster=werewolf">
-                <span class="stat-label">Werewolf</span>
-                <strong>Juggernaut / Parry</strong>
-                <span>Defensive perk source for mitigation-focused builds.</span>
-              </a>
-              <a class="imbuement-example-card" href="pages/systems/perks.html?perk=Bloodthirster">
-                <span class="stat-label">Perk Detail</span>
-                <strong>Bloodthirster</strong>
-                <span>Review stack behavior and item sources before farming.</span>
-              </a>
-            </div>
-          </section>
-
-          <section class="imbuement-related">
-            <h2>Related Pages</h2>
-            <div class="imbuement-link-grid">
-              <a href="pages/systems/perks.html">Perks</a>
-              <a href="pages/enemies/monsters.html">Monsters</a>
-              <a href="pages/systems/craft.html">Craft</a>
-              <a href="pages/systems/purge.html">Purge</a>
-              <a href="pages/items/weapons.html">Weapons</a>
-              <a href="pages/items/armors.html">Armors</a>
+            <h2>Example Sources</h2>
+            <div class="imbuement-example-grid"><a class="imbuement-example-card" href="pages/enemies/monsters.html?monster=hell-spawn"><strong>Hell Spawn</strong><span>Bloodthirster / Bloodlust</span></a><a class="imbuement-example-card" href="pages/enemies/monsters.html?monster=werewolf"><strong>Werewolf</strong><span>Juggernaut / Parry</span></a><a class="imbuement-example-card" href="pages/systems/perks.html?perk=Bloodthirster"><strong>Bloodthirster</strong><span>Perk details &amp; sources</span></a>
             </div>
           </section>
         </article>

@@ -13,34 +13,33 @@
     <link rel="icon" type="image/png" sizes="64x64" href="images/project-rogue-favicon-64.png" />
     <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
-    <link rel="stylesheet" href="css/styles.css?v=codex-2026-09-06-nav-tints" />
-    <link rel="stylesheet" href="css/resistances.css?v=codex-2026-09-06-nav-tints" />
-    <script src="js/utils.js?v=codex-2026-09-06-nav-tints"></script>
-    <script src="js/site-search.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/weapon-specialty.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/keyword-links.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/cursor-toggle.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/perks.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/rarity-roller.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/nav-core.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/resistances.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <link rel="stylesheet" href="css/refresh.css?v=codex-2026-09-06-nav-tints" />
-    <script src="js/refresh.js?v=codex-2026-09-06-nav-tints" defer></script>
+    <link rel="stylesheet" href="css/styles.css?v=codex-2026-09-08-lean-ui" />
+    <link rel="stylesheet" href="css/resistances.css?v=codex-2026-09-08-lean-ui" />
+    <script src="js/utils.js?v=codex-2026-09-08-lean-ui"></script>
+    <script src="js/site-search.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/weapon-specialty.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/keyword-links.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/cursor-toggle.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/perks.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/rarity-roller.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/nav-core.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/resistances.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <link rel="stylesheet" href="css/refresh.css?v=codex-2026-09-08-lean-ui" />
+    <link rel="stylesheet" href="css/character.css?v=codex-2026-09-08-lean-ui" />
+    <script src="js/character.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/refresh.js?v=codex-2026-09-08-lean-ui" defer></script>
   </head>
-  <body>
+  <body class="character-page">
     <div class="layout">
       <div id="sidebar-root"></div>
       <main class="main-content">
         <header class="content-header">
           <h1 class="content-title">Resistances</h1>
-          <p class="content-tagline">
-            Player elemental mitigation, armor resistance caps, and monster type damage multipliers.
-          </p>
         </header>
 
         <article class="content-section" id="resistance-basics">
-          <h2>Resistance at a Glance</h2>
-          <div class="resistance-summary-grid" role="list">
+          <h2>Overview</h2>
+          <div class="resistance-summary-grid" data-character-summary role="list">
             <section class="stat-card" role="listitem">
               <p class="stat-label">Player Cap</p>
               <h3>60%</h3>
@@ -69,11 +68,11 @@
 
         <article class="content-section" id="player-resistance-preview">
           <h2>Player Damage Preview</h2>
-          <p>Set an incoming elemental hit and a player resistance value to see the capped damage result.</p>
 
           <div class="resistance-calculator-widget">
             <div class="resistance-control-grid">
-              <label for="resistance-value-slider">Resistance: <span data-resistance-value>35</span>%</label>
+              <div class="character-control">
+<label for="resistance-value-slider">Resistance: <span data-resistance-value>35</span>%</label>
               <input
                 type="range"
                 id="resistance-value-slider"
@@ -83,8 +82,10 @@
                 step="1"
                 data-resistance-value-slider
               />
+              </div>
 
-              <label for="resistance-incoming-slider">
+              <div class="character-control">
+<label for="resistance-incoming-slider">
                 Incoming Damage: <span data-resistance-incoming>1,000</span>
               </label>
               <input
@@ -96,18 +97,19 @@
                 step="50"
                 data-resistance-incoming-slider
               />
+              </div>
             </div>
 
             <div class="resistance-output-grid" aria-live="polite">
-              <div class="stat-output">
+              <div class="stat-output" data-character-help="Player elemental resistance caps at 60% for each element. Armor and perk sources add together before the cap.">
                 <span class="stat-output-label">Effective Resistance</span>
                 <span class="stat-output-value" data-resistance-effective>35.0%</span>
               </div>
-              <div class="stat-output">
+              <div class="stat-output" data-character-help="Incoming elemental damage * (1 - effective resistance / 100). Enter damage remaining after armor.">
                 <span class="stat-output-label">Final Damage</span>
                 <span class="stat-output-value" data-resistance-final-damage>650 / 1,000</span>
               </div>
-              <div class="stat-output">
+              <div class="stat-output" data-character-help="Incoming elemental damage minus final damage.">
                 <span class="stat-output-label">Damage Reduced</span>
                 <span class="stat-output-value" data-resistance-reduced-damage>350</span>
               </div>
@@ -123,7 +125,6 @@
           <div class="resistance-section-heading">
             <div>
               <h2>Monster Type Matchups</h2>
-              <p>Monster type multipliers are loaded from the shared resistance data used by Weapons and Monsters.</p>
             </div>
             <button
               type="button"
@@ -136,59 +137,18 @@
             </button>
           </div>
 
-          <div class="resistance-legend" aria-label="Monster resistance legend">
-            <span><strong>Weak To</strong> &gt; 1x</span>
-            <span><strong>Neutral</strong> = 1x</span>
-            <span><strong>Resistant To</strong> &lt; 1x</span>
-          </div>
-
           <div class="resistance-type-grid" data-resistance-type-grid>
             <p class="resistance-loading">Loading monster type matchups...</p>
           </div>
         </article>
 
-        <article class="content-section" id="resistance-build-context">
-          <h2>Build Context</h2>
-          <div class="resistance-context-grid">
-            <section class="resistance-context-card">
-              <p class="stat-label">Player Sources</p>
-              <h3>Armor First</h3>
-              <p>Most player resistance comes from armor rolls, with resistance perks adding focused boosts.</p>
-            </section>
-
-            <section class="resistance-context-card">
-              <p class="stat-label">Weapon Targeting</p>
-              <h3>Exploit Weaknesses</h3>
-              <p>Elemental weapon value depends heavily on the monster type you are farming.</p>
-            </section>
-
-            <section class="resistance-context-card">
-              <p class="stat-label">Planner</p>
-              <h3>Compare Whole Builds</h3>
-              <p>Use the Build Planner when resistance changes are tied to rarity, armor slots, and perks.</p>
-            </section>
-          </div>
-        </article>
-
+        <span id="resistance-build-context" class="character-anchor" aria-hidden="true"></span>
         <article class="content-section" id="resistance-perks">
-          <h2>Perks</h2>
-          <p class="content-tagline">
-            Resistance perks can be broad, such as all resistances, or targeted to a single element.
-          </p>
+          <h2 data-character-help="[ ] = Tier 1 / 2 / 3. ( ) = weapon attack speeds 750 / 1000 / 1250 / 1500 ms. { } = formulas.">Perks</h2>
           <div class="stat-grid perk-grid" data-perk-stats="resistances"></div>
         </article>
 
-        <article class="content-section">
-          <h2>Related Pages</h2>
-          <div class="resistance-link-grid">
-            <a href="pages/items/armors.html">Armors</a>
-            <a href="pages/General/build-planner.html">Build Planner</a>
-            <a href="pages/enemies/monsters.html">Monsters</a>
-            <a href="pages/items/weapons.html">Weapons</a>
-            <a href="pages/systems/perks.html">Perks</a>
-            <a href="pages/systems/pvp-system.html">PVP System</a>
-          </div>
-        </article>
+
       </main>
     </div>
   </body>

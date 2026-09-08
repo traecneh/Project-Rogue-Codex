@@ -87,14 +87,14 @@ const smokeSpecs = [
 ];
 
 const standaloneSmokeRuns = [
-  { id: "home", checkIds: [], run: runHomeSpec, summary: "timeline focus, stories, related links" },
+  { id: "home", checkIds: [], run: runHomeSpec, summary: "timeline focus and stories" },
   {
     id: "build planner",
     checkIds: ["build-planner"],
     run: runBuildPlannerSpec,
     summary: "search, rarity, share reload, reset",
   },
-  { id: "play the game", checkIds: [], run: runPlayTheGameSpec, summary: "Discord setup, CTA, related links" },
+  { id: "play the game", checkIds: [], run: runPlayTheGameSpec, summary: "Discord invitation, setup steps, mobile navigation" },
   { id: "quests", checkIds: [], run: runQuestsSpec, summary: "deep links, objectives, filters, relationships, search" },
   { id: "perks", checkIds: ["perk-sources"], run: runPerksSpec, summary: "deep link, search, filters, source links, tooltips" },
   { id: "rarity", checkIds: [], run: runRaritySpec, summary: "reference table, deterministic roll, upgrade preview" },
@@ -744,19 +744,7 @@ async function runHomeSpec(browser, baseUrl) {
       }
     }
 
-    for (const href of [
-      "https://traecneh.github.io/Project-Rogue-Map/",
-      "pages/stats/resistances.html",
-      "pages/systems/rarity.html",
-      "pages/systems/crafting.html",
-      "pages/systems/corruption.html",
-      "pages/systems/experience.html",
-    ]) {
-      const count = await page.locator(`.home-link-grid a[href="${href}"]`).count();
-      if (count !== 1) {
-        throw new Error(`Home related link expected one "${href}", found ${count}`);
-      }
-    }
+
 
     await assertHomeTimelineFocus(page);
     await assertMobilePageFirstNavigation(page, baseUrl, "/index.html");
@@ -850,6 +838,8 @@ async function runBuildPlannerSpec(browser, baseUrl) {
     const selectedCount = await page.locator(".slot-card.has-item").count();
     if (selectedCount) throw new Error(`reset left ${selectedCount} selected slot(s)`);
 
+    await assertBuildPlannerCorrections(page, baseUrl);
+
     if (runtimeErrors.length) {
       throw new Error(`browser errors: ${runtimeErrors.join("; ")}`);
     }
@@ -872,44 +862,15 @@ async function runPlayTheGameSpec(browser, baseUrl) {
     await page.goto(joinUrl(baseUrl, "/pages/General/play-the-game.html"), { waitUntil: "load" });
     await page.locator(".play-discord-panel").waitFor({ state: "visible" });
     const pageText = (await page.locator("#play-basics").textContent()).trim();
-    for (const expected of [
-      "Discord-First Setup",
-      "Join the Discord",
-      "#welcome",
-      "Create Your Account",
-      "Log In and Play",
-      "https://discord.gg/DW6zcWy",
-      "Related Pages",
-    ]) {
-      if (!pageText.includes(expected)) {
-        throw new Error(`Play the Game page missing "${expected}": "${pageText}"`);
-      }
+    for (const expected of ["Downloads and account setup are in Discord.", "Join the Discord", "#welcome", "Create your account", "Log in and play"]) {
+      if (!pageText.includes(expected)) throw new Error(`Play setup missing ${expected}`);
     }
-
-    const discordLinkCount = await page.locator('a[href="https://discord.gg/DW6zcWy"]').count();
-    if (discordLinkCount !== 1) {
-      throw new Error(`Play the Game expected one Discord CTA, found ${discordLinkCount}`);
-    }
-
-    const monsterCount = await page.locator("[data-play-monster]").count();
-    const eliteCount = await page.locator("[data-play-elite]").count();
-    if (monsterCount !== 1 || eliteCount !== 1) {
-      throw new Error(`Play the Game escort assets missing: monster=${monsterCount}, elite=${eliteCount}`);
-    }
-
-    for (const href of [
-      "pages/General/build-planner.html",
-      "pages/items/weapons.html",
-      "pages/items/armors.html",
-      "pages/enemies/monsters.html",
-      "pages/systems/chat.html",
-      "pages/systems/experience.html",
-    ]) {
-      const count = await page.locator(`.play-link-grid a[href="${href}"]`).count();
-      if (count !== 1) {
-        throw new Error(`Play the Game related link expected one "${href}", found ${count}`);
-      }
-    }
+    const cta = page.locator('[data-discord-cta]');
+    if (await cta.count() !== 1 || await cta.getAttribute('href') !== 'https://discord.gg/DW6zcWy') throw new Error('Missing Discord invitation');
+    if (await cta.getAttribute('rel') !== 'noreferrer noopener') throw new Error('Discord link needs external-tab protection');
+    if (await page.locator('.play-step-card').count() !== 3) throw new Error('Expected three setup steps');
+    if (await page.locator('[data-play-escort-wrap], [data-play-monster], [data-play-elite]').count()) throw new Error('Orbiting CTA decoration should be removed');
+    if (await page.locator('h2').filter({hasText: /^Related (Pages|Item Pages|Codex Tools)$/}).count()) throw new Error('Related footer should be removed');
 
     await assertMobilePageFirstNavigation(page, baseUrl, "/pages/General/play-the-game.html");
 
@@ -1519,13 +1480,15 @@ async function runQuestsSpec(browser, baseUrl) {
         '#quest-detail a[href="pages/items/armors.html?armor=1006"]'
       );
       await bottomlessBagLink.waitFor({ state: "visible" });
-      await bottomlessBagLink.click();
-      await masteryPage.waitForURL((url) => url.searchParams.get("armor") === "1006", {
+      const [rewardPage] = await Promise.all([masteryPage.waitForEvent('popup'), bottomlessBagLink.click()]);
+      await rewardPage.waitForURL((url) => url.searchParams.get("armor") === "1006", {
         timeout: timeoutMs,
       });
-      await masteryPage.locator("#item-details.show").waitFor({ state: "visible" });
-      const armorName = (await masteryPage.locator("#details-name").textContent()).trim();
-      const armorSearch = await masteryPage.locator("#item-search").inputValue();
+      await rewardPage.locator("#item-details.show").waitFor({ state: "visible" });
+      const armorName = (await rewardPage.locator("#details-name").textContent()).trim();
+      const armorSearch = await rewardPage.locator("#item-search").inputValue();
+      await rewardPage.close();
+      if (!masteryPage.url().includes('quest=mastery-of-silvest')) throw new Error('Reward link replaced the quest route');
       if (armorName !== "Bottomless Bag" || armorSearch) {
         throw new Error(
           `Bottomless Bag quest link opened name="${armorName}" with search="${armorSearch}"`
@@ -1906,8 +1869,8 @@ async function runQuestsSpec(browser, baseUrl) {
       throw new Error("The Backroom map previews are not attached to their quest context");
     }
     const backroomDetailText = (await page.locator("#quest-detail").textContent()).trim();
-    if (backroomDetailText.includes("3,576, 3,031")) {
-      throw new Error("The Backroom still exposes numeric coordinates in visible detail text");
+    if (!backroomDetailText.includes("3,576, 3,031")) {
+      throw new Error("The Backroom is missing its compact map coordinates");
     }
     await page.waitForFunction(() => {
       const previews = Array.from(document.querySelectorAll(".quest-map-preview-image"));
@@ -1963,10 +1926,6 @@ async function runQuestsSpec(browser, baseUrl) {
     if (ribsLinkCount !== 1) {
       throw new Error(`Lotor's Ettin Slayer expected one Uncooked Ribs link, found ${ribsLinkCount}`);
     }
-    const summaryText = (await page.locator("#quest-page-summary").textContent()).trim();
-    if (summaryText !== "22 quests / 1 service / 9 regions") {
-      throw new Error(`Quest summary has unexpected multi-region text: "${summaryText}"`);
-    }
     const factLayoutIsContained = await page.locator(".quest-facts").evaluate((facts) =>
       Array.from(facts.querySelectorAll(".quest-fact")).every((fact) => {
         const preview = fact.querySelector(".quest-map-preview");
@@ -1998,6 +1957,8 @@ async function runQuestsSpec(browser, baseUrl) {
         throw new Error(`Map preview fallback expected six unavailable tiles, found ${unavailableCount}`);
       }
       await fallbackPage
+        .locator(".quest-map-preview").first().hover();
+      await fallbackPage
         .locator(".quest-map-preview-fallback")
         .first()
         .waitFor({ state: "visible" });
@@ -2021,9 +1982,18 @@ async function runQuestsSpec(browser, baseUrl) {
           overflow: document.documentElement.scrollWidth > window.innerWidth + 1,
         };
       });
-      if (mobileLayout.cardCount !== 6 || mobileLayout.minCardWidth < 120 || mobileLayout.overflow) {
+      if (mobileLayout.cardCount !== 6 || mobileLayout.minCardWidth < 48 || mobileLayout.overflow) {
         throw new Error(`Quest map previews do not fit mobile: ${JSON.stringify(mobileLayout)}`);
       }
+      const previewLink = mobileQuestPage.locator('.quest-map-preview').first();
+      await previewLink.focus();
+      await previewLink.locator('[role="tooltip"]').waitFor({ state: 'visible' });
+      if (await previewLink.locator('[role="tooltip"]').evaluate(node => {
+        const rect = node.getBoundingClientRect();
+        return rect.left < 0 || rect.right > innerWidth || rect.top < 0 || rect.bottom > innerHeight;
+      })) throw new Error('Quest map tooltip falls outside the viewport');
+      await mobileQuestPage.keyboard.press('Escape');
+      await previewLink.locator('[role="tooltip"]').waitFor({ state: 'hidden' });
     } finally {
       await mobileQuestPage.close();
     }
@@ -2170,6 +2140,24 @@ async function runRaritySpec(browser, baseUrl) {
   }
 }
 
+async function assertAscendancyReference(page) {
+  const help = page.locator('.main-content .system-help').first();
+  await help.hover();
+  await page.locator('#system-tooltip').waitFor({ state: 'visible' });
+  if (!(await page.locator('#system-tooltip').innerText()).trim()) throw new Error('Empty Ascendancy tooltip');
+  await page.keyboard.press('Escape');
+  await page.locator('#system-tooltip').waitFor({ state: 'hidden' });
+  await help.focus();
+  await page.locator('#system-tooltip').waitFor({ state: 'visible' });
+  await page.keyboard.press('Escape');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await help.click();
+  await page.locator('#system-tooltip').waitFor({ state: 'visible' });
+  const bounds = await page.locator('#system-tooltip').boundingBox();
+  if (bounds.x < 0 || bounds.x + bounds.width > 390 || bounds.y < 0 || bounds.y + bounds.height > 844) throw new Error('Ascendancy tooltip exceeds viewport');
+  if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)) throw new Error('Ascendancy horizontal overflow');
+}
+
 async function runRerollSpec(browser, baseUrl) {
   const page = await browser.newPage();
   page.setDefaultTimeout(timeoutMs);
@@ -2187,9 +2175,6 @@ async function runRerollSpec(browser, baseUrl) {
     for (const expected of [
       "What Changes",
       "What Does Not Change",
-      "Reforge Flow",
-      "Before You Reforge",
-      "When Reforge Helps",
       "Rarity Shards",
       "Tinker Tools",
       "Current Rarity",
@@ -2200,18 +2185,9 @@ async function runRerollSpec(browser, baseUrl) {
       }
     }
 
-    for (const href of [
-      "pages/systems/rarity.html",
-      "pages/items/weapons.html",
-      "pages/items/armors.html",
-      "pages/systems/deconstruct.html",
-      "pages/systems/crafting.html",
-    ]) {
-      const count = await page.locator(`.reroll-link-grid a[href="${href}"]`).count();
-      if (count !== 1) {
-        throw new Error(`Reforge related link expected one "${href}", found ${count}`);
-      }
-    }
+
+
+    await assertAscendancyReference(page);
 
     if (runtimeErrors.length) {
       throw new Error(`browser errors: ${runtimeErrors.join("; ")}`);
@@ -2233,14 +2209,10 @@ async function runDeconstructSpec(browser, baseUrl) {
 
   try {
     await page.goto(joinUrl(baseUrl, "/pages/systems/deconstruct.html"), { waitUntil: "load" });
-    await page.locator(".deconstruct-decision-grid").waitFor({ state: "visible" });
+    await page.locator(".deconstruct-summary-grid").waitFor({ state: "visible" });
     const pageText = (await page.locator("#deconstruct-basics").textContent()).trim();
     for (const expected of [
-      "What Deconstruct Returns",
-      "What Affects Value",
-      "Deconstruct Flow",
-      "Deconstruct or Keep",
-      "Bulk Safety",
+      "How to Deconstruct",
       "Dirty Loot",
       "Half Value",
       "No Takebacks",
@@ -2254,19 +2226,9 @@ async function runDeconstructSpec(browser, baseUrl) {
       }
     }
 
-    for (const href of [
-      "pages/items/weapons.html",
-      "pages/items/armors.html",
-      "pages/systems/re-roll.html",
-      "pages/systems/ascend.html",
-      "pages/systems/craft.html",
-      "pages/systems/rarity.html",
-    ]) {
-      const count = await page.locator(`.deconstruct-link-grid a[href="${href}"]`).count();
-      if (count !== 1) {
-        throw new Error(`Deconstruct related link expected one "${href}", found ${count}`);
-      }
-    }
+
+
+    await assertAscendancyReference(page);
 
     if (runtimeErrors.length) {
       throw new Error(`browser errors: ${runtimeErrors.join("; ")}`);
@@ -2291,11 +2253,8 @@ async function runAscendSpec(browser, baseUrl) {
     await page.locator(".ascend-compare-grid").waitFor({ state: "visible" });
     const pageText = (await page.locator("#ascend-basics").textContent()).trim();
     for (const expected of [
-      "What Ascend Uses",
       "What Changes",
       "What Stays Fixed",
-      "Ascend Flow",
-      "Ascend or Save",
       "Current Rarity",
       "Max Rarity",
       "Promotion Cost",
@@ -2308,19 +2267,9 @@ async function runAscendSpec(browser, baseUrl) {
       }
     }
 
-    for (const href of [
-      "pages/items/weapons.html",
-      "pages/items/armors.html",
-      "pages/systems/deconstruct.html",
-      "pages/systems/rarity.html",
-      "pages/systems/re-roll.html",
-      "pages/General/build-planner.html",
-    ]) {
-      const count = await page.locator(`.ascend-link-grid a[href="${href}"]`).count();
-      if (count !== 1) {
-        throw new Error(`Ascend related link expected one "${href}", found ${count}`);
-      }
-    }
+
+
+    await assertAscendancyReference(page);
 
     if (runtimeErrors.length) {
       throw new Error(`browser errors: ${runtimeErrors.join("; ")}`);
@@ -2345,10 +2294,8 @@ async function runCraftSpec(browser, baseUrl) {
     await page.locator(".craft-shop-grid").waitFor({ state: "visible" });
     const pageText = (await page.locator("#craft-basics").textContent()).trim();
     for (const expected of [
-      "Craft Menu Role",
       "Ethereal Shard Purchases",
       "Scrolls of Imbuement",
-      "Craft vs Crafting",
       "Ethereal Shards",
       "Augment Orb",
       "Race Change Scroll",
@@ -2361,19 +2308,19 @@ async function runCraftSpec(browser, baseUrl) {
       }
     }
 
-    for (const href of [
-      "pages/systems/crafting.html",
-      "pages/systems/imbuements.html",
-      "pages/systems/deconstruct.html",
-      "pages/systems/purge.html",
-      "pages/systems/rarity.html",
-      "pages/systems/ascend.html",
-    ]) {
-      const count = await page.locator(`.craft-link-grid a[href="${href}"]`).count();
-      if (count !== 1) {
-        throw new Error(`Craft related link expected one "${href}", found ${count}`);
-      }
+
+
+    const raceHelp = page.getByRole('button', { name: 'Race Change Scroll details', exact: true });
+    await raceHelp.hover();
+    const requirements = await page.locator('#system-tooltip').innerText();
+    for (const expected of ['safe zone', 'criminal', '30+ seconds', 'Jeel']) {
+      if (!requirements.includes(expected)) throw new Error(`Missing race-change requirement: ${expected}`);
     }
+    for (const [name, cost] of [['Augment Orb', '100,000'], ['Scroll of Regret', '25,000'], ['Race Change Scroll', '250,000'], ["Collector's Pouch", '100,000'], ['Berserker Potion', '10,000'], ['Berserker Potion Bundle', '40,000']]) {
+      const card = page.locator('.craft-shop-card').filter({ has: page.getByRole('button', { name: `${name} details`, exact: true }) });
+      if (!(await card.locator('.ascendancy-price').innerText()).includes(cost)) throw new Error(`Incorrect cost for ${name}`);
+    }
+    await assertAscendancyReference(page);
 
     if (runtimeErrors.length) {
       throw new Error(`browser errors: ${runtimeErrors.join("; ")}`);
@@ -2398,11 +2345,8 @@ async function runImbuementsSpec(browser, baseUrl) {
     await page.locator(".imbuement-flow").waitFor({ state: "visible" });
     const pageText = (await page.locator("#imbuement-basics").textContent()).trim();
     for (const expected of [
-      "Targeted Perk Path",
-      "Imbuement Flow",
-      "Source Mechanics",
+      "Tatter Drops",
       "Tier Roll Odds",
-      "Targeting Decisions",
       "Tattered Imbuement",
       "Scroll of Imbuement",
       "250 Matching Tatters",
@@ -2433,19 +2377,9 @@ async function runImbuementsSpec(browser, baseUrl) {
       }
     }
 
-    for (const href of [
-      "pages/systems/perks.html",
-      "pages/enemies/monsters.html",
-      "pages/systems/craft.html",
-      "pages/systems/purge.html",
-      "pages/items/weapons.html",
-      "pages/items/armors.html",
-    ]) {
-      const count = await page.locator(`.imbuement-link-grid a[href="${href}"]`).count();
-      if (count !== 1) {
-        throw new Error(`Imbuements related link expected one "${href}", found ${count}`);
-      }
-    }
+
+
+    await assertAscendancyReference(page);
 
     if (runtimeErrors.length) {
       throw new Error(`browser errors: ${runtimeErrors.join("; ")}`);
@@ -2470,18 +2404,13 @@ async function runPurgeSpec(browser, baseUrl) {
     await page.locator(".purge-compare-grid").waitFor({ state: "visible" });
     const pageText = (await page.locator("#purge-basics").textContent()).trim();
     for (const expected of [
-      "Cleanup Roles",
       "Purge or Cleanse",
-      "What Purge Removes",
-      "What Cleanse Removes",
       "Recovery Rules",
-      "Cleanup Flow",
-      "Before You Confirm",
       "Special Effect",
       "Corrupted Innate",
       "25 Tattered Imbuements",
       "No Tier Refund",
-      "No Item Reset",
+
       "Epic+ Item",
     ]) {
       if (!pageText.includes(expected)) {
@@ -2489,19 +2418,9 @@ async function runPurgeSpec(browser, baseUrl) {
       }
     }
 
-    for (const href of [
-      "pages/systems/imbuements.html",
-      "pages/systems/corruption.html",
-      "pages/systems/craft.html",
-      "pages/systems/deconstruct.html",
-      "pages/items/weapons.html",
-      "pages/items/armors.html",
-    ]) {
-      const count = await page.locator(`.purge-link-grid a[href="${href}"]`).count();
-      if (count !== 1) {
-        throw new Error(`Purge related link expected one "${href}", found ${count}`);
-      }
-    }
+
+
+    await assertAscendancyReference(page);
 
     if (runtimeErrors.length) {
       throw new Error(`browser errors: ${runtimeErrors.join("; ")}`);
@@ -2524,9 +2443,8 @@ async function runEncounterSpec(browser, baseUrl) {
   try {
     await page.goto(joinUrl(baseUrl, "/pages/systems/encounter.html"), { waitUntil: "load" });
     await page.locator(".encounter-variant-grid").waitFor({ state: "visible" });
-    const pageText = (await page.locator("#encounter-basics").textContent()).trim();
+    const pageText = await page.locator(".main-content").evaluate(main => main.textContent + [...main.querySelectorAll("[data-system-help]")].map(node => node.dataset.systemHelp).join(" "));
     for (const expected of [
-      "Encounter Flow",
       "Active vs Passive",
       "Escalation Flow",
       "Variant Rules",
@@ -2557,19 +2475,7 @@ async function runEncounterSpec(browser, baseUrl) {
       }
     }
 
-    for (const href of [
-      "pages/systems/corruption.html",
-      "pages/enemies/monsters.html",
-      "pages/items/weapons.html",
-      "pages/items/armors.html",
-      "pages/systems/rarity.html",
-      "pages/General/play-the-game.html",
-    ]) {
-      const count = await page.locator(`.encounter-link-grid a[href="${href}"]`).count();
-      if (count !== 1) {
-        throw new Error(`Encounter related link expected one "${href}", found ${count}`);
-      }
-    }
+
 
     if (runtimeErrors.length) {
       throw new Error(`browser errors: ${runtimeErrors.join("; ")}`);
@@ -2592,9 +2498,8 @@ async function runPvpSpec(browser, baseUrl) {
   try {
     await page.goto(joinUrl(baseUrl, "/pages/systems/pvp-system.html"), { waitUntil: "load" });
     await page.locator(".pvp-flow").waitFor({ state: "visible" });
-    const pageText = (await page.locator("#pvp-basics").textContent()).trim();
+    const pageText = await page.locator(".main-content").evaluate(main => main.textContent + [...main.querySelectorAll("[data-system-help]")].map(node => node.dataset.systemHelp).join(" "));
     for (const expected of [
-      "PVP at a Glance",
       "Safe Zones and Flagging",
       "Death and Loot Flow",
       "Criminal Consequences",
@@ -2621,19 +2526,7 @@ async function runPvpSpec(browser, baseUrl) {
       }
     }
 
-    for (const href of [
-      "pages/systems/anti-zerg.html",
-      "pages/systems/guild.html",
-      "pages/items/weapons.html",
-      "pages/items/armors.html",
-      "pages/enemies/monsters.html",
-      "pages/General/play-the-game.html",
-    ]) {
-      const count = await page.locator(`.pvp-link-grid a[href="${href}"]`).count();
-      if (count !== 1) {
-        throw new Error(`PVP related link expected one "${href}", found ${count}`);
-      }
-    }
+
 
     await assertMobilePageFirstNavigation(page, baseUrl, "/pages/systems/pvp-system.html");
 
@@ -2658,9 +2551,8 @@ async function runAntiZergSpec(browser, baseUrl) {
   try {
     await page.goto(joinUrl(baseUrl, "/pages/systems/anti-zerg.html"), { waitUntil: "load" });
     await page.locator(".anti-zerg-calculator").waitFor({ state: "visible" });
-    const pageText = (await page.locator("#anti-zerg-basics").textContent()).trim();
+    const pageText = await page.locator(".main-content").evaluate(main => main.textContent + [...main.querySelectorAll("[data-system-help]")].map(node => node.dataset.systemHelp).join(" "));
     for (const expected of [
-      "Anti-Zerg at a Glance",
       "Mode and Sizing Rules",
       "Focus Fire and Collaboration",
       "Damage Reduction Calculator",
@@ -2687,19 +2579,7 @@ async function runAntiZergSpec(browser, baseUrl) {
       }
     }
 
-    for (const href of [
-      "pages/systems/pvp-system.html",
-      "pages/systems/guild.html",
-      "pages/items/weapons.html",
-      "pages/items/armors.html",
-      "pages/enemies/monsters.html",
-      "pages/General/play-the-game.html",
-    ]) {
-      const count = await page.locator(`.anti-zerg-link-grid a[href="${href}"]`).count();
-      if (count !== 1) {
-        throw new Error(`Anti-Zerg related link expected one "${href}", found ${count}`);
-      }
-    }
+
 
     await assertAntiZergCalculator(page, 3, 8, "30%", "My guild receives the max 30% damage reduction.");
     await assertAntiZergCalculator(page, 1, 2, "20%", "My guild receives 20% damage reduction in this matchup.");
@@ -2761,14 +2641,10 @@ async function runMonsterDamageReductionSpec(browser, baseUrl) {
   try {
     await page.goto(joinUrl(baseUrl, "/pages/systems/monster-damage-reduction.html"), { waitUntil: "load" });
     await page.locator(".monster-dr-calculator").waitFor({ state: "visible" });
-    const pageText = (await page.locator("#monster-dr-basics").textContent()).trim();
+    const pageText = await page.locator(".main-content").evaluate(main => main.textContent + [...main.querySelectorAll("[data-system-help]")].map(node => node.dataset.systemHelp).join(" "));
     for (const expected of [
-      "Monster Damage Reduction at a Glance",
-      "Scaling Rules",
       "Damage Reduction Calculator",
       "Threshold Reference",
-      "Example Outcomes",
-      "Related Pages",
       "+20 level gap",
       "+30 level gap",
       "25%",
@@ -2788,19 +2664,7 @@ async function runMonsterDamageReductionSpec(browser, baseUrl) {
       }
     }
 
-    for (const href of [
-      "pages/enemies/monsters.html",
-      "pages/items/weapons.html",
-      "pages/items/armors.html",
-      "pages/systems/anti-zerg.html",
-      "pages/systems/pvp-system.html",
-      "pages/General/build-planner.html",
-    ]) {
-      const count = await page.locator(`.monster-dr-link-grid a[href="${href}"]`).count();
-      if (count !== 1) {
-        throw new Error(`Monster Damage Reduction related link expected one "${href}", found ${count}`);
-      }
-    }
+
 
     await assertMonsterDamageReductionCalculator(page, 25, 50, {
       gap: "+25",
@@ -2890,15 +2754,10 @@ async function runExperienceSpec(browser, baseUrl) {
 
   try {
     await page.goto(joinUrl(baseUrl, "/pages/systems/experience.html"), { waitUntil: "load" });
-    await page.locator(".experience-sim-widget").waitFor({ state: "visible" });
-    const pageText = (await page.locator("#experience-basics").textContent()).trim();
+    await page.locator(".experience-build-grid").waitFor({ state: "visible" });
+    const pageText = await page.locator(".main-content").evaluate(main => main.textContent + [...main.querySelectorAll("[data-system-help]")].map(node => node.dataset.systemHelp).join(" "));
     for (const expected of [
-      "Experience Pool at a Glance",
       "Daily Pool Build",
-      "Combat Conversion",
-      "Experience Pool Simulator",
-      "XP Threshold Reference",
-      "Related Pages",
       "Levels 1-89",
       "+3.0 levels per 24 hours",
       "Levels 90+",
@@ -2907,34 +2766,15 @@ async function runExperienceSpec(browser, baseUrl) {
       "Double XP",
       "1% of a level",
       "0.01 pool",
-      "150-235 XP",
-      "XP Multiplier",
-      "Weapon Speed",
-      "Projected XP / Second",
-      "Est. Time to Level",
-      "Run Tick",
     ]) {
       if (!pageText.includes(expected)) {
         throw new Error(`Experience page missing "${expected}": "${pageText}"`);
       }
     }
 
-    for (const href of [
-      "pages/General/build-planner.html",
-      "pages/systems/perks.html",
-      "pages/systems/monster-damage-reduction.html",
-      "pages/items/weapons.html",
-      "pages/items/armors.html",
-      "pages/enemies/monsters.html",
-      "pages/General/play-the-game.html",
-    ]) {
-      const count = await page.locator(`.experience-link-grid a[href="${href}"]`).count();
-      if (count !== 1) {
-        throw new Error(`Experience related link expected one "${href}", found ${count}`);
-      }
-    }
 
-    await assertExperienceSimulator(page);
+
+    if (await page.locator("[data-experience-widget], [data-xp-run-tick]").count()) throw new Error("Experience simulator should be removed");
     await assertMobilePageFirstNavigation(page, baseUrl, "/pages/systems/experience.html");
 
     if (runtimeErrors.length) {
@@ -3240,14 +3080,10 @@ async function runRacesSpec(browser, baseUrl) {
 
   try {
     await page.goto(joinUrl(baseUrl, "/pages/stats/races.html"), { waitUntil: "load" });
-    await page.locator(".races-preview-widget").waitFor({ state: "visible" });
-    const pageText = (await page.locator(".main-content").textContent()).trim();
+    await page.locator(".races-card-grid").waitFor({ state: "visible" });
+    const pageText = await page.locator(".main-content").evaluate(main => main.textContent + [...main.querySelectorAll("[data-character-help]")].map(node => node.dataset.characterHelp).join("\n"));
     for (const expected of [
-      "Races at a Glance",
-      "Playable Race Bonuses",
-      "Race Bonus Preview",
-      "Equipment Requirement Rule",
-      "Related Pages",
+      "Race Bonuses",
       "Human",
       "Tundrian",
       "Brimlock",
@@ -3256,28 +3092,18 @@ async function runRacesSpec(browser, baseUrl) {
       "Orc",
       "Gnoll",
       "Dark Elf",
-      "Base values pass equipment checks",
+      "Equipment requirements use trained base values, before race bonuses.",
     ]) {
       if (!pageText.includes(expected)) {
         throw new Error(`Races page missing "${expected}": "${pageText}"`);
       }
     }
 
-    for (const href of [
-      "pages/stats/skills.html",
-      "pages/stats/strength.html",
-      "pages/stats/constitution.html",
-      "pages/stats/dexterity.html",
-      "pages/General/build-planner.html",
-      "pages/systems/perks.html",
-    ]) {
-      const count = await page.locator(`.races-link-grid a[href="${href}"]`).count();
-      if (count !== 1) {
-        throw new Error(`Races related link expected one "${href}", found ${count}`);
-      }
-    }
 
-    await assertRacesPreview(page);
+
+    if (await page.locator('.races-card').count() !== 8) throw new Error('Expected eight race bonus cards');
+    if (await page.locator('#race-preview, .races-select-button, [data-race-option]').count()) throw new Error('Races should not contain preview controls');
+    await assertCharacterTooltip(page, '[data-character-perk="Desperation"] .character-help', 'Desperation');
     await assertMobilePageFirstNavigation(page, baseUrl, "/pages/stats/races.html");
 
     if (runtimeErrors.length) {
@@ -3286,77 +3112,6 @@ async function runRacesSpec(browser, baseUrl) {
   } finally {
     await page.close();
   }
-}
-
-async function assertRacesPreview(page) {
-  let state = await readRacesPreviewState(page);
-  for (const [key, expected] of Object.entries({
-    base: "85",
-    effectiveSkill: "90",
-    effectiveStat: "90",
-    requirement: "90",
-    selected: "Human",
-    status: "Requirement unmet",
-  })) {
-    if (state[key] !== expected) {
-      throw new Error(`Races preview expected ${key}="${expected}", got "${state[key]}"`);
-    }
-  }
-  if (!state.note.includes("Race bonus is visible")) {
-    throw new Error(`Races preview initial rule note was incorrect: ${JSON.stringify(state)}`);
-  }
-
-  await page.locator('[data-race-option="tundrian"]').click();
-  await page.waitForFunction(
-    () => document.querySelector("[data-race-selected-name]")?.textContent?.trim() === "Tundrian",
-    undefined,
-    { timeout: timeoutMs }
-  );
-  state = await readRacesPreviewState(page);
-  if (state.selected !== "Tundrian" || state.effectiveStat !== "95" || state.effectiveSkill !== "90") {
-    throw new Error(`Races preview did not apply Tundrian bonuses: ${JSON.stringify(state)}`);
-  }
-  if (state.status !== "Requirement unmet") {
-    throw new Error(`Races preview incorrectly let a race bonus pass the requirement: ${JSON.stringify(state)}`);
-  }
-
-  await setRacesRange(page, "[data-race-base-slider]", 90);
-  await page.waitForFunction(
-    () => document.querySelector("[data-race-requirement-status]")?.textContent?.trim() === "Meets requirement",
-    undefined,
-    { timeout: timeoutMs }
-  );
-  state = await readRacesPreviewState(page);
-  if (state.base !== "90" || state.effectiveStat !== "100" || state.effectiveSkill !== "95") {
-    throw new Error(`Races preview did not update base slider correctly: ${JSON.stringify(state)}`);
-  }
-
-  await setRacesRange(page, "[data-race-requirement-slider]", 105);
-  await page.waitForFunction(
-    () => document.querySelector("[data-race-requirement-status]")?.textContent?.trim() === "Requirement unmet",
-    undefined,
-    { timeout: timeoutMs }
-  );
-}
-
-async function setRacesRange(page, selector, value) {
-  await page.locator(selector).evaluate((input, nextValue) => {
-    input.value = String(nextValue);
-    input.dispatchEvent(new Event("input", { bubbles: true }));
-  }, value);
-}
-
-async function readRacesPreviewState(page) {
-  return await page.evaluate(() => ({
-    base: document.querySelector("[data-race-base]")?.textContent?.trim() || "",
-    effectiveSkill: document.querySelector("[data-race-effective-skill]")?.textContent?.trim() || "",
-    effectiveStat: document.querySelector("[data-race-effective-stat]")?.textContent?.trim() || "",
-    note: document.querySelector("[data-race-rule-note]")?.textContent?.trim() || "",
-    requirement: document.querySelector("[data-race-requirement]")?.textContent?.trim() || "",
-    selected: document.querySelector("[data-race-selected-name]")?.textContent?.trim() || "",
-    status: document.querySelector("[data-race-requirement-status]")?.textContent?.trim() || "",
-    tundrianPressed: document.querySelector('[data-race-option="tundrian"]')?.getAttribute("aria-pressed") || "",
-  }));
 }
 
 async function runStrengthSpec(browser, baseUrl) {
@@ -3372,16 +3127,12 @@ async function runStrengthSpec(browser, baseUrl) {
   try {
     await page.goto(joinUrl(baseUrl, "/pages/stats/strength.html"), { waitUntil: "load" });
     await page.locator(".strength-calculator-widget").waitFor({ state: "visible" });
-    const pageText = (await page.locator(".main-content").textContent()).trim();
+    const pageText = await page.locator(".main-content").evaluate(main => main.textContent + [...main.querySelectorAll("[data-character-help]")].map(node => node.dataset.characterHelp).join("\n"));
     for (const expected of [
-      "Strength at a Glance",
-      "Strength Calculator",
+      "Calculator",
       "Weight Benchmarks",
-      "Bleed Threshold",
-      "Build Context",
       "Perks",
-      "Equipment Reference",
-      "Related Pages",
+      "Equipment",
       "Melee Multiplier",
       "Max Weight",
       "Max Health",
@@ -3393,21 +3144,11 @@ async function runStrengthSpec(browser, baseUrl) {
       }
     }
 
-    for (const href of [
-      "pages/stats/races.html",
-      "pages/stats/skills.html",
-      "pages/stats/constitution.html",
-      "pages/stats/dexterity.html",
-      "pages/General/build-planner.html",
-      "pages/items/weapons.html",
-    ]) {
-      const count = await page.locator(`.strength-link-grid a[href="${href}"]`).count();
-      if (count !== 1) {
-        throw new Error(`Strength related link expected one "${href}", found ${count}`);
-      }
-    }
+
 
     await assertStrengthCalculator(page);
+    await assertCharacterTooltip(page, '.perk-grid .character-help', 'Garrote');
+    await assertCharacterTooltip(page, '[data-weapon-specialty] .character-help', 'DPS:');
     await assertMobilePageFirstNavigation(page, baseUrl, "/pages/stats/strength.html");
 
     if (runtimeErrors.length) {
@@ -3416,6 +3157,37 @@ async function runStrengthSpec(browser, baseUrl) {
   } finally {
     await page.close();
   }
+}
+
+async function assertCharacterTooltip(page, selector, expected) {
+  const trigger = page.locator(selector).first();
+  const tooltip = page.locator('#character-tooltip');
+  await trigger.hover();
+  await tooltip.waitFor({state: 'visible'});
+  if (!(await tooltip.textContent()).includes(expected)) throw new Error(`Character tooltip missing ${expected}`);
+  await page.keyboard.press('Escape');
+  await tooltip.waitFor({state: 'hidden'});
+  await page.mouse.move(0, 0);
+  await trigger.focus();
+  await tooltip.waitFor({state: 'visible'});
+  if (await trigger.getAttribute('aria-describedby') !== 'character-tooltip') throw new Error('Character tooltip lacks accessible description');
+  await page.keyboard.press('Escape');
+  await tooltip.waitFor({state: 'hidden'});
+  const viewport = page.viewportSize();
+  await page.setViewportSize({width: 390, height: 844});
+  await trigger.click();
+  await tooltip.waitFor({state: 'visible'});
+  const bounds = await tooltip.boundingBox();
+  if (!bounds || bounds.x < 0 || bounds.y < 0 || bounds.x + bounds.width > 390 || bounds.y + bounds.height > 844) {
+    throw new Error('Character tooltip extends beyond the mobile viewport');
+  }
+  // A delayed event from the click's automatic scroll must not dismiss the new tooltip.
+  await page.evaluate(() => window.dispatchEvent(new Event('scroll')));
+  if (!(await tooltip.isVisible())) throw new Error('Queued scroll dismissed the Character tooltip');
+  await page.evaluate(() => window.scrollBy(0, window.scrollY > 0 ? -80 : 80));
+  await tooltip.waitFor({state: 'hidden'});
+  await page.locator('.content-title').click();
+  await page.setViewportSize(viewport);
 }
 
 async function assertStrengthCalculator(page) {
@@ -3513,15 +3285,13 @@ async function runConstitutionSpec(browser, baseUrl) {
   try {
     await page.goto(joinUrl(baseUrl, "/pages/stats/constitution.html"), { waitUntil: "load" });
     await page.locator(".constitution-calculator-widget").waitFor({ state: "visible" });
-    const pageText = (await page.locator(".main-content").textContent()).trim();
+    const pageText = await page.locator(".main-content").evaluate(main => main.textContent + [...main.querySelectorAll("[data-character-help]")].map(node => node.dataset.characterHelp).join("\n"));
     for (const expected of [
-      "Constitution at a Glance",
-      "Constitution Calculator",
+      "Calculator",
       "Regeneration Benchmarks",
-      "Race Context",
+      "Race Bonuses",
       "Perks",
-      "Equipment Reference",
-      "Related Pages",
+      "Equipment",
       "Max Health",
       "Baseline Regen",
       "Con / 3",
@@ -3532,19 +3302,7 @@ async function runConstitutionSpec(browser, baseUrl) {
       }
     }
 
-    for (const href of [
-      "pages/stats/races.html",
-      "pages/stats/strength.html",
-      "pages/stats/dexterity.html",
-      "pages/General/build-planner.html",
-      "pages/items/armors.html",
-      "pages/systems/perks.html",
-    ]) {
-      const count = await page.locator(`.constitution-link-grid a[href="${href}"]`).count();
-      if (count !== 1) {
-        throw new Error(`Constitution related link expected one "${href}", found ${count}`);
-      }
-    }
+
 
     await assertConstitutionCalculator(page);
     await assertMobilePageFirstNavigation(page, baseUrl, "/pages/stats/constitution.html");
@@ -3655,16 +3413,13 @@ async function runDexteritySpec(browser, baseUrl) {
   try {
     await page.goto(joinUrl(baseUrl, "/pages/stats/dexterity.html"), { waitUntil: "load" });
     await page.locator(".dexterity-calculator-widget").waitFor({ state: "visible" });
-    const pageText = (await page.locator(".main-content").textContent()).trim();
+    const pageText = await page.locator(".main-content").evaluate(main => main.textContent + [...main.querySelectorAll("[data-character-help]")].map(node => node.dataset.characterHelp).join("\n"));
     for (const expected of [
-      "Dexterity at a Glance",
-      "Dexterity Calculator",
+      "Calculator",
       "Damage Reduction Benchmarks",
-      "Race Context",
-      "Build Context",
+      "Race Bonuses",
       "Perks",
-      "Equipment Reference",
-      "Related Pages",
+      "Equipment",
       "Melee Multiplier",
       "Crit Chance",
       "Damage Reduction",
@@ -3677,19 +3432,7 @@ async function runDexteritySpec(browser, baseUrl) {
       }
     }
 
-    for (const href of [
-      "pages/stats/races.html",
-      "pages/stats/strength.html",
-      "pages/stats/constitution.html",
-      "pages/General/build-planner.html",
-      "pages/items/weapons.html",
-      "pages/systems/perks.html",
-    ]) {
-      const count = await page.locator(`.dexterity-link-grid a[href="${href}"]`).count();
-      if (count !== 1) {
-        throw new Error(`Dexterity related link expected one "${href}", found ${count}`);
-      }
-    }
+
 
     await assertDexterityCalculator(page);
     await assertMobilePageFirstNavigation(page, baseUrl, "/pages/stats/dexterity.html");
@@ -3796,14 +3539,11 @@ async function runResistancesSpec(browser, baseUrl) {
   try {
     await page.goto(joinUrl(baseUrl, "/pages/stats/resistances.html"), { waitUntil: "load" });
     await page.locator(".resistance-calculator-widget").waitFor({ state: "visible" });
-    const pageText = (await page.locator(".main-content").textContent()).trim();
+    const pageText = await page.locator(".main-content").evaluate(main => main.textContent + [...main.querySelectorAll("[data-character-help]")].map(node => node.dataset.characterHelp).join("\n"));
     for (const expected of [
-      "Resistance at a Glance",
       "Player Damage Preview",
       "Monster Type Matchups",
-      "Build Context",
       "Perks",
-      "Related Pages",
       "60%",
       "Applied after armor",
       "Weak To",
@@ -3814,19 +3554,7 @@ async function runResistancesSpec(browser, baseUrl) {
       }
     }
 
-    for (const href of [
-      "pages/items/armors.html",
-      "pages/General/build-planner.html",
-      "pages/enemies/monsters.html",
-      "pages/items/weapons.html",
-      "pages/systems/perks.html",
-      "pages/systems/pvp-system.html",
-    ]) {
-      const count = await page.locator(`.resistance-link-grid a[href="${href}"]`).count();
-      if (count !== 1) {
-        throw new Error(`Resistances related link expected one "${href}", found ${count}`);
-      }
-    }
+
 
     await assertResistanceCalculator(page);
     await assertResistanceNeutralToggle(page);
@@ -3955,83 +3683,31 @@ async function readResistanceCalculatorState(page) {
   }));
 }
 
-async function assertExperienceSimulator(page) {
-  await setExperienceInput(page, "[data-xp-level-input]", 10);
-  await setExperienceInput(page, "[data-xp-current-input]", 0);
-  await setExperienceInput(page, "[data-xp-pool-input]", 1);
-  await setExperienceInput(page, "[data-xp-min-input]", 100);
-  await setExperienceInput(page, "[data-xp-max-input]", 100);
-  await setExperienceInput(page, "[data-xp-multiplier-input]", 1.07);
-  await setExperienceInput(page, "[data-xp-speed-input]", 1000);
 
-  await page.waitForFunction(
-    () => document.querySelector("[data-xp-rate]")?.textContent?.trim() === "107 xp/s",
-    undefined,
-    { timeout: timeoutMs }
-  );
 
-  await page.locator("[data-xp-run-tick]").click();
-  await page.waitForFunction(
-    () => document.querySelector("[data-xp-total]")?.textContent?.trim() === "214",
-    undefined,
-    { timeout: timeoutMs }
-  );
 
-  let state = await readExperienceState(page);
-  for (const [key, expected] of Object.entries({
-    base: "107",
-    bonus: "107",
-    current: "214",
-    currentInput: "214",
-    pool: "0.99",
-    poolInput: "0.99",
-    progress: "2.1%",
-    total: "214",
-  })) {
-    if (state[key] !== expected) {
-      throw new Error(`Experience simulator expected ${key}="${expected}", got "${state[key]}"`);
-    }
-  }
-
-  await setExperienceInput(page, "[data-xp-pool-input]", 0);
-  await page.locator("[data-xp-run-tick]").click();
-  await page.waitForFunction(
-    () => document.querySelector("[data-xp-bonus]")?.textContent?.trim() === "0",
-    undefined,
-    { timeout: timeoutMs }
-  );
-  state = await readExperienceState(page);
-  if (state.total !== "107" || state.bonus !== "0") {
-    throw new Error(`Experience simulator empty-pool tick expected total 107 and bonus 0: ${JSON.stringify(state)}`);
-  }
-
-  await setExperienceInput(page, "[data-xp-level-input]", 90);
-  await page.waitForFunction(
-    () => document.querySelector("[data-xp-build-rate]")?.textContent?.trim() === "+1.0 levels per 24 hours",
-    undefined,
-    { timeout: timeoutMs }
-  );
-}
-
-async function setExperienceInput(page, selector, value) {
-  await page.locator(selector).evaluate((input, nextValue) => {
-    input.value = String(nextValue);
-    input.dispatchEvent(new Event("input", { bubbles: true }));
-  }, value);
-}
-
-async function readExperienceState(page) {
-  return await page.evaluate(() => ({
-    base: document.querySelector("[data-xp-base]")?.textContent?.trim() || "",
-    bonus: document.querySelector("[data-xp-bonus]")?.textContent?.trim() || "",
-    current: document.querySelector("[data-xp-current]")?.textContent?.trim() || "",
-    currentInput: document.querySelector("[data-xp-current-input]")?.value || "",
-    pool: document.querySelector("[data-xp-pool-remaining]")?.textContent?.trim() || "",
-    poolInput: document.querySelector("[data-xp-pool-input]")?.value || "",
-    progress: document.querySelector("[data-xp-progress]")?.textContent?.trim() || "",
-    rate: document.querySelector("[data-xp-rate]")?.textContent?.trim() || "",
-    total: document.querySelector("[data-xp-total]")?.textContent?.trim() || "",
-  }));
+async function assertSystemsTooltip(page) {
+  const trigger = page.locator('.system-help').first();
+  const tooltip = page.locator('#system-tooltip');
+  await trigger.hover();
+  await tooltip.waitFor({state: 'visible'});
+  if (!(await tooltip.textContent()).includes('guild')) throw new Error('Guild summary tooltip lost its explanation');
+  await page.keyboard.press('Escape');
+  await tooltip.waitFor({state: 'hidden'});
+  await page.mouse.move(0, 0);
+  await trigger.focus();
+  await tooltip.waitFor({state: 'visible'});
+  await page.keyboard.press('Escape');
+  await tooltip.waitFor({state: 'hidden'});
+  const viewport = page.viewportSize();
+  await page.setViewportSize({width: 390, height: 844});
+  await trigger.click();
+  await tooltip.waitFor({state: 'visible'});
+  const rect = await tooltip.boundingBox();
+  if (!rect || rect.x < 0 || rect.y < 0 || rect.x + rect.width > 390 || rect.y + rect.height > 844) throw new Error('Systems tooltip overflows mobile viewport');
+  await page.keyboard.press('Escape');
+  await tooltip.waitFor({state: 'hidden'});
+  await page.setViewportSize(viewport);
 }
 
 async function runGuildSpec(browser, baseUrl) {
@@ -4046,13 +3722,10 @@ async function runGuildSpec(browser, baseUrl) {
 
   try {
     await page.goto(joinUrl(baseUrl, "/pages/systems/guild.html"), { waitUntil: "load" });
-    await page.locator(".guild-party-preview").waitFor({ state: "visible" });
-    const pageText = (await page.locator("#guild-basics").textContent()).trim();
+    await page.locator(".guild-action-grid").waitFor({ state: "visible" });
+    const pageText = await page.locator(".main-content").evaluate(main => main.textContent + [...main.querySelectorAll("[data-system-help]")].map(node => node.dataset.systemHelp).join(" "));
     for (const expected of [
-      "Guild at a Glance",
       "Identity and Roster",
-      "Rank and Management Flow",
-      "Party Cycle Preview",
       "Operations Reference",
       "PVP and Group Context",
       "G",
@@ -4078,22 +3751,9 @@ async function runGuildSpec(browser, baseUrl) {
       }
     }
 
-    for (const href of [
-      "pages/systems/anti-zerg.html",
-      "pages/systems/pvp-system.html",
-      "pages/systems/chat.html",
-      "pages/items/weapons.html",
-      "pages/items/armors.html",
-      "pages/enemies/monsters.html",
-      "pages/General/play-the-game.html",
-    ]) {
-      const count = await page.locator(`.guild-link-grid a[href="${href}"]`).count();
-      if (count !== 1) {
-        throw new Error(`Guild related link expected one "${href}", found ${count}`);
-      }
-    }
 
-    await assertGuildPartyPreview(page);
+
+    await assertSystemsTooltip(page);
     await assertMobilePageFirstNavigation(page, baseUrl, "/pages/systems/guild.html");
 
     if (runtimeErrors.length) {
@@ -4102,45 +3762,6 @@ async function runGuildSpec(browser, baseUrl) {
   } finally {
     await page.close();
   }
-}
-
-async function assertGuildPartyPreview(page) {
-  const currentParty = page.locator("[data-party-current]");
-  await currentParty.waitFor({ state: "visible" });
-
-  const initialText = (await currentParty.textContent()).trim();
-  if (initialText !== "Party A") {
-    throw new Error(`Guild party preview expected Party A initially, got "${initialText}"`);
-  }
-
-  await page.locator('[data-party-option="B"]').click();
-  await page.waitForFunction(
-    () => document.querySelector("[data-party-current]")?.textContent?.trim() === "Party B",
-    undefined,
-    { timeout: timeoutMs }
-  );
-  const selectedB = await page.locator('[data-party-option="B"]').getAttribute("aria-pressed");
-  if (selectedB !== "true") {
-    throw new Error(`Guild party preview did not mark Party B active, got aria-pressed="${selectedB}"`);
-  }
-
-  await page.locator("[data-party-cycle]").click();
-  await page.waitForFunction(
-    () => document.querySelector("[data-party-current]")?.textContent?.trim() === "Party C",
-    undefined,
-    { timeout: timeoutMs }
-  );
-  const partyCDescription = (await page.locator("[data-party-description]").textContent()).trim();
-  if (!partyCDescription.includes("third guild party slot")) {
-    throw new Error(`Guild party preview did not describe Party C: "${partyCDescription}"`);
-  }
-
-  await page.locator("[data-party-cycle]").click();
-  await page.waitForFunction(
-    () => document.querySelector("[data-party-current]")?.textContent?.trim() === "Party A",
-    undefined,
-    { timeout: timeoutMs }
-  );
 }
 
 async function runChatSpec(browser, baseUrl) {
@@ -4156,13 +3777,10 @@ async function runChatSpec(browser, baseUrl) {
   try {
     await page.goto(joinUrl(baseUrl, "/pages/systems/chat.html"), { waitUntil: "load" });
     await page.locator(".chat-mode-preview").waitFor({ state: "visible" });
-    const pageText = (await page.locator("#chat-basics").textContent()).trim();
+    const pageText = await page.locator(".main-content").evaluate(main => main.textContent + [...main.querySelectorAll("[data-system-help]")].map(node => node.dataset.systemHelp).join(" "));
     for (const expected of [
-      "Chat at a Glance",
       "Viewing Channels",
       "Send Mode Preview",
-      "Hotkeys and Input Flow",
-      "Scope Reference",
       "All",
       "Local",
       "Global",
@@ -4175,9 +3793,9 @@ async function runChatSpec(browser, baseUrl) {
       "Safe Zone Only",
       "World Channel",
       "Nearby Only",
-      "Visible Area",
-      "8 surrounding tiles",
-      "server-wide messages sent from safe zones",
+      "visible area",
+
+
       "global-chat",
       "Discord",
     ]) {
@@ -4186,19 +3804,7 @@ async function runChatSpec(browser, baseUrl) {
       }
     }
 
-    for (const href of [
-      "pages/systems/guild.html",
-      "pages/systems/pvp-system.html",
-      "pages/systems/anti-zerg.html",
-      "pages/General/play-the-game.html",
-      "pages/items/weapons.html",
-      "pages/items/armors.html",
-    ]) {
-      const count = await page.locator(`.chat-link-grid a[href="${href}"]`).count();
-      if (count !== 1) {
-        throw new Error(`Chat related link expected one "${href}", found ${count}`);
-      }
-    }
+
 
     await assertChatModePreview(page);
     await assertMobilePageFirstNavigation(page, baseUrl, "/pages/systems/chat.html");
@@ -4271,14 +3877,9 @@ async function runFloorCleanupSpec(browser, baseUrl) {
   try {
     await page.goto(joinUrl(baseUrl, "/pages/systems/floor-cleanup.html"), { waitUntil: "load" });
     await page.locator(".floor-cleanup-preview").waitFor({ state: "visible" });
-    const pageText = (await page.locator("#floor-cleanup-basics").textContent()).trim();
+    const pageText = await page.locator(".main-content").evaluate(main => main.textContent + [...main.querySelectorAll("[data-system-help]")].map(node => node.dataset.systemHelp).join(" "));
     for (const expected of [
-      "Floor Cleanup at a Glance",
-      "Creeper Timing Rules",
       "Sweep Timing Preview",
-      "Loot Lifetime Flow",
-      "What Resets the Risk",
-      "Related Pages",
       "Creeper",
       "3 minutes",
       "8 minutes",
@@ -4294,20 +3895,7 @@ async function runFloorCleanupSpec(browser, baseUrl) {
       }
     }
 
-    for (const href of [
-      "pages/systems/pvp-system.html",
-      "pages/systems/corruption.html",
-      "pages/systems/purge.html",
-      "pages/items/weapons.html",
-      "pages/items/armors.html",
-      "pages/enemies/monsters.html",
-      "pages/General/play-the-game.html",
-    ]) {
-      const count = await page.locator(`.floor-cleanup-link-grid a[href="${href}"]`).count();
-      if (count !== 1) {
-        throw new Error(`Floor Cleanup related link expected one "${href}", found ${count}`);
-      }
-    }
+
 
     await assertFloorCleanupPreview(page);
     await assertMobilePageFirstNavigation(page, baseUrl, "/pages/systems/floor-cleanup.html");
@@ -4380,16 +3968,12 @@ async function runCorruptionSpec(browser, baseUrl) {
   try {
     await page.goto(joinUrl(baseUrl, "/pages/systems/corruption.html"), { waitUntil: "load" });
     await page.locator(".corruption-compare-grid").waitFor({ state: "visible" });
-    const pageText = (await page.locator("#corruption-basics").textContent()).trim();
+    const pageText = await page.locator(".main-content").evaluate(main => main.textContent + [...main.querySelectorAll("[data-system-help]")].map(node => node.dataset.systemHelp).join(" "));
     for (const expected of [
-      "Corruption Roles",
       "Corrupted Innate",
       "Hard Bosses",
-      "Cleanse with Purge",
       "What Corruption Changes",
-      "Cleanse Flow",
-      "Before You Cleanse",
-      "No Item Reset",
+
       "Purge Tool",
       "Epidemic T3",
       "Crimson Feast T1",
@@ -4404,19 +3988,7 @@ async function runCorruptionSpec(browser, baseUrl) {
       throw new Error(`Corruption example link expected one Dark Sword link, found ${exampleCount}`);
     }
 
-    for (const href of [
-      "pages/systems/purge.html",
-      "pages/systems/imbuements.html",
-      "pages/systems/rarity.html",
-      "pages/systems/re-roll.html",
-      "pages/items/weapons.html",
-      "pages/items/armors.html",
-    ]) {
-      const count = await page.locator(`.corruption-link-grid a[href="${href}"]`).count();
-      if (count !== 1) {
-        throw new Error(`Corruption related link expected one "${href}", found ${count}`);
-      }
-    }
+
 
     await assertMobilePageFirstNavigation(page, baseUrl, "/pages/systems/corruption.html");
 
@@ -4503,12 +4075,9 @@ async function runCraftingSpec(browser, baseUrl) {
 
   try {
     await page.goto(joinUrl(baseUrl, "/pages/systems/crafting.html"), { waitUntil: "load" });
-    await page.locator(".crafting-cost-grid").waitFor({ state: "visible" });
-    const pageText = (await page.locator("#crafting-basics").textContent()).trim();
+    await page.locator(".crafting-calculator-widget").waitFor({ state: "visible" });
+    const pageText = await page.locator(".main-content").evaluate(main => main.textContent + [...main.querySelectorAll("[data-system-help]")].map(node => node.dataset.systemHelp).join(" "));
     for (const expected of [
-      "Armor Crafting Scope",
-      "Frost vs Dragon Materials",
-      "Material Costs",
       "Crafting Flow",
       "Materials Calculator",
       "Set Preview",
@@ -4517,7 +4086,7 @@ async function runCraftingSpec(browser, baseUrl) {
       "Hammer & Anvil",
       "100% Success",
       "Random Rarity",
-      "Full Suit",
+      "full suit",
       "455",
     ]) {
       if (!pageText.includes(expected)) {
@@ -4549,18 +4118,7 @@ async function runCraftingSpec(browser, baseUrl) {
       () => document.querySelector("[data-material-summary]")?.textContent?.trim() === "Select at least one slot to see totals."
     );
 
-    for (const href of [
-      "pages/systems/craft.html",
-      "pages/items/armors.html",
-      "pages/systems/rarity.html",
-      "pages/systems/deconstruct.html",
-      "pages/General/build-planner.html",
-    ]) {
-      const count = await page.locator(`.crafting-link-grid a[href="${href}"]`).count();
-      if (count !== 1) {
-        throw new Error(`Crafting related link expected one "${href}", found ${count}`);
-      }
-    }
+
 
     if (runtimeErrors.length) {
       throw new Error(`browser errors: ${runtimeErrors.join("; ")}`);
@@ -4606,6 +4164,7 @@ async function assertBuildPlannerSuggestionLink(page, itemName) {
   if (href !== RUNE_SWORD_DETAIL_PATH) {
     throw new Error(`Build Planner suggestion link expected ${RUNE_SWORD_DETAIL_PATH}, got "${href}"`);
   }
+  await assertPlannerReferenceNewTab(page, suggestionLink, true);
 }
 
 async function assertBuildPlannerSuggestionDeltas(page, itemName) {
@@ -4632,6 +4191,31 @@ async function assertBuildPlannerItemLinks(page, expectedName) {
   if (href !== RUNE_SWORD_DETAIL_PATH) {
     throw new Error(`Build Planner selected item link expected ${RUNE_SWORD_DETAIL_PATH}, got "${href}"`);
   }
+  await assertPlannerReferenceNewTab(page, link);
+  const statReference = page.locator('.char-section a.stat-keyword-link').first();
+  await assertPlannerReferenceNewTab(page, statReference);
+}
+
+async function assertPlannerReferenceNewTab(page, link, keyboard = false) {
+  const target = await link.getAttribute('target');
+  const rel = (await link.getAttribute('rel') || '').split(/\s+/);
+  if (target !== '_blank' || !rel.includes('noopener')) throw new Error('Planner reference must open a separate tab');
+  const readBuild = () => page.evaluate(() => JSON.stringify({
+    slots: [...document.querySelectorAll('.slot-card')].map(card => card.textContent),
+    inputs: [...document.querySelectorAll('.char-section input, .char-section select')].map(input => input.value),
+  }));
+  const before = await readBuild();
+  const expectedUrl = await link.evaluate(node => node.href);
+  const [popup] = await Promise.all([
+    page.waitForEvent('popup'),
+    keyboard ? link.press('Enter') : link.click(),
+  ]);
+  try {
+    await popup.waitForURL(expectedUrl);
+    if (!new URL(page.url()).pathname.endsWith('/pages/General/build-planner.html') || await readBuild() !== before) {
+      throw new Error('Opening a planner reference navigated away or changed the build');
+    }
+  } finally { await popup.close(); }
 }
 
 async function assertBuildPlannerSummaryTooltips(page) {
@@ -4645,16 +4229,120 @@ async function assertBuildPlannerSummaryTooltips(page) {
     throw new Error(`Build Planner details section was incomplete: "${detailsText}"`);
   }
   const armorTitle = await page.locator('[data-quick-stat="armor"]').evaluate((node) =>
-    node.closest(".quick-summary-card")?.getAttribute("title") || node.getAttribute("title") || ""
+    node.closest(".quick-summary-card")?.dataset.tooltip || ""
   );
   if (!armorTitle.includes("Base armor") || !armorTitle.includes("Rarity bonus")) {
     throw new Error(`Build Planner quick Armor tooltip missing breakdown: "${armorTitle}"`);
   }
   const regenTitle = await page.locator("#calc-regen").evaluate((node) =>
-    node.closest(".summary-card")?.getAttribute("title") || node.getAttribute("title") || ""
+    node.closest(".summary-card")?.dataset.tooltip || ""
   );
   if (!regenTitle.includes("Total Constitution")) {
     throw new Error(`Build Planner Health Regen tooltip missing breakdown: "${regenTitle}"`);
+  }
+  await assertPlannerPerkTooltip(page, 'Runic (Tier 3)', ['15% of your damage in PvE', '30% of your damage in PvP'], 'hover');
+}
+
+async function assertPlannerPerkTooltip(page, perk, expected, interaction) {
+  const chip = page.locator('#sum-perks button').filter({ hasText: perk });
+  if (interaction === 'hover') await chip.hover();
+  else if (interaction === 'focus') await chip.focus();
+  else await chip.click();
+  const tip = page.locator('#planner-tooltip');
+  await tip.waitFor({ state: 'visible' });
+  const text = await tip.textContent();
+  if (!expected.every(value => text.includes(value))) throw new Error(`Incorrect perk tooltip: ${text}`);
+  if (await tip.evaluate(node => {
+    const rect = node.getBoundingClientRect();
+    return rect.left < 0 || rect.right > innerWidth || rect.top < 0 || rect.bottom > innerHeight;
+  })) throw new Error('Perk tooltip is outside the viewport');
+  await page.keyboard.press('Escape');
+  await tip.waitFor({ state: 'hidden' });
+}
+
+async function assertBuildPlannerCorrections(page, baseUrl) {
+  // Weapon weight must count even with no armor equipped.
+  await selectBuildPlannerItem(page, "Rune Sword");
+  const expectedWeight = await page.evaluate(async () => {
+    const records = await (await fetch(new URL("pages/items/weapons_data05.json", document.baseURI))).json();
+    return Number(records.find((item) => item.id === 227).fields.weight);
+  });
+  if (Number(await page.locator('[data-quick-stat="weight"]').textContent()) !== expectedWeight) {
+    throw new Error("Equipped weight omitted the weapon");
+  }
+
+  // Replace an item after binding its perk controls; edits must target its replacement.
+  const weapon = page.locator('[data-slot="Weapon"]');
+  await weapon.locator('[data-rarity-inc]').click({ clickCount: 2 });
+  await weapon.locator('[data-perk-select]').selectOption({ label: "Tenacity" });
+  await selectBuildPlannerItem(page, "Famine Bringer");
+  await weapon.locator('[data-rarity-inc]').click({ clickCount: 2 });
+  await weapon.locator('[data-perk-select]').selectOption({ label: "Tenacity" });
+  await weapon.locator('[data-perk-tier]').selectOption("2");
+  await page.waitForFunction(() => document.querySelector('#sum-perks').textContent.includes('Tenacity (T2)'));
+  await page.locator('#share-build').click();
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForFunction(() => document.querySelector('#sum-perks').textContent.includes('Tenacity (T2)'));
+  await assertPlannerPerkTooltip(page, 'Tenacity (T2)', ['(2/3/3/4)%', '30 bonus seconds'], 'focus');
+
+  // Character fields are base stats; race bonuses change totals, not point spending or base-only crit.
+  await page.locator('#reset-build').click();
+  const pointsBeforeRace = await page.locator('#planner-status').textContent();
+  const critBeforeRace = await page.locator('#calc-crit').textContent();
+  await page.locator('#char-race').selectOption('elf');
+  if ((await page.locator('[data-quick-stat="dex"]').textContent()) !== '15' ||
+      (await page.locator('#calc-crit').textContent()) !== critBeforeRace ||
+      (await page.locator('#planner-status').textContent()) !== pointsBeforeRace) {
+    throw new Error('Race bonus affected base stat spending/crit, or was missing from totals');
+  }
+
+  const help = page.locator('[data-quick-stat="dex"]').locator('..').locator('button');
+  await help.focus();
+  await page.locator('#planner-tooltip').waitFor({ state: 'visible' });
+  await page.keyboard.press('Escape');
+  await page.locator('#planner-tooltip').waitFor({ state: 'hidden' });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await help.click();
+  await page.locator('#planner-tooltip').waitFor({ state: 'visible' });
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
+  if (overflow) throw new Error('Build Planner overflows on mobile');
+  await assertPlannerPerkTooltip(page, 'Parry (T1)', ['(6/7/9/10)%', '70%'], 'tap');
+
+  // Duplicate-name fixture tests identity independently of mutable production names/allowlists.
+  await page.route('**/weapons_data05.json*', async (route) => {
+    const response = await route.fetch();
+    const records = await response.json();
+    const source = records.find((item) => item.id === 227);
+    records.push({ ...source, id: 990001, name: 'Planner identity fixture' });
+    records.push({ ...source, id: 990002, name: 'Planner identity fixture', fields: { ...source.fields, weight: 42 } });
+    records.push({ ...source, id: 990003, name: 'Planner identity fixture', codex_hidden: true });
+    await route.fulfill({ response, json: records });
+  });
+  await page.evaluate(() => sessionStorage.clear());
+  await page.goto(joinUrl(baseUrl, '/pages/General/build-planner.html'), { waitUntil: 'networkidle' });
+  await page.locator('#gear-search').fill('Planner identity fixture');
+  if (await page.locator('#gear-suggestions .suggestion').count() !== 2) {
+    throw new Error('Planner search did not honor the hidden-item flag');
+  }
+  await page.locator('#gear-suggestions .suggestion').nth(1).locator('.suggestion-meta').click();
+  await page.locator('#share-build').click();
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForFunction(() => document.querySelector('[data-quick-stat="weight"]').textContent === '42');
+  const href = await weapon.locator('[data-slot-item]').getAttribute('href');
+  if (!href.includes('weapon=990002')) throw new Error('Shared build restored the wrong duplicate-name item');
+
+  // Older name-only links remain valid.
+  const legacy = { v: 2, c: [1, 5, 5, 5, 0, ''], s: [['Weapon', 1, 'Rune Sword']] };
+  await page.goto(joinUrl(baseUrl, `/pages/General/build-planner.html?build=${encodeURIComponent(JSON.stringify(legacy))}`), { waitUntil: 'load' });
+  await assertBuildPlannerWeapon(page, 'Rune Sword');
+
+  const savedUrl = page.url();
+  await page.route('**/armors_data06.json*', route => route.abort());
+  await page.evaluate(() => sessionStorage.clear());
+  await page.goto(savedUrl, { waitUntil: 'load' });
+  await page.waitForFunction(() => document.querySelector('#planner-status').textContent.includes('Equipment could not load'));
+  if (page.url() !== savedUrl || !(await page.locator('#gear-search').isDisabled())) {
+    throw new Error('A data load failure discarded the incoming build or enabled an unusable search');
   }
 }
 

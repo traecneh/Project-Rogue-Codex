@@ -13,33 +13,31 @@
     <link rel="icon" type="image/png" sizes="64x64" href="images/project-rogue-favicon-64.png" />
     <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
-    <link rel="stylesheet" href="css/styles.css?v=codex-2026-09-06-nav-tints" />
-    <link rel="stylesheet" href="css/crafting.css?v=codex-2026-09-06-nav-tints" />
-    <script src="js/site-search.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/weapon-specialty.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/stat-widgets.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/keyword-links.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/cursor-toggle.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/perks.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/rarity-roller.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/crafting-page.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/nav-core.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <link rel="stylesheet" href="css/refresh.css?v=codex-2026-09-06-nav-tints" />
-    <script src="js/refresh.js?v=codex-2026-09-06-nav-tints" defer></script>
+    <link rel="stylesheet" href="css/styles.css?v=codex-2026-09-08-lean-ui" />
+    <link rel="stylesheet" href="css/crafting.css?v=codex-2026-09-08-lean-ui" />
+    <script src="js/site-search.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/weapon-specialty.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/stat-widgets.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/keyword-links.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/cursor-toggle.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/perks.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/rarity-roller.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/crafting-page.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/nav-core.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <link rel="stylesheet" href="css/refresh.css?v=codex-2026-09-08-lean-ui" />
+    <link rel="stylesheet" href="css/systems.css?v=codex-2026-09-08-lean-ui" />
+    <script src="js/systems.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/refresh.js?v=codex-2026-09-08-lean-ui" defer></script>
   </head>
-  <body>
+  <body class="systems-page">
     <div class="layout">
       <div id="sidebar-root"></div>
       <main class="main-content">
         <header class="content-header">
-          <h1 class="content-title">Crafting System</h1>
-          <p class="content-tagline">
-            Hammer-and-anvil armor crafting for Frost and Dragon sets.
-          </p>
+          <h1 class="content-title">Crafting</h1>
         </header>
 
         <article class="content-section" id="crafting-basics">
-          <h2>Armor Crafting Scope</h2>
           <div class="crafting-summary-grid" role="list">
             <section class="crafting-summary-card" role="listitem">
               <p class="stat-label">Tools</p>
@@ -71,28 +69,6 @@
               <p>The completed item appears after about 4 seconds and rolls a random rarity.</p>
             </section>
           </div>
-
-          <section class="crafting-materials">
-            <h2>Frost vs Dragon Materials</h2>
-            <div class="crafting-material-grid">
-              <section class="crafting-panel crafting-panel-frost">
-                <h3>Frost Armor</h3>
-                <ul>
-                  <li>Uses Ice Crystals only.</li>
-                  <li>Every slot consumes the same amount listed in the Material Costs section.</li>
-                  <li>There is one Frost visual set.</li>
-                </ul>
-              </section>
-              <section class="crafting-panel crafting-panel-dragon">
-                <h3>Dragon Armor</h3>
-                <ul>
-                  <li>Uses Dragon Scales.</li>
-                  <li>Scale color determines the Dragon armor look.</li>
-                  <li>Black, Red, Blue, and Green scales use the same slot costs.</li>
-                </ul>
-              </section>
-            </div>
-          </section>
 
           <section class="crafting-preview">
             <h2>Set Preview</h2>
@@ -162,42 +138,6 @@
             </div>
           </section>
 
-          <section class="crafting-costs">
-            <h2>Material Costs</h2>
-            <div class="crafting-cost-grid" role="list">
-              <section class="crafting-cost-card" role="listitem">
-                <p class="stat-label">Helm</p>
-                <h3>30</h3>
-                <p>Ice Crystals or Dragon Scales.</p>
-              </section>
-              <section class="crafting-cost-card" role="listitem">
-                <p class="stat-label">Gauntlets</p>
-                <h3>55</h3>
-                <p>Ice Crystals or Dragon Scales.</p>
-              </section>
-              <section class="crafting-cost-card" role="listitem">
-                <p class="stat-label">Legs</p>
-                <h3>99</h3>
-                <p>Ice Crystals or Dragon Scales.</p>
-              </section>
-              <section class="crafting-cost-card" role="listitem">
-                <p class="stat-label">Shield</p>
-                <h3>113</h3>
-                <p>Ice Crystals or Dragon Scales.</p>
-              </section>
-              <section class="crafting-cost-card" role="listitem">
-                <p class="stat-label">Plate</p>
-                <h3>158</h3>
-                <p>Ice Crystals or Dragon Scales.</p>
-              </section>
-              <section class="crafting-cost-card crafting-cost-total" role="listitem">
-                <p class="stat-label">Full Suit</p>
-                <h3>455</h3>
-                <p>Total materials for Helm, Gauntlets, Legs, Shield, and Plate.</p>
-              </section>
-            </div>
-          </section>
-
           <section class="crafting-flow-section">
             <h2>Crafting Flow</h2>
             <ol class="crafting-flow">
@@ -233,7 +173,7 @@
           </section>
 
           <section class="crafting-calculator">
-            <h2>Materials Calculator</h2>
+            <h2 data-system-help="Costs apply to Ice Crystals and all Dragon Scale colors. A full suit costs 455 materials: Helm 30, Gauntlets 55, Legs 99, Shield 113, Plate 158.">Materials Calculator</h2>
             <div class="stat-widget crafting-calculator-widget">
               <div class="stat-control">
                 <label for="materials-slider">Current Materials: <span data-materials-value>0</span></label>
@@ -294,16 +234,6 @@
             </div>
           </section>
 
-          <section class="crafting-related">
-            <h2>Related Item Pages</h2>
-            <div class="crafting-link-grid" aria-label="Related crafting pages">
-              <a href="pages/systems/craft.html">Craft</a>
-              <a href="pages/items/armors.html">Armors</a>
-              <a href="pages/systems/rarity.html">Rarity</a>
-              <a href="pages/systems/deconstruct.html">Deconstruct</a>
-              <a href="pages/General/build-planner.html">Build Planner</a>
-            </div>
-          </section>
         </article>
       </main>
     </div>

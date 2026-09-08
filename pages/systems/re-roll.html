@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Reforge System — Project Rogue Codex</title>
+    <title>Reforge — Project Rogue Codex</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
@@ -13,143 +13,66 @@
     <link rel="icon" type="image/png" sizes="64x64" href="images/project-rogue-favicon-64.png" />
     <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
-    <link rel="stylesheet" href="css/styles.css?v=codex-2026-09-06-nav-tints" />
-    <link rel="stylesheet" href="css/reroll.css?v=codex-2026-09-06-nav-tints" />
-    <script src="js/site-search.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/weapon-specialty.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/stat-widgets.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/keyword-links.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/cursor-toggle.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/perks.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/rarity-roller.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/nav-core.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <link rel="stylesheet" href="css/refresh.css?v=codex-2026-09-06-nav-tints" />
-    <script src="js/refresh.js?v=codex-2026-09-06-nav-tints" defer></script>
+    <link rel="stylesheet" href="css/styles.css?v=codex-2026-09-08-lean-ui" />
+    <link rel="stylesheet" href="css/reroll.css?v=codex-2026-09-08-lean-ui" />
+    <script src="js/site-search.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/weapon-specialty.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/stat-widgets.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/keyword-links.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/cursor-toggle.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/perks.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/rarity-roller.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/nav-core.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <link rel="stylesheet" href="css/refresh.css?v=codex-2026-09-08-lean-ui" />
+    <link rel="stylesheet" href="css/systems.css?v=codex-2026-09-08-lean-ui" />
+    <script src="js/systems.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/refresh.js?v=codex-2026-09-08-lean-ui" defer></script>
   </head>
-  <body>
+  <body class="systems-page ascendancy-page">
     <div class="layout">
       <div id="sidebar-root"></div>
       <main class="main-content">
         <header class="content-header">
-          <h1 class="content-title">Reforge System</h1>
-          <p class="content-tagline">Spend rarity shards to reforge eligible Epic-or-higher equipment.</p>
+          <h1 class="content-title">Reforge</h1>
         </header>
 
         <article class="content-section" id="reroll-basics">
-          <h2>What Reforge Uses</h2>
           <div class="reroll-summary-grid" role="list">
             <section class="reroll-summary-card" role="listitem">
               <p class="stat-label">Eligibility</p>
               <h3>Epic+</h3>
               <p>The current client describes Reforge as an action for Epic-or-higher equipment.</p>
             </section>
-
             <section class="reroll-summary-card" role="listitem">
               <p class="stat-label">Currency</p>
               <h3>Rarity Shards</h3>
               <p>Rare, Epic, Mythical, and Ascendant Reroll Shards form the current shard family.</p>
             </section>
-
             <section class="reroll-summary-card" role="listitem">
               <p class="stat-label">Menu</p>
               <h3>Tinker Tools</h3>
               <p>Open Tinker Tools, choose Reforge, then select the equipment you want to reforge.</p>
             </section>
-
             <section class="reroll-summary-card" role="listitem">
               <p class="stat-label">Outcome</p>
               <h3>Fresh Stat Spread</h3>
               <p>Stats are rerolled within the item's current rarity tier.</p>
             </section>
           </div>
-
           <section class="reroll-compare">
             <h2>What Changes</h2>
             <div class="reroll-compare-grid">
               <section class="reroll-panel reroll-panel-change">
                 <h3>Changes</h3>
-                <ul>
-                  <li><strong>Stat Spread</strong> is replaced with a fresh roll.</li>
-                  <li>Strength, Dexterity, and Constitution can land in a different distribution.</li>
-                  <li>The total stat value can move within the current rarity tier's range.</li>
-                </ul>
+                <p>A new Strength, Dexterity, and Constitution spread. Total stats can vary within the current rarity range.</p>
               </section>
               <section class="reroll-panel reroll-panel-stable">
                 <h3>What Does Not Change</h3>
-                <ul>
-                  <li><strong>Item Identity</strong> stays the same weapon or armor.</li>
-                  <li><strong>Current Rarity</strong> is not promoted by reforging.</li>
-                  <li><strong>Max Rarity</strong>, drop source, craft source, and base item values stay tied to the item.</li>
-                </ul>
+                <p>Item identity, <strong>Current Rarity</strong>, <strong>Max Rarity</strong>, base values, and sources.</p>
               </section>
             </div>
           </section>
-
-          <section class="reroll-flow-section">
-            <h2>Reforge Flow</h2>
-            <ol class="reroll-flow">
-              <li>
-                <span>1</span>
-                <div>
-                  <h3>Pick a keeper</h3>
-                  <p>Start with an item whose base stats, rarity, source, or perk make it worth improving.</p>
-                </div>
-              </li>
-              <li>
-                <span>2</span>
-                <div>
-                  <h3>Bring rarity shards</h3>
-                  <p>Carry the required rarity shards before opening Tinker Tools.</p>
-                </div>
-              </li>
-              <li>
-                <span>3</span>
-                <div>
-                  <h3>Replace the roll</h3>
-                  <p>Select the item and commit only when you are ready to replace its current stat spread.</p>
-                </div>
-              </li>
-              <li>
-                <span>4</span>
-                <div>
-                  <h3>Check the result</h3>
-                  <p>Compare the new Strength, Dexterity, and Constitution spread against the build you are chasing.</p>
-                </div>
-              </li>
-            </ol>
-          </section>
-
-          <section class="reroll-guidance">
-            <div>
-              <h2>Before You Reforge</h2>
-              <ul class="reroll-check-list">
-                <li>Check the item's current rarity on the item detail page.</li>
-                <li>Use the Rarity page to understand the stat range for that tier.</li>
-                <li>Know which stat your build actually needs before replacing a decent roll.</li>
-                <li>Consider Deconstruct when the item itself is not worth keeping.</li>
-              </ul>
-            </div>
-            <div>
-              <h2>When Reforge Helps</h2>
-              <ul class="reroll-check-list">
-                <li>The item is strong, but its bonus stats landed in the wrong places.</li>
-                <li>A build is short on Strength, Dexterity, or Constitution.</li>
-                <li>You want a better spread without changing the item, source, or rarity tier.</li>
-              </ul>
-            </div>
-          </section>
-
-          <section class="reroll-related">
-            <h2>Related Item Pages</h2>
-            <div class="reroll-link-grid" aria-label="Related reforge pages">
-              <a href="pages/systems/rarity.html">Rarity</a>
-              <a href="pages/items/weapons.html">Weapons</a>
-              <a href="pages/items/armors.html">Armors</a>
-              <a href="pages/systems/deconstruct.html">Deconstruct</a>
-              <a href="pages/systems/crafting.html">Crafting</a>
-              <a href="pages/General/build-planner.html">Build Planner</a>
-            </div>
-          </section>
+          <p class="ascendancy-caution">Reforging replaces the current stat roll; a better result is not guaranteed.</p>
         </article>
       </main>
     </div>

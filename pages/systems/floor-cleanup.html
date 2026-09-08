@@ -13,33 +13,31 @@
     <link rel="icon" type="image/png" sizes="64x64" href="images/project-rogue-favicon-64.png" />
     <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
-    <link rel="stylesheet" href="css/styles.css?v=codex-2026-09-06-nav-tints" />
-    <link rel="stylesheet" href="css/floor-cleanup.css?v=codex-2026-09-06-nav-tints" />
-    <script src="js/site-search.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/weapon-specialty.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/stat-widgets.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/keyword-links.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/cursor-toggle.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/perks.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/rarity-roller.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/nav-core.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/floor-cleanup.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <link rel="stylesheet" href="css/refresh.css?v=codex-2026-09-06-nav-tints" />
-    <script src="js/refresh.js?v=codex-2026-09-06-nav-tints" defer></script>
+    <link rel="stylesheet" href="css/styles.css?v=codex-2026-09-08-lean-ui" />
+    <link rel="stylesheet" href="css/floor-cleanup.css?v=codex-2026-09-08-lean-ui" />
+    <script src="js/site-search.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/weapon-specialty.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/stat-widgets.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/keyword-links.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/cursor-toggle.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/perks.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/rarity-roller.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/nav-core.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/floor-cleanup.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <link rel="stylesheet" href="css/refresh.css?v=codex-2026-09-08-lean-ui" />
+    <link rel="stylesheet" href="css/systems.css?v=codex-2026-09-08-lean-ui" />
+    <script src="js/systems.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/refresh.js?v=codex-2026-09-08-lean-ui" defer></script>
   </head>
-  <body>
+  <body class="systems-page">
     <div class="layout">
       <div id="sidebar-root"></div>
       <main class="main-content">
         <header class="content-header">
-          <h1 class="content-title">Floor Cleanup System (Creeper)</h1>
-          <p class="content-tagline">
-            A compact reference for how long abandoned loot can stay on the ground before the Creeper removes it.
-          </p>
+          <h1 class="content-title">Floor Cleanup</h1>
         </header>
 
         <article class="content-section" id="floor-cleanup-basics">
-          <h2>Floor Cleanup at a Glance</h2>
           <div class="floor-cleanup-summary-grid" role="list">
             <section class="floor-cleanup-summary-card" role="listitem">
               <p class="stat-label">System</p>
@@ -66,34 +64,10 @@
             </section>
           </div>
 
-          <section class="floor-cleanup-rule-section">
-            <h2>Creeper Timing Rules</h2>
-            <div class="floor-cleanup-rule-grid" role="list">
-              <section class="floor-cleanup-rule-card" role="listitem">
-                <p class="stat-label">1</p>
-                <h3>Item Drops</h3>
-                <p>A dropped item starts accumulating undisturbed time while it remains on the floor.</p>
-              </section>
-
-              <section class="floor-cleanup-rule-card" role="listitem">
-                <p class="stat-label">2</p>
-                <h3>Sweep Checks</h3>
-                <p>Every 3 minutes, the cleanup pass checks each ground item against its undisturbed time.</p>
-              </section>
-
-              <section class="floor-cleanup-rule-card" role="listitem">
-                <p class="stat-label">3</p>
-                <h3>Creeper Removes</h3>
-                <p>If the item has been untouched for more than 8 minutes when the sweep occurs, it is deleted.</p>
-              </section>
-            </div>
-          </section>
-
           <section class="floor-cleanup-preview-section">
             <div class="floor-cleanup-section-heading">
               <div>
-                <h2>Sweep Timing Preview</h2>
-                <p>Select a timing case to see why the practical loot lifetime lands between 8 and 11 minutes.</p>
+                <h2 data-system-help="Select a timing case to see why the practical loot lifetime lands between 8 and 11 minutes.">Sweep Timing Preview</h2>
               </div>
               <p class="floor-cleanup-preview-note">Cleanup runs every 3 minutes.</p>
             </div>
@@ -120,68 +94,6 @@
             </div>
           </section>
 
-          <section class="floor-cleanup-flow-section">
-            <h2>Loot Lifetime Flow</h2>
-            <ol class="floor-cleanup-flow">
-              <li>
-                <span>1</span>
-                <div>
-                  <h3>Loot lands</h3>
-                  <p>The item sits on the floor and begins tracking undisturbed time.</p>
-                </div>
-              </li>
-              <li>
-                <span>2</span>
-                <div>
-                  <h3>Sweeps pass</h3>
-                  <p>Each 3 minutes cleanup pass checks whether the item has crossed the removal threshold.</p>
-                </div>
-              </li>
-              <li>
-                <span>3</span>
-                <div>
-                  <h3>Threshold is reached</h3>
-                  <p>Once the item is more than 8 minutes old and still undisturbed, the next sweep can remove it.</p>
-                </div>
-              </li>
-            </ol>
-          </section>
-
-          <section class="floor-cleanup-reset-section">
-            <h2>What Resets the Risk</h2>
-            <div class="floor-cleanup-reset-grid" role="list">
-              <section class="floor-cleanup-reset-card" role="listitem">
-                <p class="stat-label">Pickup</p>
-                <h3>Claim the item</h3>
-                <p>Picking up loot removes it from the floor, so it is no longer exposed to Creeper cleanup.</p>
-              </section>
-
-              <section class="floor-cleanup-reset-card" role="listitem">
-                <p class="stat-label">Fresh Drop</p>
-                <h3>New floor item</h3>
-                <p>Newly dropped loot starts its own undisturbed time and follows the same 8-11 minutes window.</p>
-              </section>
-
-              <section class="floor-cleanup-reset-card" role="listitem">
-                <p class="stat-label">Planning</p>
-                <h3>Do not wait</h3>
-                <p>If loot matters, treat 8 minutes as the practical deadline and the remaining sweep window as buffer.</p>
-              </section>
-            </div>
-          </section>
-
-          <section class="floor-cleanup-related">
-            <h2>Related Pages</h2>
-            <div class="floor-cleanup-link-grid" aria-label="Related Floor Cleanup pages">
-              <a href="pages/systems/pvp-system.html">PVP System</a>
-              <a href="pages/systems/corruption.html">Corruption</a>
-              <a href="pages/systems/purge.html">Purge</a>
-              <a href="pages/items/weapons.html">Weapons</a>
-              <a href="pages/items/armors.html">Armors</a>
-              <a href="pages/enemies/monsters.html">Monsters</a>
-              <a href="pages/General/play-the-game.html">Play the Game</a>
-            </div>
-          </section>
         </article>
       </main>
     </div>

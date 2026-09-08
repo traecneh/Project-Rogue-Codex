@@ -1,5 +1,6 @@
       (function () {
         const searchInput = document.getElementById("gear-search");
+        if (searchInput) searchInput.disabled = true;
         const suggestionsEl = document.getElementById("gear-suggestions");
         const slotEls = new Map(
           Array.from(document.querySelectorAll(".slot-card")).map((card) => [card.dataset.slot, card])
@@ -75,7 +76,7 @@
 
         const RACES = [
           { value: "", label: "Select race", bonus: { str: 0, dex: 0, con: 0 }, perk: null },
-          { value: "human", label: "Human", bonus: { str: 0, dex: 0, con: 0 }, perk: "Desperation" },
+          { value: "human", label: "Human", bonus: { str: 5, dex: 0, con: 5 }, perk: "Desperation" },
           { value: "tundrian", label: "Tundrian", bonus: { str: 10, dex: 0, con: 0 }, perk: "Frozen Heart" },
           { value: "brimlock", label: "Brimlock", bonus: { str: 0, dex: 0, con: 5 }, perk: "Demon Blood" },
           { value: "komodan", label: "Komodan", bonus: { str: 0, dex: 0, con: 5 }, perk: "Magic Shield" },
@@ -136,16 +137,71 @@
           list: document.querySelector("[data-build-issue-list]"),
           count: document.querySelector("[data-build-issue-count]"),
         };
+        const tooltip = document.createElement("div");
+        tooltip.id = "planner-tooltip";
+        tooltip.className = "planner-tooltip";
+        tooltip.setAttribute("role", "tooltip");
+        tooltip.hidden = true;
+        document.body.appendChild(tooltip);
+        let tooltipTrigger = null;
+        let tooltipTimer = null;
+        const hideTooltip = () => {
+          window.clearTimeout(tooltipTimer);
+          tooltip.hidden = true;
+          tooltipTrigger?.removeAttribute("aria-describedby");
+          tooltipTrigger = null;
+        };
+        const showTooltip = (trigger) => {
+          hideTooltip();
+          const text = trigger.closest("[data-tooltip]")?.dataset.tooltip;
+          if (!text) return;
+          tooltipTrigger = trigger;
+          tooltip.textContent = text;
+          tooltip.hidden = false;
+          trigger.setAttribute("aria-describedby", tooltip.id);
+          const rect = trigger.getBoundingClientRect();
+          const size = tooltip.getBoundingClientRect();
+          tooltip.style.left = `${Math.max(12, Math.min(rect.left, window.innerWidth - size.width - 12))}px`;
+          tooltip.style.top = `${Math.max(12, rect.bottom + size.height + 20 < window.innerHeight ? rect.bottom + 8 : rect.top - size.height - 8)}px`;
+        };
+        const scheduleTooltipHide = () => {
+          tooltipTimer = window.setTimeout(hideTooltip, 150);
+        };
+        const bindPlannerTooltip = (trigger) => {
+          trigger.addEventListener("mouseenter", () => showTooltip(trigger));
+          trigger.addEventListener("mouseleave", scheduleTooltipHide);
+          trigger.addEventListener("focus", () => window.requestAnimationFrame(() => {
+            if (document.activeElement === trigger) showTooltip(trigger);
+          }));
+          trigger.addEventListener("blur", hideTooltip);
+          trigger.addEventListener("click", () => showTooltip(trigger));
+        };
+        tooltip.addEventListener("mouseenter", () => window.clearTimeout(tooltipTimer));
+        tooltip.addEventListener("mouseleave", scheduleTooltipHide);
+        document.addEventListener("keydown", (event) => {
+          if (event.key === "Escape") hideTooltip();
+        });
+        document.addEventListener("click", (event) => {
+          if (!event.target.closest(".planner-tip-trigger, .planner-tooltip")) hideTooltip();
+        });
+        window.addEventListener("scroll", hideTooltip, true);
+        window.addEventListener("resize", hideTooltip);
+
         const setElementTitle = (element, title = "") => {
           if (!element) return;
           const card = element.closest(".quick-summary-card, .summary-card");
-          [element, card].filter(Boolean).forEach((target) => {
-            if (title) {
-              target.title = title;
-            } else {
-              target.removeAttribute("title");
-            }
-          });
+          if (!card) return;
+          card.dataset.tooltip = title;
+          const label = card.querySelector(".quick-summary-label, .summary-label");
+          if (!label || label.querySelector("button")) return;
+          const trigger = document.createElement("button");
+          trigger.type = "button";
+          trigger.className = "planner-tip-trigger";
+          trigger.textContent = label.textContent;
+          trigger.setAttribute("aria-label", `${label.textContent} calculation details`);
+          label.textContent = "";
+          label.appendChild(trigger);
+          bindPlannerTooltip(trigger);
         };
         const setElementTextAndTitle = (element, value, title = "") => {
           if (!element) return;
@@ -256,8 +312,11 @@
             const href = getItemHref(item);
             if (href) {
               titleEl.setAttribute("href", href);
+              titleEl.target = "_blank";
+              titleEl.rel = "noopener noreferrer";
+              titleEl.title = "Open item details in a new tab";
               titleEl.tabIndex = 0;
-              titleEl.setAttribute("aria-label", `Open ${itemName}`);
+              titleEl.setAttribute("aria-label", `Open ${itemName} in a new tab`);
             } else {
               titleEl.removeAttribute("href");
               titleEl.tabIndex = -1;
@@ -304,6 +363,7 @@
           updateSlotRarityUI(slot);
           updateSlotPerkUI(slot);
           updatePlannerStatus();
+          if (!skipPersist) schedulePersistState();
           const sources = deriveImageCandidates(item, folder);
           if (!sources.length) {
             img.style.display = "none";
@@ -331,7 +391,6 @@
             img.src = sources[index];
            };
            trySet();
-          if (!skipPersist) schedulePersistState();
         };
 
         const clearSlot = (slot) => {
@@ -378,6 +437,21 @@
           status.textContent = `${selectedCount} / ${slotEls.size} slots selected · ${statText}`;
         };
 
+        const perkDescriptions = new Map();
+        const describePerk = (label) => {
+          const match = String(label).match(/\s*\((?:Tier\s*|T)([1-3])\)\s*$/i);
+          const name = match ? String(label).slice(0, match.index).trim() : String(label).trim();
+          const tier = match ? Number(match[1]) : null;
+          const entry = perkDescriptions.get(name.toLowerCase());
+          const lines = Array.isArray(entry?.details) ? entry.details : [];
+          // Square brackets encode tiers; parentheses may encode weapon-speed values.
+          const details = lines.map((line) => String(line).replace(/\[([^\]]+)\]/g, (original, values) => {
+            const tiers = values.split("/").map((value) => value.trim());
+            return tier && tiers.length === 3 ? tiers[tier - 1] : original;
+          }));
+          return [tier ? `${name} (Tier ${tier})` : name, ...(details.length ? details : ["Perk details unavailable."])].join("\n\n");
+        };
+
         const dataset = {
           weapons: [],
           armors: [],
@@ -422,6 +496,7 @@
                 toNumber(entry.bonusStr),
                 toNumber(entry.bonusDex),
                 toNumber(entry.bonusCon),
+                entry.id ?? "",
               ])
             ),
           };
@@ -442,6 +517,7 @@
                 slot,
                 kind: kindCode === 1 ? "weapon" : kindCode === 2 ? "armor" : "",
                 name,
+                id: entry[9] ?? null,
                 rarityIndex: migrateRarityIndex(entry[3], packed.v),
                 extraPerkName: entry[4] ? String(entry[4]) : null,
                 extraPerkTier: entry[5] ? toNumber(entry[5]) : null,
@@ -468,6 +544,7 @@
           const entries = Object.entries(selectedBySlot).map(([slot, item]) => ({
             slot,
             name: item.name,
+            id: item.id,
             kind: item.kind,
             rarityIndex: item.rarityIndex,
             extraPerkName: item.extraPerkName || null,
@@ -584,13 +661,17 @@
         const applySavedState = () => {
           const state = decodeState();
           if (!state) return;
-          const findItem = (kind, name) => {
+          const findItem = (kind, name, id) => {
             const list = kind === "weapon" ? dataset.weapons : dataset.armors;
+            // New links use IDs; older shared builds retain name-based lookup.
+            if (id !== null && id !== undefined && id !== "") {
+              return list.find((item) => String(item.id) === String(id));
+            }
             const lower = String(name || "").toLowerCase();
             return list.find((item) => String(item.name || "").toLowerCase() === lower);
           };
           state.slots.forEach((entry) => {
-            const item = findItem(entry.kind, entry.name);
+            const item = findItem(entry.kind, entry.name, entry.id);
             if (!item) return;
             const folder = entry.kind === "weapon" ? "weapons" : "armors";
             setSlotImage(entry.slot, item, folder, { restoreState: entry, skipPersist: true });
@@ -771,7 +852,6 @@
           const fields = (raw && raw.fields) || {};
           const dps = computeDps(fields.min_damage, fields.max_damage, fields.attack_speed);
           return {
-            id: raw.id ?? raw.ID ?? raw.name ?? "",
             kind: "weapon",
             id: raw.id ?? raw.ID ?? null,
             name: raw.name || raw.Name,
@@ -780,6 +860,7 @@
             image: raw.image || raw.icon || raw.thumbnail || "",
             maxRarityLabel: fields.max_rarity_label || fields.max_rarity,
             dps,
+            weight: toNumber(fields.weight),
             levelRequirement: toNumber(fields.level_requirement),
             skillRequirement: toNumber(fields.skill_requirement),
             element: fields.element_label || (fields.element ? fields.element : "None"),
@@ -913,13 +994,17 @@
             });
             select.dataset.bound = "true";
             select.addEventListener("change", () => {
-              data.extraPerkName = select.value || null;
+              const current = selectedBySlot[slot];
+              if (!current) return;
+              current.extraPerkName = select.value || null;
               schedulePersistState();
               updateTotals();
             });
             if (tierSelect) {
               tierSelect.addEventListener("change", () => {
-                data.extraPerkTier = Number(tierSelect.value) || 1;
+                const current = selectedBySlot[slot];
+                if (!current) return;
+                current.extraPerkTier = Number(tierSelect.value) || 1;
                 schedulePersistState();
                 updateTotals();
               });
@@ -1021,7 +1106,7 @@
             createBuildIssue(
               "overweight",
               `Overweight +${formatIssueNumber(excess)}`,
-              `Equipped armor weight ${formatIssueNumber(totalWeight)} exceeds max weight ${formatIssueNumber(maxWeight)}.`,
+              `Equipped weight ${formatIssueNumber(totalWeight)} exceeds max weight ${formatIssueNumber(maxWeight)}.`,
               "error"
             ),
           ];
@@ -1090,7 +1175,7 @@
           const totalArmor = sumObjects(armors, "armor") + selected.reduce((acc, a) => acc + toNumber(a.bonusAC), 0);
           const baseArmor = sumObjects(armors, "armor");
           const rarityArmor = selected.reduce((acc, a) => acc + toNumber(a.bonusAC), 0);
-          const totalWeight = sumObjects(armors, "weight");
+          const totalWeight = sumObjects(selected, "weight");
           const totalToHit = sumObjects(selected, "toHit");
           const baseStr = sumObjects(selected, "strength");
           const baseCon = sumObjects(selected, "constitution");
@@ -1107,9 +1192,10 @@
           const raceBonusStr = race?.bonus?.str || 0;
           const raceBonusDex = race?.bonus?.dex || 0;
           const raceBonusCon = race?.bonus?.con || 0;
-          const baseStrWithChar = baseStr + charStr;
-          const baseDexWithChar = baseDex + charDex;
-          const baseConWithChar = baseCon + charCon;
+          // Character inputs are trained base attributes; race bonuses cost no points.
+          const baseStrWithChar = baseStr + charStr + raceBonusStr;
+          const baseDexWithChar = baseDex + charDex + raceBonusDex;
+          const baseConWithChar = baseCon + charCon + raceBonusCon;
           const totalStr = baseStrWithChar + bonusStr;
           const totalCon = baseConWithChar + bonusCon;
           const totalDex = baseDexWithChar + bonusDex;
@@ -1200,8 +1286,12 @@
             }
           }
 
-          if (totals.perks) {
-            const perksTitle = "Perks from equipped items, corrupted perks, extra perks, and race.";
+          // Preserve focused perk buttons when unrelated calculations/images update.
+          const perksKey = JSON.stringify(Array.from(perkSet));
+          if (totals.perks && totals.perks.dataset.perksKey !== perksKey) {
+            totals.perks.dataset.perksKey = perksKey;
+            if (tooltipTrigger && totals.perks.contains(tooltipTrigger)) hideTooltip();
+            const perksTitle = "Perks from equipped items, corrupted perks, extra perks, and race. This lists available effects; their conditional bonuses are not applied to the calculated stats.";
             if (!perkSet.size) {
               setElementTextAndTitle(totals.perks, "None", perksTitle);
             } else {
@@ -1210,9 +1300,13 @@
               totals.perks.innerHTML = "";
               setElementTitle(totals.perks, perksTitle);
               Array.from(perkSet).forEach((perk) => {
-                const chip = document.createElement("span");
-                chip.className = "summary-chip";
+                const chip = document.createElement("button");
+                chip.type = "button";
+                chip.className = "summary-chip planner-tip-trigger planner-perk-tip";
                 chip.textContent = perk;
+                chip.dataset.tooltip = describePerk(perk);
+                chip.setAttribute("aria-label", `${perk} description`);
+                bindPlannerTooltip(chip);
                 const color = getPerkTierColor(perk);
                 if (color) {
                   chip.style.color = color;
@@ -1231,7 +1325,7 @@
           setElementTextAndTitle(
             regenEl,
             `${regenPerTick} HP`,
-            `Total Constitution (base + items + rarity): ${totalCon} -> ${totalCon}/3 rounded down, every 2 seconds`
+            `Total Constitution (base + race + items + rarity): ${totalCon} -> ${totalCon}/3 rounded down, every 2 seconds`
           );
 
           const meleeMult = 1 + charSkill / 50 + totalStr / 100 + totalDex / 200;
@@ -1239,7 +1333,7 @@
           setElementTextAndTitle(
             meleeEl,
             `${meleeMult.toFixed(2)}x`,
-            `1 + (Skill ${charSkill}/50) + (Str ${totalStr}/100) + (Dex ${totalDex}/200)`
+            `1 + (Skill ${charSkill}/50) + (Str ${totalStr}/100) + (Dex ${totalDex}/200)\nUses entered skill; racial weapon-skill bonuses and conditional perk effects are not modeled.`
           );
 
           const maxWeight = 150 + 3 * totalStr;
@@ -1270,13 +1364,13 @@
             }
           }
 
-          const dexForCrit = Math.max(0, charDex - raceBonusDex); // crit uses character dex minus racial bonus
+          const dexForCrit = charDex; // Base input already excludes racial bonuses.
           const critChance = (dexForCrit / 2.5).toFixed(1);
           const critEl = document.getElementById("calc-crit");
           setElementTextAndTitle(
             critEl,
             `${critChance}%`,
-            `Dex from Character Details minus racial bonus (${charDex} - ${raceBonusDex}) / 2.5 => ${critChance}% @ 1.35x damage`
+            `Base Dexterity ${charDex} / 2.5 => ${critChance}% @ 1.35x damage. Race and equipment bonuses are excluded.`
           );
 
           const drNumerator = totalDex * 0.00125;
@@ -1287,16 +1381,16 @@
           setQuickSummary(
             "dps",
             totalDps,
-            weapon ? `${weapon.name || "Selected weapon"} DPS: ${totalDps}` : "No weapon selected."
+            weapon ? `${weapon.name || "Selected weapon"} base DPS: ${totalDps}\nBefore character multipliers and perk effects.` : "No weapon selected."
           );
           setQuickSummary(
             "weight",
             totalWeight,
-            `Equipped armor weight: ${totalWeight}\nMax carry weight: ${maxWeight}\nRemaining: ${maxWeight - totalWeight}`
+            `Equipped weight: ${totalWeight}\nMax carry weight: ${maxWeight}\nRemaining: ${maxWeight - totalWeight}`
           );
-          setQuickSummary("str", totalStr, `Items: ${baseStr}\nCharacter base: ${charStr}\nRarity bonus: ${bonusStr}`);
-          setQuickSummary("con", totalCon, `Items: ${baseCon}\nCharacter base: ${charCon}\nRarity bonus: ${bonusCon}`);
-          setQuickSummary("dex", totalDex, `Items: ${baseDex}\nCharacter base: ${charDex}\nRarity bonus: ${bonusDex}`);
+          setQuickSummary("str", totalStr, `Items: ${baseStr}\nCharacter base: ${charStr}\nRace bonus: ${raceBonusStr}\nRarity bonus: ${bonusStr}`);
+          setQuickSummary("con", totalCon, `Items: ${baseCon}\nCharacter base: ${charCon}\nRace bonus: ${raceBonusCon}\nRarity bonus: ${bonusCon}`);
+          setQuickSummary("dex", totalDex, `Items: ${baseDex}\nCharacter base: ${charDex}\nRace bonus: ${raceBonusDex}\nRarity bonus: ${bonusDex}`);
           setQuickSummary("health", maxHealth, healthTitle);
           setQuickSummary("dr", `${dr.toFixed(2)}%`, drTitle);
           updatePlannerStatus();
@@ -1334,14 +1428,19 @@
         slotEls.forEach((card, slot) => {
           const inc = card.querySelector("[data-rarity-inc]");
           const dec = card.querySelector("[data-rarity-dec]");
+          inc?.setAttribute("aria-label", `Increase ${slot} rarity`);
+          dec?.setAttribute("aria-label", `Decrease ${slot} rarity`);
           if (inc) inc.addEventListener("click", () => adjustRarity(slot, 1));
           if (dec) dec.addEventListener("click", () => adjustRarity(slot, -1));
           const clearBtn = card.querySelector(".slot-clear");
+          clearBtn?.setAttribute("aria-label", `Clear ${slot}`);
           if (clearBtn) clearBtn.addEventListener("click", () => clearSlot(slot));
           card.querySelectorAll(".stat-row").forEach((row) => {
             const stat = row.dataset.stat;
             const decBtn = row.querySelector("[data-stat-dec]");
             const incBtn = row.querySelector("[data-stat-inc]");
+            decBtn?.setAttribute("aria-label", `Decrease ${slot} bonus ${stat}`);
+            incBtn?.setAttribute("aria-label", `Increase ${slot} bonus ${stat}`);
             if (decBtn) decBtn.addEventListener("click", () => adjustStat(slot, stat, -1));
             if (incBtn) incBtn.addEventListener("click", () => adjustStat(slot, stat, 1));
           });
@@ -1442,7 +1541,10 @@
             title.className = "suggestion-title suggestion-link";
             title.textContent = item.name || "Unknown";
             title.href = getItemHref(item);
-            title.setAttribute("aria-label", `Open ${item.name || "item"} details`);
+            title.target = "_blank";
+            title.rel = "noopener noreferrer";
+            title.title = "Open item details in a new tab";
+            title.setAttribute("aria-label", `Open ${item.name || "item"} details in a new tab`);
             title.addEventListener("click", (event) => event.stopPropagation());
 
             const meta = document.createElement("div");
@@ -1467,6 +1569,7 @@
             div.addEventListener("mouseenter", () => setActiveSuggestion(idx, { focus: false }));
             div.addEventListener("focus", () => setActiveSuggestion(idx, { focus: false }));
             div.addEventListener("keydown", (e) => {
+              if (e.target.closest("a")) return;
               if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
                 handleSelect();
@@ -1531,7 +1634,7 @@
                     .filter(
                       (weapon) =>
                         weapon &&
-                        !hiddenWeaponNames.has((weapon.name || "").toLowerCase()) &&
+                        !isRecordHidden(weapon, hiddenWeaponNames) &&
                         !hiddenWeaponIds.has(String(weapon.id).trim())
                     )
                 : [];
@@ -1541,6 +1644,10 @@
                     .filter((armor) => armor && !isRecordHidden(armor, hiddenArmorNames))
                 : [];
               const perks = Array.isArray(perksIndex?.perks) ? perksIndex.perks : [];
+              perkDescriptions.clear();
+              perks.forEach((entry) => {
+                if (typeof entry?.name === "string") perkDescriptions.set(entry.name.trim().toLowerCase(), entry);
+              });
               const seen = new Set();
               perkOptions = perks
                 .filter((entry) => entry && typeof entry.name === "string")
@@ -1687,6 +1794,13 @@
 
         loadData().then(() => {
           populateRaceOptions();
+          if (!dataset.weapons.length || !dataset.armors.length) {
+            document.getElementById("planner-status").textContent = "Equipment could not load. Refresh to retry.";
+            if (shareBtn) shareBtn.disabled = true;
+            if (resetBtn) resetBtn.disabled = true;
+            return; // Preserve an incoming build link if its data could not be loaded.
+          }
+          if (searchInput) searchInput.disabled = false;
           applySavedState();
           trackBuildEvent("build_view", initialBuildParam);
           persistStateNow();

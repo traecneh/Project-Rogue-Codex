@@ -58,6 +58,9 @@
   }
 
   function drawSkillCurve(curve, selectedLevel) {
+    // Draw at the displayed size so labels stay readable on narrow screens.
+    curve.width = Math.max(1, Math.round(curve.clientWidth));
+    curve.height = Math.max(1, Math.round(curve.clientHeight));
     const ctx = curve.getContext("2d");
     if (!ctx) return;
     const chartLeft = CURVE_PADDING.left;

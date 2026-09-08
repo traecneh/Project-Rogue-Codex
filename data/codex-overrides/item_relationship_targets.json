@@ -2,6 +2,10 @@
   "schemaVersion": 1,
   "targets": [
     {
+      "target": "Ascend",
+      "href": "pages/systems/ascend.html"
+    },
+    {
       "target": "Ascend System",
       "href": "pages/systems/ascend.html"
     },
@@ -22,12 +26,24 @@
       "href": "pages/stats/skills.html#carpentry"
     },
     {
+      "target": "Craft",
+      "href": "pages/systems/craft.html"
+    },
+    {
       "target": "Craft System",
       "href": "pages/systems/craft.html"
     },
     {
+      "target": "Crafting",
+      "href": "pages/systems/crafting.html"
+    },
+    {
       "target": "Crafting System",
       "href": "pages/systems/crafting.html"
+    },
+    {
+      "target": "Deconstruct",
+      "href": "pages/systems/deconstruct.html"
     },
     {
       "target": "Deconstruct System",
@@ -44,6 +60,10 @@
     {
       "target": "Fishing",
       "href": "pages/stats/skills.html#fishing"
+    },
+    {
+      "target": "Imbuements",
+      "href": "pages/systems/imbuements.html"
     },
     {
       "target": "Imbuements System",
@@ -65,8 +85,16 @@
       "reviewEvidence": "Reviewed current rogue_data.vpack JSON: Feather and Human Bones only appear in collectables.json; monsters.json exposes no drop/loot table."
     },
     {
+      "target": "Purge",
+      "href": "pages/systems/purge.html"
+    },
+    {
       "target": "Purge System",
       "href": "pages/systems/purge.html"
+    },
+    {
+      "target": "Reforge",
+      "href": "pages/systems/re-roll.html"
     },
     {
       "target": "Reforge System",
@@ -74,7 +102,10 @@
     },
     {
       "target": "Seasonal Events",
-      "href": "pages/systems/seasonal-events.html"
+      "textOnly": true,
+      "reason": "The Seasonal Events page was removed; retain the holiday relationship without a page link.",
+      "reviewNextStep": "Keep this relationship as text unless a seasonal reference page is added.",
+      "reviewEvidence": "The standalone Seasonal Events page was removed during the Systems redesign."
     },
     {
       "target": "Tinkering",

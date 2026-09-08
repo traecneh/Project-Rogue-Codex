@@ -13,31 +13,30 @@
     <link rel="icon" type="image/png" sizes="64x64" href="images/project-rogue-favicon-64.png" />
     <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
-    <link rel="stylesheet" href="css/styles.css?v=codex-2026-09-06-nav-tints" />
-    <link rel="stylesheet" href="css/experience.css?v=codex-2026-09-06-nav-tints" />
-    <script src="js/site-search.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/weapon-specialty.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/stat-widgets.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/keyword-links.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/cursor-toggle.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/perks.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/rarity-roller.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/nav-core.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/experience.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <link rel="stylesheet" href="css/refresh.css?v=codex-2026-09-06-nav-tints" />
-    <script src="js/refresh.js?v=codex-2026-09-06-nav-tints" defer></script>
+    <link rel="stylesheet" href="css/styles.css?v=codex-2026-09-08-lean-ui" />
+    <link rel="stylesheet" href="css/experience.css?v=codex-2026-09-08-lean-ui" />
+    <script src="js/site-search.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/weapon-specialty.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/stat-widgets.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/keyword-links.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/cursor-toggle.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/perks.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/rarity-roller.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/nav-core.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <link rel="stylesheet" href="css/refresh.css?v=codex-2026-09-08-lean-ui" />
+    <link rel="stylesheet" href="css/systems.css?v=codex-2026-09-08-lean-ui" />
+    <script src="js/systems.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/refresh.js?v=codex-2026-09-08-lean-ui" defer></script>
   </head>
-  <body>
+  <body class="systems-page">
     <div class="layout">
       <div id="sidebar-root"></div>
       <main class="main-content">
         <header class="content-header">
-          <h1 class="content-title">Experience Pool System</h1>
-          <p class="content-tagline">Stored levels that build passively and double XP while they are available.</p>
+          <h1 class="content-title">Experience Pool</h1>
         </header>
 
         <article class="content-section" id="experience-basics">
-          <h2>Experience Pool at a Glance</h2>
           <div class="experience-summary-grid" role="list">
             <section class="experience-summary-card" role="listitem">
               <p class="stat-label">Pool Cap</p>
@@ -87,181 +86,6 @@
             </div>
           </section>
 
-          <section class="experience-conversion-section">
-            <h2>Combat Conversion</h2>
-            <div class="experience-conversion-grid" role="list">
-              <section class="experience-conversion-card" role="listitem">
-                <p class="stat-label">Base XP</p>
-                <h3>Kill or Tick XP</h3>
-                <p>XP gain starts with the tick's base XP, then applies the XP multiplier.</p>
-              </section>
-
-              <section class="experience-conversion-card" role="listitem">
-                <p class="stat-label">Pool Bonus</p>
-                <h3>Matched XP</h3>
-                <p>If pool remains, it adds an equal bonus up to the amount of pool available.</p>
-              </section>
-
-              <section class="experience-conversion-card" role="listitem">
-                <p class="stat-label">Spend Rate</p>
-                <h3>Percent of Level</h3>
-                <p>Pool consumption is based on how much of the current level the base XP would award.</p>
-              </section>
-            </div>
-          </section>
-
-          <section class="experience-sim-section">
-            <div class="experience-section-heading">
-              <div>
-                <h2>Experience Pool Simulator</h2>
-                <p>Preview 150-235 XP ticks, multiplier scaling, weapon speed, pool drain, and time-to-level.</p>
-              </div>
-              <p class="experience-sim-note">
-                Current refill: <strong data-xp-build-rate>+3.0 levels per 24 hours</strong>
-              </p>
-            </div>
-
-            <div class="stat-widget experience-sim-widget" data-experience-widget>
-              <div class="experience-control-grid">
-                <label class="experience-control" for="xp-sim-level">
-                  <span>Level</span>
-                  <strong data-xp-level>10</strong>
-                  <input type="range" id="xp-sim-level" min="1" max="105" value="10" step="1" data-xp-level-input />
-                </label>
-
-                <label class="experience-control" for="xp-sim-current-xp">
-                  <span>Current XP</span>
-                  <strong><span data-xp-current>0</span> / <span data-xp-needed>10,000</span></strong>
-                  <input
-                    type="range"
-                    id="xp-sim-current-xp"
-                    min="0"
-                    max="10000"
-                    value="0"
-                    step="1"
-                    data-xp-current-input
-                  />
-                </label>
-
-                <label class="experience-control" for="xp-sim-pool">
-                  <span>Experience Pool</span>
-                  <strong><span data-xp-pool>1.00</span> levels</strong>
-                  <input type="range" id="xp-sim-pool" min="0" max="3" step="0.01" value="1" data-xp-pool-input />
-                </label>
-
-                <label class="experience-control" for="xp-sim-min-gain">
-                  <span>Minimum XP per tick</span>
-                  <strong><span data-xp-min>100</span> (<span data-xp-min-effective>107</span>)</strong>
-                  <input type="range" id="xp-sim-min-gain" min="0" max="235" step="1" value="100" data-xp-min-input />
-                </label>
-
-                <label class="experience-control" for="xp-sim-max-gain">
-                  <span>Maximum XP per tick</span>
-                  <strong><span data-xp-max>100</span> (<span data-xp-max-effective>107</span>)</strong>
-                  <input type="range" id="xp-sim-max-gain" min="0" max="235" step="1" value="100" data-xp-max-input />
-                </label>
-
-                <label class="experience-control" for="xp-sim-multiplier">
-                  <span>XP Multiplier</span>
-                  <strong data-xp-multiplier>1.07x</strong>
-                  <input
-                    type="range"
-                    id="xp-sim-multiplier"
-                    min="1.07"
-                    max="10.9"
-                    step="0.01"
-                    value="1.07"
-                    data-xp-multiplier-input
-                  />
-                </label>
-
-                <label class="experience-control" for="xp-sim-speed">
-                  <span>Weapon Speed</span>
-                  <strong><span data-xp-speed>1000</span> ms</strong>
-                  <input type="range" id="xp-sim-speed" min="750" max="1500" step="250" value="1000" data-xp-speed-input />
-                </label>
-              </div>
-
-              <div class="experience-sim-buttons">
-                <button type="button" data-xp-run-tick>Run Tick</button>
-                <button type="button" data-xp-start>Start Simulation</button>
-                <button type="button" data-xp-stop disabled>Stop</button>
-              </div>
-
-              <div class="experience-metric-grid" aria-label="Experience simulator results">
-                <section class="experience-metric-card">
-                  <p class="stat-label">Last Base XP</p>
-                  <h3 data-xp-base>0</h3>
-                </section>
-
-                <section class="experience-metric-card">
-                  <p class="stat-label">Pool Bonus</p>
-                  <h3 data-xp-bonus>0</h3>
-                </section>
-
-                <section class="experience-metric-card">
-                  <p class="stat-label">Total XP Gain</p>
-                  <h3 data-xp-total>0</h3>
-                </section>
-
-                <section class="experience-metric-card">
-                  <p class="stat-label">Pool Remaining</p>
-                  <h3><span data-xp-pool-remaining>1.00</span> levels</h3>
-                </section>
-
-                <section class="experience-metric-card">
-                  <p class="stat-label">Progress</p>
-                  <h3 data-xp-progress>0.0%</h3>
-                </section>
-
-                <section class="experience-metric-card">
-                  <p class="stat-label">Projected XP / Second</p>
-                  <h3 data-xp-rate>107 xp/s</h3>
-                </section>
-
-                <section class="experience-metric-card">
-                  <p class="stat-label">Est. Time to Level</p>
-                  <h3 data-xp-eta>1m 34s</h3>
-                </section>
-              </div>
-            </div>
-          </section>
-
-          <section class="experience-threshold-section">
-            <h2>XP Threshold Reference</h2>
-            <div class="experience-threshold-grid" role="list">
-              <section class="experience-threshold-card" role="listitem">
-                <p class="stat-label">Level 10</p>
-                <h3>10,000 XP</h3>
-                <p>Default simulator level for a readable one-tick example.</p>
-              </section>
-
-              <section class="experience-threshold-card" role="listitem">
-                <p class="stat-label">Level 70</p>
-                <h3>3,000,000 XP</h3>
-                <p>Higher-level thresholds make the same XP tick consume less pool.</p>
-              </section>
-
-              <section class="experience-threshold-card" role="listitem">
-                <p class="stat-label">Level 90+</p>
-                <h3>Slower refill</h3>
-                <p>The pool still caps at 3.0 levels, but passive refill drops to +1.0 level per 24 hours.</p>
-              </section>
-            </div>
-          </section>
-
-          <section class="experience-related">
-            <h2>Related Pages</h2>
-            <div class="experience-link-grid" aria-label="Related Experience pages">
-              <a href="pages/General/build-planner.html">Build Planner</a>
-              <a href="pages/systems/perks.html">Perks</a>
-              <a href="pages/systems/monster-damage-reduction.html">Monster Damage Reduction</a>
-              <a href="pages/items/weapons.html">Weapons</a>
-              <a href="pages/items/armors.html">Armors</a>
-              <a href="pages/enemies/monsters.html">Monsters</a>
-              <a href="pages/General/play-the-game.html">Play the Game</a>
-            </div>
-          </section>
         </article>
       </main>
     </div>

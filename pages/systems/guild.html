@@ -13,31 +13,30 @@
     <link rel="icon" type="image/png" sizes="64x64" href="images/project-rogue-favicon-64.png" />
     <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
-    <link rel="stylesheet" href="css/styles.css?v=codex-2026-09-06-nav-tints" />
-    <link rel="stylesheet" href="css/guild.css?v=codex-2026-09-06-nav-tints" />
-    <script src="js/site-search.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/weapon-specialty.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/stat-widgets.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/keyword-links.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/cursor-toggle.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/perks.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/rarity-roller.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/nav-core.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/guild.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <link rel="stylesheet" href="css/refresh.css?v=codex-2026-09-06-nav-tints" />
-    <script src="js/refresh.js?v=codex-2026-09-06-nav-tints" defer></script>
+    <link rel="stylesheet" href="css/styles.css?v=codex-2026-09-08-lean-ui" />
+    <link rel="stylesheet" href="css/guild.css?v=codex-2026-09-08-lean-ui" />
+    <script src="js/site-search.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/weapon-specialty.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/stat-widgets.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/keyword-links.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/cursor-toggle.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/perks.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/rarity-roller.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/nav-core.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <link rel="stylesheet" href="css/refresh.css?v=codex-2026-09-08-lean-ui" />
+    <link rel="stylesheet" href="css/systems.css?v=codex-2026-09-08-lean-ui" />
+    <script src="js/systems.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/refresh.js?v=codex-2026-09-08-lean-ui" defer></script>
   </head>
-  <body>
+  <body class="systems-page">
     <div class="layout">
       <div id="sidebar-root"></div>
       <main class="main-content">
         <header class="content-header">
-          <h1 class="content-title">Guild System</h1>
-          <p class="content-tagline">Clan identity, roster management, ranks, and party assignment at a glance.</p>
+          <h1 class="content-title">Guild</h1>
         </header>
 
         <article class="content-section" id="guild-basics">
-          <h2>Guild at a Glance</h2>
           <div class="guild-summary-grid" role="list">
             <section class="guild-summary-card" role="listitem">
               <p class="stat-label">Hotkey</p>
@@ -90,72 +89,6 @@
                 <h3>## / 50</h3>
                 <p>Use the member count to understand whether the guild has room for another invite.</p>
               </section>
-            </div>
-          </section>
-
-          <section class="guild-flow-section">
-            <h2>Rank and Management Flow</h2>
-            <ol class="guild-flow">
-              <li>
-                <span>1</span>
-                <div>
-                  <h3>Open the panel</h3>
-                  <p>Press <strong>G</strong> to view clan identity, roster, rank, and leader details.</p>
-                </div>
-              </li>
-              <li>
-                <span>2</span>
-                <div>
-                  <h3>Select a member</h3>
-                  <p>Roster actions work from the selected member row when a target is required.</p>
-                </div>
-              </li>
-              <li>
-                <span>3</span>
-                <div>
-                  <h3>Adjust standing</h3>
-                  <p>Promote and Demote move members through the displayed rank ladder.</p>
-                </div>
-              </li>
-              <li>
-                <span>4</span>
-                <div>
-                  <h3>Assign parties</h3>
-                  <p>Guild Party cycles selected members through Party A, Party B, and Party C.</p>
-                </div>
-              </li>
-            </ol>
-          </section>
-
-          <section class="guild-party-section">
-            <div class="guild-section-heading">
-              <div>
-                <h2>Party Cycle Preview</h2>
-                <p>Use the preview to see the same A/B/C cycle described by the in-game Guild Party control.</p>
-              </div>
-              <p class="guild-party-note">Party assignment is an organization tool; combat scaling still follows combat rules.</p>
-            </div>
-
-            <div class="stat-widget guild-party-preview" data-party-preview data-current-party="A">
-              <div class="guild-party-options" role="group" aria-label="Guild party selection preview">
-                <button type="button" class="guild-party-option is-active" data-party-option="A" aria-pressed="true">
-                  Party A
-                </button>
-                <button type="button" class="guild-party-option" data-party-option="B" aria-pressed="false">
-                  Party B
-                </button>
-                <button type="button" class="guild-party-option" data-party-option="C" aria-pressed="false">
-                  Party C
-                </button>
-              </div>
-
-              <div class="guild-party-output">
-                <span class="stat-output-label">Current Assignment</span>
-                <strong data-party-current>Party A</strong>
-                <p data-party-description>Party A is selected as the active guild party slot.</p>
-              </div>
-
-              <button type="button" class="guild-cycle-button" data-party-cycle>Cycle Party</button>
             </div>
           </section>
 
@@ -220,18 +153,6 @@
             </div>
           </section>
 
-          <section class="guild-related">
-            <h2>Related Pages</h2>
-            <div class="guild-link-grid" aria-label="Related Guild pages">
-              <a href="pages/systems/anti-zerg.html">Anti-Zerg</a>
-              <a href="pages/systems/pvp-system.html">PVP System</a>
-              <a href="pages/systems/chat.html">Chat</a>
-              <a href="pages/items/weapons.html">Weapons</a>
-              <a href="pages/items/armors.html">Armors</a>
-              <a href="pages/enemies/monsters.html">Monsters</a>
-              <a href="pages/General/play-the-game.html">Play the Game</a>
-            </div>
-          </section>
         </article>
       </main>
     </div>

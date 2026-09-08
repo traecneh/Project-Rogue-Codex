@@ -13,33 +13,31 @@
     <link rel="icon" type="image/png" sizes="64x64" href="images/project-rogue-favicon-64.png" />
     <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
-    <link rel="stylesheet" href="css/styles.css?v=codex-2026-09-06-nav-tints" />
-    <link rel="stylesheet" href="css/monster-damage-reduction.css?v=codex-2026-09-06-nav-tints" />
-    <script src="js/site-search.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/weapon-specialty.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/stat-widgets.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/keyword-links.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/cursor-toggle.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/perks.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/rarity-roller.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/nav-core.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/monster-damage-reduction.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <link rel="stylesheet" href="css/refresh.css?v=codex-2026-09-06-nav-tints" />
-    <script src="js/refresh.js?v=codex-2026-09-06-nav-tints" defer></script>
+    <link rel="stylesheet" href="css/styles.css?v=codex-2026-09-08-lean-ui" />
+    <link rel="stylesheet" href="css/monster-damage-reduction.css?v=codex-2026-09-08-lean-ui" />
+    <script src="js/site-search.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/weapon-specialty.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/stat-widgets.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/keyword-links.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/cursor-toggle.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/perks.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/rarity-roller.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/nav-core.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/monster-damage-reduction.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <link rel="stylesheet" href="css/refresh.css?v=codex-2026-09-08-lean-ui" />
+    <link rel="stylesheet" href="css/systems.css?v=codex-2026-09-08-lean-ui" />
+    <script src="js/systems.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/refresh.js?v=codex-2026-09-08-lean-ui" defer></script>
   </head>
-  <body>
+  <body class="systems-page">
     <div class="layout">
       <div id="sidebar-root"></div>
       <main class="main-content">
         <header class="content-header">
           <h1 class="content-title">Monster Damage Reduction</h1>
-          <p class="content-tagline">
-            Current in-game scaling for high-level monsters: starts at +20, caps at +30, and tops out at a 25% shift.
-          </p>
         </header>
 
         <article class="content-section" id="monster-dr-basics">
-          <h2>Monster Damage Reduction at a Glance</h2>
           <div class="monster-dr-summary-grid" role="list">
             <section class="monster-dr-summary-card" role="listitem">
               <p class="stat-label">Start Threshold</p>
@@ -66,34 +64,10 @@
             </section>
           </div>
 
-          <section class="monster-dr-rule-section">
-            <h2>Scaling Rules</h2>
-            <div class="monster-dr-rule-grid" role="list">
-              <section class="monster-dr-rule-card" role="listitem">
-                <p class="stat-label">Below Start</p>
-                <h3>0%</h3>
-                <p>Gaps at +20 or lower have no damage shift.</p>
-              </section>
-
-              <section class="monster-dr-rule-card" role="listitem">
-                <p class="stat-label">Ramp</p>
-                <h3>Linear +20 to +30</h3>
-                <p>Each level inside the +20 to +30 window increases the shift toward the 25% cap.</p>
-              </section>
-
-              <section class="monster-dr-rule-card" role="listitem">
-                <p class="stat-label">Capped</p>
-                <h3>+30 and above</h3>
-                <p>The same thresholds apply at every player level, and gaps above +30 stay capped.</p>
-              </section>
-            </div>
-          </section>
-
           <section class="monster-dr-calculator-section">
             <div class="monster-dr-section-heading">
               <div>
-                <h2>Damage Reduction Calculator</h2>
-                <p>Adjust the levels to see monster damage dealt and your outgoing damage after their reduction.</p>
+                <h2 data-system-help="Adjust the levels to see monster damage dealt and your outgoing damage after their reduction.">Damage Reduction Calculator</h2>
               </div>
               <p class="monster-dr-note">Monster levels above 100 are treated as 100.</p>
             </div>
@@ -174,40 +148,6 @@
             </div>
           </section>
 
-          <section class="monster-dr-example-section">
-            <h2>Example Outcomes</h2>
-            <div class="monster-dr-example-grid" role="list">
-              <section class="monster-dr-example-card" role="listitem">
-                <p class="stat-label">Even or Lower</p>
-                <h3>No scaling</h3>
-                <p>A monster at or below your level does not trigger this system.</p>
-              </section>
-
-              <section class="monster-dr-example-card" role="listitem">
-                <p class="stat-label">Player 25 vs Monster 50</p>
-                <h3>12.5% shift</h3>
-                <p>A +25 gap is halfway through the ramp, so monster damage is 112.5% and your damage is 87.5%.</p>
-              </section>
-
-              <section class="monster-dr-example-card" role="listitem">
-                <p class="stat-label">Player 25 vs Monster 120</p>
-                <h3>25% cap</h3>
-                <p>Monster 120 is treated as 100, producing a capped result of 125% monster damage and 75% player damage.</p>
-              </section>
-            </div>
-          </section>
-
-          <section class="monster-dr-related">
-            <h2>Related Pages</h2>
-            <div class="monster-dr-link-grid" aria-label="Related Monster Damage Reduction pages">
-              <a href="pages/enemies/monsters.html">Monsters</a>
-              <a href="pages/items/weapons.html">Weapons</a>
-              <a href="pages/items/armors.html">Armors</a>
-              <a href="pages/systems/anti-zerg.html">Anti-Zerg</a>
-              <a href="pages/systems/pvp-system.html">PVP System</a>
-              <a href="pages/General/build-planner.html">Build Planner</a>
-            </div>
-          </section>
         </article>
       </main>
     </div>

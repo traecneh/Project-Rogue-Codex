@@ -125,6 +125,12 @@ function initializeKeywordLinks() {
         anchor.classList.add("stat-keyword-link");
         anchor.setAttribute("data-auto-link", "stat-keyword");
         anchor.textContent = match[0];
+        if (currentPath.endsWith("/pages/general/build-planner.html")) {
+          anchor.target = "_blank";
+          anchor.rel = "noopener noreferrer";
+          anchor.title = "Open reference in a new tab";
+          anchor.setAttribute("aria-label", `${match[0]} (opens in a new tab)`);
+        }
         fragment.appendChild(anchor);
         lastIndex = match.index + match[0].length;
         replaced = true;
@@ -140,4 +146,3 @@ function initializeKeywordLinks() {
 
   activeRules.forEach(linkifyRule);
 }
-

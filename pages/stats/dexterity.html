@@ -13,60 +13,37 @@
     <link rel="icon" type="image/png" sizes="64x64" href="images/project-rogue-favicon-64.png" />
     <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
-    <link rel="stylesheet" href="css/styles.css?v=codex-2026-09-06-nav-tints" />
-    <link rel="stylesheet" href="css/dexterity.css?v=codex-2026-09-06-nav-tints" />
-    <script src="js/site-search.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/weapon-specialty.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/keyword-links.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/cursor-toggle.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/perks.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/rarity-roller.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/nav-core.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/dexterity.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <link rel="stylesheet" href="css/refresh.css?v=codex-2026-09-06-nav-tints" />
-    <script src="js/refresh.js?v=codex-2026-09-06-nav-tints" defer></script>
+    <link rel="stylesheet" href="css/styles.css?v=codex-2026-09-08-lean-ui" />
+    <link rel="stylesheet" href="css/dexterity.css?v=codex-2026-09-08-lean-ui" />
+    <script src="js/site-search.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/weapon-specialty.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/keyword-links.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/cursor-toggle.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/perks.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/rarity-roller.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/nav-core.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/dexterity.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <link rel="stylesheet" href="css/refresh.css?v=codex-2026-09-08-lean-ui" />
+    <link rel="stylesheet" href="css/character.css?v=codex-2026-09-08-lean-ui" />
+    <script src="js/character.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/refresh.js?v=codex-2026-09-08-lean-ui" defer></script>
   </head>
-  <body>
+  <body class="character-page">
     <div class="layout">
       <div id="sidebar-root"></div>
       <main class="main-content">
         <header class="content-header">
           <h1 class="content-title">Dexterity</h1>
-          <p class="content-tagline">
-            Melee damage contribution, base-Dex crit chance, and total-Dex damage reduction.
-          </p>
         </header>
 
-        <article class="content-section" id="dexterity-basics">
-          <h2>Dexterity at a Glance</h2>
-          <div class="dexterity-summary-grid" role="list">
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Damage</p>
-              <h3>Melee Multiplier</h3>
-              <p>Shared multiplier: <code>1 + (Skill / 50) + (Str / 100) + (Dex / 200)</code>.</p>
-            </section>
-
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Critical</p>
-              <h3>Crit Chance</h3>
-              <p><code>Base Dex / 2.5%</code> crit chance at <code>1.35x</code> damage.</p>
-            </section>
-
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Mitigation</p>
-              <h3>Damage Reduction</h3>
-              <p><code>(Total Dex * 0.00125) / (1 + Total Dex * 0.00125)</code>.</p>
-            </section>
-          </div>
-        </article>
-
+        <span id="dexterity-basics" class="character-anchor" aria-hidden="true"></span>
         <article class="content-section" id="dexterity-calculator">
-          <h2>Dexterity Calculator</h2>
-          <p>Adjust combat stats to preview Dexterity's damage, crit, and damage reduction values.</p>
+          <h2>Calculator</h2>
 
           <div class="dexterity-calculator-widget">
             <div class="dexterity-control-grid">
-              <label for="dexterity-skill-slider">Skill: <span data-dexterity-skill>50</span></label>
+              <div class="character-control">
+<label for="dexterity-skill-slider">Skill: <span data-dexterity-skill>50</span></label>
               <input
                 type="range"
                 id="dexterity-skill-slider"
@@ -75,8 +52,10 @@
                 value="50"
                 data-dexterity-skill-slider
               />
+              </div>
 
-              <label for="dexterity-str-slider">Strength: <span data-dexterity-str>50</span></label>
+              <div class="character-control">
+<label for="dexterity-str-slider">Strength: <span data-dexterity-str>50</span></label>
               <input
                 type="range"
                 id="dexterity-str-slider"
@@ -85,8 +64,10 @@
                 value="50"
                 data-dexterity-str-slider
               />
+              </div>
 
-              <label for="dexterity-dex-slider">Dexterity: <span data-dexterity-dex>50</span></label>
+              <div class="character-control">
+<label for="dexterity-dex-slider">Dexterity: <span data-dexterity-dex>50</span></label>
               <input
                 type="range"
                 id="dexterity-dex-slider"
@@ -95,8 +76,10 @@
                 value="50"
                 data-dexterity-dex-slider
               />
+              </div>
 
-              <label for="dexterity-crit-dex-slider">Base Dexterity: <span data-dexterity-crit-dex>150</span></label>
+              <div class="character-control">
+<label for="dexterity-crit-dex-slider">Base Dexterity: <span data-dexterity-crit-dex>150</span></label>
               <input
                 type="range"
                 id="dexterity-crit-dex-slider"
@@ -105,8 +88,10 @@
                 value="150"
                 data-dexterity-crit-dex-slider
               />
+              </div>
 
-              <label for="dexterity-dr-slider">Total Dexterity: <span data-dexterity-dr-dex>120</span></label>
+              <div class="character-control">
+<label for="dexterity-dr-slider">Total Dexterity: <span data-dexterity-dr-dex>120</span></label>
               <input
                 type="range"
                 id="dexterity-dr-slider"
@@ -115,26 +100,27 @@
                 value="120"
                 data-dexterity-dr-slider
               />
+              </div>
             </div>
 
             <div class="dexterity-output-grid" aria-live="polite">
-              <div class="stat-output">
+              <div class="stat-output" data-character-help="1 + (Skill / 50) + (Str / 100) + (Dex / 200). Dexterity contributes half as much as Strength.">
                 <span class="stat-output-label">Melee Multiplier</span>
                 <span class="stat-output-value" data-dexterity-multiplier>2.75x</span>
               </div>
-              <div class="stat-output">
+              <div class="stat-output" data-character-help="Base Dex / 2.5% chance. Uses base Dexterity, excluding race and equipment bonuses.">
                 <span class="stat-output-label">Crit Chance</span>
                 <span class="stat-output-value" data-dexterity-crit-chance>60.0%</span>
               </div>
-              <div class="stat-output">
+              <div class="stat-output" data-character-help="Critical hits deal 1.35x damage.">
                 <span class="stat-output-label">Crit Multiplier</span>
                 <span class="stat-output-value" data-dexterity-crit-multiplier>1.35x</span>
               </div>
-              <div class="stat-output">
+              <div class="stat-output" data-character-help="(Total Dex * 0.00125) / (1 + Total Dex * 0.00125). Uses total Dexterity, including bonuses.">
                 <span class="stat-output-label">Damage Reduction</span>
                 <span class="stat-output-value" data-dexterity-dr>13.04% DR</span>
               </div>
-              <div class="stat-output">
+              <div class="stat-output" data-character-help="Remaining damage from a 1,000-damage hit after the calculated Dexterity reduction.">
                 <span class="stat-output-label">Damage Taken</span>
                 <span class="stat-output-value" data-dexterity-post-dr>869.6 / 1,000</span>
               </div>
@@ -144,75 +130,36 @@
 
         <article class="content-section" id="dexterity-dr-benchmarks">
           <h2>Damage Reduction Benchmarks</h2>
-          <p>Benchmarks use total Dexterity and the <code>Total Dex * 0.00125</code> reduction curve.</p>
           <div class="dexterity-benchmark-grid" data-dexterity-dr-chart></div>
         </article>
 
         <article class="content-section" id="dexterity-races">
-          <h2>Race Context</h2>
+          <h2>Race Bonuses</h2>
           <div class="dexterity-context-grid">
             <section class="dexterity-context-card">
               <p class="stat-label">Elf</p>
               <h3>+10 Dexterity</h3>
-              <p>Pole proficiency and Parry make Elf a direct fit for high-Dex defensive combat.</p>
             </section>
 
             <section class="dexterity-context-card">
               <p class="stat-label">Dark Elf</p>
               <h3>+5 Dexterity</h3>
-              <p>Small blades and Alchemist support fast-hit setups that still value base-Dex crit.</p>
             </section>
           </div>
         </article>
 
-        <article class="content-section" id="dexterity-build-context">
-          <h2>Build Context</h2>
-          <div class="dexterity-context-grid">
-            <section class="dexterity-context-card">
-              <p class="stat-label">Base vs Total</p>
-              <h3>Crit Uses Base Dex</h3>
-              <p>Crit chance checks base Dexterity, while damage reduction checks total Dexterity.</p>
-            </section>
-
-            <section class="dexterity-context-card">
-              <p class="stat-label">Damage</p>
-              <h3>Shared Melee Formula</h3>
-              <p>Dexterity contributes half as much as Strength to the shared melee multiplier.</p>
-            </section>
-
-            <section class="dexterity-context-card">
-              <p class="stat-label">Planner</p>
-              <h3>Compare Whole Builds</h3>
-              <p>Use the Build Planner when Dexterity changes are tied to armor, perks, and weapon speed.</p>
-            </section>
-          </div>
-        </article>
-
+        <span id="dexterity-build-context" class="character-anchor" aria-hidden="true"></span>
         <article class="content-section" id="dexterity-perks">
-          <h2>Perks</h2>
-          <p class="content-tagline">
-            Notation: <strong>[ ]</strong> = tiers (T1/T2/T3), <strong>( )</strong> = weapon attack speeds
-            (750/1000/1250/1500), <strong>{ }</strong> = formulas.
-          </p>
+          <h2 data-character-help="[ ] = Tier 1 / 2 / 3. ( ) = weapon attack speeds 750 / 1000 / 1250 / 1500 ms. { } = formulas.">Perks</h2>
           <div class="stat-grid perk-grid" data-perk-stats="dexterity"></div>
         </article>
 
         <article class="content-section" id="dexterity-gear">
-          <h2>Equipment Reference</h2>
+          <h2>Equipment</h2>
           <div class="stat-grid" data-weapon-specialty="Dexterity"></div>
         </article>
 
-        <article class="content-section">
-          <h2>Related Pages</h2>
-          <div class="dexterity-link-grid">
-            <a href="pages/stats/races.html">Races</a>
-            <a href="pages/stats/strength.html">Strength</a>
-            <a href="pages/stats/constitution.html">Constitution</a>
-            <a href="pages/General/build-planner.html">Build Planner</a>
-            <a href="pages/items/weapons.html">Weapons</a>
-            <a href="pages/systems/perks.html">Perks</a>
-          </div>
-        </article>
+
       </main>
     </div>
   </body>

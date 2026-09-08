@@ -13,32 +13,30 @@
     <link rel="icon" type="image/png" sizes="64x64" href="images/project-rogue-favicon-64.png" />
     <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
-    <link rel="stylesheet" href="css/styles.css?v=codex-2026-09-06-nav-tints" />
-    <link rel="stylesheet" href="css/rarity.css?v=codex-2026-09-06-nav-tints" />
-    <script src="js/site-search.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/weapon-specialty.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/stat-widgets.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/keyword-links.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/cursor-toggle.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/perks.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/rarity-roller.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/nav-core.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <link rel="stylesheet" href="css/refresh.css?v=codex-2026-09-06-nav-tints" />
-    <script src="js/refresh.js?v=codex-2026-09-06-nav-tints" defer></script>
+    <link rel="stylesheet" href="css/styles.css?v=codex-2026-09-08-lean-ui" />
+    <link rel="stylesheet" href="css/rarity.css?v=codex-2026-09-08-lean-ui" />
+    <script src="js/site-search.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/weapon-specialty.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/stat-widgets.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/keyword-links.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/cursor-toggle.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/perks.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/rarity-roller.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/nav-core.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <link rel="stylesheet" href="css/refresh.css?v=codex-2026-09-08-lean-ui" />
+    <link rel="stylesheet" href="css/systems.css?v=codex-2026-09-08-lean-ui" />
+    <script src="js/systems.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/refresh.js?v=codex-2026-09-08-lean-ui" defer></script>
   </head>
-  <body>
+  <body class="systems-page">
     <div class="layout">
       <div id="sidebar-root"></div>
       <main class="main-content">
         <header class="content-header">
-          <h1 class="content-title">Rarity System</h1>
-          <p class="content-tagline">
-            How item rarity tiers affect bonus stats, armor class, perk rolls, and item power.
-          </p>
+          <h1 class="content-title">Rarity</h1>
         </header>
 
         <article class="content-section">
-          <h2>What Rarity Affects</h2>
           <div class="rarity-summary-grid" role="list">
             <section class="rarity-summary-card" role="listitem">
               <p class="stat-label">Bonus Stats</p>
@@ -128,11 +126,7 @@
           </section>
 
           <section class="rarity-roller-section" id="rarity-roller">
-            <h2>Upgrade Preview</h2>
-            <p>
-              Roll a sandbox item rarity, then step it upward until the simulated max rarity is reached. The perk result
-              stays tied to the original roll so upgrades show stat and AC movement separately.
-            </p>
+            <h2 data-system-help="Roll a sandbox item rarity, then step it upward until the simulated max rarity is reached. The perk result stays tied to the original roll so upgrades show stat and AC movement separately.">Upgrade Preview</h2>
             <div class="rarity-roller-actions">
               <button class="rarity-roll-button" type="button" data-rarity-roll>Roll Random Rarity</button>
               <button class="rarity-roll-button" type="button" data-rarity-upgrade>Upgrade +1</button>
@@ -140,16 +134,6 @@
             <div class="rarity-roll-result" data-rarity-result>Roll results will appear here.</div>
           </section>
 
-          <section class="rarity-related">
-            <h2>Related Item Pages</h2>
-            <div class="rarity-link-grid" aria-label="Related item progression pages">
-              <a href="pages/items/weapons.html">Weapons</a>
-              <a href="pages/items/armors.html">Armors</a>
-              <a href="pages/systems/perks.html">Perks</a>
-              <a href="pages/systems/re-roll.html">Reforge</a>
-              <a href="pages/systems/crafting.html">Crafting</a>
-            </div>
-          </section>
         </article>
       </main>
     </div>

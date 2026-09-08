@@ -96,22 +96,6 @@
   box-shadow: 0 0 12px rgba(75, 255, 75, 0.16);
 }
 
-.resistance-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.55rem;
-  margin-bottom: 0.8rem;
-}
-
-.resistance-legend span {
-  border: 1px solid var(--border-soft);
-  border-radius: 8px;
-  padding: 0.4rem 0.6rem;
-  color: var(--text-muted);
-  background: rgba(255, 255, 255, 0.04);
-  font-size: 0.86rem;
-}
-
 .resistance-type-grid {
   grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
 }

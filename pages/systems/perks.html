@@ -13,40 +13,34 @@
     <link rel="icon" type="image/png" sizes="64x64" href="images/project-rogue-favicon-64.png" />
     <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
-    <link rel="stylesheet" href="css/styles.css?v=codex-2026-09-06-nav-tints" />
-    <link rel="stylesheet" href="css/perks.css?v=codex-2026-09-06-nav-tints" />
-    <script src="js/utils.js?v=codex-2026-09-06-nav-tints"></script>
-    <script src="js/site-search.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/weapon-specialty.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/stat-widgets.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/keyword-links.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/cursor-toggle.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/perks.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/perk-calculations.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/perks-page.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/rarity-roller.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/nav-core.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <link rel="stylesheet" href="css/refresh.css?v=codex-2026-09-06-nav-tints" />
-    <script src="js/refresh.js?v=codex-2026-09-06-nav-tints" defer></script>
+    <link rel="stylesheet" href="css/styles.css?v=codex-2026-09-08-lean-ui" />
+    <link rel="stylesheet" href="css/perks.css?v=codex-2026-09-08-lean-ui" />
+    <script src="js/utils.js?v=codex-2026-09-08-lean-ui"></script>
+    <script src="js/site-search.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/weapon-specialty.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/stat-widgets.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/keyword-links.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/cursor-toggle.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/perks.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/perk-calculations.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/perks-page.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/rarity-roller.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/nav-core.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <link rel="stylesheet" href="css/refresh.css?v=codex-2026-09-08-lean-ui" />
+    <link rel="stylesheet" href="css/systems.css?v=codex-2026-09-08-lean-ui" />
+    <script src="js/systems.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/refresh.js?v=codex-2026-09-08-lean-ui" defer></script>
   </head>
-  <body>
+  <body class="systems-page">
     <div class="layout">
       <div id="sidebar-root"></div>
       <main class="main-content">
         <header class="content-header">
-          <h1 class="content-title">Perks System</h1>
-          <p class="content-tagline">
-            Perks are item-based effects with tiered values, stacking rules, and item/race sources.
-          </p>
+          <h1 class="content-title">Perks</h1>
         </header>
 
-        <article class="content-section">
-          <h2>Overview</h2>
-          <p>Perks drop on loot or come innate on items; values can change with balance updates.</p>
-        </article>
-
         <article class="content-section" id="stacking-rules">
-          <h2>Perk Stacking Rules</h2>
+
           <div class="stat-grid" role="list">
             <section class="stat-card" role="listitem">
               <p class="stat-label">Limit</p>
@@ -68,31 +62,8 @@
           </div>
         </article>
 
-        <article class="content-section" id="notation">
-          <h2>Notation</h2>
-          <div class="stat-grid" role="list">
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Tiers</p>
-              <h3>[Brackets]</h3>
-              <p>Tier values list in order [T1 / T2 / T3].</p>
-            </section>
-
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Speed</p>
-              <h3>(Parentheses)</h3>
-              <p>Weapon speed variants use (750 / 1000 / 1250 / 1500).</p>
-            </section>
-
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Formula</p>
-              <h3>{Curly Braces}</h3>
-              <p>Formulas appear in curly brackets.</p>
-            </section>
-          </div>
-        </article>
-
         <article class="content-section" id="perk-list">
-          <h2>Perks</h2>
+          <h2 data-system-help="[ ] = Tier 1 / Tier 2 / Tier 3. ( ) = weapon speeds 750 / 1000 / 1250 / 1500 ms. { } = formulas.">Perk Reference</h2>
           <div class="perk-tools" aria-label="Perk reference controls">
             <div class="perk-controls">
               <div class="perk-control">
@@ -135,7 +106,7 @@
             </div>
             <div class="perk-results-meta">
               <span id="perk-result-count" data-perk-results>Loading perks...</span>
-              <span class="perk-index-hint">Selecting a perk updates the page link.</span>
+
             </div>
           </div>
           <p id="perk-empty" class="perk-empty-state" data-perk-empty hidden>No perks match these filters.</p>
@@ -143,7 +114,7 @@
         </article>
 
         <article class="content-section" id="unique-effects">
-          <h2 class="perk-group-header">Unique Perks (Typically Item-Only)</h2>
+          <h2 class="perk-group-header">Unique Perks</h2>
           <div class="stat-grid perk-grid" id="unique-perk-cards"></div>
         </article>
       </main>

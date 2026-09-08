@@ -13,64 +13,37 @@
     <link rel="icon" type="image/png" sizes="64x64" href="images/project-rogue-favicon-64.png" />
     <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
-    <link rel="stylesheet" href="css/styles.css?v=codex-2026-09-06-nav-tints" />
-    <link rel="stylesheet" href="css/strength.css?v=codex-2026-09-06-nav-tints" />
-    <script src="js/site-search.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/weapon-specialty.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/keyword-links.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/cursor-toggle.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/perks.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/rarity-roller.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/nav-core.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/strength.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <link rel="stylesheet" href="css/refresh.css?v=codex-2026-09-06-nav-tints" />
-    <script src="js/refresh.js?v=codex-2026-09-06-nav-tints" defer></script>
+    <link rel="stylesheet" href="css/styles.css?v=codex-2026-09-08-lean-ui" />
+    <link rel="stylesheet" href="css/strength.css?v=codex-2026-09-08-lean-ui" />
+    <script src="js/site-search.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/weapon-specialty.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/keyword-links.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/cursor-toggle.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/perks.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/rarity-roller.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/nav-core.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/strength.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <link rel="stylesheet" href="css/refresh.css?v=codex-2026-09-08-lean-ui" />
+    <link rel="stylesheet" href="css/character.css?v=codex-2026-09-08-lean-ui" />
+    <script src="js/character.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/refresh.js?v=codex-2026-09-08-lean-ui" defer></script>
   </head>
-  <body>
+  <body class="character-page">
     <div class="layout">
       <div id="sidebar-root"></div>
       <main class="main-content">
         <header class="content-header">
           <h1 class="content-title">Strength</h1>
-          <p class="content-tagline">Melee damage, carry weight, max health contribution, and bleed scaling.</p>
         </header>
 
-        <article class="content-section" id="strength-basics">
-          <h2>Strength at a Glance</h2>
-          <div class="strength-summary-grid" role="list">
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Damage</p>
-              <h3>Melee Multiplier</h3>
-              <p>Shared multiplier: <code>1 + (Skill / 50) + (Str / 100) + (Dex / 200)</code>.</p>
-            </section>
-
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Carry Weight</p>
-              <h3>Max Weight</h3>
-              <p><code>150 + (3 * Strength)</code>.</p>
-            </section>
-
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Vitality</p>
-              <h3>Max Health</h3>
-              <p><code>20 + (Level * 15) + (Con * 10) + (Str * 2)</code>.</p>
-            </section>
-
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Bleed</p>
-              <h3>100 Base Strength</h3>
-              <p>Bleed unlocks at 100 base Strength, then scales at <code>Strength / 10%</code> per hit.</p>
-            </section>
-          </div>
-        </article>
-
+        <span id="strength-basics" class="character-anchor" aria-hidden="true"></span>
         <article class="content-section" id="strength-calculator">
-          <h2>Strength Calculator</h2>
-          <p>Adjust the shared combat values to see Strength's direct contribution to damage, weight, health, and bleed.</p>
+          <h2>Calculator</h2>
 
           <div class="strength-calculator-widget">
             <div class="strength-control-grid">
-              <label for="strength-skill-slider">Skill: <span data-strength-skill>50</span></label>
+              <div class="character-control">
+<label for="strength-skill-slider">Skill: <span data-strength-skill>50</span></label>
               <input
                 type="range"
                 id="strength-skill-slider"
@@ -79,8 +52,10 @@
                 value="50"
                 data-strength-skill-slider
               />
+              </div>
 
-              <label for="strength-str-slider">Strength: <span data-strength-str>100</span></label>
+              <div class="character-control">
+<label for="strength-str-slider">Strength: <span data-strength-str>100</span></label>
               <input
                 type="range"
                 id="strength-str-slider"
@@ -89,8 +64,10 @@
                 value="100"
                 data-strength-str-slider
               />
+              </div>
 
-              <label for="strength-dex-slider">Dexterity: <span data-strength-dex>50</span></label>
+              <div class="character-control">
+<label for="strength-dex-slider">Dexterity: <span data-strength-dex>50</span></label>
               <input
                 type="range"
                 id="strength-dex-slider"
@@ -99,8 +76,10 @@
                 value="50"
                 data-strength-dex-slider
               />
+              </div>
 
-              <label for="strength-level-slider">Level: <span data-strength-level>50</span></label>
+              <div class="character-control">
+<label for="strength-level-slider">Level: <span data-strength-level>50</span></label>
               <input
                 type="range"
                 id="strength-level-slider"
@@ -109,8 +88,10 @@
                 value="50"
                 data-strength-level-slider
               />
+              </div>
 
-              <label for="strength-con-slider">Constitution: <span data-strength-con>150</span></label>
+              <div class="character-control">
+<label for="strength-con-slider">Constitution: <span data-strength-con>150</span></label>
               <input
                 type="range"
                 id="strength-con-slider"
@@ -119,8 +100,10 @@
                 value="150"
                 data-strength-con-slider
               />
+              </div>
 
-              <label for="strength-hit-slider">Hit Damage: <span data-strength-hit>100</span></label>
+              <div class="character-control">
+<label for="strength-hit-slider">Hit Damage: <span data-strength-hit>100</span></label>
               <input
                 type="range"
                 id="strength-hit-slider"
@@ -129,26 +112,27 @@
                 value="100"
                 data-strength-hit-slider
               />
+              </div>
             </div>
 
             <div class="strength-output-grid" aria-live="polite">
-              <div class="stat-output">
+              <div class="stat-output" data-character-help="1 + (Skill / 50) + (Str / 100) + (Dex / 200).">
                 <span class="stat-output-label">Melee Multiplier</span>
                 <span class="stat-output-value" data-strength-multiplier>3.25x</span>
               </div>
-              <div class="stat-output">
+              <div class="stat-output" data-character-help="150 + (3 * Strength).">
                 <span class="stat-output-label">Max Weight</span>
                 <span class="stat-output-value" data-strength-max-weight>450</span>
               </div>
-              <div class="stat-output">
+              <div class="stat-output" data-character-help="20 + (Level * 15) + (Con * 10) + (Str * 2).">
                 <span class="stat-output-label">Max Health</span>
                 <span class="stat-output-value" data-strength-max-health>2,470</span>
               </div>
-              <div class="stat-output">
+              <div class="stat-output" data-character-help="Requires 100 Base Strength. Chance per hit: Strength / 10%. Race and equipment bonuses do not unlock the threshold.">
                 <span class="stat-output-label">Bleed Chance</span>
                 <span class="stat-output-value" data-strength-bleed-chance>10.0%</span>
               </div>
-              <div class="stat-output">
+              <div class="stat-output" data-character-help="Each bleed stack deals 7.5% of hit damage. The hit that applied the stack determines its damage.">
                 <span class="stat-output-label">Bleed Damage</span>
                 <span class="stat-output-value" data-strength-bleed-damage>7.5</span>
               </div>
@@ -162,81 +146,22 @@
 
         <article class="content-section" id="strength-weight-benchmarks">
           <h2>Weight Benchmarks</h2>
-          <p>Benchmarks use <code>150 + (3 * Strength)</code> and are generated from the same calculator formula.</p>
           <div class="strength-benchmark-grid" data-strength-weight-chart></div>
         </article>
 
-        <article class="content-section" id="strength-bleed">
-          <h2>Bleed Threshold</h2>
-          <div class="strength-context-grid">
-            <section class="strength-context-card">
-              <p class="stat-label">Trigger</p>
-              <h3>100 Base Strength</h3>
-              <p>Attacks can inflict bleed once base Strength reaches 100.</p>
-            </section>
-
-            <section class="strength-context-card">
-              <p class="stat-label">Chance</p>
-              <h3>Strength / 10%</h3>
-              <p>A character with 150 base Strength has a 15.0% bleed chance per hit.</p>
-            </section>
-
-            <section class="strength-context-card">
-              <p class="stat-label">Damage</p>
-              <h3>7.5% of hit damage</h3>
-              <p>Each bleed stack uses the damage that applied the stack.</p>
-            </section>
-          </div>
-        </article>
-
-        <article class="content-section" id="strength-build-context">
-          <h2>Build Context</h2>
-          <div class="strength-context-grid">
-            <section class="strength-context-card">
-              <p class="stat-label">Race Bonuses</p>
-              <h3>Human / Tundrian</h3>
-              <p>Human adds +5 Strength. Tundrian adds +10 Strength.</p>
-            </section>
-
-            <section class="strength-context-card">
-              <p class="stat-label">Requirements</p>
-              <h3>Check Base Values</h3>
-              <p>When a requirement calls for base Strength, race or gear bonuses should be reviewed separately.</p>
-            </section>
-
-            <section class="strength-context-card">
-              <p class="stat-label">Planner</p>
-              <h3>Compare Whole Builds</h3>
-              <p>Use the Build Planner when Strength changes are tied to armor weight, health, and weapon damage.</p>
-            </section>
-          </div>
-        </article>
-
+        <span id="strength-bleed" class="character-anchor" aria-hidden="true"></span>
+<p class="character-note">Race bonuses: Human +5 Strength; Tundrian +10 Strength.</p>
         <article class="content-section" id="strength-perks">
-          <h2>Perks</h2>
-          <p class="content-tagline">
-            Notation: <strong>[ ]</strong> = tiers (T1/T2/T3), <strong>( )</strong> = weapon attack speeds
-            (750/1000/1250/1500), <strong>{ }</strong> = formulas.
-          </p>
+          <h2 data-character-help="[ ] = Tier 1 / 2 / 3. ( ) = weapon attack speeds 750 / 1000 / 1250 / 1500 ms. { } = formulas.">Perks</h2>
           <div class="stat-grid perk-grid" data-perk-stats="strength"></div>
         </article>
 
         <article class="content-section" id="strength-gear">
-          <h2>Equipment Reference</h2>
+          <h2>Equipment</h2>
           <div class="stat-grid" data-weapon-specialty="Strength"></div>
         </article>
 
-        <article class="content-section">
-          <h2>Related Pages</h2>
-          <div class="strength-link-grid">
-            <a href="pages/stats/races.html">Races</a>
-            <a href="pages/stats/skills.html">Skills</a>
-            <a href="pages/stats/constitution.html">Constitution</a>
-            <a href="pages/stats/dexterity.html">Dexterity</a>
-            <a href="pages/General/build-planner.html">Build Planner</a>
-            <a href="pages/items/weapons.html">Weapons</a>
-          </div>
-        </article>
+
       </main>
     </div>
   </body>

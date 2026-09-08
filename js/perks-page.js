@@ -304,17 +304,19 @@
   };
 
   const addPerkAbbreviation = (card, entry) => {
+    if (card.querySelector(".perk-card-heading")) return;
+    const heading = card.querySelector("h3");
+    if (!heading) return;
+    const header = document.createElement("div");
+    header.className = "perk-card-heading";
+    heading.before(header);
+    header.appendChild(heading);
     const abbrev = entry?.abbreviation ? String(entry.abbreviation).trim() : "";
-    if (!abbrev || card.querySelector(".perk-abbrev")) return;
+    if (!abbrev) return;
     const badge = document.createElement("span");
     badge.className = "perk-abbrev";
     badge.textContent = abbrev;
-    const heading = card.querySelector("h3");
-    if (heading) {
-      heading.insertAdjacentElement("afterend", badge);
-    } else {
-      card.appendChild(badge);
-    }
+    header.appendChild(badge);
   };
 
   const renderPerkSources = (card, entry) => {

@@ -1,8 +1,6 @@
 .main-content:has(.home-timeline) { background: linear-gradient(150deg, #1b3035 0, #121a23 440px); overflow: hidden; }
 .main-content:has(.home-timeline) > .content-header { padding: 22px 0 30px; position: relative; }
-.main-content:has(.home-timeline) > .content-header::before { content: "THE PROJECT ROGUE ARCHIVE"; display: block; color: #8bdbc5; font-size: 11px; font-weight: 700; letter-spacing: .22em; margin-bottom: 14px; }
 .main-content:has(.home-timeline) > .content-header .content-title { font-size: clamp(32px, 4vw, 52px); line-height: 1.1; }
-.main-content:has(.home-timeline) .content-tagline { max-width: 560px; font-size: 15px; margin-top: 16px; line-height: 1.7; }
 .home-section-heading h2 { font-size: 22px; letter-spacing: -.02em; margin-bottom: 8px; }
 .home-section-heading p { color: var(--text-muted); max-width: 580px; font-size: 14px; }
 .home-filter-summary { background: transparent; border: 0; border-left: 1px solid #41535d; border-radius: 0; min-width: 140px; }

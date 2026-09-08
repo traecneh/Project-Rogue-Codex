@@ -13,19 +13,18 @@
     <link rel="icon" type="image/png" sizes="64x64" href="images/project-rogue-favicon-64.png" />
     <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
-    <link rel="stylesheet" href="css/styles.css?v=codex-2026-09-06-nav-tints" />
-    <link rel="stylesheet" href="css/play-the-game.css?v=codex-2026-09-06-nav-tints" />
-    <script src="js/site-search.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/weapon-specialty.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/stat-widgets.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/keyword-links.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/cursor-toggle.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/perks.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/rarity-roller.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/nav-core.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/play-the-game.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <link rel="stylesheet" href="css/refresh.css?v=codex-2026-09-06-nav-tints" />
-    <script src="js/refresh.js?v=codex-2026-09-06-nav-tints" defer></script>
+    <link rel="stylesheet" href="css/styles.css?v=codex-2026-09-08-lean-ui" />
+    <link rel="stylesheet" href="css/play-the-game.css?v=codex-2026-09-08-lean-ui" />
+    <script src="js/site-search.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/weapon-specialty.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/stat-widgets.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/keyword-links.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/cursor-toggle.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/perks.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/rarity-roller.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/nav-core.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <link rel="stylesheet" href="css/refresh.css?v=codex-2026-09-08-lean-ui" />
+    <script src="js/refresh.js?v=codex-2026-09-08-lean-ui" defer></script>
   </head>
   <body>
     <div class="layout">
@@ -33,70 +32,28 @@
       <main class="main-content">
         <header class="content-header">
           <h1 class="content-title">Play the Game</h1>
-          <p class="content-tagline">Discord-first setup for downloading the client, creating an account, and getting in.</p>
         </header>
 
-        <article class="content-section" id="play-basics">
-          <h2>Discord-First Setup</h2>
-          <div class="play-step-grid" role="list">
-            <section class="play-step-card" role="listitem">
-              <p class="stat-label">Step 1</p>
-              <h3>Join the Discord</h3>
-              <p>Use the permanent invite to enter the server where the current download and account steps live.</p>
-            </section>
-
-            <section class="play-step-card" role="listitem">
-              <p class="stat-label">Step 2</p>
-              <h3>Open #welcome</h3>
-              <p>The #welcome channel has the client download links and the bot instructions for creating your game account.</p>
-            </section>
-
-            <section class="play-step-card" role="listitem">
-              <p class="stat-label">Step 3</p>
-              <h3>Create Your Account</h3>
-              <p>DM the Discord bot from the welcome flow, then use that account in the game client.</p>
-            </section>
-
-            <section class="play-step-card" role="listitem">
-              <p class="stat-label">Step 4</p>
-              <h3>Log In and Play</h3>
-              <p>Open the client, sign in, and use the Codex while you learn gear, monsters, and systems.</p>
-            </section>
-          </div>
-
-          <section class="play-discord-panel">
-            <div>
-              <p class="stat-label">Permanent Invite</p>
-              <h2>https://discord.gg/DW6zcWy</h2>
-              <p class="play-discord-copy">The Discord stays the source of truth for current download links and account setup details.</p>
-            </div>
-
-            <div class="discord-cta-wrap" data-play-escort-wrap>
-              <a
-                class="discord-cta"
-                data-discord-cta
-                href="https://discord.gg/DW6zcWy"
-                target="_blank"
-                rel="noreferrer noopener"
-              >
-                <span class="discord-cta-mark" aria-hidden="true">#</span>
-                <span>Enter the Discord</span>
+        <article id="play-basics" class="play-landing">
+          <section class="play-discord-panel" aria-label="Game access">
+            <div class="play-invite-copy">
+              <p class="play-intro">Downloads and account setup are in Discord.</p>
+              <a class="discord-cta" data-discord-cta href="https://discord.gg/DW6zcWy" target="_blank" rel="noreferrer noopener">
+                <!-- Discord mark from Simple Icons (CC0). -->
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z"/></svg>
+                <span>Join the Discord</span><span class="discord-cta-arrow" aria-hidden="true">↗</span>
               </a>
-              <img class="discord-monster" data-play-monster width="32" height="32" alt="" hidden />
-              <img class="discord-elite" data-play-elite width="32" height="32" alt="" hidden />
+              <p class="play-invite-note">Opens in a new tab</p>
             </div>
           </section>
 
-          <section class="play-reference-section">
-            <h2>Related Pages</h2>
-            <div class="play-link-grid">
-              <a href="pages/General/build-planner.html">Build Planner</a>
-              <a href="pages/items/weapons.html">Weapons</a>
-              <a href="pages/items/armors.html">Armors</a>
-              <a href="pages/enemies/monsters.html">Monsters</a>
-              <a href="pages/systems/chat.html">Chat</a>
-              <a href="pages/systems/experience.html">Experience Pool</a>
-            </div>
+          <section class="play-setup" aria-labelledby="play-setup-title">
+            <div class="play-setup-heading"><h2 id="play-setup-title">Setup</h2></div>
+            <ol class="play-step-grid">
+              <li class="play-step-card"><span class="play-step-number" aria-hidden="true">01</span><h3>Open #welcome</h3><p>Download the client from #welcome.</p></li>
+              <li class="play-step-card"><span class="play-step-number" aria-hidden="true">02</span><h3>Create your account</h3><p>DM the bot listed in #welcome.</p></li>
+              <li class="play-step-card"><span class="play-step-number" aria-hidden="true">03</span><h3>Log in and play</h3><p>Open the client and sign in.</p></li>
+            </ol>
           </section>
         </article>
       </main>

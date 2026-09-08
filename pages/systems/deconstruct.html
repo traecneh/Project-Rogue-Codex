@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Deconstruct System &mdash; Project Rogue Codex</title>
+    <title>Deconstruct &mdash; Project Rogue Codex</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
@@ -13,32 +13,30 @@
     <link rel="icon" type="image/png" sizes="64x64" href="images/project-rogue-favicon-64.png" />
     <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
-    <link rel="stylesheet" href="css/styles.css?v=codex-2026-09-06-nav-tints" />
-    <link rel="stylesheet" href="css/deconstruct.css?v=codex-2026-09-06-nav-tints" />
-    <script src="js/site-search.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/weapon-specialty.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/stat-widgets.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/keyword-links.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/cursor-toggle.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/perks.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/rarity-roller.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/nav-core.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <link rel="stylesheet" href="css/refresh.css?v=codex-2026-09-06-nav-tints" />
-    <script src="js/refresh.js?v=codex-2026-09-06-nav-tints" defer></script>
+    <link rel="stylesheet" href="css/styles.css?v=codex-2026-09-08-lean-ui" />
+    <link rel="stylesheet" href="css/deconstruct.css?v=codex-2026-09-08-lean-ui" />
+    <script src="js/site-search.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/weapon-specialty.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/stat-widgets.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/keyword-links.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/cursor-toggle.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/perks.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/rarity-roller.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/nav-core.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <link rel="stylesheet" href="css/refresh.css?v=codex-2026-09-08-lean-ui" />
+    <link rel="stylesheet" href="css/systems.css?v=codex-2026-09-08-lean-ui" />
+    <script src="js/systems.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/refresh.js?v=codex-2026-09-08-lean-ui" defer></script>
   </head>
-  <body>
+  <body class="systems-page ascendancy-page">
     <div class="layout">
       <div id="sidebar-root"></div>
       <main class="main-content">
         <header class="content-header">
-          <h1 class="content-title">Deconstruct System</h1>
-          <p class="content-tagline">
-            Convert unwanted gear into Ascendency Shards without losing track of what is worth keeping.
-          </p>
+          <h1 class="content-title">Deconstruct</h1>
         </header>
 
         <article class="content-section" id="deconstruct-basics">
-          <h2>What Deconstruct Returns</h2>
           <div class="deconstruct-summary-grid" role="list">
             <section class="deconstruct-summary-card" role="listitem">
               <p class="stat-label">Currency</p>
@@ -47,129 +45,57 @@
                 Deconstruct turns gear into <strong>Ascendency Shards</strong>; higher rarity and level grant more shards.
               </p>
             </section>
-
             <section class="deconstruct-summary-card" role="listitem">
               <p class="stat-label">Value</p>
               <h3>Inspect Payout</h3>
-              <p>Select an eligible backpack item to see its shard payout before confirming.</p>
+              <p>Select an eligible backpack item to see its shard payout before confirming. Weapon and armor details also list deconstruction and promotion values.</p>
             </section>
-
             <section class="deconstruct-summary-card" role="listitem">
               <p class="stat-label">Dirty Loot</p>
               <h3>Half Value</h3>
               <p>Deconstructing dirty looted items returns <strong>half</strong> the normal shard value.</p>
             </section>
-
             <section class="deconstruct-summary-card" role="listitem">
               <p class="stat-label">Imbuements</p>
               <h3>T1 Returns</h3>
               <p>Deconstructing <strong>T1 Imbuements</strong> from the Craft menu returns <strong>25 Tattered Imbuements</strong>.</p>
             </section>
-
             <section class="deconstruct-summary-card" role="listitem">
               <p class="stat-label">Finality</p>
               <h3>No Takebacks</h3>
               <p>Every deconstruct is final; shards go to your inventory and the original item cannot be recovered.</p>
             </section>
           </div>
-
-          <section class="deconstruct-value">
-            <h2>What Affects Value</h2>
-            <div class="deconstruct-value-grid" role="list">
-              <section class="deconstruct-value-card" role="listitem">
-                <h3>Rarity & Level</h3>
-                <p>Higher rarity and item level grant more Ascendency Shards.</p>
-              </section>
-              <section class="deconstruct-value-card" role="listitem">
-                <h3>Dirty State</h3>
-                <p>Dirty looted items return half of the normal shard payout.</p>
-              </section>
-              <section class="deconstruct-value-card" role="listitem">
-                <h3>Item Data</h3>
-                <p>Weapon and armor detail pages show deconstruction and promotion values for each item.</p>
-              </section>
-              <section class="deconstruct-value-card" role="listitem">
-                <h3>Imbuement Type</h3>
-                <p>T1 imbuements convert into Tattered Imbuements instead of regular gear shards.</p>
-              </section>
-            </div>
-          </section>
-
-          <section class="deconstruct-decision">
-            <h2>Deconstruct or Keep</h2>
-            <div class="deconstruct-decision-grid">
-              <section class="deconstruct-panel deconstruct-panel-break">
-                <h3>Deconstruct</h3>
-                <ul>
-                  <li>The item has poor base value, weak rarity, or no useful perk.</li>
-                  <li>The shard payout is more useful than trying to improve the item.</li>
-                  <li>You need Ascendency Shards for another item's promotion path.</li>
-                </ul>
-              </section>
-              <section class="deconstruct-panel deconstruct-panel-keep">
-                <h3>Keep / Improve</h3>
-                <ul>
-                  <li>The item has a strong source, high max rarity, or a perk you want.</li>
-                  <li>The current roll is bad, but the item is worth a Reforge attempt.</li>
-                  <li>The item can still Ascend and fits a build you are planning.</li>
-                </ul>
-              </section>
-            </div>
-          </section>
-
           <section class="deconstruct-flow-section">
-            <h2>Deconstruct Flow</h2>
+            <h2>How to Deconstruct</h2>
             <ol class="deconstruct-flow">
-              <li>
-                <span>1</span>
+              <li><span>1</span>
                 <div>
-                  <h3>Open the tab</h3>
+                  <h3>Open Deconstruct</h3>
                   <p>Press <strong>[R]</strong>, then open the Deconstruct tab.</p>
                 </div>
               </li>
-              <li>
-                <span>2</span>
+              <li><span>2</span>
                 <div>
                   <h3>Inspect payout</h3>
-                  <p>Select an eligible backpack item to view the shard payout before committing.</p>
+                  <p>Select a backpack item to preview its shard return.</p>
                 </div>
               </li>
-              <li>
-                <span>3</span>
+              <li><span>3</span>
                 <div>
                   <h3>Single item</h3>
-                  <p>Click <strong>Select</strong>, then <strong>Decon</strong> to deconstruct one item.</p>
+                  <p>Click <strong>Select</strong>, then <strong>Decon</strong>.</p>
                 </div>
               </li>
-              <li>
-                <span>4</span>
+              <li><span>4</span>
                 <div>
-                  <h3>Bulk Safety</h3>
-                  <p><strong>Deconstruct All</strong> requires three presses, then a fourth click to confirm the action.</p>
+                  <h3>Deconstruct All</h3>
+                  <p>Three presses, then a fourth click to confirm. Includes every eligible backpack item.</p>
                 </div>
               </li>
             </ol>
           </section>
-
-          <section class="deconstruct-warning">
-            <h2>Bulk Safety</h2>
-            <p>
-              Use <strong>Deconstruct All</strong> only after checking the backpack. It targets everything eligible in
-              your backpack, and the action cannot be undone after confirmation.
-            </p>
-          </section>
-
-          <section class="deconstruct-related">
-            <h2>Related Item Pages</h2>
-            <div class="deconstruct-link-grid" aria-label="Related deconstruct pages">
-              <a href="pages/items/weapons.html">Weapons</a>
-              <a href="pages/items/armors.html">Armors</a>
-              <a href="pages/systems/re-roll.html">Reforge</a>
-              <a href="pages/systems/ascend.html">Ascend</a>
-              <a href="pages/systems/craft.html">Craft</a>
-              <a href="pages/systems/rarity.html">Rarity</a>
-            </div>
-          </section>
+          <p class="ascendancy-caution">Deconstruction is permanent. Check your backpack before using Deconstruct All.</p>
         </article>
       </main>
     </div>

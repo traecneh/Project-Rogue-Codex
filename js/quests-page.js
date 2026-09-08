@@ -11,7 +11,6 @@
   const empty = document.getElementById("quest-empty");
   const errorMessage = document.getElementById("quest-load-error");
   const resultCount = document.getElementById("quest-result-count");
-  const pageSummary = document.getElementById("quest-page-summary");
   const searchInput = document.getElementById("quest-search");
   const kindFilter = document.getElementById("quest-kind-filter");
   const categoryFilter = document.getElementById("quest-category-filter");
@@ -25,7 +24,6 @@
     !empty ||
     !errorMessage ||
     !resultCount ||
-    !pageSummary ||
     !searchInput ||
     !kindFilter ||
     !categoryFilter ||
@@ -49,6 +47,36 @@
     if (text !== undefined && text !== null) node.textContent = String(text);
     return node;
   };
+
+  let activePreview = null;
+  let previewTimer = null;
+  let previewSequence = 0;
+  const hidePreview = () => {
+    clearTimeout(previewTimer);
+    if (!activePreview) return;
+    activePreview.classList.remove("is-preview-open");
+    activePreview.querySelector(".quest-map-preview-media").hidden = true;
+    activePreview.removeAttribute("aria-describedby");
+    activePreview = null;
+  };
+  const showPreview = (link) => {
+    hidePreview();
+    const media = link.querySelector(".quest-map-preview-media");
+    activePreview = link;
+    link.classList.add("is-preview-open");
+    media.hidden = false;
+    link.setAttribute("aria-describedby", media.id);
+    const rect = link.getBoundingClientRect();
+    const size = media.getBoundingClientRect();
+    media.style.left = `${Math.max(8, Math.min(rect.left, innerWidth - size.width - 8))}px`;
+    const top = rect.top >= size.height + 16 ? rect.top - size.height - 8 : rect.bottom + 8;
+    media.style.top = `${Math.max(8, Math.min(top, innerHeight - size.height - 8))}px`;
+  };
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") hidePreview();
+  });
+  window.addEventListener("scroll", hidePreview, true);
+  window.addEventListener("resize", hidePreview);
 
   const formatNumber = (value) =>
     Number(value).toLocaleString("en-US", {
@@ -100,7 +128,6 @@
     link.href = href;
     link.target = "_blank";
     link.rel = "noopener noreferrer";
-    link.title = `Open ${label} at ${coordinateLabel} on Project Rogue Map`;
     link.setAttribute(
       "aria-label",
       `Open ${label} at ${coordinateLabel} on Project Rogue Map`
@@ -108,11 +135,15 @@
     link.dataset.mapCoordinate = `${x},${y}`;
 
     const media = createElement("span", "quest-map-preview-media");
+    media.id = `quest-map-tip-${++previewSequence}`;
+    media.setAttribute("role", "tooltip");
+    media.setAttribute("aria-label", `Map preview: ${label} at ${coordinateLabel}`);
+    media.hidden = true;
     const image = createElement("img", "quest-map-preview-image");
     const scale = x >= MAP_FLOOR_WIDTH ? 0.75 : 0.5;
     image.src = MAP_PREVIEW_IMAGE_URL;
     image.alt = "";
-    image.loading = "lazy";
+    image.loading = "eager";
     image.decoding = "async";
     image.draggable = false;
     image.style.width = `${MAP_WIDTH * scale}px`;
@@ -144,6 +175,14 @@
     } else {
       link.classList.add("quest-map-preview-uncaptioned");
     }
+    link.appendChild(createElement("span", "quest-map-coordinates", coordinateLabel));
+    link.addEventListener("mouseenter", () => showPreview(link));
+    link.addEventListener("mouseleave", () => { previewTimer = setTimeout(hidePreview, 150); });
+    media.addEventListener("mouseenter", () => clearTimeout(previewTimer));
+    link.addEventListener("focus", () => requestAnimationFrame(() => {
+      if (document.activeElement === link) showPreview(link);
+    }));
+    link.addEventListener("blur", hidePreview);
     return link;
   };
 
@@ -220,6 +259,9 @@
     if (!href) return createElement("span", "quest-target-label", label || entity?.name || "");
     const link = createElement("a", "quest-entity-link");
     link.href = href;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.title = "Open details in a new tab";
     const image = createEntityImage(entity);
     if (image) link.appendChild(image);
     link.appendChild(createElement("span", "", label || entity.name));
@@ -332,6 +374,8 @@
 
   const renderList = () => {
     const entries = filteredEntries();
+    const previousScroll = list.scrollTop;
+    const focusedId = list.contains(document.activeElement) ? document.activeElement.dataset.entryId : "";
     list.replaceChildren();
     entries.forEach((entry) => {
       const button = createElement("button", "quest-list-item");
@@ -339,21 +383,12 @@
       button.dataset.entryId = entry.id;
       button.classList.toggle("is-selected", entry.id === state.selectedId);
       button.setAttribute("aria-pressed", entry.id === state.selectedId ? "true" : "false");
+      button.title = `${getProvider(entry)?.name || "Unknown"} · ${entry.category}${entry.repeatable ? " · Repeatable" : ""}`;
 
       const heading = createElement("span", "quest-list-heading");
       heading.appendChild(createElement("span", "quest-list-name", entry.name));
       heading.appendChild(createBadge(`Lv ${entry.min_level}`));
       button.appendChild(heading);
-
-      const meta = createElement("span", "quest-list-meta");
-      meta.appendChild(createElement("span", "", getProvider(entry)?.name || "Unknown"));
-      if (entry.kind === "service") {
-        meta.appendChild(createBadge("Service", "service"));
-      } else {
-        meta.appendChild(createElement("span", "", entry.category));
-        if (entry.repeatable) meta.appendChild(createBadge("Repeatable", "repeatable"));
-      }
-      button.appendChild(meta);
 
       const summary = rewardSummary(entry);
       if (summary) button.appendChild(createElement("span", "quest-list-reward", summary));
@@ -362,6 +397,8 @@
 
     resultCount.textContent = `${entries.length} of ${state.entries.length}`;
     empty.hidden = entries.length > 0;
+    list.scrollTop = previousScroll;
+    if (focusedId) list.querySelector(`[data-entry-id="${CSS.escape(focusedId)}"]`)?.focus({ preventScroll: true });
   };
 
   const appendFacts = (container, entry, useMapPreviewsForEntry = false) => {
@@ -375,15 +412,6 @@
         mapLabel: provider?.name,
       },
       { label: "Area", value: entry.area },
-      {
-        label: "Type",
-        value:
-          entry.kind === "service"
-            ? "Service"
-            : entry.repeatable
-              ? "Repeatable quest"
-              : `${entry.category} quest`,
-      },
     ];
     const factList = createElement("dl", "quest-facts");
     facts.forEach((item) => {
@@ -502,7 +530,7 @@
           body.appendChild(createElement("p", "quest-inline-note", note));
         });
         if (objective.dialogue) {
-          body.appendChild(createDialogue("Observed dialogue", objective.dialogue, objective.dialogue_truncated));
+          body.appendChild(createDialogue("Dialogue", objective.dialogue, objective.dialogue_truncated));
         }
         objectiveNode.appendChild(body);
         objectiveList.appendChild(objectiveNode);
@@ -590,7 +618,7 @@
   const appendNotes = (container, notes) => {
     if (!notes?.length) return;
     const section = createElement("section", "quest-section");
-    section.appendChild(createElement("h3", "quest-section-title", "Field Notes"));
+    section.appendChild(createElement("h3", "quest-section-title", "Notes"));
     const noteList = createElement("ul", "quest-note-list");
     notes.forEach((note) => noteList.appendChild(createElement("li", "", note)));
     section.appendChild(noteList);
@@ -609,7 +637,7 @@
       createElement(
         "p",
         "quest-detail-subtitle",
-        `${entry.region} / ${entry.category} / Observed in game`
+        `${entry.region} · ${entry.category}`
       )
     );
     header.appendChild(titleGroup);
@@ -643,7 +671,7 @@
     titleRow.appendChild(createBadge("Service", "service"));
     titleGroup.appendChild(titleRow);
     titleGroup.appendChild(
-      createElement("p", "quest-detail-subtitle", `${entry.region} / Observed in game`)
+      createElement("p", "quest-detail-subtitle", entry.region)
     );
     header.appendChild(titleGroup);
     const close = createElement("button", "quest-detail-close", "\u00d7");
@@ -672,19 +700,20 @@
 
     if (entry.related_pages?.length) {
       const relatedSection = createElement("section", "quest-section");
-      relatedSection.appendChild(createElement("h3", "quest-section-title", "Related System"));
       entry.related_pages.forEach((related) => {
         const link = createElement("a", "quest-related-link", related.label);
         link.href = related.href;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
         relatedSection.appendChild(link);
       });
       fragment.appendChild(relatedSection);
     }
-    appendNotes(fragment, entry.notes);
     detail.replaceChildren(fragment);
   };
 
   const renderDetail = () => {
+    hidePreview();
     const entry = state.entriesById.get(state.selectedId);
     if (!entry) {
       detail.replaceChildren(createElement("p", "quest-detail-empty", "No entry selected."));
@@ -707,6 +736,14 @@
     state.selectedId = nextId;
     renderList();
     renderDetail();
+    const selected = list.querySelector(".is-selected");
+    if (selected) {
+      const row = selected.getBoundingClientRect();
+      const viewport = list.getBoundingClientRect();
+      if (row.top < viewport.top || row.bottom > viewport.bottom) {
+        list.scrollTop += row.top - viewport.top - (list.clientHeight - row.height) / 2;
+      }
+    }
     if (!options.skipHistory && window.history) {
       const targetUrl = buildEntryUrl(nextId);
       const currentUrl = `${window.location.pathname}${window.location.search}`;
@@ -730,15 +767,12 @@
     state.entriesById = new Map(state.entries.map((entry) => [entry.id, entry]));
     state.entryOrder = new Map(state.entries.map((entry, index) => [entry.id, index]));
     populateFilters();
-    const regions = [...new Set(state.entries.map((entry) => entry.region).filter(Boolean))];
-    const regionSummary =
-      regions.length === 1 ? regions[0] : `${regions.length} regions`;
-    pageSummary.textContent = `${quests.length} quests / ${services.length} service / ${regionSummary}`;
     browser.setAttribute("aria-busy", "false");
 
     const routeId = selectedIdFromLocation();
     if (state.entriesById.has(routeId)) {
       setSelected(routeId, { skipHistory: true });
+      if (window.matchMedia("(max-width: 800px)").matches) detail.scrollIntoView({ block: "start" });
     } else {
       setSelected(quests[0]?.id || services[0]?.id || "", { skipHistory: true });
     }
@@ -759,14 +793,17 @@
   detail.addEventListener("click", (event) => {
     const close = event.target instanceof Element ? event.target.closest("[data-close-detail]") : null;
     if (close) {
+      const previousId = state.selectedId;
       setSelected("");
+      list.querySelector(`[data-entry-id="${CSS.escape(previousId)}"]`)?.focus({ preventScroll: true });
       return;
     }
     const prerequisite = event.target instanceof Element ? event.target.closest("[data-quest-id]") : null;
     if (prerequisite) {
+      if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
       event.preventDefault();
       setSelected(prerequisite.dataset.questId || "");
-      detail.scrollIntoView({ behavior: "smooth", block: "start" });
+      detail.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
     }
   });
 

@@ -13,33 +13,31 @@
     <link rel="icon" type="image/png" sizes="64x64" href="images/project-rogue-favicon-64.png" />
     <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
-    <link rel="stylesheet" href="css/styles.css?v=codex-2026-09-06-nav-tints" />
-    <link rel="stylesheet" href="css/anti-zerg.css?v=codex-2026-09-06-nav-tints" />
-    <script src="js/site-search.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/weapon-specialty.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/stat-widgets.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/keyword-links.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/cursor-toggle.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/perks.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/rarity-roller.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/anti-zerg.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/nav-core.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <link rel="stylesheet" href="css/refresh.css?v=codex-2026-09-06-nav-tints" />
-    <script src="js/refresh.js?v=codex-2026-09-06-nav-tints" defer></script>
+    <link rel="stylesheet" href="css/styles.css?v=codex-2026-09-08-lean-ui" />
+    <link rel="stylesheet" href="css/anti-zerg.css?v=codex-2026-09-08-lean-ui" />
+    <script src="js/site-search.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/weapon-specialty.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/stat-widgets.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/keyword-links.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/cursor-toggle.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/perks.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/rarity-roller.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/anti-zerg.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/nav-core.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <link rel="stylesheet" href="css/refresh.css?v=codex-2026-09-08-lean-ui" />
+    <link rel="stylesheet" href="css/systems.css?v=codex-2026-09-08-lean-ui" />
+    <script src="js/systems.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/refresh.js?v=codex-2026-09-08-lean-ui" defer></script>
   </head>
-  <body>
+  <body class="systems-page">
     <div class="layout">
       <div id="sidebar-root"></div>
       <main class="main-content">
         <header class="content-header">
-          <h1 class="content-title">Anti-Zerg System</h1>
-          <p class="content-tagline">
-            PvP scaling that protects smaller squads and mirrors that protection as an offensive self-heal penalty.
-          </p>
+          <h1 class="content-title">Anti-Zerg</h1>
         </header>
 
         <article class="content-section" id="anti-zerg-basics">
-          <h2>Anti-Zerg at a Glance</h2>
           <div class="anti-zerg-summary-grid" role="list">
             <section class="anti-zerg-summary-card" role="listitem">
               <p class="stat-label">Purpose</p>
@@ -65,6 +63,57 @@
               <p>Published reduction ranges cap at <strong>30%</strong> for the smaller qualifying squad.</p>
             </section>
           </div>
+
+          <section class="anti-zerg-calculator-section">
+            <div class="anti-zerg-section-heading">
+              <div>
+                <h2 data-system-help="Pick squad sizes to see whether Anti-Zerg cushions the smaller team. The calculator mirrors the published range table below.">Damage Reduction Calculator</h2>
+              </div>
+              <p class="anti-zerg-cap-label">Only the smaller squad can receive reduction.</p>
+            </div>
+
+            <div class="stat-widget anti-zerg-calculator">
+              <div class="anti-zerg-controls">
+                <div class="stat-control">
+                  <label for="anti-zerg-smaller">My Guild &mdash; <span data-smaller-value>3 players</span></label>
+                  <input
+                    type="range"
+                    id="anti-zerg-smaller"
+                    min="1"
+                    max="14"
+                    value="3"
+                    step="1"
+                    data-smaller-range
+                  />
+                </div>
+                <div class="stat-control">
+                  <label for="anti-zerg-bigger">Enemy Guild &mdash; <span data-bigger-value>8 players</span></label>
+                  <input
+                    type="range"
+                    id="anti-zerg-bigger"
+                    min="1"
+                    max="14"
+                    value="8"
+                    step="1"
+                    data-bigger-range
+                  />
+                </div>
+              </div>
+
+              <div class="anti-zerg-result-grid">
+                <div class="stat-output">
+                  <span class="stat-output-label">Damage Reduction</span>
+                  <span class="stat-output-value" data-reduction-result>30%</span>
+                </div>
+                <div class="anti-zerg-scenario-card">
+                  <p class="calculator-scenario" data-reduction-scenario>
+                    My guild is smaller (3 players); Enemy guild is larger (8 players)
+                  </p>
+                  <p class="calculator-note" data-reduction-note>My guild receives the max 30% damage reduction.</p>
+                </div>
+              </div>
+            </div>
+          </section>
 
           <section class="anti-zerg-mode-section">
             <h2>Mode and Sizing Rules</h2>
@@ -131,64 +180,8 @@
             </ol>
           </section>
 
-          <section class="anti-zerg-calculator-section">
-            <div class="anti-zerg-section-heading">
-              <div>
-                <h2>Damage Reduction Calculator</h2>
-                <p>
-                  Pick squad sizes to see whether Anti-Zerg cushions the smaller team. The calculator mirrors the
-                  published range table below.
-                </p>
-              </div>
-              <p class="anti-zerg-cap-label">Only the smaller squad can receive reduction.</p>
-            </div>
-
-            <div class="stat-widget anti-zerg-calculator">
-              <div class="anti-zerg-controls">
-                <div class="stat-control">
-                  <label for="anti-zerg-smaller">My Guild &mdash; <span data-smaller-value>3 players</span></label>
-                  <input
-                    type="range"
-                    id="anti-zerg-smaller"
-                    min="1"
-                    max="14"
-                    value="3"
-                    step="1"
-                    data-smaller-range
-                  />
-                </div>
-                <div class="stat-control">
-                  <label for="anti-zerg-bigger">Enemy Guild &mdash; <span data-bigger-value>8 players</span></label>
-                  <input
-                    type="range"
-                    id="anti-zerg-bigger"
-                    min="1"
-                    max="14"
-                    value="8"
-                    step="1"
-                    data-bigger-range
-                  />
-                </div>
-              </div>
-
-              <div class="anti-zerg-result-grid">
-                <div class="stat-output">
-                  <span class="stat-output-label">Damage Reduction</span>
-                  <span class="stat-output-value" data-reduction-result>30%</span>
-                </div>
-                <div class="anti-zerg-scenario-card">
-                  <p class="calculator-scenario" data-reduction-scenario>
-                    My guild is smaller (3 players); Enemy guild is larger (8 players)
-                  </p>
-                  <p class="calculator-note" data-reduction-note>My guild receives the max 30% damage reduction.</p>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <section class="anti-zerg-reference-section">
-            <h2>Reduction Reference</h2>
-            <p>Only the smaller squad receives the reduction. Equal-size fights and larger-team targets receive no bonus.</p>
+          <details class="anti-zerg-reference-section system-disclosure">
+            <summary>Reduction Reference</summary>
             <div class="anti-zerg-reference-grid" aria-label="Anti-Zerg damage reduction examples">
               <section class="anti-zerg-reference-card">
                 <h3>Solo Player</h3>
@@ -298,7 +291,7 @@
                 </ul>
               </section>
             </div>
-          </section>
+          </details>
 
           <section class="anti-zerg-moderation">
             <h2>Moderation Rules</h2>
@@ -316,17 +309,6 @@
             </div>
           </section>
 
-          <section class="anti-zerg-related">
-            <h2>Related Pages</h2>
-            <div class="anti-zerg-link-grid" aria-label="Related Anti-Zerg pages">
-              <a href="pages/systems/pvp-system.html">PVP System</a>
-              <a href="pages/systems/guild.html">Guilds</a>
-              <a href="pages/items/weapons.html">Weapons</a>
-              <a href="pages/items/armors.html">Armors</a>
-              <a href="pages/enemies/monsters.html">Monsters</a>
-              <a href="pages/General/play-the-game.html">Play the Game</a>
-            </div>
-          </section>
         </article>
       </main>
     </div>

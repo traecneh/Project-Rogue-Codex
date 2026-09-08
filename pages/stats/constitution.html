@@ -13,58 +13,37 @@
     <link rel="icon" type="image/png" sizes="64x64" href="images/project-rogue-favicon-64.png" />
     <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
-    <link rel="stylesheet" href="css/styles.css?v=codex-2026-09-06-nav-tints" />
-    <link rel="stylesheet" href="css/constitution.css?v=codex-2026-09-06-nav-tints" />
-    <script src="js/site-search.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/weapon-specialty.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/keyword-links.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/cursor-toggle.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/perks.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/rarity-roller.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/nav-core.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/constitution.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <link rel="stylesheet" href="css/refresh.css?v=codex-2026-09-06-nav-tints" />
-    <script src="js/refresh.js?v=codex-2026-09-06-nav-tints" defer></script>
+    <link rel="stylesheet" href="css/styles.css?v=codex-2026-09-08-lean-ui" />
+    <link rel="stylesheet" href="css/constitution.css?v=codex-2026-09-08-lean-ui" />
+    <script src="js/site-search.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/weapon-specialty.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/keyword-links.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/cursor-toggle.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/perks.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/rarity-roller.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/nav-core.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/constitution.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <link rel="stylesheet" href="css/refresh.css?v=codex-2026-09-08-lean-ui" />
+    <link rel="stylesheet" href="css/character.css?v=codex-2026-09-08-lean-ui" />
+    <script src="js/character.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/refresh.js?v=codex-2026-09-08-lean-ui" defer></script>
   </head>
-  <body>
+  <body class="character-page">
     <div class="layout">
       <div id="sidebar-root"></div>
       <main class="main-content">
         <header class="content-header">
           <h1 class="content-title">Constitution</h1>
-          <p class="content-tagline">Max health, passive regeneration, durability perks, and defensive gear context.</p>
         </header>
 
-        <article class="content-section" id="constitution-basics">
-          <h2>Constitution at a Glance</h2>
-          <div class="constitution-summary-grid" role="list">
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Vitality</p>
-              <h3>Max Health</h3>
-              <p><code>20 + (Level * 15) + (Con * 10) + (Str * 2)</code>.</p>
-            </section>
-
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Recovery</p>
-              <h3>Baseline Regen</h3>
-              <p><code>Con / 3</code> HP every 2 seconds before bonus regeneration.</p>
-            </section>
-
-            <section class="stat-card" role="listitem">
-              <p class="stat-label">Build Role</p>
-              <h3>Staying Power</h3>
-              <p>Constitution is the simplest direct health stat and scales recovery at the same time.</p>
-            </section>
-          </div>
-        </article>
-
+        <span id="constitution-basics" class="character-anchor" aria-hidden="true"></span>
         <article class="content-section" id="constitution-calculator">
-          <h2>Constitution Calculator</h2>
-          <p>Adjust level, Constitution, Strength, and bonus regeneration to preview health and recovery values.</p>
+          <h2>Calculator</h2>
 
           <div class="constitution-calculator-widget">
             <div class="constitution-control-grid">
-              <label for="constitution-level-slider">Level: <span data-constitution-level>50</span></label>
+              <div class="character-control">
+<label for="constitution-level-slider">Level: <span data-constitution-level>50</span></label>
               <input
                 type="range"
                 id="constitution-level-slider"
@@ -73,8 +52,10 @@
                 value="50"
                 data-constitution-level-slider
               />
+              </div>
 
-              <label for="constitution-con-slider">Constitution: <span data-constitution-con>150</span></label>
+              <div class="character-control">
+<label for="constitution-con-slider">Constitution: <span data-constitution-con>150</span></label>
               <input
                 type="range"
                 id="constitution-con-slider"
@@ -83,8 +64,10 @@
                 value="150"
                 data-constitution-con-slider
               />
+              </div>
 
-              <label for="constitution-str-slider">Strength: <span data-constitution-str>50</span></label>
+              <div class="character-control">
+<label for="constitution-str-slider">Strength: <span data-constitution-str>50</span></label>
               <input
                 type="range"
                 id="constitution-str-slider"
@@ -93,8 +76,10 @@
                 value="50"
                 data-constitution-str-slider
               />
+              </div>
 
-              <label for="constitution-regen-bonus-slider">
+              <div class="character-control">
+<label for="constitution-regen-bonus-slider">
                 Regen Bonus: <span data-constitution-regen-bonus>0%</span>
               </label>
               <input
@@ -105,22 +90,23 @@
                 value="0"
                 data-constitution-regen-bonus-slider
               />
+              </div>
             </div>
 
             <div class="constitution-output-grid" aria-live="polite">
-              <div class="stat-output">
+              <div class="stat-output" data-character-help="20 + (Level * 15) + (Con * 10) + (Str * 2).">
                 <span class="stat-output-label">Max Health</span>
                 <span class="stat-output-value" data-constitution-max-health>2,370</span>
               </div>
-              <div class="stat-output">
+              <div class="stat-output" data-character-help="Con / 3 HP every 2 seconds, before bonus regeneration.">
                 <span class="stat-output-label">Baseline Regen</span>
                 <span class="stat-output-value" data-constitution-regen-tick>50.0 HP / 2s</span>
               </div>
-              <div class="stat-output">
+              <div class="stat-output" data-character-help="Baseline regeneration per 2-second tick divided by two.">
                 <span class="stat-output-label">Regen Per Second</span>
                 <span class="stat-output-value" data-constitution-regen-per-sec>25.0 HP/s</span>
               </div>
-              <div class="stat-output">
+              <div class="stat-output" data-character-help="Baseline regeneration multiplied by (1 + Regen Bonus / 100).">
                 <span class="stat-output-label">With Bonus Regen</span>
                 <span class="stat-output-value" data-constitution-effective-regen>50.0 HP / 2s</span>
               </div>
@@ -130,64 +116,50 @@
 
         <article class="content-section" id="constitution-regen-benchmarks">
           <h2>Regeneration Benchmarks</h2>
-          <p>Benchmarks use the baseline <code>Con / 3</code> formula, shown as HP every 2 seconds.</p>
           <div class="constitution-benchmark-grid" data-constitution-regen-chart></div>
         </article>
 
         <article class="content-section" id="constitution-races">
-          <h2>Race Context</h2>
+          <h2>Race Bonuses</h2>
           <div class="constitution-context-grid">
+            <section class="constitution-context-card">
+              <p class="stat-label">Human</p>
+              <h3>+5 Constitution</h3>
+            </section>
+
             <section class="constitution-context-card">
               <p class="stat-label">Brimlock</p>
               <h3>+5 Constitution</h3>
-              <p>Demon Blood and blunt proficiency make this a defensive melee option.</p>
             </section>
 
             <section class="constitution-context-card">
               <p class="stat-label">Komodan</p>
               <h3>+5 Constitution</h3>
-              <p>Magic Shield and pole proficiency lean toward resistant frontline builds.</p>
             </section>
 
             <section class="constitution-context-card">
               <p class="stat-label">Orc</p>
               <h3>+10 Constitution</h3>
-              <p>The largest racial Constitution boost, paired with blunt proficiency and Hazmat.</p>
             </section>
 
             <section class="constitution-context-card">
               <p class="stat-label">Gnoll</p>
               <h3>+5 Constitution</h3>
-              <p>Rejuvenation, sword proficiency, and Constitution support survival-focused setups.</p>
             </section>
           </div>
         </article>
 
         <article class="content-section" id="constitution-perks">
-          <h2>Perks</h2>
-          <p class="content-tagline">
-            Notation: <strong>[ ]</strong> = tiers (T1/T2/T3), <strong>( )</strong> = weapon attack speeds
-            (750/1000/1250/1500), <strong>{ }</strong> = formulas.
-          </p>
+          <h2 data-character-help="[ ] = Tier 1 / 2 / 3. ( ) = weapon attack speeds 750 / 1000 / 1250 / 1500 ms. { } = formulas.">Perks</h2>
           <div class="stat-grid perk-grid" data-perk-stats="constitution"></div>
         </article>
 
         <article class="content-section" id="constitution-gear">
-          <h2>Equipment Reference</h2>
+          <h2>Equipment</h2>
           <div class="stat-grid" data-weapon-specialty="Constitution"></div>
         </article>
 
-        <article class="content-section">
-          <h2>Related Pages</h2>
-          <div class="constitution-link-grid">
-            <a href="pages/stats/races.html">Races</a>
-            <a href="pages/stats/strength.html">Strength</a>
-            <a href="pages/stats/dexterity.html">Dexterity</a>
-            <a href="pages/General/build-planner.html">Build Planner</a>
-            <a href="pages/items/armors.html">Armors</a>
-            <a href="pages/systems/perks.html">Perks</a>
-          </div>
-        </article>
+
       </main>
     </div>
   </body>

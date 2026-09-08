@@ -401,7 +401,7 @@ class SiteValidationTests(unittest.TestCase):
         self.assertEqual("pages/enemies/monsters.html?monster=balron", target_links["Balron"])
         self.assertEqual("pages/enemies/monsters.html?monster=beholder", target_links["Beholder"])
         self.assertEqual("pages/enemies/monsters.html?monster=demon", target_links["Demon"])
-        self.assertEqual("pages/systems/seasonal-events.html", target_links["Seasonal Events"])
+        self.assertNotIn("Seasonal Events", target_links)
         self.assertIn(".relationship-pill:hover", css)
         self.assertIn(".relationship-pill:focus-visible", css)
 
@@ -505,23 +505,15 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn('link.target = "_blank"', page_script)
         self.assertIn('link.rel = "noopener noreferrer"', page_script)
 
-    def test_seasonal_events_page_is_registered_for_navigation_search_and_validation(self):
+    def test_seasonal_events_page_is_removed_from_navigation_search_and_validation(self):
         from tools.codex_pipeline import cli
         from tools.codex_pipeline.config import REPO_ROOT
 
         html_path = REPO_ROOT / "pages" / "systems" / "seasonal-events.html"
-        nav = (REPO_ROOT / "nav.html").read_text(encoding="utf-8")
-        script = (REPO_ROOT / "js" / "site-search.js").read_text(encoding="utf-8")
-        html = html_path.read_text(encoding="utf-8") if html_path.exists() else ""
-
-        self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
-        self.assertIn('href="pages/systems/seasonal-events.html">Seasonal Events</a>', nav)
-        self.assertIn('title: "Seasonal Events"', script)
-        self.assertIn('url: "pages/systems/seasonal-events.html"', script)
-        self.assertIn('"holiday gift"', script)
-        self.assertIn("<h1 class=\"content-title\">Seasonal Events</h1>", html)
-        self.assertIn("Holiday Gift", html)
-        self.assertIn("pages/items/collectables.html?collectable=Holiday%20Gift", html)
+        self.assertFalse(html_path.exists())
+        self.assertNotIn(html_path, cli.VALIDATED_HTML_PATHS)
+        for path in [REPO_ROOT / "nav.html", REPO_ROOT / "js" / "site-search.js"]:
+            self.assertNotIn("seasonal-events.html", path.read_text(encoding="utf-8"))
 
     def test_home_page_has_expandable_timeline_without_countdown(self):
         from tools.codex_pipeline import cli
@@ -595,8 +587,6 @@ class SiteValidationTests(unittest.TestCase):
             "Dransik Classic",
             "Project Rogue Begins",
             "Fresh Wipes &amp; Live Upkeep",
-            "pages/stats/resistances.html",
-            "https://traecneh.github.io/Project-Rogue-Map/",
         ]:
             self.assertIn(expected, html)
 
@@ -1227,7 +1217,6 @@ class SiteValidationTests(unittest.TestCase):
         )
 
         for expected in [
-            "What Rarity Affects",
             "Bonus Stats",
             "Perk Eligibility",
             "Max Rarity",
@@ -1236,11 +1225,6 @@ class SiteValidationTests(unittest.TestCase):
             "Upgrade Preview",
             'class="rarity-reference-table"',
             'data-rarity-upgrade',
-            "pages/items/weapons.html",
-            "pages/items/armors.html",
-            "pages/systems/perks.html",
-            "pages/systems/re-roll.html",
-            "pages/systems/crafting.html",
         ]:
             self.assertIn(expected, html)
 
@@ -1271,6 +1255,9 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
         self.assertIn(f'<link rel="stylesheet" href="css/reroll.css?v={STATIC_ASSET_VERSION}" />', html)
         self.assertNotIn("<style>", html)
+        self.assertIn('class="systems-page ascendancy-page"', html)
+        self.assertIn('css/systems.css', html)
+        self.assertIn('js/systems.js', html)
         self.assertEqual(
             [],
             [
@@ -1287,21 +1274,12 @@ class SiteValidationTests(unittest.TestCase):
         for expected in [
             "What Changes",
             "What Does Not Change",
-            "Reforge Flow",
-            "Before You Reforge",
-            "When Reforge Helps",
-            "Related Item Pages",
             "Stat Spread",
             "Current Rarity",
-            "Item Identity",
+            "Item identity",
             "Max Rarity",
             "Rarity Shards",
             "Tinker Tools",
-            "pages/systems/rarity.html",
-            "pages/items/weapons.html",
-            "pages/items/armors.html",
-            "pages/systems/deconstruct.html",
-            "pages/systems/crafting.html",
         ]:
             self.assertIn(expected, html)
 
@@ -1323,6 +1301,9 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
         self.assertIn(f'<link rel="stylesheet" href="css/deconstruct.css?v={STATIC_ASSET_VERSION}" />', html)
         self.assertNotIn("<style>", html)
+        self.assertIn('class="systems-page ascendancy-page"', html)
+        self.assertIn('css/systems.css', html)
+        self.assertIn('js/systems.js', html)
         self.assertEqual(
             [],
             [
@@ -1337,11 +1318,7 @@ class SiteValidationTests(unittest.TestCase):
         )
 
         for expected in [
-            "What Deconstruct Returns",
-            "What Affects Value",
-            "Deconstruct Flow",
-            "Deconstruct or Keep",
-            "Bulk Safety",
+            "How to Deconstruct",
             "Dirty Loot",
             "Half Value",
             "No Takebacks",
@@ -1349,12 +1326,6 @@ class SiteValidationTests(unittest.TestCase):
             "T1 Imbuements",
             "25 Tattered Imbuements",
             "Deconstruct All",
-            "pages/items/weapons.html",
-            "pages/items/armors.html",
-            "pages/systems/re-roll.html",
-            "pages/systems/ascend.html",
-            "pages/systems/craft.html",
-            "pages/systems/rarity.html",
         ]:
             self.assertIn(expected, html)
 
@@ -1376,6 +1347,9 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
         self.assertIn(f'<link rel="stylesheet" href="css/ascend.css?v={STATIC_ASSET_VERSION}" />', html)
         self.assertNotIn("<style>", html)
+        self.assertIn('class="systems-page ascendancy-page"', html)
+        self.assertIn('css/systems.css', html)
+        self.assertIn('js/systems.js', html)
         self.assertEqual(
             [],
             [
@@ -1390,23 +1364,14 @@ class SiteValidationTests(unittest.TestCase):
         )
 
         for expected in [
-            "What Ascend Uses",
             "What Changes",
             "What Stays Fixed",
-            "Ascend Flow",
-            "Ascend or Save",
             "Current Rarity",
             "Max Rarity",
             "Promotion Cost",
             "Ascendency Shards",
             "One Tier",
             "Item Ceiling",
-            "pages/items/weapons.html",
-            "pages/items/armors.html",
-            "pages/systems/deconstruct.html",
-            "pages/systems/rarity.html",
-            "pages/systems/re-roll.html",
-            "pages/General/build-planner.html",
         ]:
             self.assertIn(expected, html)
 
@@ -1428,6 +1393,9 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
         self.assertIn(f'<link rel="stylesheet" href="css/craft.css?v={STATIC_ASSET_VERSION}" />', html)
         self.assertNotIn("<style>", html)
+        self.assertIn('class="systems-page ascendancy-page"', html)
+        self.assertIn('css/systems.css', html)
+        self.assertIn('js/systems.js', html)
         self.assertEqual(
             [],
             [
@@ -1442,25 +1410,17 @@ class SiteValidationTests(unittest.TestCase):
         )
 
         for expected in [
-            "Craft Menu Role",
             "Ethereal Shard Purchases",
             "Scrolls of Imbuement",
-            "Craft vs Crafting",
             "Ethereal Shards",
             "Augment Orb",
             "Scroll of Regret",
             "Race Change Scroll",
-            "Collector's Pouch",
+            "Collector&#x27;s Pouch",
             "Berserker Potion",
             "250 Tattered Imbuements",
             "25 Tattered Imbuements",
             "Epic+ Only",
-            "pages/systems/crafting.html",
-            "pages/systems/imbuements.html",
-            "pages/systems/deconstruct.html",
-            "pages/systems/purge.html",
-            "pages/systems/rarity.html",
-            "pages/systems/ascend.html",
         ]:
             self.assertIn(expected, html)
 
@@ -1482,6 +1442,9 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
         self.assertIn(f'<link rel="stylesheet" href="css/imbuements.css?v={STATIC_ASSET_VERSION}" />', html)
         self.assertNotIn("<style>", html)
+        self.assertIn('class="systems-page ascendancy-page"', html)
+        self.assertIn('css/systems.css', html)
+        self.assertIn('js/systems.js', html)
         self.assertEqual(
             [],
             [
@@ -1496,10 +1459,8 @@ class SiteValidationTests(unittest.TestCase):
         )
 
         for expected in [
-            "Imbuement Flow",
-            "Source Mechanics",
+            "Tatter Drops",
             "Tier Roll Odds",
-            "Targeting Decisions",
             "Tattered Imbuement",
             "Scroll of Imbuement",
             "250 Matching Tatters",
@@ -1516,10 +1477,6 @@ class SiteValidationTests(unittest.TestCase):
             "pages/systems/perks.html?perk=Bloodthirster",
             "pages/enemies/monsters.html?monster=hell-spawn",
             "pages/enemies/monsters.html?monster=werewolf",
-            "pages/systems/craft.html",
-            "pages/systems/purge.html",
-            "pages/items/weapons.html",
-            "pages/items/armors.html",
         ]:
             self.assertIn(expected, html)
 
@@ -1541,6 +1498,9 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
         self.assertIn(f'<link rel="stylesheet" href="css/purge.css?v={STATIC_ASSET_VERSION}" />', html)
         self.assertNotIn("<style>", html)
+        self.assertIn('class="systems-page ascendancy-page"', html)
+        self.assertIn('css/systems.css', html)
+        self.assertIn('js/systems.js', html)
         self.assertEqual(
             [],
             [
@@ -1556,23 +1516,13 @@ class SiteValidationTests(unittest.TestCase):
 
         for expected in [
             "Purge or Cleanse",
-            "What Purge Removes",
-            "What Cleanse Removes",
-            "Cleanup Flow",
-            "Before You Confirm",
             "Recovery Rules",
             "Special Effect",
             "Corrupted Innate",
             "25 Tattered Imbuements",
             "No Tier Refund",
-            "No Item Reset",
+
             "Epic+ Item",
-            "pages/systems/imbuements.html",
-            "pages/systems/corruption.html",
-            "pages/systems/craft.html",
-            "pages/systems/deconstruct.html",
-            "pages/items/weapons.html",
-            "pages/items/armors.html",
         ]:
             self.assertIn(expected, html)
 
@@ -1608,21 +1558,13 @@ class SiteValidationTests(unittest.TestCase):
         )
 
         for expected in [
-            "Corruption Roles",
             "Corrupted Innate",
             "Hard Bosses",
-            "Cleanse with Purge",
             "What Corruption Changes",
-            "Cleanse Flow",
-            "Before You Cleanse",
-            "No Item Reset",
+
             "Purge Tool",
             "pages/systems/purge.html",
-            "pages/systems/imbuements.html",
-            "pages/systems/rarity.html",
-            "pages/systems/re-roll.html",
             "pages/items/weapons.html",
-            "pages/items/armors.html",
         ]:
             self.assertIn(expected, html)
 
@@ -1658,7 +1600,6 @@ class SiteValidationTests(unittest.TestCase):
         )
 
         for expected in [
-            "Encounter Flow",
             "Active vs Passive",
             "Escalation Flow",
             "Variant Rules",
@@ -1676,10 +1617,6 @@ class SiteValidationTests(unittest.TestCase):
             "1 in 100",
             "Night only",
             "Corrupts loot",
-            "pages/systems/corruption.html",
-            "pages/enemies/monsters.html",
-            "pages/items/weapons.html",
-            "pages/items/armors.html",
         ]:
             self.assertIn(expected, html)
 
@@ -1716,7 +1653,6 @@ class SiteValidationTests(unittest.TestCase):
         )
 
         for expected in [
-            "PVP at a Glance",
             "Safe Zones and Flagging",
             "Death and Loot Flow",
             "Criminal Consequences",
@@ -1737,11 +1673,6 @@ class SiteValidationTests(unittest.TestCase):
             "global-chat",
             "kill-feed",
             "leaderboard-levels",
-            "pages/systems/anti-zerg.html",
-            "pages/systems/guild.html",
-            "pages/items/weapons.html",
-            "pages/items/armors.html",
-            "pages/enemies/monsters.html",
         ]:
             self.assertIn(expected, html)
 
@@ -1782,7 +1713,6 @@ class SiteValidationTests(unittest.TestCase):
         )
 
         for expected in [
-            "Anti-Zerg at a Glance",
             "Mode and Sizing Rules",
             "Focus Fire and Collaboration",
             "Damage Reduction Calculator",
@@ -1803,10 +1733,6 @@ class SiteValidationTests(unittest.TestCase):
             "30%",
             "27.27%",
             "Self-Heal Mirror",
-            "pages/systems/pvp-system.html",
-            "pages/systems/guild.html",
-            "pages/items/weapons.html",
-            "pages/items/armors.html",
         ]:
             self.assertIn(expected, html)
 
@@ -1853,12 +1779,8 @@ class SiteValidationTests(unittest.TestCase):
         )
 
         for expected in [
-            "Monster Damage Reduction at a Glance",
-            "Scaling Rules",
             "Damage Reduction Calculator",
             "Threshold Reference",
-            "Example Outcomes",
-            "Related Pages",
             "+20 level gap",
             "+30 level gap",
             "25%",
@@ -1874,11 +1796,6 @@ class SiteValidationTests(unittest.TestCase):
             "87.5%",
             "data-player-input",
             "data-monster-input",
-            "pages/enemies/monsters.html",
-            "pages/items/weapons.html",
-            "pages/items/armors.html",
-            "pages/systems/anti-zerg.html",
-            "pages/systems/pvp-system.html",
         ]:
             self.assertIn(expected, html)
 
@@ -1895,13 +1812,13 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn("function initMonsterDamageReductionCalculator", script)
         self.assertIn('document.addEventListener("DOMContentLoaded"', script)
 
-    def test_experience_page_has_compact_pool_simulator_reference(self):
+    def test_experience_page_has_compact_pool_reference(self):
         from tools.codex_pipeline import cli
         from tools.codex_pipeline.config import REPO_ROOT
 
         html_path = REPO_ROOT / "pages" / "systems" / "experience.html"
         css_path = REPO_ROOT / "css" / "experience.css"
-        script_path = REPO_ROOT / "js" / "experience.js"
+        script_path = REPO_ROOT / "js" / "systems.js"
         html = html_path.read_text(encoding="utf-8")
         css = css_path.read_text(encoding="utf-8") if css_path.exists() else ""
         script = script_path.read_text(encoding="utf-8") if script_path.exists() else ""
@@ -1910,7 +1827,7 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
         self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
         self.assertIn(f'<link rel="stylesheet" href="css/experience.css?v={STATIC_ASSET_VERSION}" />', html)
-        self.assertIn(f'<script src="js/experience.js?v={STATIC_ASSET_VERSION}" defer></script>', html)
+        self.assertIn(f'<script src="js/systems.js?v={STATIC_ASSET_VERSION}" defer></script>', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -1926,12 +1843,7 @@ class SiteValidationTests(unittest.TestCase):
         )
 
         for expected in [
-            "Experience Pool at a Glance",
             "Daily Pool Build",
-            "Combat Conversion",
-            "Experience Pool Simulator",
-            "XP Threshold Reference",
-            "Related Pages",
             "Levels 1-89",
             "+3.0 levels per 24 hours",
             "Levels 90+",
@@ -1940,35 +1852,13 @@ class SiteValidationTests(unittest.TestCase):
             "Double XP",
             "1% of a level",
             "0.01 pool",
-            "150-235 XP",
-            "XP Multiplier",
-            "Weapon Speed",
-            "Projected XP / Second",
-            "Est. Time to Level",
-            "Run Tick",
-            "data-xp-run-tick",
-            "pages/General/build-planner.html",
-            "pages/systems/perks.html",
-            "pages/systems/monster-damage-reduction.html",
-            "pages/items/weapons.html",
-            "pages/items/armors.html",
-            "pages/enemies/monsters.html",
         ]:
             self.assertIn(expected, html)
 
         self.assertIn(".experience-summary-grid", css)
         self.assertIn(".experience-build-grid", css)
-        self.assertIn(".experience-conversion-grid", css)
-        self.assertIn(".experience-sim-widget", css)
-        self.assertIn(".experience-threshold-grid", css)
-        self.assertIn(".experience-link-grid", css)
-
-        self.assertIn("const EXPERIENCE_XP_THRESHOLDS", script)
-        self.assertIn("function getExperiencePoolBuildRate", script)
-        self.assertIn("function calculateExperienceTick", script)
-        self.assertIn("function updateExperienceSimulator", script)
-        self.assertIn("function initExperienceSimulator", script)
-        self.assertIn('document.addEventListener("DOMContentLoaded"', script)
+        self.assertNotIn("data-experience-widget", html)
+        self.assertNotIn("Experience Pool Simulator", html)
 
     def test_guild_page_has_compact_management_reference(self):
         from tools.codex_pipeline import cli
@@ -1976,7 +1866,7 @@ class SiteValidationTests(unittest.TestCase):
 
         html_path = REPO_ROOT / "pages" / "systems" / "guild.html"
         css_path = REPO_ROOT / "css" / "guild.css"
-        script_path = REPO_ROOT / "js" / "guild.js"
+        script_path = REPO_ROOT / "js" / "systems.js"
         html = html_path.read_text(encoding="utf-8")
         css = css_path.read_text(encoding="utf-8") if css_path.exists() else ""
         script = script_path.read_text(encoding="utf-8") if script_path.exists() else ""
@@ -1985,7 +1875,7 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
         self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
         self.assertIn(f'<link rel="stylesheet" href="css/guild.css?v={STATIC_ASSET_VERSION}" />', html)
-        self.assertIn(f'<script src="js/guild.js?v={STATIC_ASSET_VERSION}" defer></script>', html)
+        self.assertIn(f'<script src="js/systems.js?v={STATIC_ASSET_VERSION}" defer></script>', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -2001,13 +1891,9 @@ class SiteValidationTests(unittest.TestCase):
         )
 
         for expected in [
-            "Guild at a Glance",
             "Identity and Roster",
-            "Rank and Management Flow",
-            "Party Cycle Preview",
             "Operations Reference",
             "PVP and Group Context",
-            "Related Pages",
             "G",
             "50 members",
             "[Rank] Character Name",
@@ -2025,11 +1911,6 @@ class SiteValidationTests(unittest.TestCase):
             "Party C",
             "Leave",
             "Anti-Zerg sizing",
-            "pages/systems/anti-zerg.html",
-            "pages/systems/pvp-system.html",
-            "pages/systems/chat.html",
-            "pages/items/weapons.html",
-            "pages/items/armors.html",
         ]:
             self.assertIn(expected, html)
 
@@ -2040,10 +1921,7 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(".guild-action-grid", css)
         self.assertIn(".guild-link-grid", css)
 
-        self.assertIn("const GUILD_PARTY_SEQUENCE", script)
-        self.assertIn("function setGuildParty", script)
-        self.assertIn("function initGuildPartyPreview", script)
-        self.assertIn('document.addEventListener("DOMContentLoaded"', script)
+        self.assertIn(".guild-action-card", script)
 
     def test_chat_page_has_compact_channel_reference(self):
         from tools.codex_pipeline import cli
@@ -2076,12 +1954,8 @@ class SiteValidationTests(unittest.TestCase):
         )
 
         for expected in [
-            "Chat at a Glance",
             "Viewing Channels",
             "Send Mode Preview",
-            "Hotkeys and Input Flow",
-            "Scope Reference",
-            "Related Pages",
             "All",
             "Local",
             "Global",
@@ -2094,17 +1968,13 @@ class SiteValidationTests(unittest.TestCase):
             "Safe Zone Only",
             "World Channel",
             "Nearby Only",
-            "Visible Area",
+            "visible area",
             "8 surrounding tiles",
             "server-wide messages sent from safe zones",
             "global-chat",
             "Discord",
-            "pages/systems/guild.html",
-            "pages/systems/pvp-system.html",
-            "pages/systems/anti-zerg.html",
-            "pages/General/play-the-game.html",
         ]:
-            self.assertIn(expected, html)
+            self.assertIn(expected, html + script)
 
         self.assertIn(".chat-summary-grid", css)
         self.assertIn(".chat-channel-grid", css)
@@ -2149,12 +2019,7 @@ class SiteValidationTests(unittest.TestCase):
         )
 
         for expected in [
-            "Floor Cleanup at a Glance",
-            "Creeper Timing Rules",
             "Sweep Timing Preview",
-            "Loot Lifetime Flow",
-            "What Resets the Risk",
-            "Related Pages",
             "Creeper",
             "3 minutes",
             "8 minutes",
@@ -2164,13 +2029,6 @@ class SiteValidationTests(unittest.TestCase):
             "more than 8 minutes",
             "about 8 minutes",
             "up to 11 minutes",
-            "pages/systems/pvp-system.html",
-            "pages/systems/corruption.html",
-            "pages/systems/purge.html",
-            "pages/items/weapons.html",
-            "pages/items/armors.html",
-            "pages/enemies/monsters.html",
-            "pages/General/play-the-game.html",
         ]:
             self.assertIn(expected, html)
 
@@ -2201,11 +2059,10 @@ class SiteValidationTests(unittest.TestCase):
 
         self.assertIn(html_path, cli.VALIDATED_HTML_PATHS)
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
-        self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
+        self.assertNotIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
         self.assertFalse(endless_page_path.exists())
         self.assertFalse(endless_script_path.exists())
         self.assertIn(f'<link rel="stylesheet" href="css/play-the-game.css?v={STATIC_ASSET_VERSION}" />', html)
-        self.assertIn(f'<script src="js/play-the-game.js?v={STATIC_ASSET_VERSION}" defer></script>', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -2225,31 +2082,18 @@ class SiteValidationTests(unittest.TestCase):
 
         for expected in [
             "Play the Game",
-            "Discord-first setup",
+            "Downloads and account setup are in Discord.",
             "Join the Discord",
             "#welcome",
-            "Create Your Account",
-            "Log In and Play",
+            "Create your account",
+            "Log in and play",
             "https://discord.gg/DW6zcWy",
-            "data-play-monster",
-            "data-play-elite",
-            "Related Pages",
-            "pages/General/build-planner.html",
-            "pages/items/weapons.html",
-            "pages/items/armors.html",
-            "pages/enemies/monsters.html",
         ]:
             self.assertIn(expected, html)
 
         self.assertIn(".play-step-grid", css)
         self.assertIn(".play-discord-panel", css)
-        self.assertIn(".play-link-grid", css)
         self.assertIn(".discord-cta", css)
-        self.assertIn("function initPlayMonsterEscort", script)
-        self.assertIn("images/monsters/manifest.json", script)
-        self.assertIn("wrap.clientWidth", script)
-        self.assertIn("wrap.clientHeight", script)
-        self.assertIn('document.addEventListener("DOMContentLoaded"', script)
 
     def test_level_page_has_compact_xp_reference(self):
         from tools.codex_pipeline import cli
@@ -2459,7 +2303,7 @@ class SiteValidationTests(unittest.TestCase):
 
         html_path = REPO_ROOT / "pages" / "stats" / "races.html"
         css_path = REPO_ROOT / "css" / "races.css"
-        script_path = REPO_ROOT / "js" / "races.js"
+        script_path = REPO_ROOT / "js" / "character.js"
         html = html_path.read_text(encoding="utf-8")
         css = css_path.read_text(encoding="utf-8") if css_path.exists() else ""
         script = script_path.read_text(encoding="utf-8") if script_path.exists() else ""
@@ -2468,7 +2312,7 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(css_path, cli.VALIDATED_STYLE_PATHS)
         self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
         self.assertIn(f'<link rel="stylesheet" href="css/races.css?v={STATIC_ASSET_VERSION}" />', html)
-        self.assertIn(f'<script src="js/races.js?v={STATIC_ASSET_VERSION}" defer></script>', html)
+        self.assertIn(f'<script src="js/character.js?v={STATIC_ASSET_VERSION}" defer></script>', html)
         self.assertNotIn("<style>", html)
         self.assertEqual(
             [],
@@ -2485,11 +2329,7 @@ class SiteValidationTests(unittest.TestCase):
         self.assertNotRegex(html, r"\sstyle\s*=")
 
         for expected in [
-            "Races at a Glance",
-            "Playable Race Bonuses",
-            "Race Bonus Preview",
-            "Equipment Requirement Rule",
-            "Related Pages",
+            "Race Bonuses",
             "Human",
             "Tundrian",
             "Brimlock",
@@ -2501,33 +2341,16 @@ class SiteValidationTests(unittest.TestCase):
             "Tier 1",
             "Tier 2",
             "Tier 3",
-            "Base values pass equipment checks",
-            "data-race-option",
-            "data-race-base-slider",
-            "data-race-requirement-slider",
-            "data-race-effective-stat",
-            "data-race-effective-skill",
-            "data-race-requirement-status",
-            "pages/stats/skills.html",
-            "pages/stats/strength.html",
-            "pages/stats/constitution.html",
-            "pages/stats/dexterity.html",
-            "pages/General/build-planner.html",
-            "pages/systems/perks.html",
+            "Equipment requirements use trained base values, before race bonuses.",
         ]:
             self.assertIn(expected, html)
 
-        self.assertIn(".races-summary-grid", css)
         self.assertIn(".races-card-grid", css)
-        self.assertIn(".races-preview-widget", css)
-        self.assertIn(".races-rule-grid", css)
-        self.assertIn(".races-link-grid", css)
-
-        self.assertIn("const RACE_BONUSES", script)
-        self.assertIn("function initRacePreviewWidget", script)
-        self.assertIn("function renderRaceSummary", script)
-        self.assertIn("function updateRacePreview", script)
-        self.assertIn('document.addEventListener("DOMContentLoaded"', script)
+        self.assertIn(".races-bonus-list", css)
+        self.assertEqual(8, html.count('class="races-card"'))
+        self.assertNotIn('id="race-preview"', html)
+        self.assertNotIn('races-select-button', html)
+        self.assertIn('data-character-perk', html)
 
     def test_strength_page_has_compact_formula_reference(self):
         from tools.codex_pipeline import cli
@@ -2561,14 +2384,10 @@ class SiteValidationTests(unittest.TestCase):
         self.assertNotRegex(html, r"\sstyle\s*=")
 
         for expected in [
-            "Strength at a Glance",
-            "Strength Calculator",
+            "Calculator",
             "Weight Benchmarks",
-            "Bleed Threshold",
-            "Build Context",
             "Perks",
-            "Equipment Reference",
-            "Related Pages",
+            "Equipment",
             "Melee Multiplier",
             "Max Weight",
             "Max Health",
@@ -2588,12 +2407,6 @@ class SiteValidationTests(unittest.TestCase):
             "data-strength-weight-chart",
             "data-perk-stats=\"strength\"",
             "data-weapon-specialty=\"Strength\"",
-            "pages/stats/races.html",
-            "pages/stats/skills.html",
-            "pages/stats/constitution.html",
-            "pages/stats/dexterity.html",
-            "pages/General/build-planner.html",
-            "pages/items/weapons.html",
         ]:
             self.assertIn(expected, html)
 
@@ -2642,13 +2455,11 @@ class SiteValidationTests(unittest.TestCase):
         self.assertNotRegex(html, r"\sstyle\s*=")
 
         for expected in [
-            "Constitution at a Glance",
-            "Constitution Calculator",
+            "Calculator",
             "Regeneration Benchmarks",
-            "Race Context",
+            "Race Bonuses",
             "Perks",
-            "Equipment Reference",
-            "Related Pages",
+            "Equipment",
             "Max Health",
             "Baseline Regen",
             "Con / 3",
@@ -2664,12 +2475,6 @@ class SiteValidationTests(unittest.TestCase):
             "data-constitution-regen-chart",
             "data-perk-stats=\"constitution\"",
             "data-weapon-specialty=\"Constitution\"",
-            "pages/stats/races.html",
-            "pages/stats/strength.html",
-            "pages/stats/dexterity.html",
-            "pages/General/build-planner.html",
-            "pages/items/armors.html",
-            "pages/systems/perks.html",
         ]:
             self.assertIn(expected, html)
 
@@ -2718,14 +2523,11 @@ class SiteValidationTests(unittest.TestCase):
         self.assertNotRegex(html, r"\sstyle\s*=")
 
         for expected in [
-            "Dexterity at a Glance",
-            "Dexterity Calculator",
+            "Calculator",
             "Damage Reduction Benchmarks",
-            "Race Context",
-            "Build Context",
+            "Race Bonuses",
             "Perks",
-            "Equipment Reference",
-            "Related Pages",
+            "Equipment",
             "Melee Multiplier",
             "Crit Chance",
             "Damage Reduction",
@@ -2745,12 +2547,6 @@ class SiteValidationTests(unittest.TestCase):
             "data-dexterity-dr-chart",
             "data-perk-stats=\"dexterity\"",
             "data-weapon-specialty=\"Dexterity\"",
-            "pages/stats/races.html",
-            "pages/stats/strength.html",
-            "pages/stats/constitution.html",
-            "pages/General/build-planner.html",
-            "pages/items/weapons.html",
-            "pages/systems/perks.html",
         ]:
             self.assertIn(expected, html)
 
@@ -2801,12 +2597,9 @@ class SiteValidationTests(unittest.TestCase):
         self.assertNotRegex(html, r"\sstyle\s*=")
 
         for expected in [
-            "Resistance at a Glance",
             "Player Damage Preview",
             "Monster Type Matchups",
-            "Build Context",
             "Perks",
-            "Related Pages",
             "60%",
             "Applied after armor",
             "data-resistance-value-slider",
@@ -2819,12 +2612,6 @@ class SiteValidationTests(unittest.TestCase):
             "data-perk-stats=\"resistances\"",
             "Holy",
             "Dark",
-            "pages/items/armors.html",
-            "pages/General/build-planner.html",
-            "pages/enemies/monsters.html",
-            "pages/items/weapons.html",
-            "pages/systems/perks.html",
-            "pages/systems/pvp-system.html",
         ]:
             self.assertIn(expected, html)
 
@@ -2926,9 +2713,6 @@ class SiteValidationTests(unittest.TestCase):
         )
 
         for expected in [
-            "Armor Crafting Scope",
-            "Frost vs Dragon Materials",
-            "Material Costs",
             "Crafting Flow",
             "Materials Calculator",
             "Set Preview",
@@ -2937,14 +2721,11 @@ class SiteValidationTests(unittest.TestCase):
             "Hammer &amp; Anvil",
             "100% Success",
             "Random Rarity",
-            "Full Suit",
+            "full suit",
             "455",
             "Current Materials",
             "data-materials-range",
             "data-set-option",
-            "pages/systems/craft.html",
-            "pages/items/armors.html",
-            "pages/systems/rarity.html",
         ]:
             self.assertIn(expected, html)
 

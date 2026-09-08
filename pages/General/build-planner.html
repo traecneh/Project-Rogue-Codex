@@ -13,20 +13,20 @@
     <link rel="icon" type="image/png" sizes="64x64" href="images/project-rogue-favicon-64.png" />
     <link rel="icon" type="image/png" sizes="180x180" href="images/project-rogue-favicon-180.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="images/project-rogue-favicon-512.png" />
-    <link rel="stylesheet" href="css/styles.css?v=codex-2026-09-06-nav-tints" />
-    <link rel="stylesheet" href="css/build-planner.css?v=codex-2026-09-06-nav-tints" />
-    <script src="js/utils.js?v=codex-2026-09-06-nav-tints"></script>
-    <script src="js/site-search.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/weapon-specialty.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/stat-widgets.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/keyword-links.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/cursor-toggle.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/perks.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/rarity-roller.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/nav-core.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <script src="js/build-planner.js?v=codex-2026-09-06-nav-tints" defer></script>
-    <link rel="stylesheet" href="css/refresh.css?v=codex-2026-09-06-nav-tints" />
-    <script src="js/refresh.js?v=codex-2026-09-06-nav-tints" defer></script>
+    <link rel="stylesheet" href="css/styles.css?v=codex-2026-09-08-lean-ui" />
+    <link rel="stylesheet" href="css/build-planner.css?v=codex-2026-09-08-lean-ui" />
+    <script src="js/utils.js?v=codex-2026-09-08-lean-ui"></script>
+    <script src="js/site-search.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/weapon-specialty.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/stat-widgets.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/keyword-links.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/cursor-toggle.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/perks.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/rarity-roller.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/nav-core.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <script src="js/build-planner.js?v=codex-2026-09-08-lean-ui" defer></script>
+    <link rel="stylesheet" href="css/refresh.css?v=codex-2026-09-08-lean-ui" />
+    <script src="js/refresh.js?v=codex-2026-09-08-lean-ui" defer></script>
   </head>
   <body>
     <div class="layout">
@@ -36,14 +36,64 @@
           <h1 class="content-title">Build Planner</h1>
         </header>
 
-        <article class="content-section planner-section">
-          <p class="content-description">Search for items to add them.</p>
+        <article class="char-section">
+          <h3>Character</h3>
+          <div class="char-grid">
+            <div class="slider-row">
+              <div class="slider-label">
+                <label for="char-race">Race</label>
+              </div>
+              <select id="char-race" class="select-input">
+                <option value="">Select race</option>
+              </select>
+            </div>
+            <div class="slider-row">
+              <div class="slider-label">
+                <label for="char-level">Level</label>
+                <span class="slider-value" id="val-level">1</span>
+              </div>
+              <input type="range" id="char-level" class="slider-input" min="1" max="105" value="1" />
+            </div>
+            <div class="slider-row">
+              <div class="slider-label">
+                <label for="char-str">Base Strength</label>
+                <span class="slider-value" id="val-str">5</span>
+              </div>
+              <input type="range" id="char-str" class="slider-input" min="5" max="200" value="5" />
+            </div>
+            <div class="slider-row">
+              <div class="slider-label">
+                <label for="char-dex">Base Dexterity</label>
+                <span class="slider-value" id="val-dex">5</span>
+              </div>
+              <input type="range" id="char-dex" class="slider-input" min="5" max="200" value="5" />
+            </div>
+            <div class="slider-row">
+              <div class="slider-label">
+                <label for="char-con">Base Constitution</label>
+                <span class="slider-value" id="val-con">5</span>
+              </div>
+              <input type="range" id="char-con" class="slider-input" min="5" max="200" value="5" />
+            </div>
+            <div class="slider-row">
+              <div class="slider-label">
+                <label for="char-skill">Skill</label>
+                <span class="slider-value" id="val-skill">0</span>
+              </div>
+              <input type="range" id="char-skill" class="slider-input" min="0" max="120" value="0" />
+            </div>
+            <div class="stat-warning" id="base-stat-warning" role="status" aria-live="polite"></div>
+            <div class="stat-warning" id="base-stat-unallocated" role="status" aria-live="polite"></div>
+          </div>
+        </article>
 
+        <article class="content-section planner-section">
           <div class="planner-toolbar" aria-label="Build planner tools">
             <div class="planner-search-wrap">
               <input
                 type="text"
                 id="gear-search"
+                aria-label="Search equipment to equip"
                 class="search-input"
                 placeholder="Search weapons or armors..."
                 autocomplete="off"
@@ -108,13 +158,12 @@
           </section>
 
           <div class="planner-grid" aria-label="Gear slots">
-            <div class="planner-col planner-col--center">
-              <div class="slot-card" data-slot="Gauntlets">
+              <div class="slot-card" data-slot="Weapon">
                 <button type="button" class="slot-clear" aria-label="Clear slot">&times;</button>
-                <div class="slot-label">Gauntlets</div>
+                <div class="slot-label">Weapon</div>
                 <a class="slot-name slot-item-link" data-slot-item tabindex="-1"></a>
                 <div class="slot-visual">
-                  <img class="slot-image" alt="Gauntlets preview" />
+                  <img class="slot-image" alt="Weapon preview" />
                   <div class="slot-placeholder slot-placeholder--small"></div>
                 </div>
                 <div class="slot-rarity">
@@ -122,8 +171,8 @@
                     <button type="button" class="rarity-btn" data-rarity-dec>-</button>
                     <button type="button" class="rarity-btn" data-rarity-inc>+</button>
                   </div>
-                  <div class="rarity-label" data-rarity-label>—</div>
-                  <div class="rarity-max" data-rarity-max>Max: —</div>
+                  <div class="rarity-label" data-rarity-label>-</div>
+                  <div class="rarity-max" data-rarity-max>Max: -</div>
                 </div>
                 <div class="slot-stat-adjust" data-stat-row>
                   <div class="stat-row" data-stat="str">
@@ -146,66 +195,17 @@
                   </div>
                 </div>
                 <div class="slot-extra-perk" data-perk-row>
-                  <select data-perk-select>
+                  <!-- extra perk label removed -->
+                  <select data-perk-select aria-label="Extra perk">
                     <option value="">Select perk</option>
                   </select>
-                  <select data-perk-tier>
+                  <select data-perk-tier aria-label="Extra perk tier">
                     <option value="1">Tier 1</option>
                     <option value="2">Tier 2</option>
                     <option value="3">Tier 3</option>
                   </select>
                 </div>
               </div>
-              <div class="slot-card" data-slot="Shield">
-                <button type="button" class="slot-clear" aria-label="Clear slot">&times;</button>
-                <div class="slot-label">Shield</div>
-                <a class="slot-name slot-item-link" data-slot-item tabindex="-1"></a>
-                <div class="slot-visual">
-                  <img class="slot-image" alt="Shield preview" />
-                  <div class="slot-placeholder slot-placeholder--small"></div>
-                </div>
-                <div class="slot-rarity">
-                  <div class="rarity-buttons">
-                    <button type="button" class="rarity-btn" data-rarity-dec>-</button>
-                    <button type="button" class="rarity-btn" data-rarity-inc>+</button>
-                  </div>
-                  <div class="rarity-label" data-rarity-label>—</div>
-                  <div class="rarity-max" data-rarity-max>Max: —</div>
-                </div>
-                <div class="slot-stat-adjust" data-stat-row>
-                  <div class="stat-row" data-stat="str">
-                    <button type="button" class="rarity-btn" data-stat-dec>-</button>
-                    <span class="stat-value" data-stat-value>0</span>
-                    <button type="button" class="rarity-btn" data-stat-inc>+</button>
-                    <span class="stat-label">Str</span>
-                  </div>
-                  <div class="stat-row" data-stat="dex">
-                    <button type="button" class="rarity-btn" data-stat-dec>-</button>
-                    <span class="stat-value" data-stat-value>0</span>
-                    <button type="button" class="rarity-btn" data-stat-inc>+</button>
-                    <span class="stat-label">Dex</span>
-                  </div>
-                  <div class="stat-row" data-stat="con">
-                    <button type="button" class="rarity-btn" data-stat-dec>-</button>
-                    <span class="stat-value" data-stat-value>0</span>
-                    <button type="button" class="rarity-btn" data-stat-inc>+</button>
-                    <span class="stat-label">Con</span>
-                  </div>
-                </div>
-                <div class="slot-extra-perk" data-perk-row>
-                  <select data-perk-select>
-                    <option value="">Select perk</option>
-                  </select>
-                  <select data-perk-tier>
-                    <option value="1">Tier 1</option>
-                    <option value="2">Tier 2</option>
-                    <option value="3">Tier 3</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <div class="planner-col planner-col--stacked">
               <div class="slot-card" data-slot="Helmet">
                 <button type="button" class="slot-clear" aria-label="Clear slot">&times;</button>
                 <div class="slot-label">Helmet</div>
@@ -243,10 +243,10 @@
                   </div>
                 </div>
                 <div class="slot-extra-perk" data-perk-row>
-                  <select data-perk-select>
+                  <select data-perk-select aria-label="Extra perk">
                     <option value="">Select perk</option>
                   </select>
-                  <select data-perk-tier>
+                  <select data-perk-tier aria-label="Extra perk tier">
                     <option value="1">Tier 1</option>
                     <option value="2">Tier 2</option>
                     <option value="3">Tier 3</option>
@@ -290,10 +290,10 @@
                   </div>
                 </div>
                 <div class="slot-extra-perk" data-perk-row>
-                  <select data-perk-select>
+                  <select data-perk-select aria-label="Extra perk">
                     <option value="">Select perk</option>
                   </select>
-                  <select data-perk-tier>
+                  <select data-perk-tier aria-label="Extra perk tier">
                     <option value="1">Tier 1</option>
                     <option value="2">Tier 2</option>
                     <option value="3">Tier 3</option>
@@ -337,25 +337,22 @@
                   </div>
                 </div>
                 <div class="slot-extra-perk" data-perk-row>
-                  <select data-perk-select>
+                  <select data-perk-select aria-label="Extra perk">
                     <option value="">Select perk</option>
                   </select>
-                  <select data-perk-tier>
+                  <select data-perk-tier aria-label="Extra perk tier">
                     <option value="1">Tier 1</option>
                     <option value="2">Tier 2</option>
                     <option value="3">Tier 3</option>
                   </select>
                 </div>
               </div>
-            </div>
-
-            <div class="planner-col planner-col--center">
-              <div class="slot-card" data-slot="Weapon">
+              <div class="slot-card" data-slot="Gauntlets">
                 <button type="button" class="slot-clear" aria-label="Clear slot">&times;</button>
-                <div class="slot-label">Weapon</div>
+                <div class="slot-label">Gauntlets</div>
                 <a class="slot-name slot-item-link" data-slot-item tabindex="-1"></a>
                 <div class="slot-visual">
-                  <img class="slot-image" alt="Weapon preview" />
+                  <img class="slot-image" alt="Gauntlets preview" />
                   <div class="slot-placeholder slot-placeholder--small"></div>
                 </div>
                 <div class="slot-rarity">
@@ -363,8 +360,8 @@
                     <button type="button" class="rarity-btn" data-rarity-dec>-</button>
                     <button type="button" class="rarity-btn" data-rarity-inc>+</button>
                   </div>
-                  <div class="rarity-label" data-rarity-label>-</div>
-                  <div class="rarity-max" data-rarity-max>Max: -</div>
+                  <div class="rarity-label" data-rarity-label>—</div>
+                  <div class="rarity-max" data-rarity-max>Max: —</div>
                 </div>
                 <div class="slot-stat-adjust" data-stat-row>
                   <div class="stat-row" data-stat="str">
@@ -387,11 +384,57 @@
                   </div>
                 </div>
                 <div class="slot-extra-perk" data-perk-row>
-                  <!-- extra perk label removed -->
-                  <select data-perk-select>
+                  <select data-perk-select aria-label="Extra perk">
                     <option value="">Select perk</option>
                   </select>
-                  <select data-perk-tier>
+                  <select data-perk-tier aria-label="Extra perk tier">
+                    <option value="1">Tier 1</option>
+                    <option value="2">Tier 2</option>
+                    <option value="3">Tier 3</option>
+                  </select>
+                </div>
+              </div>
+              <div class="slot-card" data-slot="Shield">
+                <button type="button" class="slot-clear" aria-label="Clear slot">&times;</button>
+                <div class="slot-label">Shield</div>
+                <a class="slot-name slot-item-link" data-slot-item tabindex="-1"></a>
+                <div class="slot-visual">
+                  <img class="slot-image" alt="Shield preview" />
+                  <div class="slot-placeholder slot-placeholder--small"></div>
+                </div>
+                <div class="slot-rarity">
+                  <div class="rarity-buttons">
+                    <button type="button" class="rarity-btn" data-rarity-dec>-</button>
+                    <button type="button" class="rarity-btn" data-rarity-inc>+</button>
+                  </div>
+                  <div class="rarity-label" data-rarity-label>—</div>
+                  <div class="rarity-max" data-rarity-max>Max: —</div>
+                </div>
+                <div class="slot-stat-adjust" data-stat-row>
+                  <div class="stat-row" data-stat="str">
+                    <button type="button" class="rarity-btn" data-stat-dec>-</button>
+                    <span class="stat-value" data-stat-value>0</span>
+                    <button type="button" class="rarity-btn" data-stat-inc>+</button>
+                    <span class="stat-label">Str</span>
+                  </div>
+                  <div class="stat-row" data-stat="dex">
+                    <button type="button" class="rarity-btn" data-stat-dec>-</button>
+                    <span class="stat-value" data-stat-value>0</span>
+                    <button type="button" class="rarity-btn" data-stat-inc>+</button>
+                    <span class="stat-label">Dex</span>
+                  </div>
+                  <div class="stat-row" data-stat="con">
+                    <button type="button" class="rarity-btn" data-stat-dec>-</button>
+                    <span class="stat-value" data-stat-value>0</span>
+                    <button type="button" class="rarity-btn" data-stat-inc>+</button>
+                    <span class="stat-label">Con</span>
+                  </div>
+                </div>
+                <div class="slot-extra-perk" data-perk-row>
+                  <select data-perk-select aria-label="Extra perk">
+                    <option value="">Select perk</option>
+                  </select>
+                  <select data-perk-tier aria-label="Extra perk tier">
                     <option value="1">Tier 1</option>
                     <option value="2">Tier 2</option>
                     <option value="3">Tier 3</option>
@@ -436,68 +479,16 @@
                 </div>
                 <div class="slot-extra-perk" data-perk-row>
                   <!-- extra perk label removed -->
-                  <select data-perk-select>
+                  <select data-perk-select aria-label="Extra perk">
                     <option value="">Select perk</option>
                   </select>
-                  <select data-perk-tier>
+                  <select data-perk-tier aria-label="Extra perk tier">
                     <option value="1">Tier 1</option>
                     <option value="2">Tier 2</option>
                     <option value="3">Tier 3</option>
                   </select>
                 </div>
               </div>
-            </div>
-          </div>
-        </article>
-
-        <article class="char-section">
-          <h3>Character Details</h3>
-          <div class="char-grid">
-            <div class="slider-row">
-              <div class="slider-label">
-                <span>Race</span>
-              </div>
-              <select id="char-race" class="select-input">
-                <option value="">Select race</option>
-              </select>
-            </div>
-            <div class="slider-row">
-              <div class="slider-label">
-                <span>Level</span>
-                <span class="slider-value" id="val-level">1</span>
-              </div>
-              <input type="range" id="char-level" class="slider-input" min="1" max="105" value="1" />
-            </div>
-            <div class="slider-row">
-              <div class="slider-label">
-                <span>Base Strength</span>
-                <span class="slider-value" id="val-str">5</span>
-              </div>
-              <input type="range" id="char-str" class="slider-input" min="5" max="200" value="5" />
-            </div>
-            <div class="slider-row">
-              <div class="slider-label">
-                <span>Base Dexterity</span>
-                <span class="slider-value" id="val-dex">5</span>
-              </div>
-              <input type="range" id="char-dex" class="slider-input" min="5" max="200" value="5" />
-            </div>
-            <div class="slider-row">
-              <div class="slider-label">
-                <span>Base Constitution</span>
-                <span class="slider-value" id="val-con">5</span>
-              </div>
-              <input type="range" id="char-con" class="slider-input" min="5" max="200" value="5" />
-            </div>
-            <div class="slider-row">
-              <div class="slider-label">
-                <span>Skill</span>
-                <span class="slider-value" id="val-skill">0</span>
-              </div>
-              <input type="range" id="char-skill" class="slider-input" min="0" max="120" value="0" />
-            </div>
-            <div class="stat-warning" id="base-stat-warning" role="status" aria-live="polite"></div>
-            <div class="stat-warning" id="base-stat-unallocated" role="status" aria-live="polite"></div>
           </div>
         </article>
 
