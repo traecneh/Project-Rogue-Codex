@@ -144,12 +144,14 @@
         tooltip.hidden = true;
         document.body.appendChild(tooltip);
         let tooltipTrigger = null;
+        let tooltipAnchorRect = null;
         let tooltipTimer = null;
         const hideTooltip = () => {
           window.clearTimeout(tooltipTimer);
           tooltip.hidden = true;
           tooltipTrigger?.removeAttribute("aria-describedby");
           tooltipTrigger = null;
+          tooltipAnchorRect = null;
         };
         const showTooltip = (trigger) => {
           hideTooltip();
@@ -160,6 +162,7 @@
           tooltip.hidden = false;
           trigger.setAttribute("aria-describedby", tooltip.id);
           const rect = trigger.getBoundingClientRect();
+          tooltipAnchorRect = rect;
           const size = tooltip.getBoundingClientRect();
           tooltip.style.left = `${Math.max(12, Math.min(rect.left, window.innerWidth - size.width - 12))}px`;
           tooltip.style.top = `${Math.max(12, rect.bottom + size.height + 20 < window.innerHeight ? rect.bottom + 8 : rect.top - size.height - 8)}px`;
@@ -184,7 +187,12 @@
         document.addEventListener("click", (event) => {
           if (!event.target.closest(".planner-tip-trigger, .planner-tooltip")) hideTooltip();
         });
-        window.addEventListener("scroll", hideTooltip, true);
+        window.addEventListener("scroll", (event) => {
+          if (!tooltipTrigger || (event.target instanceof Node && tooltip.contains(event.target))) return;
+          const rect = tooltipTrigger.getBoundingClientRect();
+          // Ignore queued scroll events when the tooltip already matches its anchor.
+          if (!tooltipAnchorRect || Math.abs(rect.top - tooltipAnchorRect.top) > .5 || Math.abs(rect.left - tooltipAnchorRect.left) > .5) hideTooltip();
+        }, true);
         window.addEventListener("resize", hideTooltip);
 
         const setElementTitle = (element, title = "") => {

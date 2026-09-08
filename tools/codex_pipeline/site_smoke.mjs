@@ -4250,6 +4250,8 @@ async function assertPlannerPerkTooltip(page, perk, expected, interaction) {
   else await chip.click();
   const tip = page.locator('#planner-tooltip');
   await tip.waitFor({ state: 'visible' });
+  await page.evaluate(() => window.dispatchEvent(new Event('scroll')));
+  if (!(await tip.isVisible())) throw new Error('Queued scroll dismissed the planner perk tooltip');
   const text = await tip.textContent();
   if (!expected.every(value => text.includes(value))) throw new Error(`Incorrect perk tooltip: ${text}`);
   if (await tip.evaluate(node => {
