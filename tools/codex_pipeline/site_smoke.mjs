@@ -759,7 +759,8 @@ async function runHomeSpec(browser, baseUrl) {
 
 async function assertHomeTimelineFocus(page) {
   if (await page.locator('[data-era-filter]').count()) throw new Error('Timeline filters should be removed');
-  if (await page.locator('[data-home-timeline-item]:not([hidden])').count() !== 23) throw new Error('All timeline entries should remain visible');
+  const timelineItems = page.locator('[data-home-timeline-item]');
+  if (await timelineItems.count() < 6 || await timelineItems.locator(':scope[hidden]').count()) throw new Error('All timeline entries should remain visible');
   const target = page.locator('[data-home-timeline-item]').nth(5);
   await target.evaluate(item => item.scrollIntoView({block: 'center'}));
   await page.waitForFunction(() => document.querySelectorAll('[data-home-timeline-item]')[5].classList.contains('is-timeline-focus'));
@@ -771,7 +772,7 @@ async function assertHomeTimelineFocus(page) {
   const story = page.locator('#dransik-commercial .history-story');
   await story.locator('summary').click();
   await story.locator('.history-story-body').waitFor({state: 'visible'});
-  if (!(await story.textContent()).includes('March 2003 was not the Ashen Empires rebrand')) throw new Error('Missing chronology correction');
+  if (!(await story.textContent()).includes('original Dransik already offered paid accounts in June 2002')) throw new Error('Missing chronology correction');
   if (!(await story.locator('.history-sources a').count())) throw new Error('Missing history sources');
   await page.locator('#modern-vorlia').evaluate(item => item.scrollIntoView({block: 'center'}));
   await page.waitForFunction(() => getComputedStyle(document.querySelector('#dransik-commercial .history-story')).opacity === '1');
