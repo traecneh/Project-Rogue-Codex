@@ -42,15 +42,7 @@ function getPerksIndexUrl() {
 
 function fetchPerksIndex() {
   const url = getPerksIndexUrl();
-  return fetch(url, { cache: "no-store" })
-    .then((response) => {
-      if (!response.ok) throw new Error("Failed to load perks.json");
-      return response.json();
-    })
-    .catch((error) => {
-      console.warn(error.message || error);
-      return null;
-    });
+  return window.RogueCodexUtils.fetchJsonCached(url);
 }
 
 function appendFormattedText(target, value) {

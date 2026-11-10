@@ -550,29 +550,31 @@
   };
 
   const setImageSource = (imgEl, monster, onFail, onSuccess) => {
-    const sources = deriveImageCandidates(monster);
-    if (!sources.length) {
-      if (onFail) onFail();
-      return;
-    }
-    let index = 0;
-    const trySet = () => {
-      imgEl.onerror = () => {
-        index += 1;
-        if (index < sources.length) {
-          trySet();
-        } else {
-          imgEl.onerror = null;
-          if (onFail) onFail();
-        }
+    loadMonsterImageManifest().then(() => {
+      const sources = deriveImageCandidates(monster);
+      if (!sources.length) {
+        if (onFail) onFail();
+        return;
+      }
+      let index = 0;
+      const trySet = () => {
+        imgEl.onerror = () => {
+          index += 1;
+          if (index < sources.length) {
+            trySet();
+          } else {
+            imgEl.onerror = null;
+            if (onFail) onFail();
+          }
+        };
+        imgEl.onload = () => {
+          imgEl.onload = null;
+          if (onSuccess) onSuccess();
+        };
+        imgEl.src = sources[index];
       };
-      imgEl.onload = () => {
-        imgEl.onload = null;
-        if (onSuccess) onSuccess();
-      };
-      imgEl.src = sources[index];
-    };
-    trySet();
+      trySet();
+    });
   };
 
   const detailFields = {
@@ -2825,12 +2827,11 @@ const renderTable = (rows) => {
         noImg.textContent = "No Image";
         imgCell.appendChild(noImg);
       };
-      setImageSource(img, monster, fallback, () => {
+      window.RogueCodexUtils.queueTableImage(img, () => setImageSource(img, monster, fallback, () => {
         img.style.display = "block";
-      });
+      }));
       img.alt = monster.name ? `${monster.name} portrait` : "Monster portrait";
       img.className = "monster-thumb";
-      img.loading = "lazy";
       imgCell.appendChild(img);
       tr.appendChild(imgCell);
 
@@ -3035,13 +3036,13 @@ const unpinTooltip = (tooltip) => {
         : `${formatNumber(monster.movingSpeed)} ms`;
     const formattedType = formatTypeLabel(monster.monsterType);
     detailFields.type.textContent = formattedType;
-    renderTypeTooltip(monster.monsterType);
+    equipmentData.fill(detailFields.typeTooltip, () => { renderTypeTooltip(monster.monsterType); attachTooltipPinning(); });
     applyElementColor(monster.elementalAttack, detailFields.element);
     renderFlags(monster);
     renderStatusEffect(monster);
-    renderLootTable(monster);
-    renderRecommendedWeapons(monster);
-    renderRecommendedArmors(monster);
+    equipmentData.fill(detailFields.lootTable, () => { renderLootTable(monster); attachTooltipPinning(); });
+    equipmentData.fill(detailFields.recommendedWeapons, () => { renderRecommendedWeapons(monster); attachTooltipPinning(); });
+    equipmentData.fill(detailFields.recommendedArmors, () => { renderRecommendedArmors(monster); attachTooltipPinning(); });
     attachTooltipPinning();
 
     details.classList.add("show");
@@ -3097,70 +3098,51 @@ const unpinTooltip = (tooltip) => {
     });
   };
 
-  const init = () => {
-    Promise.all([
-      fetchJsonCached(dataUrl, { cacheKey: `monsters-data-v${MONSTERS_SCHEMA_VERSION}:${dataUrl}` }),
+  const equipmentData = utils.createDeferredData(async () => {
+    const [weaponData, armorData, perksData, resistancesData, loadedDropSources] = await Promise.all([
       fetchJsonCached(weaponsUrl.toString()),
       fetchJsonCached(new URL("../items/armors_data06.json", window.location.href).toString()),
-      fetchJsonCached(perksUrl.toString()),
-      fetchJsonCached(resistancesUrl),
-      loadAllowlists(),
-      loadDropSources(),
-      loadMonsterImageManifest(),
-    ]).then(
-      ([
-        monsterData,
-        weaponData,
-        armorData,
-        perksData,
-        resistancesData,
-        allowlists,
-        loadedDropSources,
-      ]) => {
-        const map =
-          resistancesData && typeof resistancesData === "object" ? resistancesData.typeResistances : null;
-        if (map && typeof map === "object") {
-          TYPE_RESISTANCES = map;
-        }
-        perkDefinitions = new Map(
-          (Array.isArray(perksData?.perks) ? perksData.perks : [])
-            .filter((perk) => perk && COMBAT_PERK_GROUPS.has(perk.group))
-            .map((perk) => [normalizePerkNameKey(perk.name), perk])
-        );
-        applyAllowlists(allowlists);
-        dropSources =
-          loadedDropSources ||
-          (typeof utils.createEmptyDropSources === "function"
-            ? utils.createEmptyDropSources()
-            : dropSources);
-        monsters = normalizeMonsters(Array.isArray(monsterData) ? monsterData : []);
-        weapons = Array.isArray(weaponData)
-          ? weaponData
-              .map((w) => normalizeWeapon(w))
-              .filter((w) => {
-                if (!w) return false;
-                const nameLower = (w.name || "").toLowerCase();
-                if (nameLower === "flaming sword" && Number(w.level) === 0) return false;
-                return !hiddenWeaponNames.has(nameLower) && !hiddenWeaponIds.has(String(w.id).trim());
-              })
-          : [];
-        armors = Array.isArray(armorData)
-          ? armorData
-              .map((a) => normalizeArmor(a))
-              .filter((a) => a && !isRecordHidden(a, hiddenArmorNames))
-          : [];
-        if (!monsters.length) {
-          renderEmpty("No monsters found in monsters_data03.json.");
-          return;
-        }
-        populateFilters(monsters);
-        applyFilterAndSort();
-      }
-    )
-      .catch((error) => {
-        console.error("Unable to initialize monster data.", error);
-        renderEmpty("Unable to load monsters. Add monsters_data03.json beside this page.");
+      fetchJsonCached(perksUrl.toString()), fetchJsonCached(resistancesUrl), loadDropSources(),
+    ]);
+    if (!Array.isArray(weaponData) || !Array.isArray(armorData) || !Array.isArray(perksData?.perks) || !resistancesData?.typeResistances || !loadedDropSources) {
+      throw new Error("Equipment details unavailable");
+    }
+    TYPE_RESISTANCES = resistancesData.typeResistances;
+    perkDefinitions = new Map(
+      perksData.perks
+        .filter((perk) => perk && COMBAT_PERK_GROUPS.has(perk.group))
+        .map((perk) => [normalizePerkNameKey(perk.name), perk])
+    );
+    dropSources = loadedDropSources;
+    weapons = weaponData
+      .map((w) => normalizeWeapon(w))
+      .filter((w) => {
+        if (!w) return false;
+        const nameLower = (w.name || "").toLowerCase();
+        if (nameLower === "flaming sword" && Number(w.level) === 0) return false;
+        return !hiddenWeaponNames.has(nameLower) && !hiddenWeaponIds.has(String(w.id).trim());
       });
+    armors = armorData
+      .map((a) => normalizeArmor(a))
+      .filter((a) => a && !isRecordHidden(a, hiddenArmorNames));
+  });
+
+  const init = () => {
+    Promise.all([
+      fetchJsonCached(dataUrl, {cacheKey:`monsters-data-v${MONSTERS_SCHEMA_VERSION}:${dataUrl}`}),
+      loadAllowlists(),
+    ]).then(([monsterData, allowlists]) => {
+      applyAllowlists(allowlists);
+      monsters = normalizeMonsters(Array.isArray(monsterData) ? monsterData : []);
+      if (!monsters.length) { renderEmpty("No monsters found in monsters_data03.json."); return; }
+      populateFilters(monsters);
+      applyFilterAndSort();
+      utils.markCatalogReady();
+      equipmentData.schedule();
+    }).catch(error => {
+      console.error("Unable to initialize monster data.", error);
+      renderEmpty("Unable to load monsters. Add monsters_data03.json beside this page.");
+    });
   };
 
   searchInput.addEventListener("input", (event) => {

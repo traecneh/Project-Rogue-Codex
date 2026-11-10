@@ -18,9 +18,8 @@
   }
 
   async function loadSkillXp() {
-    const response = await fetch(PLAYER_TABLES_URL, { cache: "no-store" });
-    if (!response.ok) throw new Error(`Skill XP data request failed (${response.status}).`);
-    return validateSkillXp(await response.json());
+    const data = await window.RogueCodexUtils.fetchJsonCached(PLAYER_TABLES_URL);
+    return validateSkillXp(data);
   }
 
   function formatNumber(value) {

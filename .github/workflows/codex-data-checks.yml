@@ -55,6 +55,12 @@ jobs:
       - name: Run release readiness check
         run: python -m tools.codex_pipeline release-check
 
+      - name: Check generated browser assets
+        run: python -m tools.browser_assets --check
+
+      - name: Check browser cache behavior
+        run: node --test tests/browser-cache.test.mjs tests/browser-deferred.test.mjs
+
       - name: Smoke test site pages
         run: python -m tools.codex_pipeline smoke-site --smoke-timeout-ms 60000
 

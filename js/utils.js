@@ -3,7 +3,7 @@
   const PROJECT_ROGUE_MAP_URL = "https://traecneh.github.io/Project-Rogue-Map/";
   const PERKS_INDEX_SCHEMA_VERSION = 4;
   const ALLOWLISTS_SCHEMA_VERSION = 5;
-  const FORCE_JSON_REFRESH = true;
+  const FORCE_JSON_REFRESH = false;
   const jsonMemoryCache = new Map();
   let perkIndexPromise = null;
   let perkIndexMap = null;
@@ -108,85 +108,209 @@
     }
   }
 
-  function fetchJsonCached(url, options = {}) {
-    const absoluteUrl = getAbsoluteUrl(url);
-    if (!absoluteUrl) return Promise.resolve(null);
-
-    const cacheKey = options.cacheKey || absoluteUrl;
-    const storageKey = options.storageKey || `json-cache:${cacheKey}`;
-    const ttlMs = Number.isFinite(options.ttlMs) ? options.ttlMs : DEFAULT_JSON_TTL_MS;
-    const now = Date.now();
-    const forceFresh = options.forceFresh || FORCE_JSON_REFRESH;
-
-    const withCacheBust = (targetUrl) => {
-      try {
-        const resolved = new URL(targetUrl);
-        resolved.searchParams.set("_", String(Date.now()));
-        return resolved.toString();
-      } catch (error) {
-        const separator = targetUrl.includes("?") ? "&" : "?";
-        return `${targetUrl}${separator}_=${Date.now()}`;
-      }
-    };
-
-    if (forceFresh) {
-      const requestUrl = withCacheBust(absoluteUrl);
-      return fetch(requestUrl, { cache: "no-store" })
-        .then((response) => {
-          if (!response.ok) throw new Error(`Failed to fetch ${absoluteUrl}`);
-          return response.json();
-        })
-        .catch((error) => {
-          console.warn(error.message || error);
-          return null;
-        });
-    }
-
-    const existing = jsonMemoryCache.get(cacheKey);
-    if (existing) {
-      if (existing.data && (!ttlMs || now < existing.expiresAt)) {
-        return Promise.resolve(existing.data);
-      }
-      if (existing.promise) return existing.promise;
-    }
-
-    const stored = safeReadSession(storageKey);
-    if (stored && stored.value !== undefined && stored.timestamp) {
-      if (!ttlMs || now - stored.timestamp < ttlMs) {
-        jsonMemoryCache.set(cacheKey, {
-          data: stored.value,
-          expiresAt: ttlMs ? stored.timestamp + ttlMs : Infinity,
-          promise: null,
-        });
-        return Promise.resolve(stored.value);
-      }
-    }
-
-    const promise = fetch(absoluteUrl)
-      .then((response) => {
-        if (!response.ok) throw new Error(`Failed to fetch ${absoluteUrl}`);
-        return response.json();
-      })
-      .then((data) => {
-        const expiresAt = ttlMs ? now + ttlMs : Infinity;
-        jsonMemoryCache.set(cacheKey, { data, expiresAt, promise: null });
-        safeWriteSession(storageKey, { timestamp: now, value: data });
+  // One small conditional request per document validates all stored game data.
+  let releaseManifestPromise = null;
+  function loadReleaseManifest() {
+    if (releaseManifestPromise) return releaseManifestPromise;
+    releaseManifestPromise = fetch(getAbsoluteUrl("data/browser-release.json"), {cache: "no-cache"})
+      .then(response => { if (!response.ok) throw new Error("Release manifest unavailable"); return response.json(); })
+      .then(data => {
+        if (data?.schema !== 1 || !data.files || typeof data.files !== "object") throw new Error("Invalid release manifest");
         return data;
       })
-      .catch((error) => {
+      .catch(() => null);
+    return releaseManifestPromise;
+  }
+
+  async function fetchJsonCached(url, options = {}) {
+    const absoluteUrl = getAbsoluteUrl(url);
+    if (!absoluteUrl) return null;
+    const release = await loadReleaseManifest();
+    const versions = release?.files;
+    const resolved = new URL(absoluteUrl);
+    const root = new URL(".", document.baseURI || window.location.href);
+    const relative = resolved.origin === root.origin && resolved.pathname.startsWith(root.pathname)
+      ? decodeURI(resolved.pathname.slice(root.pathname.length)) : "";
+    const revision = versions?.[relative];
+    if (revision) {
+      resolved.searchParams.delete("v");
+      resolved.searchParams.delete("_");
+    }
+    // Canonical URLs deduplicate callers that used different legacy schema tokens.
+    const cacheKey = resolved.toString();
+    const storageKey = `json-cache:v2:${cacheKey}`;
+    const ttlMs = Number.isFinite(options.ttlMs) ? options.ttlMs : DEFAULT_JSON_TTL_MS;
+    const now = Date.now();
+    const canCache = Boolean(revision);
+    if (canCache && !options.forceFresh) {
+      const existing = jsonMemoryCache.get(cacheKey);
+      if (existing?.revision === revision) {
+        if (existing.promise) return existing.promise;
+        if (!ttlMs || now < existing.expiresAt) return existing.data;
+      }
+      const stored = safeReadSession(storageKey);
+      if (stored?.revision === revision && stored.value !== undefined && (!ttlMs || now - stored.timestamp < ttlMs)) {
+        jsonMemoryCache.set(cacheKey, {data:stored.value,revision,expiresAt:stored.timestamp+ttlMs});
+        return stored.value;
+      }
+    }
+    if (revision) resolved.searchParams.set("v", revision);
+    const entry = {revision, promise:null};
+    const promise = fetch(resolved.toString(), {cache:canCache && !options.forceFresh ? "default" : "no-cache", priority:options.priority || "auto"})
+      .then(response => { if (!response.ok) throw new Error(`Failed to fetch ${absoluteUrl}`); return response.json(); })
+      .then(data => {
+        if (canCache) {
+          Object.assign(entry, {data,expiresAt:Date.now()+ttlMs});
+          safeWriteSession(storageKey, {revision,timestamp:Date.now(),value:data});
+        }
+        return data;
+      })
+      .catch(error => {
+        if (jsonMemoryCache.get(cacheKey) === entry) jsonMemoryCache.delete(cacheKey);
         console.warn(error.message || error);
-        jsonMemoryCache.delete(cacheKey);
         return null;
       })
-      .finally(() => {
-        const current = jsonMemoryCache.get(cacheKey);
-      if (current && current.promise) {
-        current.promise = null;
-      }
-    });
-
-    jsonMemoryCache.set(cacheKey, { data: null, expiresAt: 0, promise });
+      .finally(() => { entry.promise = null; });
+    entry.promise = promise;
+    if (canCache) jsonMemoryCache.set(cacheKey,entry);
     return promise;
+  }
+
+  function createDeferredData(load) {
+    let state = "idle";
+    let promise = null;
+    const tokens = new WeakMap();
+    const start = () => {
+      if (!promise) {
+        state = "loading";
+        promise = Promise.resolve().then(load).then(
+          () => { state = "ready"; },
+          error => { state = "error"; throw error; }
+        );
+      }
+      return promise;
+    };
+    const fill = (target, render, options = {}) => {
+      if (!target) return;
+      const token = {};
+      tokens.set(target, token);
+      if (state === "ready") { target.removeAttribute("aria-busy"); render(); return; }
+      target.replaceChildren(options.placeholder || document.createTextNode("Loading…"));
+      target.setAttribute("aria-busy", "true");
+      start().then(() => {
+        if (tokens.get(target) !== token || !target.isConnected) return;
+        target.removeAttribute("aria-busy");
+        render();
+      }, () => {
+        if (tokens.get(target) !== token || !target.isConnected) return;
+        target.removeAttribute("aria-busy");
+        target.textContent = options.errorText || "Details unavailable. Reload to retry.";
+      });
+    };
+    return {
+      load: start,
+      fill,
+      content(render, options) {
+        const target = document.createElement("span");
+        target.className = "deferred-content";
+        fill(target, () => {
+          target.replaceChildren();
+          const result = render();
+          if (result) target.appendChild(result);
+        }, options);
+        return target;
+      },
+      schedule() {
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          const run = () => start().catch(error => console.warn(error.message || error));
+          if (typeof requestIdleCallback === "function") requestIdleCallback(run, {timeout:1500});
+          else setTimeout(run, 0);
+        }));
+      },
+    };
+  }
+
+  function markCatalogReady() {
+    document.documentElement.dataset.catalogReady = "true";
+    document.dispatchEvent(new Event("codex:catalog-ready"));
+  }
+
+  const prefetchedResources = new Map();
+  const prefetchedPages = new Map();
+  function warmResource(url) {
+    if (prefetchedResources.has(url)) return prefetchedResources.get(url);
+    const promise = fetch(url, {priority:"low"}).then(response => {
+      if (!response.ok) throw new Error("Prefetch unavailable");
+      return response.arrayBuffer();
+    }).catch(() => { prefetchedResources.delete(url); });
+    prefetchedResources.set(url,promise);
+    return promise;
+  }
+
+  async function prefetchPage(href) {
+    const root = new URL(".", document.baseURI || window.location.href);
+    const target = new URL(href, document.baseURI || window.location.href);
+    if (target.origin !== root.origin || !target.pathname.startsWith(root.pathname) || target.pathname === window.location.pathname) return false;
+    const release = await loadReleaseManifest();
+    const descriptor = release?.pages?.[decodeURI(target.pathname.slice(root.pathname.length))];
+    if (!descriptor) return false;
+    target.hash = "";
+    const key = target.toString();
+    if (prefetchedPages.has(key)) return prefetchedPages.get(key);
+    const promise = (async () => {
+      const documentUrl = new URL(target); documentUrl.search = "";
+      const assets = [documentUrl.toString(), ...descriptor.assets.map(path => new URL(path,root).toString())];
+      const dataPaths = [...new Set([...(descriptor.data || []), ...(target.search ? descriptor.details || [] : [])])];
+      const data = new Map();
+      const resources = assets.map(warmResource);
+      resources.push(...dataPaths.map(async path => data.set(path,await fetchJsonCached(new URL(path,root).toString(),{priority:"low"}))));
+      await Promise.all(resources);
+      let images = target.search ? [] : descriptor.images || [];
+      const query = target.searchParams.get(descriptor.queryKey);
+      if (query && descriptor.dataset && descriptor.imageFolder) {
+        const slug = value => String(value || "").toLowerCase().replace(/[^a-z0-9_-]+/g,"-").replace(/^-+|-+$/g,"");
+        const row = (data.get(descriptor.dataset) || []).find(row => String(row.id) === query || slug(row.name || row.Name) === slug(query));
+        const manifest = data.get(`images/${descriptor.imageFolder}/manifest.json`) || [];
+        if (row) {
+          const name = String(row.name || row.Name).toLowerCase();
+          const match = manifest.find(path => {
+            const stem = path.split('/').pop().replace(/\.[^.]+$/,"").toLowerCase();
+            return stem === `${name}-${row.id}` || stem === name;
+          });
+          if (match) images = [match];
+        }
+      }
+      await Promise.all(images.map(path => warmResource(new URL(path,root).toString())));
+      return true;
+    })().catch(() => false);
+    prefetchedPages.set(key,promise);
+    return promise;
+  }
+
+  const imageObservers = new Map();
+  const pendingImages = new WeakMap();
+  function queueTableImage(img, load) {
+    img.width = 32;
+    img.height = 32;
+    img.decoding = "async";
+    const root = document.querySelector(".items-table-wrapper, .monsters-table-wrapper");
+    if (!root || typeof IntersectionObserver !== "function") { load(); return; }
+    let observer = imageObservers.get(root);
+    if (!observer) {
+      observer = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting || !entry.target.isConnected) {
+            observer.unobserve(entry.target);
+            const start = pendingImages.get(entry.target);
+            pendingImages.delete(entry.target);
+            if (entry.isIntersecting && start) start();
+          }
+        });
+      }, {root, rootMargin:"160px 0px", threshold:0});
+      imageObservers.set(root, observer);
+    }
+    pendingImages.set(img,load);
+    observer.observe(img);
   }
 
   function normalizeNameList(list) {
@@ -475,13 +599,11 @@
       ttlMs: DEFAULT_JSON_TTL_MS,
     })
       .then((data) => {
+        if (!data || typeof data.weapons !== "object" || typeof data.armors !== "object") return null;
         dropSourcesCache = normalizeDropSourceData(data);
         return dropSourcesCache;
       })
-      .catch(() => {
-        dropSourcesCache = createEmptyDropSources();
-        return dropSourcesCache;
-      })
+      .catch(() => null)
       .finally(() => {
         dropSourcesPromise = null;
       });
@@ -509,6 +631,10 @@
     getAbsoluteUrl,
     buildProjectRogueMapUrl,
     fetchJsonCached,
+    queueTableImage,
+    createDeferredData,
+    markCatalogReady,
+    prefetchPage,
     ELEMENT_COLORS,
     RESIST_COLORS,
     PERK_TIER_COLORS,
@@ -535,4 +661,7 @@
     createPerkBadge,
     createElementBadge,
   });
+
+  // Overlap release validation with the remaining deferred page scripts.
+  void loadReleaseManifest();
 })();

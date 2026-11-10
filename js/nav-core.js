@@ -28,9 +28,14 @@ initializeGoogleAnalytics();
 function setRandomLogo() {
   const logo = document.querySelector(".site-logo-image");
   if (!logo) return;
-  const logos = ["images/logo-1.png", "images/logo-2.png"];
-  const pick = Math.random() < 0.5 ? logos[0] : logos[1];
-  logo.src = pick;
+  let variant = 1;
+  try {
+    const saved = sessionStorage.getItem("codex-logo-variant");
+    variant = saved === "1" || saved === "2" ? Number(saved) : Math.random() < 0.5 ? 1 : 2;
+    sessionStorage.setItem("codex-logo-variant", String(variant));
+  } catch (error) { /* Storage may be unavailable. */ }
+  logo.srcset = `images/logo-${variant}-128.png 1x, images/logo-${variant}-256.png 2x`;
+  logo.src = `images/logo-${variant}-128.png`;
 }
 
 function initializeActiveNavLink() {

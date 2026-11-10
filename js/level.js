@@ -18,9 +18,8 @@
   }
 
   async function loadPlayerXp() {
-    const response = await fetch(PLAYER_TABLES_URL, { cache: "no-store" });
-    if (!response.ok) throw new Error(`Player XP data request failed (${response.status}).`);
-    return validatePlayerXp(await response.json());
+    const data = await window.RogueCodexUtils.fetchJsonCached(PLAYER_TABLES_URL);
+    return validatePlayerXp(data);
   }
 
   function formatNumber(value) {

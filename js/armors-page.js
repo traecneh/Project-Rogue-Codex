@@ -795,7 +795,7 @@
 
       addDivider(container);
 
-      addRow(container, [["Drops From", createDropsFromPill(item)]], 1);
+      addRow(container, [["Drops From", sourceData.content(() => { const pill = createDropsFromPill(item); queueMicrotask(() => attachTooltipPinning(details)); return pill; }, {errorText:"Sources unavailable. Reload to retry."})]], 1);
 
       addDivider(container);
 
@@ -863,7 +863,7 @@
           const fallback = document.createElement("span");
           fallback.className = "no-image";
           fallback.textContent = "No Image";
-          ensureImage(img, fallback, item, "armors");
+          ensureImage(img, fallback, item, "armors", {lazy:true});
           td.appendChild(img);
           td.appendChild(fallback);
         } else if (col.key === "name") {
@@ -973,32 +973,34 @@
     renderTable(sorted);
   };
 
-    const init = () => {
-      Promise.all([
-        fetchJsonCached(dataUrl.toString()),
-        fetchJsonCached(perksUrl),
-        fetchJsonCached(monstersUrl),
-        loadAllowlists(),
-        loadDropSources(),
-      ])
-        .then(([data, perksData, monstersData, allowlists, loadedDropSources]) => {
-          const perks = Array.isArray(perksData?.perks) ? perksData.perks : [];
-          perkIndexByName = new Map();
-          perks.forEach((entry) => {
-            const name = entry && typeof entry.name === "string" ? entry.name.trim() : "";
-            if (!name) return;
-            perkIndexByName.set(name.toLowerCase(), entry);
-          });
-          applyAllowlists(allowlists);
-          dropSources =
-            loadedDropSources ||
-            (typeof utils.createEmptyDropSources === "function" ? utils.createEmptyDropSources() : dropSources);
-          monsters = normalizeMonsters(Array.isArray(monstersData) ? monstersData : []);
-          items = (Array.isArray(data) ? data : [])
-            .map((row) => normalizeArmor(row))
-            .filter(
-              (row) => row && !isRecordHidden(row, hiddenArmorNames) && !isSlotZero(row.slot)
-            );
+  const sourceData = utils.createDeferredData(async () => {
+    const [monsterData, loadedDropSources] = await Promise.all([fetchJsonCached(monstersUrl), loadDropSources()]);
+    if (!Array.isArray(monsterData) || !loadedDropSources) throw new Error("Drop sources unavailable");
+    monsters = normalizeMonsters(monsterData);
+    dropSources = loadedDropSources;
+    if (searchTerm) applyFilterAndSort();
+  });
+
+  const init = () => {
+    Promise.all([
+      fetchJsonCached(dataUrl.toString()),
+      fetchJsonCached(perksUrl),
+      loadAllowlists(),
+    ])
+      .then(([data, perksData, allowlists]) => {
+        const perks = Array.isArray(perksData?.perks) ? perksData.perks : [];
+        perkIndexByName = new Map();
+        perks.forEach((entry) => {
+          const name = entry && typeof entry.name === "string" ? entry.name.trim() : "";
+          if (!name) return;
+          perkIndexByName.set(name.toLowerCase(), entry);
+        });
+        applyAllowlists(allowlists);
+        items = (Array.isArray(data) ? data : [])
+          .map((row) => normalizeArmor(row))
+          .filter(
+            (row) => row && !isRecordHidden(row, hiddenArmorNames) && !isSlotZero(row.slot)
+          );
         if (!items.length) {
           renderEmpty("Add armors_data06.json beside this page to see armors.");
           return;
@@ -1008,6 +1010,8 @@
         buildHead();
         populateFilters(items);
         applyFilterAndSort();
+        utils.markCatalogReady();
+        sourceData.schedule();
       })
       .catch(() => {
         renderEmpty("Unable to load armors. Add armors_data06.json beside this page.");

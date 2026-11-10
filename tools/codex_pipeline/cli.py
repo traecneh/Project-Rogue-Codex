@@ -231,6 +231,7 @@ VALIDATED_SCRIPT_PATHS = [
     REPO_ROOT / "js" / "refresh.js",
     REPO_ROOT / "js" / "timeline-refresh.js",
     REPO_ROOT / "js" / "utils.js",
+    REPO_ROOT / "js" / "prefetch.js",
     REPO_ROOT / "js" / "home.js",
     REPO_ROOT / "js" / "items-page-utils.js",
     REPO_ROOT / "js" / "build-planner.js",
@@ -2455,7 +2456,13 @@ def run_refresh_manifest(args: argparse.Namespace | None = None) -> int:
     try:
         manifest = build_codex_manifest()
         write_codex_manifest(manifest, CODEX_MANIFEST_PATH)
-    except (OSError, ValueError, json.JSONDecodeError) as exc:
+        # Standard game-data refreshes also update the search and cache versions.
+        # A custom manifest destination is a standalone export.
+        if CODEX_MANIFEST_PATH == REPO_ROOT / "data" / "codex_manifest.json":
+            from tools.browser_assets import build as build_browser_assets
+            for relative, content in build_browser_assets(REPO_ROOT).items():
+                (REPO_ROOT / relative).write_bytes(content)
+    except (OSError, ValueError, json.JSONDecodeError, subprocess.CalledProcessError) as exc:
         print(f"ERROR: failed to refresh codex manifest: {exc}")
         return 1
     summary = manifest["summary"]

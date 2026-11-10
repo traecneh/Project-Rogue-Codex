@@ -47,7 +47,33 @@ function initializeWeaponSpecialtyReferences() {
     });
   };
 
-  loadWeaponData()
+  const loadWeaponReferences = async () => {
+    const utils = window.RogueCodexUtils;
+    const [rows, allowlists] = await Promise.all([
+      utils.fetchJsonCached("pages/items/weapons_data05.json"), utils.loadAllowlists(),
+    ]);
+    const blocked = utils.buildNameSet(allowlists.weapons?.block);
+    const blockedIds = new Set(allowlists.weapons?.blockIds || []);
+    return (Array.isArray(rows) ? rows : [])
+      .filter(row => !utils.isRecordHidden(row,blocked) && !blockedIds.has(String(row.id)))
+      .map(row => {
+        const fields = row.fields || {};
+        const min = Number(fields.min_damage ?? row.minDamage);
+        const max = Number(fields.max_damage ?? row.maxDamage);
+        const speed = Number(fields.attack_speed ?? row.attackSpeed);
+        return {
+          id:row.id, name:row.name || row.Name,
+          specialty:fields.specialty ? fields.specialty_label || String(fields.specialty) : row.specialty,
+          dps:Number.isFinite(min+max+speed) && speed > 0 ? Number(((min+max)/2*1000/speed).toFixed(2)) : null,
+          attackSpeed:speed, level:fields.level_requirement ?? row.level,
+          type:fields.subtype_label || row.type,
+          element:fields.element_label || row.element,
+          perk:fields.perk_label || row.perk,
+        };
+      });
+  };
+
+  loadWeaponReferences()
     .then((data) => {
       containers.forEach((container) => {
         const targetSpec = normalize(container.getAttribute("data-weapon-specialty"));

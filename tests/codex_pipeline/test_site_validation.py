@@ -260,7 +260,7 @@ class SiteValidationTests(unittest.TestCase):
                 html = html_path.read_text(encoding="utf-8")
                 script = script_path.read_text(encoding="utf-8")
 
-                self.assertIn(f'<script src="js/items-page-utils.js?v={STATIC_ASSET_VERSION}"></script>', html)
+                self.assertIn(f'<script src="js/items-page-utils.js?v={STATIC_ASSET_VERSION}" defer></script>', html)
                 self.assertIn("const itemUtils = window.RogueCodexItemPageUtils || {};", script)
                 self.assertIn("itemUtils.createRouteHelpers", script)
                 self.assertIn("itemUtils.createTooltipPinningController", script)
@@ -439,6 +439,7 @@ class SiteValidationTests(unittest.TestCase):
 
         nav = (REPO_ROOT / "nav.html").read_text(encoding="utf-8")
         script = (REPO_ROOT / "js" / "site-search.js").read_text(encoding="utf-8")
+        script += (REPO_ROOT / "tools" / "search-index-source.js").read_text(encoding="utf-8")
 
         for expected in [
             'href="pages/items/collectables.html">Collectables</a>',
@@ -476,6 +477,7 @@ class SiteValidationTests(unittest.TestCase):
         script_path = REPO_ROOT / "js" / "quests-page.js"
         nav = (REPO_ROOT / "nav.html").read_text(encoding="utf-8")
         search = (REPO_ROOT / "js" / "site-search.js").read_text(encoding="utf-8")
+        search += (REPO_ROOT / "tools" / "search-index-source.js").read_text(encoding="utf-8")
         html = html_path.read_text(encoding="utf-8")
         page_script = script_path.read_text(encoding="utf-8")
         utils_script = (REPO_ROOT / "js" / "utils.js").read_text(encoding="utf-8")
@@ -1081,7 +1083,7 @@ class SiteValidationTests(unittest.TestCase):
         self.assertIn(calc_script_path, cli.VALIDATED_SCRIPT_PATHS)
         self.assertIn(script_path, cli.VALIDATED_SCRIPT_PATHS)
         self.assertIn(f'<link rel="stylesheet" href="css/perks.css?v={STATIC_ASSET_VERSION}" />', html)
-        self.assertIn(f'<script src="js/utils.js?v={STATIC_ASSET_VERSION}"></script>', html)
+        self.assertIn(f'<script src="js/utils.js?v={STATIC_ASSET_VERSION}" defer></script>', html)
         self.assertIn(f'<script src="js/perk-calculations.js?v={STATIC_ASSET_VERSION}" defer></script>', html)
         self.assertIn(f'<script src="js/perks-page.js?v={STATIC_ASSET_VERSION}" defer></script>', html)
         self.assertNotIn("<style>", html)

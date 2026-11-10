@@ -35,6 +35,18 @@ python -m tools.codex_pipeline smoke-site
 
 GitHub Actions also runs the unit tests, `release-check`, local browser smoke checks, and whitespace checks on pushes and pull requests targeting `main`.
 
+After editing searchable page text, search metadata, game JSON, or the original navigation logos, rebuild the browser assets:
+
+```powershell
+python -m tools.browser_assets
+python -m tools.browser_assets --check
+npm run test:browser-cache
+```
+
+This prepares `data/search-index.json`, per-file JSON content versions in `data/browser-release.json`, and 128/256-pixel navigation logos. The browser validates the small release manifest on each document and reuses data only when its content version matches. Standard `refresh-manifest` game-data updates rebuild these assets automatically. CI rejects stale generated assets.
+
+Catalog tables render after their own records and visibility rules load (plus equipment perk labels where needed). Supporting details load afterward and update only their own sections. Hovering a local page link for 150 ms, or focusing it with the keyboard, warms that destination's versioned assets and data. Prefetch waits for the current catalog, limits itself to four destinations per document, and skips data-saving or very slow connections.
+
 The first pipeline slice validates weapons, armors, monsters, image manifests, inline page scripts, special drop-source overrides from `data/codex-overrides/drop_sources.json`, and corrupted perk label overrides from `data/codex-overrides/perk_labels.json`.
 
 Audit drop-source overrides and the derived monster loot view:

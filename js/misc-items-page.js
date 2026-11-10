@@ -367,7 +367,7 @@
     const fallback = document.createElement("span");
     fallback.className = "no-image";
     fallback.textContent = "No Image";
-    ensureImage(img, fallback, item, page.imageFolder);
+    ensureImage(img, fallback, item, page.imageFolder, {lazy:true});
     wrapper.appendChild(img);
     wrapper.appendChild(fallback);
     return wrapper;
@@ -570,10 +570,7 @@
     const container = detailFields.properties;
     container.innerHTML = "";
     container.appendChild(createDetailSummary(item));
-    const relationshipPanel = createRelationshipPanel(item);
-    if (relationshipPanel) {
-      container.appendChild(relationshipPanel);
-    }
+    container.appendChild(relationshipData.content(() => createRelationshipPanel(item), {errorText:"Item context unavailable. Reload to retry."}));
     appendRow(container, [["Crafting Data", createCraftingSummary(item)]], 1);
     appendDivider(container);
     appendRow(
@@ -712,15 +709,16 @@
     else clearDetails({ updateUrl: false });
   });
 
+  const relationshipData = utils.createDeferredData(async () => {
+    const [relationships,targets] = await Promise.all([fetchJsonCached(relationshipDataUrl.toString()),fetchJsonCached(relationshipTargetsUrl.toString())]);
+    if (!relationships || !targets) throw new Error("Item context unavailable");
+    relationshipDataByKey = createRelationshipDataByKey(relationships);
+    relationshipTargetLinksByName = createRelationshipTargetLinksByName(targets);
+  });
+
   const init = () => {
-    Promise.all([
-      fetchJsonCached(dataUrl.toString()),
-      fetchJsonCached(relationshipDataUrl.toString()),
-      fetchJsonCached(relationshipTargetsUrl.toString()),
-    ])
-      .then(([data, relationshipData, relationshipTargets]) => {
-        relationshipDataByKey = createRelationshipDataByKey(relationshipData);
-        relationshipTargetLinksByName = createRelationshipTargetLinksByName(relationshipTargets);
+    fetchJsonCached(dataUrl.toString())
+      .then((data) => {
         items = (Array.isArray(data) ? data : []).map((row) => normalizeItem(row)).filter(Boolean);
         if (!items.length) {
           renderEmpty(`Add ${page.dataFile} beside this page to see ${page.countLabel}.`);
@@ -729,6 +727,8 @@
         buildHead();
         populateFilters(items);
         applyFilterAndSort();
+        utils.markCatalogReady();
+        relationshipData.schedule();
       })
       .catch(() => {
         renderEmpty(`Unable to load ${page.countLabel}. Add ${page.dataFile} beside this page.`);

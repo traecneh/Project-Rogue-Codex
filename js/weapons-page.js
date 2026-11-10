@@ -763,7 +763,7 @@
     const fallback = document.createElement("span");
     fallback.className = "no-image";
     fallback.textContent = "No Image";
-    ensureImage(img, fallback, item);
+    ensureImage(img, fallback, item, "weapons", {lazy:true});
     wrapper.appendChild(img);
     wrapper.appendChild(fallback);
     return wrapper;
@@ -1117,7 +1117,7 @@
     );
     addRow(
       [
-        ["Element", createElementEffectivenessPill(item.element)],
+        ["Element", matchupData.content(() => { const pill = createElementEffectivenessPill(item.element); queueMicrotask(() => attachTooltipPinning(details)); return pill; }, {placeholder:createElementBadge(item.element),errorText:formatValue(item.element)})],
         [
           "Proc",
           item.procChance === null || item.procChance === undefined || item.procChance === ""
@@ -1223,7 +1223,7 @@
 
     addDivider();
 
-    addRow([["Drops From", createDropsFromPill(item)]], 1);
+    addRow([["Drops From", sourceData.content(() => { const pill = createDropsFromPill(item); queueMicrotask(() => attachTooltipPinning(details)); return pill; }, {errorText:"Sources unavailable. Reload to retry."})]], 1);
 
     addDivider();
 
@@ -1356,24 +1356,27 @@
     maybeSelectPendingWeapon(sorted);
   };
 
+  const sourceData = utils.createDeferredData(async () => {
+    const [monsterData, loadedDropSources] = await Promise.all([fetchJsonCached(monstersUrl), loadDropSources()]);
+    if (!Array.isArray(monsterData) || !loadedDropSources) throw new Error("Drop sources unavailable");
+    monsters = normalizeMonsters(monsterData);
+    dropSources = loadedDropSources;
+    if (searchTerm) applyFilterAndSort();
+  });
+  const matchupData = utils.createDeferredData(async () => {
+    const data = await fetchJsonCached(resistancesUrl);
+    if (!data?.typeResistances) throw new Error("Matchups unavailable");
+    typeResistances = data.typeResistances;
+  });
+
   const init = () => {
     Promise.all([
       fetchJsonCached(dataUrl.toString()),
-      fetchJsonCached(resistancesUrl),
       fetchJsonCached(perksUrl),
-      fetchJsonCached(monstersUrl),
       loadAllowlists(),
-      loadDropSources(),
     ])
-      .then(([data, resistancesData, perksData, monstersData, allowlists, loadedDropSources]) => {
-        const map = resistancesData && typeof resistancesData === "object" ? resistancesData.typeResistances : null;
-        if (map && typeof map === "object") {
-          typeResistances = map;
-        }
+      .then(([data, perksData, allowlists]) => {
         applyAllowlists(allowlists);
-        dropSources =
-          loadedDropSources ||
-          (typeof utils.createEmptyDropSources === "function" ? utils.createEmptyDropSources() : dropSources);
         const perks = Array.isArray(perksData?.perks) ? perksData.perks : [];
         perkIndexByName = new Map();
         perks.forEach((entry) => {
@@ -1381,7 +1384,6 @@
           if (!name) return;
           perkIndexByName.set(name.toLowerCase(), entry);
         });
-        monsters = normalizeMonsters(Array.isArray(monstersData) ? monstersData : []);
         items = (Array.isArray(data) ? data : [])
           .map((row) => normalizeWeapon(row))
           .filter((weapon) => {
@@ -1402,6 +1404,9 @@
         buildHead();
         populateFilters(items);
         applyFilterAndSort();
+        utils.markCatalogReady();
+        sourceData.schedule();
+        matchupData.schedule();
       })
       .catch(() => {
         renderEmpty("Unable to load weapons. Add weapons_data05.json beside this page.");

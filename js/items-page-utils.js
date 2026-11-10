@@ -176,15 +176,19 @@
 
   const createImageLoader = (defaultFolder, preloadedFolders = []) => {
     const imageManifestCache = new Map();
+    const imageManifestPromises = new Map();
+    const availablePaths = new Map();
 
     const loadImageManifest = (folder) => {
       if (imageManifestCache.has(folder)) return imageManifestCache.get(folder);
       const map = new Map();
       imageManifestCache.set(folder, map);
-      fetch(`images/${folder}/manifest.json`)
-        .then((res) => (res.ok ? res.json() : Promise.reject()))
+      const fetchJson = window.RogueCodexUtils.fetchJsonCached;
+      const promise = fetchJson(`images/${folder}/manifest.json`)
         .then((list) => {
-          const entries = Array.isArray(list) ? list : [];
+          if (!Array.isArray(list)) return;
+          const entries = list;
+          availablePaths.set(folder,new Set(entries));
           entries.forEach((path) => {
             const file = String(path || "").split("/").pop() || "";
             const base = file.replace(/\.[^.]+$/, "").toLowerCase();
@@ -192,6 +196,7 @@
           });
         })
         .catch(() => {});
+      imageManifestPromises.set(folder,promise);
       return map;
     };
 
@@ -224,36 +229,45 @@
         const encodedNameWithId = encodeURIComponent(nameWithId);
         candidates.push(`images/${folder}/${encodedNameWithId}.gif`, `images/${folder}/${encodedNameWithId}.png`);
       }
-      return Array.from(new Set(candidates.filter(Boolean)));
+      const known = availablePaths.get(folder);
+      return Array.from(new Set(candidates.filter(Boolean))).filter(source => !known || known.has(decodeURI(source)) || known.has(source));
     };
 
-    const ensureImage = (img, fallback, item, folder = defaultFolder) => {
+    const ensureImage = (img, fallback, item, folder = defaultFolder, options = {}) => {
       if (!img || !fallback) return;
       fallback.style.display = "none";
-      const sources = deriveImageCandidates(item, folder);
-      if (!sources.length) {
-        img.style.display = "none";
-        fallback.style.display = "flex";
-        return;
-      }
-      let index = 0;
-      const trySet = () => {
-        img.onload = () => {
-          img.style.display = "block";
-          fallback.style.display = "none";
+      const start = () => {
+        const sources = deriveImageCandidates(item, folder);
+        if (!sources.length) {
+          img.style.display = "none";
+          fallback.style.display = "flex";
+          return;
+        }
+        let index = 0;
+        const trySet = () => {
+          img.onload = () => {
+            img.style.display = "block";
+            fallback.style.display = "none";
+          };
+          img.onerror = () => {
+            index += 1;
+            if (index < sources.length) {
+              trySet();
+            } else {
+              img.style.display = "none";
+              fallback.style.display = "flex";
+            }
+          };
+          img.src = sources[index];
         };
-        img.onerror = () => {
-          index += 1;
-          if (index < sources.length) {
-            trySet();
-          } else {
-            img.style.display = "none";
-            fallback.style.display = "flex";
-          }
-        };
-        img.src = sources[index];
+        trySet();
       };
-      trySet();
+      const load = () => {
+        loadImageManifest(folder);
+        imageManifestPromises.get(folder).then(start);
+      };
+      if (options.lazy) window.RogueCodexUtils.queueTableImage(img,load);
+      else load();
     };
 
     return {
