@@ -52,7 +52,8 @@ def digest(data):
     return hashlib.sha256(data).hexdigest()
 
 def build(root=ROOT):
-    pages = [root/'index.html', *sorted((root/'pages').rglob('*.html'))]
+    # Path ordering is case-insensitive on Windows and case-sensitive on Linux.
+    pages = [root/'index.html', *sorted((root/'pages').rglob('*.html'), key=lambda path:path.as_posix())]
     texts = {}
     descriptors = {}
     for path in pages:
